@@ -64,15 +64,23 @@ export class CustomerViewModel {
   }
 
   async login(phone, pin) {
-    const cleanPhone = phone.replace(/[^0-9+]/g, "");
+    const cleanPhone = phone.replace(/\D/g, "");
     if (!cleanPhone || cleanPhone.length < 8) {
-      throw new Error("Por favor ingresa un número de teléfono o WhatsApp válido.");
+      throw new Error("Ingresa un número telefónico o WhatsApp válido (mínimo 8 dígitos).");
     }
-    const uid = "CLIENT-" + cleanPhone.replace("+", "");
-    const u = await FirestoreService.getUser(uid);
+    const uid = "CLIENT-" + cleanPhone;
+    let u = await FirestoreService.getUser(uid);
+    if (!u) {
+      // Búsqueda alternativa por teléfono
+      u = await FirestoreService.findUserByCodeOrPhone(cleanPhone);
+    }
 
     if (!u) {
-      throw new Error("No existe una cuenta registrada con este número. Selecciona la pestaña 'Nuevo Socio' para registrarte.");
+      throw new Error("No existe una cuenta registrada con el número " + cleanPhone + ". Selecciona la pestaña 'Nuevo Socio' para registrarte.");
+    }
+
+    if (u.status === "BANNED") {
+      throw new Error("⚠️ Esta cuenta de socio se encuentra suspendida temporalmente por administración.");
     }
 
     if (pin && u.pin && u.pin !== pin.trim()) {
@@ -80,7 +88,7 @@ export class CustomerViewModel {
     }
 
     this.currentUser = new UserModel(u);
-    localStorage.setItem("melty_client_uid", uid);
+    localStorage.setItem("melty_client_uid", u.uid || uid);
     await this.refreshUserData();
     this.notify();
     return this.currentUser;
@@ -89,16 +97,18 @@ export class CustomerViewModel {
   async register(displayName, phone, pin) {
     const name = displayName.trim();
     if (!name) throw new Error("Por favor ingresa tu nombre completo.");
-    const cleanPhone = phone.replace(/[^0-9+]/g, "");
+    const cleanPhone = phone.replace(/\D/g, "");
     if (!cleanPhone || cleanPhone.length < 8) {
-      throw new Error("Ingresa un número de WhatsApp válido.");
+      throw new Error("Ingresa un número de WhatsApp válido (mínimo 8 dígitos).");
     }
     const securityPin = pin ? pin.trim() : "1234";
-    const uid = "CLIENT-" + cleanPhone.replace("+", "");
+    const uid = "CLIENT-" + cleanPhone;
 
-    const existing = await FirestoreService.getUser(uid);
-    if (existing) {
-      throw new Error("Este número ya está registrado. Ingresa desde la pestaña 'Ya Soy Socio'.");
+    // Validación estricta de unicidad: ningún otro usuario puede tener el mismo número
+    const existingUid = await FirestoreService.getUser(uid);
+    const existingPhone = await FirestoreService.findUserByCodeOrPhone(cleanPhone);
+    if (existingUid || existingPhone) {
+      throw new Error("El número [" + cleanPhone + "] ya está registrado. Ingresa desde la pestaña 'Ya Soy Socio'.");
     }
 
     const newUser = new UserModel({
@@ -107,7 +117,8 @@ export class CustomerViewModel {
       phone: cleanPhone,
       pin: securityPin,
       wiredPoints: 0,
-      lifetimePoints: 0
+      lifetimePoints: 0,
+      status: "ACTIVE"
     });
 
     await FirestoreService.saveUser(newUser.toJSON());
@@ -216,6 +227,12 @@ export class CustomerViewModel {
 
     await this.refreshUserData();
     await this.refreshCatalog();
+
+    // Compatibilidad dual absoluta: retorna voucher decorado con propiedades auxiliares
+    voucher.voucher = voucher;
+    voucher.success = true;
+    voucher.newBalance = this.currentUser.wiredPoints;
+    voucher.cost = reward.pointsCost;
 
     return voucher;
   }

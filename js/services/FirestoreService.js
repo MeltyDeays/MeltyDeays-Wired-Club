@@ -20,20 +20,17 @@ class StorageEngine {
         batches: [],
         ledger: {}
       };
-      INITIAL_TOKENS.forEach(tok => {
-        blankDb.tokens[tok.token_code] = tok;
-      });
       localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(blankDb));
     } else {
       try {
         const snap = JSON.parse(raw);
-        if (!snap.tokens || Object.keys(snap.tokens).length === 0) {
-          if (!snap.tokens) snap.tokens = {};
-          INITIAL_TOKENS.forEach(tok => {
-            snap.tokens[tok.token_code] = tok;
-          });
-          localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(snap));
-        }
+        if (!snap.tokens) snap.tokens = {};
+        if (!snap.users) snap.users = {};
+        if (!snap.rewards) snap.rewards = {};
+        if (!snap.vouchers) snap.vouchers = {};
+        if (!snap.batches) snap.batches = [];
+        if (!snap.ledger) snap.ledger = {};
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(snap));
       } catch (e) {}
     }
   }
@@ -198,6 +195,22 @@ export class FirestoreService {
     return user;
   }
 
+  static async deleteUser(uid) {
+    const snap = engine.getSnapshot();
+    delete snap.users[uid];
+    if (snap.ledger) delete snap.ledger[uid];
+    engine.saveSnapshot(snap);
+
+    if (db) {
+      try {
+        await db.collection("users").doc(uid).delete();
+      } catch (e) {
+        console.warn("Firestore deleteUser error:", e.message);
+      }
+    }
+    return true;
+  }
+
   // Tokens de Factura
   static async getToken(tokenCode) {
     if (db) {
@@ -288,26 +301,39 @@ export class FirestoreService {
   }
 
   static async getVoucher(voucherCode) {
+    const clean = (voucherCode || "").trim().toUpperCase();
+    if (!clean) return null;
     if (db) {
       try {
-        const doc = await db.collection("redemptions").doc(voucherCode).get();
+        const doc = await db.collection("redemptions").doc(clean).get();
         if (doc.exists) return doc.data();
       } catch (e) {
         console.warn("Firestore getVoucher fallback:", e.message);
       }
     }
     const snap = engine.getSnapshot();
-    return snap.vouchers[voucherCode] || null;
+    if (snap.vouchers && snap.vouchers[clean]) return snap.vouchers[clean];
+    const found = Object.values(snap.vouchers || {}).find(v => {
+      const c = (v.voucher_code || v.voucherCode || "").trim().toUpperCase();
+      return c === clean;
+    });
+    return found || null;
   }
 
   static async saveVoucher(voucher) {
+    const code = (voucher.voucher_code || voucher.voucherCode || "").trim().toUpperCase();
+    if (!code) {
+      console.error("Firestore saveVoucher: código ausente", voucher);
+      return voucher;
+    }
     const snap = engine.getSnapshot();
-    snap.vouchers[voucher.voucher_code] = voucher;
+    if (!snap.vouchers) snap.vouchers = {};
+    snap.vouchers[code] = voucher;
     engine.saveSnapshot(snap);
 
     if (db) {
       try {
-        await db.collection("redemptions").doc(voucher.voucher_code).set(voucher, { merge: true });
+        await db.collection("redemptions").doc(code).set(voucher, { merge: true });
       } catch (e) {
         console.warn("Firestore saveVoucher error:", e.message);
       }
@@ -347,5 +373,71 @@ export class FirestoreService {
   static getUserVouchers(userUid) {
     const snap = engine.getSnapshot();
     return Object.values(snap.vouchers).filter(v => v.user_uid === userUid);
+  }
+
+  // Purga integral de facturas/tokens de prueba y reinicio limpio
+  static async purgeAllTokens() {
+    const snap = engine.getSnapshot();
+    const count = Object.keys(snap.tokens || {}).length;
+    snap.tokens = {};
+    snap.batches = [];
+    engine.saveSnapshot(snap);
+
+    if (db) {
+      try {
+        const tokenDocs = await db.collection("qr_tokens").get();
+        if (!tokenDocs.empty) {
+          const batch = db.batch();
+          tokenDocs.forEach(doc => {
+            batch.delete(doc.ref);
+          });
+          await batch.commit();
+        }
+        const batchDocs = await db.collection("point_batches").get().catch(() => ({ empty: true }));
+        if (batchDocs && !batchDocs.empty) {
+          const bBatch = db.batch();
+          batchDocs.forEach(doc => bBatch.delete(doc.ref));
+          await bBatch.commit();
+        }
+      } catch (e) {
+        console.warn("Firestore purgeAllTokens error:", e.message);
+      }
+    }
+    return { success: true, count };
+  }
+
+  // Búsqueda inteligente de socio por Member Code (MC-2026-XXXX), Teléfono o UID
+  static async findUserByCodeOrPhone(query) {
+    if (!query) return null;
+    const q = query.trim().toUpperCase();
+    const cleanPhone = query.replace(/\D/g, "");
+
+    const localUsers = this.getAllUsers();
+    let found = localUsers.find(u => {
+      const mCode = (u.memberCode || u.member_code || "").toUpperCase();
+      const phone = (u.phone || "").replace(/\D/g, "");
+      const uid = (u.uid || "").toUpperCase();
+      return mCode === q || (cleanPhone && phone === cleanPhone) || uid === q;
+    });
+
+    if (found) return found;
+
+    if (db) {
+      try {
+        let snap = await db.collection("users").where("member_code", "==", q).limit(1).get();
+        if (!snap.empty) return snap.docs[0].data();
+
+        snap = await db.collection("users").where("memberCode", "==", q).limit(1).get();
+        if (!snap.empty) return snap.docs[0].data();
+
+        if (cleanPhone) {
+          snap = await db.collection("users").where("phone", "==", cleanPhone).limit(1).get();
+          if (!snap.empty) return snap.docs[0].data();
+        }
+      } catch (e) {
+        console.warn("Error buscando usuario en Firestore:", e.message);
+      }
+    }
+    return null;
   }
 }

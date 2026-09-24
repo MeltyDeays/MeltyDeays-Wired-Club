@@ -2,11 +2,14 @@
 export class VoucherModel {
   constructor(data = {}) {
     this.voucherCode = data.voucherCode || data.voucher_code || "CANJE-" + Math.floor(1000 + Math.random() * 9000);
-    this.userUid = data.userUid || data.user_uid || "";
-    this.userName = data.userName || data.user_name || "";
+    this.userUid = data.userUid || data.user_uid || data.userId || data.user_id || "";
+    this.userId = this.userUid;
+    this.userName = data.userName || data.user_name || data.userDisplayName || data.user_display_name || "";
+    this.userDisplayName = this.userName;
     this.rewardId = data.rewardId || data.reward_id || "";
     this.rewardTitle = data.rewardTitle || data.reward_title || "";
-    this.pointsSpent = Number(data.pointsSpent || data.points_spent || 0);
+    this.pointsSpent = Number(data.pointsSpent || data.points_spent || data.pointsCost || data.points_cost || 0);
+    this.pointsCost = this.pointsSpent;
     this.status = data.status || "PENDING_DELIVERY"; // PENDING_DELIVERY | DELIVERED
     this.createdAt = data.createdAt || data.created_at || new Date().toISOString();
     this.expiresAt = data.expiresAt || data.expires_at || new Date(Date.now() + 7 * 86400000).toISOString();
@@ -36,6 +39,7 @@ export class VoucherModel {
       reward_id: this.rewardId,
       reward_title: this.rewardTitle,
       points_spent: this.pointsSpent,
+      points_cost: this.pointsSpent,
       status: this.status,
       created_at: this.createdAt,
       expires_at: this.expiresAt,

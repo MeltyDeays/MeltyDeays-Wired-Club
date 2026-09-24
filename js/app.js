@@ -50,6 +50,7 @@ document.addEventListener("DOMContentLoaded", () => {
   window.switchAuthTab = switchAuthTab;
   window.submitClientLogin = submitClientLogin;
   window.submitClientRegister = submitClientRegister;
+  window.toggleClientPinVisibility = toggleClientPinVisibility;
   window.logoutClient = logoutClient;
 
   window.switchTab = switchTab;
@@ -67,6 +68,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   window.showVoucherModal = showVoucherModal;
   window.closeVoucherModal = closeVoucherModal;
+  window.copyMemberCode = copyMemberCode;
+  window.copyVoucherCode = copyVoucherCode;
   window.showToast = showToast;
 
   // Iniciar ViewModel
@@ -190,15 +193,27 @@ function renderCatalog(catalog, user) {
   }
 
   container.innerHTML = catalog.map(item => {
-    const canAfford = user && user.wiredPoints >= item.pointsCost;
     const isOut = item.stock <= 0;
+    const canAfford = user && user.wiredPoints >= item.pointsCost;
+
+    let btnHtml = "";
+    if (isOut) {
+      btnHtml = `<button class="btn-redeem out" disabled>❌ AGOTADO</button>`;
+    } else if (!user) {
+      btnHtml = `<button class="btn-redeem login-req" onclick="openAuthModal('login', 'Inicia sesión para canjear')">🔒 Iniciar Sesión</button>`;
+    } else if (!canAfford) {
+      const missing = item.pointsCost - user.wiredPoints;
+      btnHtml = `<button class="btn-redeem locked" onclick="showToast('Te faltan ${missing.toLocaleString()} WP para canjear este artículo', 'info')">🔒 Faltan ${missing.toLocaleString()} WP</button>`;
+    } else {
+      btnHtml = `<button class="btn-redeem active-canje" onclick="confirmRedeem('${item.id}')">⚡ CANJEAR AHORA</button>`;
+    }
 
     return `
       <div class="reward-card">
         <div class="reward-img-wrap" style="${!item.imageUrl ? 'background: linear-gradient(135deg, #0d131f 0%, #17243b 100%); display:flex; align-items:center; justify-content:center;' : ''}">
           ${item.imageUrl 
             ? `<img src="${item.imageUrl}" alt="${item.title}" class="reward-img" onerror="this.onerror=null; this.src=''; this.parentElement.style.background='#0d131f';">`
-            : `<div style="text-align:center; padding:1rem;"><span style="font-size:2rem;">🎁</span><div style="font-family:var(--font-mono); font-size:0.7rem; color:#38bdf8; margin-top:4px;">TECH_REWARD</div></div>`
+            : `<div style="text-align:center; padding:1rem;"><span style="font-size:2.2rem;">🎁</span><div style="font-family:var(--font-mono); font-size:0.68rem; color:#38bdf8; margin-top:4px;">TECH_REWARD</div></div>`
           }
           <div class="stock-tag ${isOut ? 'out' : ''}">${isOut ? 'AGOTADO' : item.stock + ' DISP.'}</div>
         </div>
@@ -207,9 +222,7 @@ function renderCatalog(catalog, user) {
           <div class="reward-desc">${item.description || 'Recompensa oficial MeltyDeays.'}</div>
           <div class="reward-footer">
             <div class="reward-cost">${item.pointsCost.toLocaleString()} <span>WP</span></div>
-            <button class="btn-redeem" ${isOut ? 'disabled' : ''} onclick="confirmRedeem('${item.id}')">
-              ${isOut ? 'Agotado' : 'Canjear'}
-            </button>
+            ${btnHtml}
           </div>
         </div>
       </div>
@@ -222,10 +235,10 @@ function renderVouchers(vouchers) {
   const countBadge = document.getElementById("vouchers-count-badge");
   if (!container) return;
 
-  const pending = vouchers.filter(v => v.status === "PENDING_DELIVERY");
+  const pending = (vouchers || []).filter(v => v.status === "PENDING_DELIVERY" || !v.isDelivered?.());
   if (countBadge) countBadge.textContent = pending.length;
 
-  if (vouchers.length === 0) {
+  if (!vouchers || vouchers.length === 0) {
     container.innerHTML = `
       <div class="cyber-empty-box">
         <div class="empty-icon-wrap" style="color: var(--accent); background: #fff1f2; border-color: #fecdd3;">
@@ -244,24 +257,32 @@ function renderVouchers(vouchers) {
     return;
   }
 
-  container.innerHTML = vouchers.map(v => {
-    const isDelivered = v.status === "DELIVERED";
-    return `
-      <div class="voucher-card" onclick="showVoucherModal('${v.voucherCode}')" style="cursor: pointer;">
-        <div class="voucher-header">
-          <div class="voucher-title">${v.rewardTitle}</div>
-          <div class="voucher-badge ${isDelivered ? 'delivered' : 'pending'}">
-            ${isDelivered ? '✓ ENTREGADO' : '● LISTO EN MOSTRADOR'}
+  container.innerHTML = `
+    <div class="vouchers-grid">
+      ${vouchers.map(v => {
+        const isDelivered = v.status === "DELIVERED" || (typeof v.isDelivered === "function" && v.isDelivered());
+        const cost = v.pointsSpent || v.pointsCost || 0;
+        const dateStr = v.createdAt ? new Date(v.createdAt).toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" }) : "-";
+
+        return `
+          <div class="voucher-card" onclick="showVoucherModal('${v.voucherCode}')" style="cursor: pointer; transition: transform 0.15s ease;" title="Clic para ver código QR">
+            <div class="voucher-header" style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:0.75rem;">
+              <div class="voucher-title" style="font-weight:900; font-size:1.05rem; color:var(--dark);">${v.rewardTitle || "Artículo"}</div>
+              <div class="voucher-badge ${isDelivered ? 'delivered' : 'pending'}" style="${isDelivered ? 'background:#ecfdf5; color:#065f46; border:1px solid #a7f3d0;' : 'background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe;'} font-family:var(--font-mono); font-size:0.68rem; font-weight:800; padding:2px 7px; border-radius:3px;">
+                ${isDelivered ? '✓ ENTREGADO' : '● LISTO EN MOSTRADOR'}
+              </div>
+            </div>
+            <div class="voucher-code" style="font-family:var(--font-mono); font-size:1.35rem; font-weight:900; letter-spacing:2px; color:var(--dark); margin:0.35rem 0;">${v.voucherCode}</div>
+            <div class="voucher-meta" style="display:flex; justify-content:space-between; align-items:center; font-family:var(--font-mono); font-size:0.75rem; color:var(--gray-600); border-top:1px dashed var(--gray-300); padding-top:0.6rem; margin-top:0.6rem;">
+              <div>Costo: <strong style="color:var(--dark);">${cost.toLocaleString()} WP</strong></div>
+              <div>${dateStr}</div>
+              <button class="btn-secondary" style="padding:2px 7px; font-size:0.7rem;" onclick="event.stopPropagation(); showVoucherModal('${v.voucherCode}')">👁️ Ver QR</button>
+            </div>
           </div>
-        </div>
-        <div class="voucher-meta">
-          <div>Código: <strong>${v.voucherCode}</strong></div>
-          <div>Costo: <strong>${v.pointsSpent} WP</strong></div>
-          <div>Fecha: ${new Date(v.createdAt).toLocaleDateString()}</div>
-        </div>
-      </div>
-    `;
-  }).join("");
+        `;
+      }).join("")}
+    </div>
+  `;
 }
 
 function renderLedger(ledger) {
@@ -365,6 +386,13 @@ function switchAuthTab(tab) {
   }
 }
 
+function toggleClientPinVisibility(inputId) {
+  const input = document.getElementById(inputId);
+  if (input) {
+    input.type = input.type === "password" ? "text" : "password";
+  }
+}
+
 async function submitClientLogin() {
   const phone = document.getElementById("login-phone").value.trim();
   const pin = document.getElementById("login-pin").value.trim();
@@ -373,8 +401,8 @@ async function submitClientLogin() {
     setAuthFeedback("Ingresa tu número de teléfono o WhatsApp", "error");
     return;
   }
-  if (!pin || pin.length < 4) {
-    setAuthFeedback("Ingresa tu PIN de 4 dígitos", "error");
+  if (!pin || pin.length < 4 || pin.length > 8) {
+    setAuthFeedback("Ingresa tu PIN de seguridad (entre 4 y 8 dígitos)", "error");
     return;
   }
 
@@ -410,8 +438,8 @@ async function submitClientRegister() {
     setAuthFeedback("Ingresa tu número de teléfono o WhatsApp", "error");
     return;
   }
-  if (!pin || pin.length < 4) {
-    setAuthFeedback("Crea un PIN de 4 dígitos", "error");
+  if (!pin || pin.length < 4 || pin.length > 8) {
+    setAuthFeedback("Crea un PIN de 4 a 8 dígitos", "error");
     return;
   }
 
@@ -504,15 +532,42 @@ function confirmRedeem(rewardId) {
   if (!reward) return;
 
   if (vm.currentUser.wiredPoints < reward.pointsCost) {
-    showToast("Puntos insuficientes. Requiere " + reward.pointsCost + " WP", "error");
+    showToast(`Puntos insuficientes. Requieres ${reward.pointsCost.toLocaleString()} WP (tienes ${vm.currentUser.wiredPoints.toLocaleString()} WP).`, "error");
     return;
   }
 
   selectedRewardId = rewardId;
-  const text = document.getElementById("confirm-redeem-text");
-  if (text) {
-    text.textContent = "¿Deseas canjear '" + reward.title + "' por " + reward.pointsCost.toLocaleString() + " WP?";
+
+  // Llenar datos de la recompensa
+  const titleEl = document.getElementById("confirm-reward-title");
+  const ptsEl = document.getElementById("confirm-reward-points");
+  const imgEl = document.getElementById("confirm-reward-img");
+  const fallbackEl = document.getElementById("confirm-reward-fallback");
+
+  if (titleEl) titleEl.textContent = reward.title;
+  if (ptsEl) ptsEl.textContent = reward.pointsCost.toLocaleString() + " WP";
+
+  if (reward.imageUrl && imgEl) {
+    imgEl.src = reward.imageUrl;
+    imgEl.style.display = "block";
+    if (fallbackEl) fallbackEl.style.display = "none";
+  } else {
+    if (imgEl) imgEl.style.display = "none";
+    if (fallbackEl) fallbackEl.style.display = "block";
   }
+
+  // Previsualización de balance
+  const currentPts = vm.currentUser.wiredPoints || 0;
+  const deductPts = reward.pointsCost || 0;
+  const afterPts = Math.max(0, currentPts - deductPts);
+
+  const curEl = document.getElementById("confirm-balance-current");
+  const dedEl = document.getElementById("confirm-balance-deduct");
+  const aftEl = document.getElementById("confirm-balance-after");
+
+  if (curEl) curEl.textContent = currentPts.toLocaleString() + " WP";
+  if (dedEl) dedEl.textContent = `-${deductPts.toLocaleString()} WP`;
+  if (aftEl) aftEl.textContent = afterPts.toLocaleString() + " WP";
 
   const modal = document.getElementById("modal-confirm-redeem");
   if (modal) modal.style.display = "flex";
@@ -527,13 +582,46 @@ function closeRedeemModal() {
 async function executeRedeem() {
   if (!selectedRewardId) return;
 
+  const btn = document.getElementById("btn-do-redeem");
+  const origBtnText = btn ? btn.innerHTML : "⚡ AUTORIZAR CANJE WIRED";
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = `<span class="cyber-spinner"></span> SINTETIZANDO VALE...`;
+  }
+
   try {
+    // 1. Sonido retro sintético Web Audio API (agradable arpegio sci-fi)
+    playCyberArpeggio();
+
+    // 2. Ejecutar canje atómico
     const res = await vm.redeemReward(selectedRewardId);
+    const voucher = res.voucher || res;
+    const cost = res.cost || (voucher ? voucher.pointsSpent : 0);
+
+    // 3. Animación de decremento numérico y badge flotante en CyberPass
+    animatePointsDeduction(cost);
+
+    // 4. Animación de celebración en pantalla
+    triggerCyberGlitchCelebration();
+
+    // 5. Cerrar modal de confirmación con delay visual
     closeRedeemModal();
-    showToast("¡Canje exitoso! Vale emitido: " + res.voucher.voucherCode, "success");
-    showVoucherModal(res.voucher.voucherCode);
+
+    // 6. Toast temático
+    showToast(`⚡ ¡Canje Autorizado! Vale emitido: ${voucher.voucherCode}`, "success");
+
+    // 7. Abrir modal del vale con animación
+    setTimeout(() => {
+      showVoucherModal(voucher.voucherCode);
+    }, 450);
+
   } catch (err) {
     showToast(err.message || "Error en el canje", "error");
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = origBtnText;
+    }
   }
 }
 
@@ -544,16 +632,23 @@ function showVoucherModal(voucherCode) {
   const modalTitle = document.getElementById("modal-voucher-title");
   const modalCode = document.getElementById("modal-voucher-code");
   const qrCanvas = document.getElementById("voucher-qr-canvas");
+  const waBtn = document.getElementById("btn-whatsapp-voucher");
 
-  if (modalTitle) modalTitle.textContent = voucher.rewardTitle;
+  if (modalTitle) modalTitle.textContent = voucher.rewardTitle || "Recompensa";
   if (modalCode) modalCode.textContent = voucher.voucherCode;
+
+  if (waBtn) {
+    const phone = "50588888888"; // Línea oficial MeltyDeays
+    const textMsg = encodeURIComponent(`Hola MeltyDeays! He canjeado mi vale [${voucher.voucherCode}] por "${voucher.rewardTitle}". Mi nombre es ${voucher.userName || "Cliente"}.`);
+    waBtn.href = `https://wa.me/${phone}?text=${textMsg}`;
+  }
 
   if (qrCanvas && typeof QRCode !== "undefined") {
     qrCanvas.innerHTML = "";
     new QRCode(qrCanvas, {
       text: voucher.voucherCode,
-      width: 140,
-      height: 140,
+      width: 148,
+      height: 148,
       colorDark: "#0f172a",
       colorLight: "#ffffff",
       correctLevel: QRCode.CorrectLevel.H
@@ -567,6 +662,150 @@ function showVoucherModal(voucherCode) {
 function closeVoucherModal() {
   const modal = document.getElementById("modal-voucher");
   if (modal) modal.style.display = "none";
+}
+
+function copyMemberCode() {
+  if (!vm.currentUser) {
+    openAuthModal("login", "Inicia sesión para ver tu código de socio.");
+    return;
+  }
+  const code = vm.currentUser.memberCode || vm.currentUser.member_code || "MC-" + vm.currentUser.uid.slice(-4);
+  navigator.clipboard.writeText(code).then(() => {
+    showToast(`✓ Código [${code}] copiado al portapapeles`, "success");
+  }).catch(() => {
+    showToast(`Código de Socio: ${code}`, "info");
+  });
+}
+
+function copyVoucherCode() {
+  const codeEl = document.getElementById("modal-voucher-code");
+  const code = codeEl ? codeEl.textContent.trim() : "";
+  if (!code) return;
+  navigator.clipboard.writeText(code).then(() => {
+    showToast(`✓ Vale [${code}] copiado al portapapeles`, "success");
+  }).catch(() => {
+    showToast(`Vale: ${code}`, "info");
+  });
+}
+
+function playCyberArpeggio() {
+  try {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) return;
+    const ctx = new AudioCtx();
+    const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+    notes.forEach((freq, idx) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.08, ctx.currentTime + idx * 0.07);
+      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + idx * 0.07 + 0.18);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(ctx.currentTime + idx * 0.07);
+      osc.stop(ctx.currentTime + idx * 0.07 + 0.2);
+    });
+  } catch (e) {}
+}
+
+function animatePointsDeduction(cost) {
+  const balanceEl = document.getElementById("client-balance-val");
+  if (!balanceEl) return;
+
+  const currentVal = parseInt(balanceEl.textContent.replace(/\D/g, ""), 10) || (vm.currentUser ? vm.currentUser.wiredPoints + cost : cost);
+  const targetVal = vm.currentUser ? vm.currentUser.wiredPoints : Math.max(0, currentVal - cost);
+
+  // Crear badge flotante -XXX WP
+  const floatBadge = document.createElement("div");
+  floatBadge.className = "floating-points-deduction";
+  floatBadge.textContent = `-${cost.toLocaleString()} WP`;
+  balanceEl.parentElement.style.position = "relative";
+  balanceEl.parentElement.appendChild(floatBadge);
+  setTimeout(() => floatBadge.remove(), 1400);
+
+  // Conteo regresivo numérico rápido
+  const steps = 14;
+  const stepDuration = 35; // ~500ms total
+  let currentStep = 0;
+  const delta = (currentVal - targetVal) / steps;
+
+  const timer = setInterval(() => {
+    currentStep++;
+    if (currentStep >= steps) {
+      clearInterval(timer);
+      balanceEl.textContent = targetVal.toLocaleString();
+    } else {
+      const interim = Math.round(currentVal - delta * currentStep);
+      balanceEl.textContent = interim.toLocaleString();
+    }
+  }, stepDuration);
+}
+
+function triggerCyberGlitchCelebration() {
+  let canvas = document.getElementById("cyber-celebration-canvas");
+  if (!canvas) {
+    canvas = document.createElement("canvas");
+    canvas.id = "cyber-celebration-canvas";
+    document.body.appendChild(canvas);
+  }
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+
+  const symbols = ["+", "WP", "⚡", "◆", "◇", "●", "01", "WIRED"];
+  const colors = ["#38bdf8", "#4338ca", "#e11d48", "#10b981", "#ffffff"];
+  const particles = [];
+  const originX = window.innerWidth / 2;
+  const originY = window.innerHeight * 0.45;
+
+  for (let i = 0; i < 50; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = 4 + Math.random() * 9;
+    particles.push({
+      x: originX,
+      y: originY,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed - 2,
+      gravity: 0.18,
+      char: symbols[Math.floor(Math.random() * symbols.length)],
+      color: colors[Math.floor(Math.random() * colors.length)],
+      size: 10 + Math.random() * 8,
+      alpha: 1,
+      decay: 0.015 + Math.random() * 0.02
+    });
+  }
+
+  let animId;
+  function renderFrame() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    let alive = false;
+    particles.forEach(p => {
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vy += p.gravity;
+      p.alpha -= p.decay;
+      if (p.alpha > 0) {
+        alive = true;
+        ctx.save();
+        ctx.globalAlpha = p.alpha;
+        ctx.fillStyle = p.color;
+        ctx.font = `900 ${p.size}px 'JetBrains Mono', monospace`;
+        ctx.fillText(p.char, p.x, p.y);
+        ctx.restore();
+      }
+    });
+
+    if (alive) {
+      animId = requestAnimationFrame(renderFrame);
+    } else {
+      cancelAnimationFrame(animId);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      canvas.remove();
+    }
+  }
+  animId = requestAnimationFrame(renderFrame);
 }
 
 

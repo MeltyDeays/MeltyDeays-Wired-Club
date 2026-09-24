@@ -58,7 +58,11 @@ function clearPosScanner() {
 
 function closePosResult() {
   const resultBox = document.getElementById("scan-result-box");
+  const invoiceBox = document.getElementById("scan-invoice-box");
+  const customerBox = document.getElementById("scan-customer-box");
   if (resultBox) resultBox.style.display = "none";
+  if (invoiceBox) invoiceBox.style.display = "none";
+  if (customerBox) customerBox.style.display = "none";
 }
 
 function switchAdminTab(tabName) {
@@ -75,6 +79,20 @@ function switchAdminTab(tabName) {
       sec.style.display = t === tabName ? "block" : "none";
     }
   });
+
+  // Refrescar datos en vivo cada vez que se conmuta de pestaña
+  if (vm && vm.isAuthenticated) {
+    vm.refreshData();
+  }
+}
+
+async function refreshAdminUsers() {
+  if (vm && vm.isAuthenticated) {
+    showToast("Sincronizando socios con la base de datos...", "info");
+    await vm.refreshData();
+    renderUsersTable(vm.users);
+    showToast(`✓ Base de datos sincronizada: ${vm.users.length} socios registrados.`, "success");
+  }
 }
 
 let html5QrCodeScanner = null;
@@ -143,21 +161,58 @@ document.addEventListener("DOMContentLoaded", () => {
   window.saveProductAdmin = saveProductAdmin;
   window.removeProductAdmin = removeProductAdmin;
   window.closeModal = closeModal;
+  window.recalculateRewardPoints = recalculateRewardPoints;
+  window.setFreightPreset = setFreightPreset;
+  window.setLoyaltyRatio = setLoyaltyRatio;
+  window.applyCalculatedPointsToProduct = applyCalculatedPointsToProduct;
+  window.onManualPointsCostChange = onManualPointsCostChange;
 
   // Clientes y Puntos
   window.filterUsers = filterUsers;
   window.filterUsersByTier = filterUsersByTier;
+  window.refreshAdminUsers = refreshAdminUsers;
   window.openAdjustPointsModal = openAdjustPointsModal;
+  window.selectAdjustDirection = selectAdjustDirection;
   window.toggleAdjustType = toggleAdjustType;
   window.setAdjustQuickPoints = setAdjustQuickPoints;
   window.submitAdjustPoints = submitAdjustPoints;
   window.openUserLedgerModal = openUserLedgerModal;
   window.openNewUserModal = openNewUserModal;
   window.saveNewUserAdmin = saveNewUserAdmin;
+  window.toggleNewUserPinVisibility = toggleNewUserPinVisibility;
+  window.updateNewUserPreview = updateNewUserPreview;
+  window.generateNewUserRandomPin = generateNewUserRandomPin;
+  window.setNewUserQuickPoints = setNewUserQuickPoints;
+  window.openEditPinModal = openEditPinModal;
+  window.generateEditPinRandom = generateEditPinRandom;
+  window.setEditPinPreset = setEditPinPreset;
+  window.submitEditUserPin = submitEditUserPin;
+  window.openDeleteUserModal = openDeleteUserModal;
+  window.executeDeleteUserAdmin = executeDeleteUserAdmin;
+  window.toggleBanUserAdmin = toggleBanUserAdmin;
 
-  // Historial de Vales
+  // POS Socio Actions
+  window.posCustomerQuickAdjust = posCustomerQuickAdjust;
+  window.posCustomerViewLedger = posCustomerViewLedger;
+
+  // Lotes y Purga de Facturas
+  window.validateLotCountInput = validateLotCountInput;
+  window.enforceMultipleOfFour = enforceMultipleOfFour;
+  window.openPurgeModal = openPurgeModal;
+  window.executePurgeInvoices = executePurgeInvoices;
+
+  // Manejo de Imágenes Base64 Catálogo
+  window.handleProductImageFile = handleProductImageFile;
+  window.clearProductImageUpload = clearProductImageUpload;
+  window.previewProductImageFromUrl = previewProductImageFromUrl;
+
+  // Historial de Vales y Despacho
   window.filterVouchersTable = filterVouchersTable;
   window.deliverVoucherFromTable = deliverVoucherFromTable;
+  window.openDeliverVoucherModal = openDeliverVoucherModal;
+  window.executeModalDeliver = executeModalDeliver;
+  window.playAdminDispatchSound = playAdminDispatchSound;
+  window.triggerCyberDispatchGlitch = triggerCyberDispatchGlitch;
 
   window.toggleCustomPaperInputs = toggleCustomPaperInputs;
   window.openPrintSheetModal = openPrintSheetModal;
@@ -167,6 +222,13 @@ document.addEventListener("DOMContentLoaded", () => {
   window.viewSingleTokenQr = viewSingleTokenQr;
   window.copySingleQrUrl = copySingleQrUrl;
   window.testSingleQrUrl = testSingleQrUrl;
+
+  // Sincronización entre pestañas del navegador en tiempo real
+  window.addEventListener("storage", (e) => {
+    if (e.key === "wired_club_mvvm_db_v1" && vm && vm.isAuthenticated) {
+      vm.refreshData();
+    }
+  });
 
   vm.init();
 
@@ -383,6 +445,37 @@ async function verifyVoucherAdmin() {
 
   const voucherBox = document.getElementById("scan-result-box");
   const invoiceBox = document.getElementById("scan-invoice-box");
+  const customerBox = document.getElementById("scan-customer-box");
+
+  // CASO 0: DETECCIÓN DE CARNET DIGITAL DE SOCIO (CyberPass / MC-2026-XXXX o teléfono o UID)
+  if (code.startsWith("MC-") || code.startsWith("CLIENT-") || code.startsWith("USR-") || (/^\d{8,12}$/).test(code)) {
+    const customer = await vm.findCustomer(code);
+    if (customer) {
+      clearPosFeedback();
+      if (voucherBox) voucherBox.style.display = "none";
+      if (invoiceBox) invoiceBox.style.display = "none";
+      if (customerBox) {
+        currentScannedCustomer = customer;
+        customerBox.style.display = "block";
+        document.getElementById("scan-cust-name").textContent = customer.displayName || "Socio Wired";
+        document.getElementById("scan-cust-code").textContent = customer.memberCode || customer.uid;
+        document.getElementById("scan-cust-phone").textContent = "📞 " + (customer.phone || "-");
+        document.getElementById("scan-cust-points").textContent = (customer.wiredPoints || 0).toLocaleString() + " WP";
+        document.getElementById("scan-cust-lifetime").textContent = (customer.lifetimePoints || 0).toLocaleString() + " WP";
+
+        const tierEl = document.getElementById("scan-cust-tier");
+        if (tierEl) {
+          const t = (customer.tier || "NAVI").toUpperCase();
+          tierEl.textContent = t;
+          tierEl.className = "badge-tier-navi";
+          if (t.includes("RUNNER")) tierEl.className = "badge-tier-runner";
+          else if (t.includes("ELITE")) tierEl.className = "badge-tier-elite";
+          else if (t.includes("DEUS")) tierEl.className = "badge-tier-deus";
+        }
+      }
+      return;
+    }
+  }
 
   // CASO 1: DETECCIÓN DE FACTURA FÍSICA CON QR
   if (code.startsWith("WP-") || code.includes("-F")) {
@@ -395,11 +488,13 @@ async function verifyVoucherAdmin() {
       }
       if (invoiceBox) invoiceBox.style.display = "none";
       if (voucherBox) voucherBox.style.display = "none";
+      if (customerBox) customerBox.style.display = "none";
       return;
     }
 
     clearPosFeedback();
     if (voucherBox) voucherBox.style.display = "none";
+    if (customerBox) customerBox.style.display = "none";
 
     if (invoiceBox) {
       invoiceBox.style.display = "block";
@@ -442,47 +537,266 @@ async function verifyVoucherAdmin() {
   const voucher = await vm.verifyVoucher(code);
 
   if (!voucher) {
-    setPosFeedback("❌ El vale [" + code + "] no existe o ya fue purgado del sistema.", "error");
+    // Si no es vale ni factura, intentar buscar como socio por si acaso
+    const fallbackCustomer = await vm.findCustomer(code);
+    if (fallbackCustomer) {
+      clearPosFeedback();
+      if (voucherBox) voucherBox.style.display = "none";
+      if (invoiceBox) invoiceBox.style.display = "none";
+      if (customerBox) {
+        currentScannedCustomer = fallbackCustomer;
+        customerBox.style.display = "block";
+        document.getElementById("scan-cust-name").textContent = fallbackCustomer.displayName || "Socio Wired";
+        document.getElementById("scan-cust-code").textContent = fallbackCustomer.memberCode || fallbackCustomer.uid;
+        document.getElementById("scan-cust-phone").textContent = "📞 " + (fallbackCustomer.phone || "-");
+        document.getElementById("scan-cust-points").textContent = (fallbackCustomer.wiredPoints || 0).toLocaleString() + " WP";
+        document.getElementById("scan-cust-lifetime").textContent = (fallbackCustomer.lifetimePoints || 0).toLocaleString() + " WP";
+
+        const tierEl = document.getElementById("scan-cust-tier");
+        if (tierEl) {
+          const t = (fallbackCustomer.tier || "NAVI").toUpperCase();
+          tierEl.textContent = t;
+          tierEl.className = "badge-tier-navi";
+          if (t.includes("RUNNER")) tierEl.className = "badge-tier-runner";
+          else if (t.includes("ELITE")) tierEl.className = "badge-tier-elite";
+          else if (t.includes("DEUS")) tierEl.className = "badge-tier-deus";
+        }
+      }
+      return;
+    }
+
+    setPosFeedback("❌ El código [" + code + "] no corresponde a ningún vale, factura o socio registrado.", "error");
     if (group) {
       group.classList.add("shake-input");
       setTimeout(() => group.classList.remove("shake-input"), 500);
     }
     if (voucherBox) voucherBox.style.display = "none";
     if (invoiceBox) invoiceBox.style.display = "none";
+    if (customerBox) customerBox.style.display = "none";
     return;
   }
 
   clearPosFeedback();
   if (invoiceBox) invoiceBox.style.display = "none";
+  if (customerBox) customerBox.style.display = "none";
+  if (invoiceBox) invoiceBox.style.display = "none";
 
   if (voucherBox) {
     voucherBox.style.display = "block";
+    const stampEl = document.getElementById("scan-res-stamp");
+    const actionsEl = document.getElementById("scan-res-actions");
+    const statusEl = document.getElementById("scan-res-status");
+    const deliveredMeta = document.getElementById("scan-res-delivered-meta");
+
     document.getElementById("scan-res-code").textContent = voucher.voucherCode;
     document.getElementById("scan-res-product").textContent = voucher.rewardTitle;
-    document.getElementById("scan-res-client").textContent = voucher.userName || "Socio Wired";
-    document.getElementById("scan-res-points").textContent = voucher.pointsSpent + " WP";
-    
-    const statusEl = document.getElementById("scan-res-status");
-    const btnDeliver = document.getElementById("btn-confirm-delivery");
+
+    // Localizar socio titular para contacto telefónico
+    const user = (vm.users || []).find(u => u.uid === voucher.userUid || u.id === voucher.userUid || u.phone === voucher.userUid);
+    const clientName = voucher.userName || (user ? user.displayName : "Socio Wired");
+    const clientContact = user ? (user.phone ? "📞 " + user.phone : user.memberCode || "") : (voucher.userUid || "");
+
+    document.getElementById("scan-res-client").textContent = clientName;
+    const contactEl = document.getElementById("scan-res-contact");
+    if (contactEl) contactEl.textContent = clientContact || "Cliente Mostrador";
+
+    const cost = voucher.pointsCost || voucher.pointsSpent || 0;
+    document.getElementById("scan-res-points").textContent = cost > 0 ? cost.toLocaleString() + " WP" : "CANJE";
+    document.getElementById("scan-res-date").textContent = new Date(voucher.createdAt).toLocaleString();
 
     if (voucher.isDelivered()) {
-      statusEl.innerHTML = "<span style='color:var(--accent); font-weight:900;'>❌ YA FUE ENTREGADO el " + new Date(voucher.deliveredAt).toLocaleString() + "</span>";
-      if (btnDeliver) btnDeliver.style.display = "none";
+      const deliveredTime = voucher.deliveredAt ? new Date(voucher.deliveredAt).toLocaleString() : "Previamente";
+      if (statusEl) {
+        statusEl.className = "noc-pulse-chip";
+        statusEl.style.borderColor = "#f87171";
+        statusEl.style.background = "#fee2e2";
+        statusEl.style.color = "#991b1b";
+        statusEl.innerHTML = "❌ YA DESPACHADO (" + deliveredTime + ")";
+      }
+      if (deliveredMeta) {
+        deliveredMeta.textContent = "Despachado por: " + (voucher.deliveredBy || "admin_melty");
+      }
+      if (stampEl) {
+        stampEl.className = "dispatch-stamp already-delivered";
+        stampEl.innerHTML = `❌ YA DESPACHADO<div style="font-size:0.68rem; font-weight:800; margin-top:4px;">ENTREGADO EL ${deliveredTime}</div>`;
+      }
+      if (actionsEl) {
+        actionsEl.innerHTML = `
+          <div style="background:#fee2e2; border:1px solid #f87171; color:#991b1b; padding:0.6rem 0.9rem; border-radius:4px; font-size:0.82rem; font-weight:700; width:100%; margin-bottom:0.5rem;">
+            ⚠️ ATENCIÓN: Este vale ya fue entregado y canjeado en mostrador. NO entregar un artículo duplicado.
+          </div>
+          <button class="btn-secondary" onclick="closePosResult(); clearPosScanner();">CERRAR FICHA</button>
+        `;
+      }
     } else {
-      statusEl.innerHTML = "<span style='color:#059669; font-weight:900;'>✓ VÁLIDO PARA ENTREGA</span>";
-      if (btnDeliver) btnDeliver.style.display = "inline-block";
+      if (statusEl) {
+        statusEl.className = "noc-pulse-chip";
+        statusEl.style.borderColor = "#a7f3d0";
+        statusEl.style.background = "#ecfdf5";
+        statusEl.style.color = "#059669";
+        statusEl.innerHTML = '<span class="pulse-dot"></span> VÁLIDO PARA ENTREGA';
+      }
+      if (deliveredMeta) deliveredMeta.textContent = "";
+      if (stampEl) {
+        stampEl.className = "dispatch-stamp"; // Oculto hasta pulsar entregar
+      }
+      if (actionsEl) {
+        actionsEl.innerHTML = `
+          <button id="btn-confirm-delivery" class="btn-primary btn-dispatch-action" onclick="confirmDeliveryAdmin()">
+            ⚡ CONFIRMAR Y DESPACHAR ARTÍCULO (SALIDA FÍSICA)
+          </button>
+          <button class="btn-secondary" onclick="closePosResult()">CERRAR FICHA</button>
+        `;
+      }
     }
   }
 }
 
-async function confirmDeliveryAdmin() {
-  const code = document.getElementById("scan-res-code").textContent;
+// Sintetizador Web Audio API: Sonido Cyberpunk de Despacho
+function playAdminDispatchSound() {
   try {
-    await vm.deliverVoucher(code);
-    showToast("¡Entrega Confirmada! Vale marcado como ENTREGADO.", "success");
-    document.getElementById("scan-result-box").style.display = "none";
-    document.getElementById("input-scan-voucher").value = "";
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) return;
+    const ctx = new AudioCtx();
+    const tones = [
+      { freq: 392.00, start: 0, dur: 0.12, type: "sawtooth", gain: 0.08 },
+      { freq: 523.25, start: 0.06, dur: 0.14, type: "sine", gain: 0.1 },
+      { freq: 659.25, start: 0.12, dur: 0.16, type: "sine", gain: 0.12 },
+      { freq: 783.99, start: 0.18, dur: 0.18, type: "sine", gain: 0.14 },
+      { freq: 1046.50, start: 0.24, dur: 0.3, type: "triangle", gain: 0.16 }
+    ];
+    tones.forEach(t => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = t.type;
+      osc.frequency.setValueAtTime(t.freq, ctx.currentTime + t.start);
+      gain.gain.setValueAtTime(t.gain, ctx.currentTime + t.start);
+      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + t.start + t.dur);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(ctx.currentTime + t.start);
+      osc.stop(ctx.currentTime + t.start + t.dur);
+    });
+  } catch (e) {}
+}
+
+// Ráfaga de partículas y glitch cibernético en canvas
+function triggerCyberDispatchGlitch() {
+  let canvas = document.getElementById("cyber-celebration-canvas");
+  if (!canvas) {
+    canvas = document.createElement("canvas");
+    canvas.id = "cyber-celebration-canvas";
+    document.body.appendChild(canvas);
+  }
+  const ctx = canvas.getContext("2d");
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  const particles = [];
+  const colors = ["#10b981", "#34d399", "#38bdf8", "#4338ca", "#ffffff"];
+  const centerX = window.innerWidth / 2;
+  const centerY = window.innerHeight / 2;
+
+  for (let i = 0; i < 70; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = 4 + Math.random() * 8;
+    particles.push({
+      x: centerX,
+      y: centerY,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      size: 2.5 + Math.random() * 4,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      alpha: 1,
+      decay: 0.018 + Math.random() * 0.025
+    });
+  }
+
+  let animId;
+  function loop() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    let alive = false;
+    particles.forEach(p => {
+      p.x += p.vx;
+      p.y += p.vy;
+      p.alpha -= p.decay;
+      if (p.alpha > 0) {
+        alive = true;
+        ctx.save();
+        ctx.globalAlpha = p.alpha;
+        ctx.fillStyle = p.color;
+        ctx.shadowColor = p.color;
+        ctx.shadowBlur = 8;
+        ctx.fillRect(p.x, p.y, p.size, p.size);
+        ctx.restore();
+      }
+    });
+    if (alive) {
+      animId = requestAnimationFrame(loop);
+    } else {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      cancelAnimationFrame(animId);
+    }
+  }
+  loop();
+}
+
+async function confirmDeliveryAdmin() {
+  const code = document.getElementById("scan-res-code")?.textContent?.trim();
+  if (!code) return;
+
+  const btnDeliver = document.getElementById("btn-confirm-delivery");
+  if (btnDeliver) {
+    btnDeliver.disabled = true;
+    btnDeliver.innerHTML = '<span class="cyber-spinner"></span> AUTORIZANDO SALIDA FÍSICA...';
+  }
+
+  try {
+    const updated = await vm.deliverVoucher(code);
+    playAdminDispatchSound();
+    triggerCyberDispatchGlitch();
+
+    // Estampado holográfico animado
+    const stampEl = document.getElementById("scan-res-stamp");
+    if (stampEl) {
+      const nowStr = new Date().toLocaleString();
+      stampEl.className = "dispatch-stamp active";
+      stampEl.innerHTML = `
+        ✓ ARTÍCULO DESPACHADO
+        <div style="font-size:0.68rem; font-weight:800; margin-top:4px; letter-spacing:0.5px;">
+          SALIDA AUTORIZADA // OPERADOR: ADMIN_MELTY // ${nowStr}
+        </div>
+      `;
+    }
+
+    const statusEl = document.getElementById("scan-res-status");
+    if (statusEl) {
+      statusEl.className = "noc-pulse-chip";
+      statusEl.style.borderColor = "#a7f3d0";
+      statusEl.style.background = "#ecfdf5";
+      statusEl.style.color = "#059669";
+      statusEl.innerHTML = '✓ DESPACHADO CON ÉXITO';
+    }
+
+    const actionsEl = document.getElementById("scan-res-actions");
+    if (actionsEl) {
+      actionsEl.innerHTML = `
+        <button class="btn-primary" style="background:#059669; border-color:#047857; color:#fff;" onclick="closePosResult(); clearPosScanner();">
+          ✓ ENTREGA COMPLETADA · NUEVA OPERACIÓN
+        </button>
+      `;
+    }
+
+    showToast(`✓ Vale [${code}] entregado y marcado como DESPACHADO en base de datos.`, "success");
+
+    // Destello de fila en la tabla de historial si está presente
+    const row = document.getElementById(`voucher-row-${code}`);
+    if (row) row.classList.add("row-delivered-flash");
   } catch (err) {
+    if (btnDeliver) {
+      btnDeliver.disabled = false;
+      btnDeliver.textContent = "⚡ CONFIRMAR Y DESPACHAR ARTÍCULO (SALIDA FÍSICA)";
+    }
     showToast("❌ " + err.message, "error");
   }
 }
@@ -568,9 +882,110 @@ async function printFromModal() {
   await generateBatchAdmin();
 }
 
+let activeLoyaltyRatio = 0.025; // 2.5% recomendado por defecto
+
+function setFreightPreset(rate, modeName) {
+  const rateInput = document.getElementById("calc-freight-rate");
+  if (rateInput) {
+    rateInput.value = Number(rate).toFixed(2);
+  }
+  recalculateRewardPoints();
+  showToast(`Tarifa de flete casillero fijada en $${rate}/lb (${modeName}).`, "info");
+}
+
+function setLoyaltyRatio(ratio, activeBtnId) {
+  activeLoyaltyRatio = ratio;
+  const btn25 = document.getElementById("btn-tier-ratio-25");
+  const btn20 = document.getElementById("btn-tier-ratio-20");
+  const btn30 = document.getElementById("btn-tier-ratio-30");
+  const badge = document.getElementById("calc-model-badge");
+
+  [btn25, btn20, btn30].forEach(b => { if (b) b.classList.remove("active"); });
+  const activeBtn = document.getElementById(activeBtnId);
+  if (activeBtn) activeBtn.classList.add("active");
+
+  if (badge) {
+    if (ratio === 0.020) {
+      badge.textContent = "ULTRA RENTABLE (2.0%)";
+      badge.style.color = "#047857";
+      badge.style.background = "#d1fae5";
+    } else if (ratio === 0.025) {
+      badge.textContent = "EQUILIBRADO (2.5%)";
+      badge.style.color = "#059669";
+      badge.style.background = "#ecfdf5";
+    } else {
+      badge.textContent = "CANJE RÁPIDO (3.0%)";
+      badge.style.color = "#4338ca";
+      badge.style.background = "#e0e7ff";
+    }
+  }
+
+  recalculateRewardPoints();
+}
+
+function recalculateRewardPoints() {
+  const priceInput = document.getElementById("calc-prod-price-usd");
+  const weightInput = document.getElementById("calc-prod-weight-lbs");
+  const freightInput = document.getElementById("calc-freight-rate");
+
+  const priceUsd = Math.max(0, parseFloat(priceInput?.value) || 0);
+  const weightLbs = Math.max(0, parseFloat(weightInput?.value) || 0);
+  const freightRate = Math.max(0, parseFloat(freightInput?.value) || 0);
+
+  const freightCost = weightLbs * freightRate;
+  const landedCost = priceUsd + freightCost;
+
+  // Venta requerida en tienda para cubrir el regalo manteniendo el ratio de lealtad
+  const salesRequired = activeLoyaltyRatio > 0 ? (landedCost / activeLoyaltyRatio) : 0;
+  // Redondeo inteligente a múltiplos de 10 puntos para estética retail
+  let suggestedPoints = Math.round(salesRequired / 10) * 10;
+  if (landedCost > 0 && suggestedPoints < 50) suggestedPoints = 50;
+
+  const landedCostEl = document.getElementById("calc-landed-cost");
+  const freightCostEl = document.getElementById("calc-freight-cost");
+  const salesReqEl = document.getElementById("calc-sales-required");
+  const suggestedPtsEl = document.getElementById("calc-suggested-points");
+
+  if (landedCostEl) landedCostEl.textContent = `$${landedCost.toFixed(2)} USD`;
+  if (freightCostEl) freightCostEl.textContent = `$${freightCost.toFixed(2)}`;
+  if (salesReqEl) salesReqEl.textContent = `$${Math.round(salesRequired).toLocaleString()} USD`;
+  if (suggestedPtsEl) suggestedPtsEl.textContent = `${suggestedPoints.toLocaleString()} WP`;
+
+  return { landedCost, freightCost, salesRequired, suggestedPoints };
+}
+
+function applyCalculatedPointsToProduct() {
+  const { suggestedPoints } = recalculateRewardPoints();
+  const costInput = document.getElementById("prod-cost");
+  if (costInput) {
+    costInput.value = suggestedPoints;
+    costInput.style.borderColor = "#059669";
+    costInput.style.boxShadow = "0 0 10px rgba(5, 150, 105, 0.35)";
+    setTimeout(() => {
+      costInput.style.borderColor = "";
+      costInput.style.boxShadow = "";
+    }, 1200);
+  }
+  showToast(`⚡ Asignado costo de ${suggestedPoints.toLocaleString()} WP calculado para rentabilidad del ${(activeLoyaltyRatio * 100).toFixed(1)}%.`, "success");
+}
+
+function onManualPointsCostChange() {
+  // Sincronización libre si el usuario prefiere tipear a mano
+}
+
 function openNewProductModal() {
   const modal = document.getElementById("modal-new-product");
-  if (modal) modal.style.display = "flex";
+  if (!modal) return;
+  modal.style.display = "flex";
+  const { suggestedPoints } = recalculateRewardPoints();
+  const costInput = document.getElementById("prod-cost");
+  if (costInput && !costInput.value) {
+    costInput.value = suggestedPoints;
+  }
+  setTimeout(() => {
+    const input = document.getElementById("prod-title");
+    if (input) input.focus();
+  }, 100);
 }
 
 function closeModal(id) {
@@ -578,22 +993,209 @@ function closeModal(id) {
   if (modal) modal.style.display = "none";
 }
 
+function validateLotCountInput(input) {
+  let val = parseInt(input?.value, 10);
+  const helper = document.getElementById("lot-count-helper");
+  if (!helper) return;
+
+  if (isNaN(val) || val <= 0) {
+    helper.textContent = "⚠️ Ingresa una cantidad válida (múltiplos de 4).";
+    helper.style.color = "#dc2626";
+    return;
+  }
+
+  const sheets = Math.ceil(val / 4);
+  const exact = val % 4 === 0;
+
+  if (exact) {
+    helper.innerHTML = `📐 <strong>${sheets} pliegos carta</strong> = ${val} facturas a doble cara con QR únicos`;
+    helper.style.color = "var(--primary)";
+  } else {
+    const recommended = sheets * 4;
+    helper.innerHTML = `⚠️ No es múltiplo de 4. Se redondeará a <strong>${recommended} facturas (${sheets} pliegos carta completos)</strong>`;
+    helper.style.color = "#d97706";
+  }
+}
+
+function enforceMultipleOfFour(input) {
+  let val = parseInt(input?.value, 10);
+  if (isNaN(val) || val < 4) val = 4;
+  if (val % 4 !== 0) {
+    const rounded = Math.ceil(val / 4) * 4;
+    input.value = rounded;
+    showToast(`Cantidad ajustada a ${rounded} facturas (${rounded / 4} pliegos carta completos de 4x1).`, "info");
+  }
+  validateLotCountInput(input);
+}
+
+function openPurgeModal() {
+  const modal = document.getElementById("modal-purge-invoices");
+  if (!modal) return;
+  const countBadge = document.getElementById("purge-tokens-count-badge");
+  const count = (vm.tokens || []).length;
+  if (countBadge) countBadge.textContent = `${count} ${count === 1 ? 'factura registrada' : 'facturas registradas'}`;
+  modal.style.display = "flex";
+}
+
+async function executePurgeInvoices() {
+  closeModal("modal-purge-invoices");
+  showToast("Ejecutando purga atómica en Firestore y almacenamiento local...", "info");
+  try {
+    const res = await vm.purgeAllInvoiceTokens();
+    const folioEl = document.getElementById("lot-start-folio");
+    if (folioEl) {
+      folioEl.value = 1;
+      delete folioEl.dataset.userEdited;
+    }
+    const helper = document.getElementById("lot-folio-helper");
+    if (helper) helper.innerHTML = "Siguiente folio libre detectado: <strong>#0001</strong> (Base de datos limpia)";
+
+    renderTokensTable(vm.tokens);
+    showToast("✓ Base de datos purgada: facturas eliminadas y correlativo restablecido a #0001.", "success");
+  } catch (err) {
+    showToast("❌ Error al limpiar base de datos: " + err.message, "error");
+  }
+}
+
+let currentProductBase64 = null;
+
+function handleProductImageFile(input) {
+  if (!input.files || !input.files[0]) return;
+  const file = input.files[0];
+
+  if (!file.type.startsWith("image/")) {
+    showToast("⚠️ Selecciona un archivo de imagen válido (JPG, PNG, WebP).", "error");
+    return;
+  }
+
+  showToast("Optimizando y convirtiendo imagen a Base64 gratuito...", "info");
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const img = new Image();
+    img.onload = () => {
+      const maxDim = 500;
+      let width = img.width;
+      let height = img.height;
+
+      if (width > maxDim || height > maxDim) {
+        if (width > height) {
+          height = Math.round((height * maxDim) / width);
+          width = maxDim;
+        } else {
+          width = Math.round((width * maxDim) / height);
+          height = maxDim;
+        }
+      }
+
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0, width, height);
+
+      const base64Data = canvas.toDataURL("image/jpeg", 0.78);
+      currentProductBase64 = base64Data;
+
+      const previewBox = document.getElementById("prod-img-preview-box");
+      const previewImg = document.getElementById("prod-img-preview");
+      const nameEl = document.getElementById("prod-img-name");
+      const sizeEl = document.getElementById("prod-img-size");
+      const imgInput = document.getElementById("prod-img");
+
+      if (previewImg) previewImg.src = base64Data;
+      if (nameEl) nameEl.textContent = file.name;
+      const approxKb = Math.round(base64Data.length * 0.75 / 1024);
+      if (sizeEl) sizeEl.textContent = `✓ Optimizado (${width}×${height}px · ~${approxKb} KB en Base64)`;
+      if (previewBox) previewBox.style.display = "flex";
+      if (imgInput) imgInput.value = base64Data;
+
+      showToast("✓ Imagen optimizada y lista para guardar en la base de datos.", "success");
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearProductImageUpload() {
+  currentProductBase64 = null;
+  const fileInput = document.getElementById("prod-file-input");
+  if (fileInput) fileInput.value = "";
+  const imgInput = document.getElementById("prod-img");
+  if (imgInput) imgInput.value = "";
+  const previewBox = document.getElementById("prod-img-preview-box");
+  if (previewBox) previewBox.style.display = "none";
+}
+
+function previewProductImageFromUrl(url) {
+  const val = (url || "").trim();
+  const previewBox = document.getElementById("prod-img-preview-box");
+  const previewImg = document.getElementById("prod-img-preview");
+  const nameEl = document.getElementById("prod-img-name");
+  const sizeEl = document.getElementById("prod-img-size");
+
+  if (!val) {
+    if (previewBox) previewBox.style.display = "none";
+    return;
+  }
+
+  if (val.startsWith("data:image")) {
+    currentProductBase64 = val;
+  } else {
+    currentProductBase64 = null;
+  }
+
+  if (previewImg) previewImg.src = val;
+  if (nameEl) nameEl.textContent = val.startsWith("data:") ? "Imagen Base64" : "Imagen Remota";
+  if (sizeEl) sizeEl.textContent = val.startsWith("data:") ? "Almacenamiento Local" : "URL Externa";
+  if (previewBox) previewBox.style.display = "flex";
+}
+
+let currentScannedCustomer = null;
+
+function posCustomerQuickAdjust() {
+  if (!currentScannedCustomer) return;
+  openAdjustPointsModal(
+    currentScannedCustomer.uid,
+    currentScannedCustomer.displayName || "Socio",
+    currentScannedCustomer.wiredPoints || 0
+  );
+}
+
+function posCustomerViewLedger() {
+  if (!currentScannedCustomer) return;
+  openUserLedgerModal(
+    currentScannedCustomer.uid,
+    currentScannedCustomer.displayName || "Socio"
+  );
+}
+
 async function saveProductAdmin() {
-  const title = document.getElementById("prod-title").value;
-  const pointsCost = document.getElementById("prod-cost").value;
-  const stock = document.getElementById("prod-stock").value;
-  const imageUrl = document.getElementById("prod-img").value;
-  const description = document.getElementById("prod-desc").value;
+  const title = (document.getElementById("prod-title").value || "").trim();
+  const pointsCost = parseInt(document.getElementById("prod-cost").value, 10);
+  const stock = parseInt(document.getElementById("prod-stock").value, 10) || 1;
+  const imageUrl = currentProductBase64 || (document.getElementById("prod-img").value || "").trim();
+  const description = (document.getElementById("prod-desc").value || "").trim();
+
+  if (!title) {
+    showToast("⚠️ El nombre del producto es obligatorio.", "error");
+    return;
+  }
+  if (isNaN(pointsCost) || pointsCost <= 0) {
+    showToast("⚠️ Ingresa un costo válido en Wired Points.", "error");
+    return;
+  }
 
   try {
     await vm.addReward({ title, pointsCost, stock, imageUrl, description });
     closeModal("modal-new-product");
     document.getElementById("prod-title").value = "";
     document.getElementById("prod-cost").value = "";
-    document.getElementById("prod-stock").value = "";
+    document.getElementById("prod-stock").value = "1";
     document.getElementById("prod-img").value = "";
     document.getElementById("prod-desc").value = "";
-    showToast("Producto registrado con éxito en el catálogo.", "success");
+    clearProductImageUpload();
+    showToast("✓ Producto registrado con éxito en el catálogo.", "success");
   } catch (err) {
     showToast("❌ " + err.message, "error");
   }
@@ -781,7 +1383,14 @@ function renderUsersTable(users) {
 
   let filtered = users || [];
   if (usersTierFilter !== "ALL") {
-    filtered = filtered.filter(u => (u.tier || "").toUpperCase() === usersTierFilter);
+    filtered = filtered.filter(u => {
+      const t = (u.tier || "NAVI_USER").toUpperCase();
+      if (usersTierFilter === "NAVI") return t.includes("NAVI");
+      if (usersTierFilter === "RUNNER") return t.includes("RUNNER");
+      if (usersTierFilter === "ELITE") return t.includes("ELITE");
+      if (usersTierFilter === "DEUS") return t.includes("DEUS");
+      return t === usersTierFilter;
+    });
   }
   if (usersFilterQuery) {
     const q = usersFilterQuery.toLowerCase();
@@ -799,7 +1408,7 @@ function renderUsersTable(users) {
         <td colspan="7" style="text-align: center; padding: 2.5rem 1rem; color: var(--gray-500);">
           <div style="font-size: 1.6rem; margin-bottom: 0.4rem;">👥</div>
           <strong>No se encontraron socios con los filtros aplicados.</strong>
-          <div style="font-size: 0.8rem; margin-top: 4px;">Haz clic en "+ Registrar Nuevo Socio" para dar de alta al primer cliente.</div>
+          <div style="font-size: 0.8rem; margin-top: 4px;">Los clientes aparecerán automáticamente aquí cuando se registren al escanear una factura.</div>
         </td>
       </tr>
     `;
@@ -807,34 +1416,53 @@ function renderUsersTable(users) {
   }
 
   tbody.innerHTML = filtered.map(u => {
-    const tier = (u.tier || "NAVI").toUpperCase();
+    const tier = (u.tier || "NAVI_USER").toUpperCase();
     let tierBadgeClass = "badge-tier-navi";
-    if (tier === "RUNNER") tierBadgeClass = "badge-tier-runner";
-    else if (tier === "ELITE") tierBadgeClass = "badge-tier-elite";
-    else if (tier === "DEUS") tierBadgeClass = "badge-tier-deus";
+    let tierDisplay = "NAVI";
+    if (tier.includes("RUNNER")) { tierBadgeClass = "badge-tier-runner"; tierDisplay = "RUNNER"; }
+    else if (tier.includes("ELITE")) { tierBadgeClass = "badge-tier-elite"; tierDisplay = "ELITE"; }
+    else if (tier.includes("DEUS")) { tierBadgeClass = "badge-tier-deus"; tierDisplay = "DEUS"; }
+
+    const isBanned = u.status === "BANNED";
+    const statusBadge = isBanned 
+      ? `<span class="badge-navi" style="background:#fee2e2; color:#b91c1c; border-color:#f87171; font-size:0.65rem; margin-left:4px;">🚫 SUSPENDIDO</span>`
+      : "";
 
     const joinDate = u.createdAt ? new Date(u.createdAt).toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" }) : "Reciente";
 
     return `
-      <tr>
+      <tr style="${isBanned ? 'background:#fff1f2;' : ''}">
         <td>
           <strong style="color:var(--dark); font-size:0.9rem;">${u.displayName || "Socio Sin Nombre"}</strong>
-          <div style="font-size:0.72rem; color:var(--gray-500); font-family:var(--font-mono);">${u.memberCode || u.uid}</div>
+          <div style="font-size:0.72rem; color:var(--primary); font-family:var(--font-mono); font-weight:700;">${u.memberCode || u.uid}</div>
         </td>
         <td>
-          <div style="font-family:var(--font-mono); font-size:0.8rem; color:var(--dark);">📞 ${u.phone || "-"}</div>
-          <div style="font-size:0.7rem; color:var(--gray-500);">PIN: ••••</div>
+          <div style="font-family:var(--font-mono); font-size:0.8rem; color:var(--dark); font-weight:700;">📞 ${u.phone || "-"}</div>
+          <div style="display:flex; align-items:center; gap:4px; font-size:0.75rem; margin-top:3px;">
+            <span style="font-family:var(--font-mono); font-weight:700; color:var(--gray-500); font-size:0.7rem;">PIN:</span>
+            <strong style="font-family:var(--font-mono); font-size:0.82rem; font-weight:800; background:#e0e7ff; color:#312e81; padding:1px 6px; border-radius:3px; border:1px solid #c7d2fe; letter-spacing:1px;" title="PIN de acceso">${u.pin || "1234"}</strong>
+            <button class="btn-secondary" style="padding:1px 5px; font-size:0.7rem; line-height:1; cursor:pointer;" onclick="openEditPinModal('${u.uid}', '${(u.displayName || '').replace(/'/g, "\\'")}', '${u.pin || ''}', '${u.phone || ''}')" title="Modificar PIN">✏️</button>
+          </div>
         </td>
-        <td><span class="${tierBadgeClass}">${tier}</span></td>
+        <td>
+          <span class="${tierBadgeClass}">${tierDisplay}</span>
+          ${statusBadge}
+        </td>
         <td><strong style="font-family:var(--font-mono); font-size:0.95rem; color:#4338ca;">${(u.wiredPoints || 0).toLocaleString()} WP</strong></td>
         <td><span style="font-family:var(--font-mono); font-size:0.8rem; color:var(--gray-700);">${(u.lifetimePoints || 0).toLocaleString()} WP</span></td>
         <td style="font-size:0.75rem; color:var(--gray-600);">${joinDate}</td>
         <td style="text-align: right; white-space: nowrap;">
-          <button class="btn-primary" style="padding: 3px 8px; font-size: 0.72rem; margin-right: 4px;" onclick="openAdjustPointsModal('${u.uid}', '${(u.displayName || '').replace(/'/g, "\\'")}', ${u.wiredPoints || 0})">
+          <button class="btn-primary" style="padding: 3px 8px; font-size: 0.72rem; margin-right: 3px;" onclick="openAdjustPointsModal('${u.uid}', '${(u.displayName || '').replace(/'/g, "\\'")}', ${u.wiredPoints || 0})" title="Cargar o Deducir Puntos">
             ⚡ +/- Puntos
           </button>
-          <button class="btn-secondary" style="padding: 3px 8px; font-size: 0.72rem;" onclick="openUserLedgerModal('${u.uid}', '${(u.displayName || '').replace(/'/g, "\\'")}')">
+          <button class="btn-secondary" style="padding: 3px 8px; font-size: 0.72rem; margin-right: 3px;" onclick="openUserLedgerModal('${u.uid}', '${(u.displayName || '').replace(/'/g, "\\'")}')" title="Ver Historial Contable">
             📜 Historial
+          </button>
+          <button class="btn-secondary" style="padding: 3px 7px; font-size: 0.72rem; margin-right: 3px; ${isBanned ? 'color:#059669; border-color:#059669;' : 'color:#d97706; border-color:#d97706;'}" onclick="toggleBanUserAdmin('${u.uid}', '${(u.displayName || '').replace(/'/g, "\\'")}', '${u.status || 'ACTIVE'}')" title="${isBanned ? 'Reactivar Socio' : 'Suspender/Banear Socio'}">
+            ${isBanned ? '✓ Activar' : '🚫 Banear'}
+          </button>
+          <button class="btn-secondary" style="padding: 3px 7px; font-size: 0.72rem; color:#dc2626; border-color:#ef4444;" onclick="openDeleteUserModal('${u.uid}', '${(u.displayName || '').replace(/'/g, "\\'")}', '${u.phone || ''}')" title="Eliminar Socio Permanentemente">
+            🗑️
           </button>
         </td>
       </tr>
@@ -850,7 +1478,44 @@ function filterUsers() {
 
 function filterUsersByTier(tier) {
   usersTierFilter = tier;
+  const tiers = ["ALL", "NAVI", "RUNNER", "ELITE", "DEUS"];
+  tiers.forEach(t => {
+    const btn = document.getElementById("tier-btn-" + t);
+    if (btn) {
+      if (t === tier) btn.classList.add("active");
+      else btn.classList.remove("active");
+    }
+  });
   renderUsersTable(vm.users);
+}
+
+function toggleAdjustType(direction) {
+  selectAdjustDirection(direction || "ADD");
+}
+
+function selectAdjustDirection(direction) {
+  const addBtn = document.getElementById("btn-toggle-add");
+  const subBtn = document.getElementById("btn-toggle-sub");
+  const typeInput = document.getElementById("adjust-type-val");
+  const submitBtn = document.getElementById("btn-submit-adjust");
+
+  if (typeInput) typeInput.value = direction;
+
+  if (direction === "ADD") {
+    if (addBtn) addBtn.className = "lain-toggle-btn active-add";
+    if (subBtn) subBtn.className = "lain-toggle-btn";
+    if (submitBtn) {
+      submitBtn.textContent = "⚡ OTORGAR PUNTOS (+)";
+      submitBtn.style.background = "var(--primary)";
+    }
+  } else {
+    if (addBtn) addBtn.className = "lain-toggle-btn";
+    if (subBtn) subBtn.className = "lain-toggle-btn active-sub";
+    if (submitBtn) {
+      submitBtn.textContent = "➖ DEDUCIR PUNTOS (-)";
+      submitBtn.style.background = "#e11d48";
+    }
+  }
 }
 
 function openAdjustPointsModal(uid, name, currentPts) {
@@ -861,17 +1526,12 @@ function openAdjustPointsModal(uid, name, currentPts) {
   document.getElementById("adjust-user-current").textContent = currentPts.toLocaleString() + " WP";
   document.getElementById("adjust-points-amount").value = "";
   document.getElementById("adjust-points-reason").value = "";
-  const radios = document.getElementsByName("adjust-type");
-  radios.forEach(r => { if (r.value === "ADD") r.checked = true; });
+  selectAdjustDirection("ADD");
   modal.style.display = "flex";
   setTimeout(() => {
     const input = document.getElementById("adjust-points-amount");
     if (input) input.focus();
   }, 100);
-}
-
-function toggleAdjustType() {
-  // Estado visual
 }
 
 function setAdjustQuickPoints(pts) {
@@ -886,23 +1546,22 @@ async function submitAdjustPoints() {
   const uid = document.getElementById("adjust-user-uid").value;
   const amountStr = document.getElementById("adjust-points-amount").value;
   const amount = parseInt(amountStr, 10);
-  const reason = document.getElementById("adjust-points-reason").value.trim() || "Ajuste de Mostrador";
+  const reason = document.getElementById("adjust-points-reason").value.trim() || "Ajuste Directo de Mostrador";
+  const type = document.getElementById("adjust-type-val")?.value || "ADD";
 
   if (!amount || isNaN(amount) || amount <= 0) {
     showToast("⚠️ Ingresa una cantidad de puntos válida mayor a 0.", "error");
     return;
   }
 
-  const radios = document.getElementsByName("adjust-type");
-  let type = "ADD";
-  radios.forEach(r => { if (r.checked) type = r.value; });
-
   const delta = type === "ADD" ? amount : -amount;
 
   try {
-    const updatedUser = await vm.adjustUserPoints(uid, delta, reason);
+    const res = await vm.adjustUserPoints(uid, delta, reason);
     closeModal("modal-adjust-points");
+    const updatedUser = res.user;
     showToast(`✓ Saldo actualizado: ${updatedUser.displayName} ahora tiene ${updatedUser.wiredPoints.toLocaleString()} WP`, "success");
+    renderUsersTable(vm.users);
   } catch (err) {
     showToast("❌ " + err.message, "error");
   }
@@ -915,7 +1574,7 @@ function openUserLedgerModal(uid, name) {
   document.getElementById("ledger-user-uid").textContent = "UID: " + uid;
   const tbody = document.getElementById("user-ledger-tbody");
   if (tbody) {
-    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:1.5rem; color:var(--gray-500);">Cargando movimientos...</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:1.5rem; color:var(--gray-500);">Cargando libro contable...</td></tr>`;
   }
   modal.style.display = "flex";
 
@@ -923,8 +1582,8 @@ function openUserLedgerModal(uid, name) {
   if (!ledger || ledger.length === 0) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="5" style="text-align: center; padding: 2rem; color: var(--gray-500);">
-          No hay movimientos registrados para este socio aún.
+        <td colspan="5" style="text-align: center; padding: 2rem; color: var(--gray-500); font-family: var(--font-mono);">
+          [LEDGER VACÍO] No hay movimientos registrados para este socio aún.
         </td>
       </tr>
     `;
@@ -934,7 +1593,7 @@ function openUserLedgerModal(uid, name) {
   tbody.innerHTML = ledger.map(entry => {
     const isCredit = (entry.amount || 0) >= 0;
     const diffClass = isCredit ? "ledger-credit" : "ledger-debit";
-    const sign = isCredit ? "+" : "";
+    const sign = isCredit ? "+" : "-";
     const dateStr = entry.timestamp ? new Date(entry.timestamp).toLocaleString("es-ES") : "-";
 
     return `
@@ -942,49 +1601,202 @@ function openUserLedgerModal(uid, name) {
         <td style="font-size:0.75rem; color:var(--gray-600); font-family:var(--font-mono);">${dateStr}</td>
         <td><span class="badge-navi" style="font-size:0.65rem;">${entry.type || "AJUSTE"}</span></td>
         <td style="color:var(--dark); font-weight:600;">${entry.reason || "-"}</td>
-        <td class="${diffClass}" style="text-align:right;">${sign}${(entry.amount || 0).toLocaleString()} WP</td>
+        <td class="${diffClass}" style="text-align:right;">${sign}${Math.abs(entry.amount || 0).toLocaleString()} WP</td>
         <td style="text-align:right; font-family:var(--font-mono); font-weight:800; color:var(--dark);">${(entry.balanceAfter || 0).toLocaleString()} WP</td>
       </tr>
     `;
   }).join("");
 }
 
+function toggleNewUserPinVisibility() {
+  const pinInput = document.getElementById("new-user-pin");
+  if (!pinInput) return;
+  pinInput.type = pinInput.type === "password" ? "text" : "password";
+}
+
+function updateNewUserPreview() {
+  const nameEl = document.getElementById("new-user-name");
+  const phoneEl = document.getElementById("new-user-phone");
+  const pinEl = document.getElementById("new-user-pin");
+  const ptsEl = document.getElementById("new-user-points");
+
+  const nameVal = nameEl ? nameEl.value.trim() : "";
+  const phoneVal = phoneEl ? phoneEl.value.trim() : "";
+  const pinVal = pinEl ? pinEl.value.trim() : "";
+  const ptsVal = ptsEl ? (parseInt(ptsEl.value, 10) || 0) : 0;
+
+  const pName = document.getElementById("preview-new-user-name");
+  const pPhone = document.getElementById("preview-new-user-phone");
+  const pPin = document.getElementById("preview-new-user-pin");
+  const pUid = document.getElementById("preview-new-user-uid");
+  const pPts = document.getElementById("preview-new-user-points");
+
+  if (pName) pName.textContent = nameVal || "Socio Sin Nombre";
+  if (pPhone) pPhone.textContent = "📞 Tel: " + (phoneVal || "--------");
+  if (pPin) pPin.textContent = "🔑 PIN: " + (pinVal || "----");
+  if (pUid) pUid.textContent = "UID: CLIENT-" + (phoneVal ? phoneVal.replace(/\D/g, "") : "--------");
+  if (pPts) pPts.textContent = "Saldo: " + ptsVal.toLocaleString() + " WP";
+}
+
+function generateNewUserRandomPin() {
+  const pin = Math.floor(100000 + Math.random() * 900000).toString();
+  const pinInput = document.getElementById("new-user-pin");
+  if (pinInput) {
+    pinInput.value = pin;
+    pinInput.type = "text";
+  }
+  updateNewUserPreview();
+}
+
+function setNewUserQuickPoints(points) {
+  const ptsInput = document.getElementById("new-user-points");
+  if (ptsInput) ptsInput.value = points;
+  updateNewUserPreview();
+}
+
 function openNewUserModal() {
   const modal = document.getElementById("modal-new-user");
   if (!modal) return;
-  document.getElementById("new-user-name").value = "";
-  document.getElementById("new-user-phone").value = "";
-  document.getElementById("new-user-pin").value = "1234";
-  document.getElementById("new-user-points").value = "0";
+  const nameInput = document.getElementById("new-user-name");
+  const phoneInput = document.getElementById("new-user-phone");
+  const pinInput = document.getElementById("new-user-pin");
+  const ptsInput = document.getElementById("new-user-points");
+
+  if (nameInput) nameInput.value = "";
+  if (phoneInput) phoneInput.value = "";
+  if (pinInput) {
+    pinInput.value = "110805";
+    pinInput.type = "text";
+  }
+  if (ptsInput) ptsInput.value = "0";
+
+  updateNewUserPreview();
   modal.style.display = "flex";
   setTimeout(() => {
-    const input = document.getElementById("new-user-name");
-    if (input) input.focus();
+    if (nameInput) nameInput.focus();
   }, 100);
 }
 
 async function saveNewUserAdmin() {
   const name = document.getElementById("new-user-name").value.trim();
   const phone = document.getElementById("new-user-phone").value.trim();
-  const pin = document.getElementById("new-user-pin").value.trim() || "1234";
+  const pin = document.getElementById("new-user-pin").value.trim() || "110805";
   const points = parseInt(document.getElementById("new-user-points").value, 10) || 0;
 
   if (!name) {
     showToast("⚠️ El nombre del socio es obligatorio.", "error");
     return;
   }
-  if (!phone || phone.length < 8) {
+  if (!phone || phone.replace(/\D/g, "").length < 8) {
     showToast("⚠️ Ingresa un número telefónico válido (mínimo 8 dígitos).", "error");
+    return;
+  }
+  if (pin.length < 4 || pin.length > 8) {
+    showToast("⚠️ El PIN de seguridad debe tener entre 4 y 8 dígitos.", "error");
     return;
   }
 
   try {
     const user = await vm.registerUserFromAdmin({ displayName: name, phone, pin, initialPoints: points });
     closeModal("modal-new-user");
-    showToast(`✓ Socio ${user.displayName} registrado con éxito. Saldo: ${user.wiredPoints} WP`, "success");
-    switchAdminTab("clients");
+    showToast(`✓ Socio ${user.displayName} registrado con éxito. PIN: ${user.pin}`, "success");
+    renderUsersTable(vm.users);
   } catch (err) {
     showToast("❌ " + err.message, "error");
+  }
+}
+
+function openEditPinModal(uid, name, currentPin, phone) {
+  const modal = document.getElementById("modal-edit-user-pin");
+  if (!modal) return;
+  document.getElementById("edit-pin-target-uid").value = uid;
+  document.getElementById("edit-pin-user-name").textContent = name || "Socio";
+  document.getElementById("edit-pin-user-phone").textContent = phone || "-";
+  document.getElementById("edit-pin-user-current").textContent = currentPin || "----";
+  const input = document.getElementById("edit-pin-new-input");
+  if (input) {
+    input.value = currentPin || "";
+  }
+  modal.style.display = "flex";
+  setTimeout(() => {
+    if (input) {
+      input.focus();
+      input.select();
+    }
+  }, 100);
+}
+
+function generateEditPinRandom() {
+  const pin = Math.floor(100000 + Math.random() * 900000).toString();
+  const input = document.getElementById("edit-pin-new-input");
+  if (input) input.value = pin;
+}
+
+function setEditPinPreset(val) {
+  const input = document.getElementById("edit-pin-new-input");
+  if (input) input.value = val;
+}
+
+async function submitEditUserPin() {
+  const uid = document.getElementById("edit-pin-target-uid").value;
+  const newPin = (document.getElementById("edit-pin-new-input").value || "").trim();
+  const name = document.getElementById("edit-pin-user-name").textContent;
+
+  if (!uid) {
+    showToast("⚠️ UID de socio no especificado.", "error");
+    return;
+  }
+  if (!newPin || newPin.length < 4 || newPin.length > 8) {
+    showToast("⚠️ El PIN debe tener entre 4 y 8 dígitos numéricos.", "error");
+    return;
+  }
+
+  try {
+    await vm.updateUserPin(uid, newPin);
+    closeModal("modal-edit-user-pin");
+    showToast(`✓ Clave PIN actualizada a [${newPin}] para ${name}.`, "success");
+    renderUsersTable(vm.users);
+  } catch (err) {
+    showToast("❌ Error al actualizar PIN: " + err.message, "error");
+  }
+}
+
+function openDeleteUserModal(uid, name, phone) {
+  const modal = document.getElementById("modal-delete-user");
+  if (!modal) return;
+  document.getElementById("delete-user-target-uid").value = uid;
+  document.getElementById("delete-user-info-name").textContent = name;
+  document.getElementById("delete-user-info-phone").textContent = "Teléfono: " + (phone || "-");
+  document.getElementById("delete-user-info-uid").textContent = "UID: " + uid;
+  modal.style.display = "flex";
+}
+
+async function executeDeleteUserAdmin() {
+  const uid = document.getElementById("delete-user-target-uid").value;
+  if (!uid) return;
+  closeModal("modal-delete-user");
+  showToast("Eliminando socio de la base de datos...", "info");
+  try {
+    await vm.deleteUser(uid);
+    showToast("✓ Socio eliminado permanentemente.", "success");
+    renderUsersTable(vm.users);
+  } catch (err) {
+    showToast("❌ Error al eliminar socio: " + err.message, "error");
+  }
+}
+
+async function toggleBanUserAdmin(uid, name, currentStatus) {
+  const willBan = currentStatus !== "BANNED";
+  const actionText = willBan ? "suspender/banear" : "reactivar";
+  if (confirm(`¿Estás seguro de ${actionText} la cuenta del socio [${name}]?`)) {
+    try {
+      const updated = await vm.toggleUserBan(uid);
+      const isNowBanned = updated.status === "BANNED";
+      showToast(isNowBanned ? `🚫 Socio [${name}] suspendido.` : `✓ Socio [${name}] reactivado.`, "info");
+      renderUsersTable(vm.users);
+    } catch (err) {
+      showToast("❌ Error: " + err.message, "error");
+    }
   }
 }
 
@@ -1015,26 +1827,33 @@ function renderVouchersTable(vouchers) {
   }
 
   tbody.innerHTML = filtered.map(v => {
-    const isDelivered = v.isDelivered();
+    const isDelivered = typeof v.isDelivered === "function" ? v.isDelivered() : v.status === "DELIVERED";
     const dateStr = v.createdAt ? new Date(v.createdAt).toLocaleDateString("es-ES", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }) : "-";
     const statusBadge = isDelivered
       ? `<span class="badge-navi" style="background:#ecfdf5; color:#065f46; border:1px solid #a7f3d0;">✓ DESPACHADO</span>`
       : `<span class="badge-navi" style="background:#fffbeb; color:#92400e; border:1px solid #fcd34d;">⏳ PENDIENTE</span>`;
 
+    // Extracción tolerante y búsqueda inteligente del socio en el sistema
+    const targetUid = v.userUid || v.user_uid || v.userId || v.user_id || "";
+    const userMatch = (vm.users || []).find(u => u.uid === targetUid || (u.memberCode && u.memberCode === targetUid));
+    const clientName = v.userName || v.userDisplayName || v.user_name || (userMatch ? userMatch.displayName : "Socio Wired");
+    const clientContact = (userMatch && userMatch.phone) ? userMatch.phone : (v.userPhone || targetUid || "-");
+    const cost = Number(v.pointsSpent || v.pointsCost || v.points_spent || (v.reward ? v.reward.pointsCost : 0));
+
     return `
-      <tr>
+      <tr id="voucher-row-${v.voucherCode}">
         <td style="font-family:var(--font-mono); font-weight:800; font-size:0.85rem; color:var(--dark);">${v.voucherCode}</td>
         <td><strong style="color:var(--dark);">${v.rewardTitle || "Artículo"}</strong></td>
         <td>
-          <div style="font-size:0.82rem; font-weight:700; color:var(--dark);">${v.userDisplayName || v.userId}</div>
-          <div style="font-size:0.7rem; font-family:var(--font-mono); color:var(--gray-500);">${v.userId}</div>
+          <div style="font-size:0.82rem; font-weight:700; color:var(--dark);">${clientName}</div>
+          <div style="font-size:0.7rem; font-family:var(--font-mono); color:var(--gray-500);">${clientContact}</div>
         </td>
-        <td><span class="badge-navi">${(v.pointsCost || 0).toLocaleString()} WP</span></td>
+        <td><span class="badge-navi">${cost > 0 ? cost.toLocaleString() + " WP" : "CANJE"}</span></td>
         <td style="font-size:0.75rem; color:var(--gray-600);">${dateStr}</td>
         <td>${statusBadge}</td>
         <td style="text-align: right; white-space: nowrap;">
           ${!isDelivered ? `
-            <button class="btn-primary" style="padding: 3px 8px; font-size: 0.72rem;" onclick="deliverVoucherFromTable('${v.voucherCode}')">
+            <button class="btn-primary" style="padding: 3px 8px; font-size: 0.72rem;" onclick="openDeliverVoucherModal('${v.voucherCode}')">
               ✓ Entregar
             </button>
           ` : `
@@ -1051,13 +1870,123 @@ function filterVouchersTable(state) {
   renderVouchersTable(vm.vouchers);
 }
 
-async function deliverVoucherFromTable(voucherCode) {
-  if (confirm(`¿Confirmar entrega y despacho físico del vale [${voucherCode}]?`)) {
-    try {
-      await vm.deliverVoucher(voucherCode);
-      showToast(`✓ Vale [${voucherCode}] entregado y marcado como despachado.`, "success");
-    } catch (err) {
-      showToast("❌ " + err.message, "error");
-    }
+let currentModalDeliverCode = null;
+
+function openDeliverVoucherModal(voucherCode) {
+  const code = (voucherCode || "").trim().toUpperCase();
+  currentModalDeliverCode = code;
+
+  const voucher = (vm.vouchers || []).find(v => (v.voucherCode || "").trim().toUpperCase() === code);
+  if (!voucher) {
+    showToast("❌ No se encontró el vale [" + code + "] en memoria.", "error");
+    return;
   }
+
+  const targetUid = voucher.userUid || voucher.user_uid || voucher.userId || voucher.user_id || "";
+  const user = (vm.users || []).find(u => u.uid === targetUid || (u.memberCode && u.memberCode === targetUid));
+  const clientName = voucher.userName || (user ? user.displayName : "Socio Wired");
+  const clientContact = user ? (user.phone ? "📞 " + user.phone : user.memberCode || "") : (targetUid || "-");
+  const cost = Number(voucher.pointsSpent || voucher.pointsCost || voucher.points_spent || 0);
+
+  const codeEl = document.getElementById("modal-deliver-code");
+  if (codeEl) codeEl.textContent = voucher.voucherCode;
+  const prodEl = document.getElementById("modal-deliver-product");
+  if (prodEl) prodEl.textContent = voucher.rewardTitle || "Artículo";
+  const clientEl = document.getElementById("modal-deliver-client");
+  if (clientEl) clientEl.textContent = clientName;
+  const contactEl = document.getElementById("modal-deliver-contact");
+  if (contactEl) contactEl.textContent = clientContact;
+  const pointsEl = document.getElementById("modal-deliver-points");
+  if (pointsEl) pointsEl.textContent = cost > 0 ? cost.toLocaleString() + " WP" : "CANJE";
+  const dateEl = document.getElementById("modal-deliver-date");
+  if (dateEl) dateEl.textContent = voucher.createdAt ? new Date(voucher.createdAt).toLocaleString() : "-";
+
+  const stamp = document.getElementById("modal-deliver-stamp");
+  if (stamp) stamp.className = "dispatch-stamp"; // Oculto
+
+  const pill = document.getElementById("modal-deliver-status-pill");
+  if (pill) {
+    pill.className = "noc-pulse-chip";
+    pill.style.background = "#ecfdf5";
+    pill.style.color = "#059669";
+    pill.style.borderColor = "#a7f3d0";
+    pill.innerHTML = '<span class="pulse-dot"></span> LISTO PARA SALIDA FÍSICA';
+  }
+
+  const actions = document.getElementById("modal-deliver-actions");
+  if (actions) {
+    actions.innerHTML = `
+      <button class="btn-secondary" onclick="closeModal('modal-deliver-voucher')">CANCELAR</button>
+      <button id="btn-modal-deliver-action" class="btn-primary btn-dispatch-action" onclick="executeModalDeliver()">
+        ⚡ CONFIRMAR Y DESPACHAR ARTÍCULO
+      </button>
+    `;
+  }
+
+  const modal = document.getElementById("modal-deliver-voucher");
+  if (modal) modal.style.display = "flex";
+}
+
+async function executeModalDeliver() {
+  const code = currentModalDeliverCode;
+  if (!code) return;
+
+  const btn = document.getElementById("btn-modal-deliver-action");
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<span class="cyber-spinner"></span> REGISTRANDO DESPACHO...';
+  }
+
+  try {
+    await vm.deliverVoucher(code);
+    playAdminDispatchSound();
+    triggerCyberDispatchGlitch();
+
+    // Sello Holográfico Animado en el Modal
+    const stamp = document.getElementById("modal-deliver-stamp");
+    if (stamp) {
+      const nowStr = new Date().toLocaleString();
+      stamp.className = "dispatch-stamp active";
+      stamp.innerHTML = `
+        ✓ ARTÍCULO DESPACHADO
+        <div style="font-size:0.68rem; font-weight:800; margin-top:4px; letter-spacing:0.5px;">
+          SALIDA AUTORIZADA // OPERADOR: ADMIN_MELTY // ${nowStr}
+        </div>
+      `;
+    }
+
+    const pill = document.getElementById("modal-deliver-status-pill");
+    if (pill) {
+      pill.innerHTML = "✓ DESPACHADO CON ÉXITO";
+    }
+
+    const actions = document.getElementById("modal-deliver-actions");
+    if (actions) {
+      actions.innerHTML = `
+        <button class="btn-primary" style="background:#059669; border-color:#047857; color:#fff;" onclick="closeModal('modal-deliver-voucher');">
+          ✓ FINALIZAR Y CERRAR
+        </button>
+      `;
+    }
+
+    showToast(`✓ Vale [${code}] despachado y entregado físicamente al socio.`, "success");
+
+    // Destello de fila en la tabla de historial
+    const row = document.getElementById(`voucher-row-${code}`);
+    if (row) row.classList.add("row-delivered-flash");
+
+    setTimeout(() => {
+      closeModal('modal-deliver-voucher');
+    }, 1800);
+  } catch (err) {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = "⚡ CONFIRMAR Y DESPACHAR ARTÍCULO";
+    }
+    showToast("❌ " + err.message, "error");
+  }
+}
+
+function deliverVoucherFromTable(voucherCode) {
+  openDeliverVoucherModal(voucherCode);
 }

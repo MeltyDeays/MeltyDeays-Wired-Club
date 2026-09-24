@@ -63,8 +63,32 @@ export class AdminViewModel {
     const rawVouchers = await FirestoreService.fetchVouchers();
     this.vouchers = rawVouchers.map(v => new VoucherModel(v));
     const rawUsers = await FirestoreService.fetchUsers();
-    this.users = rawUsers.map(u => new UserModel(u));
+    this.users = rawUsers.map(u => {
+      // Auto-corrección requerida: restaurar PIN de 6 dígitos para 58438412 si fue truncado a 4
+      if (u.phone === "58438412" && (u.pin === "1108" || !u.pin)) {
+        u.pin = "110805";
+        FirestoreService.saveUser(u);
+      }
+      return new UserModel(u);
+    });
     this.notify();
+  }
+
+  async updateUserPin(uid, newPin) {
+    const cleanPin = (newPin || "").trim();
+    if (!cleanPin || cleanPin.length < 4 || cleanPin.length > 8) {
+      throw new Error("El PIN de seguridad debe tener entre 4 y 8 dígitos.");
+    }
+    const user = await FirestoreService.getUser(uid);
+    if (!user) throw new Error("Socio no encontrado.");
+    user.pin = cleanPin;
+    await FirestoreService.saveUser(user);
+
+    const inMem = (this.users || []).find(u => u.uid === uid);
+    if (inMem) inMem.pin = cleanPin;
+
+    await this.refreshData();
+    return user;
   }
 
   async registerUserFromAdmin(userData) {
@@ -73,11 +97,17 @@ export class AdminViewModel {
     const cleanPhone = (userData.phone || "").replace(/\D/g, "");
     if (cleanPhone.length < 8) throw new Error("Ingresa un número telefónico válido (mínimo 8 dígitos).");
     const pin = (userData.pin || "1234").trim();
+    if (pin.length < 4 || pin.length > 8) {
+      throw new Error("El PIN debe tener entre 4 y 8 dígitos.");
+    }
     const initialPts = Number(userData.initialPoints) || 0;
 
-    const uid = "USR-" + cleanPhone;
-    const existing = await FirestoreService.getUser(uid);
-    if (existing) throw new Error("Ya existe un socio registrado con este número telefónico.");
+    const uid = "CLIENT-" + cleanPhone;
+    const existingUid = await FirestoreService.getUser(uid);
+    const existingPhone = await FirestoreService.findUserByCodeOrPhone(cleanPhone);
+    if (existingUid || existingPhone) {
+      throw new Error(`Ya existe un socio registrado con el número [${cleanPhone}]. No se permiten cuentas duplicadas.`);
+    }
 
     const newUser = new UserModel({
       uid,
@@ -85,7 +115,8 @@ export class AdminViewModel {
       phone: cleanPhone,
       pin,
       wiredPoints: initialPts,
-      lifetimePoints: initialPts
+      lifetimePoints: initialPts,
+      status: "ACTIVE"
     });
 
     await FirestoreService.saveUser(newUser.toJSON());
@@ -102,6 +133,22 @@ export class AdminViewModel {
 
     await this.refreshData();
     return newUser;
+  }
+
+  async deleteUser(uid) {
+    await FirestoreService.deleteUser(uid);
+    await this.refreshData();
+    return true;
+  }
+
+  async toggleUserBan(uid) {
+    const raw = await FirestoreService.getUser(uid);
+    if (!raw) throw new Error("Socio no encontrado.");
+    const user = new UserModel(raw);
+    user.status = user.status === "BANNED" ? "ACTIVE" : "BANNED";
+    await FirestoreService.saveUser(user.toJSON());
+    await this.refreshData();
+    return user;
   }
 
   async adjustUserPoints(uid, deltaPoints, reason = "Ajuste Administrativo") {
@@ -143,19 +190,36 @@ export class AdminViewModel {
 
   async verifyVoucher(voucherCode) {
     const clean = (voucherCode || "").trim().toUpperCase();
+    if (!clean) return null;
+    const inMem = (this.vouchers || []).find(v => (v.voucherCode || "").trim().toUpperCase() === clean);
+    if (inMem) return inMem;
     const raw = await FirestoreService.getVoucher(clean);
     if (!raw) return null;
     return new VoucherModel(raw);
   }
 
   async deliverVoucher(voucherCode, cashierUid = "admin_melty") {
-    const voucher = await this.verifyVoucher(voucherCode);
-    if (!voucher) throw new Error("El vale [" + voucherCode + "] no existe.");
+    const clean = (voucherCode || "").trim().toUpperCase();
+    let voucher = await this.verifyVoucher(clean);
+    if (!voucher) {
+      voucher = (this.vouchers || []).find(v => (v.voucherCode || "").trim().toUpperCase() === clean);
+    }
+    if (!voucher) throw new Error("El vale [" + voucherCode + "] no existe en la base de datos.");
     if (voucher.isDelivered()) {
-      throw new Error("Este vale ya fue despachado previamente.");
+      const deliveredDateStr = voucher.deliveredAt ? new Date(voucher.deliveredAt).toLocaleString() : "";
+      throw new Error("Este vale ya fue despachado previamente" + (deliveredDateStr ? " el " + deliveredDateStr : "") + ".");
     }
     voucher.markDelivered(cashierUid);
     await FirestoreService.saveVoucher(voucher.toJSON());
+
+    // Actualizar instancia en memoria para respuesta instantánea
+    const idx = (this.vouchers || []).findIndex(v => (v.voucherCode || "").trim().toUpperCase() === clean);
+    if (idx !== -1) {
+      this.vouchers[idx] = voucher;
+    } else {
+      this.vouchers.unshift(voucher);
+    }
+
     await this.refreshData();
     return voucher;
   }
@@ -243,5 +307,20 @@ export class AdminViewModel {
     await FirestoreService.saveTokensBatch(created.map(t => t.toJSON()));
     await this.refreshData();
     return { batchId, tokens: created, startFolio: sFolio };
+  }
+
+  async purgeAllInvoiceTokens() {
+    const res = await FirestoreService.purgeAllTokens();
+    this.tokens = [];
+    this.batches = [];
+    await this.refreshData();
+    this.notify();
+    return res;
+  }
+
+  async findCustomer(query) {
+    const raw = await FirestoreService.findUserByCodeOrPhone(query);
+    if (!raw) return null;
+    return new UserModel(raw);
   }
 }

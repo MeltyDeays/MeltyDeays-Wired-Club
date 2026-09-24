@@ -2,13 +2,14 @@
 export class UserModel {
   constructor(data = {}) {
     this.uid = data.uid || "";
-    this.displayName = data.displayName || "Nuevo Socio";
+    this.displayName = data.displayName || data.display_name || data.name || "Nuevo Socio";
     this.phone = data.phone || "";
     this.pin = data.pin || "1234";
-    this.memberCode = data.memberCode || "MC-2026-" + Math.random().toString(36).substring(2, 6).toUpperCase();
-    this.wiredPoints = Number(data.wiredPoints || data.wired_points || 0);
-    this.lifetimePoints = Number(data.lifetimePoints || data.lifetime_points || 0);
+    this.memberCode = data.memberCode || data.member_code || ("MC-2026-" + Math.random().toString(36).substring(2, 6).toUpperCase());
+    this.wiredPoints = Number(data.wiredPoints !== undefined ? data.wiredPoints : (data.wired_points || 0));
+    this.lifetimePoints = Number(data.lifetimePoints !== undefined ? data.lifetimePoints : (data.lifetime_points || 0));
     this.tier = data.tier || this.calculateTier();
+    this.status = data.status || "ACTIVE";
     this.createdAt = data.createdAt || data.created_at || new Date().toISOString();
   }
 
@@ -17,6 +18,10 @@ export class UserModel {
     if (this.lifetimePoints >= 2000) return "CYBER_ELITE";
     if (this.lifetimePoints >= 500) return "TECH_RUNNER";
     return "NAVI_USER";
+  }
+
+  isBanned() {
+    return this.status === "BANNED";
   }
 
   addPoints(points) {
@@ -40,12 +45,18 @@ export class UserModel {
     return {
       uid: this.uid,
       displayName: this.displayName,
+      display_name: this.displayName,
       phone: this.phone,
       pin: this.pin,
+      memberCode: this.memberCode,
       member_code: this.memberCode,
+      wiredPoints: this.wiredPoints,
       wired_points: this.wiredPoints,
+      lifetimePoints: this.lifetimePoints,
       lifetime_points: this.lifetimePoints,
       tier: this.tier,
+      status: this.status,
+      createdAt: this.createdAt,
       created_at: this.createdAt
     };
   }
