@@ -24,13 +24,7 @@ if (typeof window !== "undefined" && window.firebase && FIREBASE_CONFIG.apiKey) 
     db = window.firebase.firestore();
     auth = window.firebase.auth();
     isConnectedToCloud = true;
-    console.log("✓ Firebase inicializado en modo MVVM:", FIREBASE_CONFIG.projectId);
-
-    if (auth && auth.signInAnonymously) {
-      auth.signInAnonymously().catch(err => {
-        console.warn("Auth anónima opcional:", err.code);
-      });
-    }
+    console.log("✓ Firebase conectado:", FIREBASE_CONFIG.projectId);
   } catch (err) {
     console.warn("Aviso Firebase:", err.message);
   }

@@ -4,7 +4,7 @@ import { RewardModel } from "../models/RewardModel.js";
 import { VoucherModel } from "../models/VoucherModel.js";
 import { TokenModel } from "../models/TokenModel.js";
 
-const MASTER_PIN = "2026";
+const MASTER_PIN = "110805";
 
 export class AdminViewModel {
   constructor() {
@@ -24,21 +24,23 @@ export class AdminViewModel {
   }
 
   init() {
-    this.isAuthenticated = sessionStorage.getItem("melty_admin_auth") === "true";
-    if (this.isAuthenticated) {
+    // Verificación estricta del PIN configurado
+    const savedToken = sessionStorage.getItem("melty_admin_auth");
+    if (savedToken === MASTER_PIN) {
+      this.isAuthenticated = true;
       this.refreshData();
     } else {
+      this.isAuthenticated = false;
       this.notify();
     }
   }
 
   unlock(pin) {
     const entered = (pin || "").trim();
-    const storedPin = localStorage.getItem("melty_master_pin") || MASTER_PIN;
 
-    if (entered === storedPin || entered === MASTER_PIN) {
+    if (entered === MASTER_PIN) {
       this.isAuthenticated = true;
-      sessionStorage.setItem("melty_admin_auth", "true");
+      sessionStorage.setItem("melty_admin_auth", MASTER_PIN);
       this.refreshData();
       return true;
     }

@@ -126,7 +126,7 @@ function submitAdminPin() {
   const success = vm.unlock(pin);
 
   if (!success) {
-    alert("❌ PIN Incorrecto. El PIN maestro por defecto es 2026.");
+    alert("❌ PIN Incorrecto. El PIN maestro es 110805.");
     if (input) {
       input.value = "";
       input.focus();
