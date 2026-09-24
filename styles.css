@@ -1950,9 +1950,161 @@ body {
 }
 
 /* ========================================================
+   DASHBOARD NOC: MÉTRICAS Y TELEMETRÍA (DISEÑO LAIN / COPLAND)
+   ======================================================== */
+.noc-dashboard-card {
+  background: #ffffff;
+  border: 2px solid var(--dark);
+  border-radius: 8px;
+  padding: 1.15rem 1.35rem;
+  position: relative;
+  box-shadow: 4px 4px 0px var(--dark);
+  background-image: radial-gradient(var(--dot-color) 0.85px, transparent 0.85px);
+  background-size: 8px 8px;
+  margin-bottom: 1.5rem;
+}
+
+.noc-hud-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2px solid var(--dark);
+  padding-bottom: 0.65rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.noc-hud-title-col {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.noc-badge-main {
+  background: var(--dark);
+  color: #38bdf8;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.8px;
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+
+.noc-pulse-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: #059669;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  padding: 2.5px 7px;
+  border-radius: 12px;
+}
+
+.noc-sub-tag {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--gray-500);
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  margin-top: 2px;
+}
+
+.noc-hud-right {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.noc-telemetry-item {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--gray-600);
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  padding: 2.5px 6.5px;
+  border-radius: 3px;
+}
+
+.noc-telemetry-item strong {
+  color: var(--dark);
+}
+
+.noc-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.85rem;
+}
+
+.noc-stat-box {
+  background: #ffffff;
+  border: 1.5px solid var(--dark);
+  border-radius: 6px;
+  padding: 0.75rem 0.9rem;
+  box-shadow: 2px 2px 0px rgba(15, 23, 42, 0.1);
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.noc-stat-box:hover {
+  transform: translateY(-1px);
+  box-shadow: 3px 3px 0px var(--dark);
+}
+
+.noc-stat-box.accent-indigo {
+  border-left-width: 4px;
+  border-left-color: #4f46e5;
+}
+
+.noc-stat-box.accent-amber {
+  border-left-width: 4px;
+  border-left-color: #f59e0b;
+}
+
+.noc-stat-box.accent-emerald {
+  border-left-width: 4px;
+  border-left-color: #10b981;
+}
+
+.noc-stat-label {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: var(--gray-500);
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+.noc-stat-val {
+  font-family: var(--font-mono);
+  font-size: 1.65rem;
+  font-weight: 900;
+  color: var(--dark);
+  line-height: 1.15;
+  margin: 0.3rem 0 0.15rem 0;
+}
+
+.noc-stat-val.text-indigo { color: #4338ca; }
+.noc-stat-val.text-amber { color: #b45309; }
+.noc-stat-val.text-emerald { color: #047857; }
+
+.noc-stat-sub {
+  font-size: 0.68rem;
+  color: var(--gray-500);
+}
+
+/* ========================================================
    ESTILOS DE CONTRAPORTADA LAIN (PREVISUALIZACIÓN Y ADMIN)
    ======================================================== */
-.lain-card {
+.reverso-sheet-card .lain-card,
+.reverso-sheet-page .lain-card {
   padding: 0.16in 0.18in 0.14in; display: flex; flex-direction: column;
   justify-content: space-between; box-sizing: border-box; height: 100%;
   min-height: 5.2in; overflow: hidden; background-color: #f8fafc;
@@ -1960,57 +2112,60 @@ body {
   background-size: 8px 8px; position: relative; border: 1.5px solid #0f172a;
   border-radius: 6px;
 }
-.tech-corner {
+.reverso-sheet-card .tech-corner,
+.reverso-sheet-page .tech-corner {
   position: absolute; font-family: 'JetBrains Mono', monospace;
   font-size: 9px; font-weight: 800; color: #94a3b8; line-height: 1; pointer-events: none;
 }
-.tech-corner.top-left { top: 6px; left: 8px; }
-.tech-corner.top-right { top: 6px; right: 8px; }
-.tech-corner.bottom-left { bottom: 6px; left: 8px; }
-.tech-corner.bottom-right { bottom: 6px; right: 8px; }
-.lain-header {
+.reverso-sheet-card .tech-corner.top-left, .reverso-sheet-page .tech-corner.top-left { top: 6px; left: 8px; }
+.reverso-sheet-card .tech-corner.top-right, .reverso-sheet-page .tech-corner.top-right { top: 6px; right: 8px; }
+.reverso-sheet-card .tech-corner.bottom-left, .reverso-sheet-page .tech-corner.bottom-left { bottom: 6px; left: 8px; }
+.reverso-sheet-card .tech-corner.bottom-right, .reverso-sheet-page .tech-corner.bottom-right { bottom: 6px; right: 8px; }
+
+.reverso-sheet-card .lain-header,
+.reverso-sheet-page .lain-header {
   display: flex; justify-content: space-between; align-items: center;
   border-bottom: 1.5px solid #0f172a; padding-bottom: 2.5px;
 }
-.lain-badge-group { display: flex; align-items: center; gap: 4px; }
-.badge-navi {
+.reverso-sheet-card .lain-badge-group, .reverso-sheet-page .lain-badge-group { display: flex; align-items: center; gap: 4px; }
+.reverso-sheet-card .badge-navi, .reverso-sheet-page .badge-navi {
   background: #0f172a; color: #ffffff; font-family: 'JetBrains Mono', monospace;
   font-size: 6px; font-weight: 800; letter-spacing: 0.6px; padding: 1.5px 5px; border-radius: 2px;
 }
-.badge-layer {
+.reverso-sheet-card .badge-layer, .reverso-sheet-page .badge-layer {
   background: #4f46e5; color: #ffffff; font-family: 'JetBrains Mono', monospace;
   font-size: 6px; font-weight: 800; letter-spacing: 0.5px; padding: 1.5px 4.5px; border-radius: 2px;
 }
-.lain-os-tag { font-family: 'JetBrains Mono', monospace; font-size: 6px; font-weight: 800; color: #475569; letter-spacing: 0.5px; }
-.lain-title-row { margin-top: 2px; display: flex; flex-direction: column; gap: 0.5px; }
-.lain-main-title {
+.reverso-sheet-card .lain-os-tag, .reverso-sheet-page .lain-os-tag { font-family: 'JetBrains Mono', monospace; font-size: 6px; font-weight: 800; color: #475569; letter-spacing: 0.5px; }
+.reverso-sheet-card .lain-title-row, .reverso-sheet-page .lain-title-row { margin-top: 2px; display: flex; flex-direction: column; gap: 0.5px; }
+.reverso-sheet-card .lain-main-title, .reverso-sheet-page .lain-main-title {
   font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 900;
   color: #0f172a; letter-spacing: -0.2px; line-height: 1.1;
 }
-.lain-sub-title { font-size: 5.5px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.3px; }
+.reverso-sheet-card .lain-sub-title, .reverso-sheet-page .lain-sub-title { font-size: 5.5px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.3px; }
 
-.lain-main-body-row {
+.reverso-sheet-card .lain-main-body-row, .reverso-sheet-page .lain-main-body-row {
   display: flex; align-items: stretch; justify-content: space-between;
   gap: 7px; margin: 3px 0; flex: 1; min-height: 180px; max-height: 205px; box-sizing: border-box;
 }
-.lain-figure-col {
+.reverso-sheet-card .lain-figure-col, .reverso-sheet-page .lain-figure-col {
   flex: 1.18; display: flex; flex-direction: column; min-width: 0;
   background: #ffffff; border: 1.5px solid #0f172a; border-radius: 5px;
   box-shadow: 2px 2px 0px rgba(15, 23, 42, 0.12); overflow: hidden; box-sizing: border-box;
 }
-.figure-hud-header {
+.reverso-sheet-card .figure-hud-header, .reverso-sheet-page .figure-hud-header {
   background: #0f172a; color: #38bdf8; font-family: 'JetBrains Mono', monospace;
   font-size: 5.6px; font-weight: 800; letter-spacing: 0.5px; padding: 2.5px 5px;
   display: flex; justify-content: space-between; align-items: center; line-height: 1;
   border-bottom: 1px solid #1e293b;
 }
-.hud-status-dot {
+.reverso-sheet-card .hud-status-dot, .reverso-sheet-page .hud-status-dot {
   width: 4px; height: 4px; border-radius: 50%; background: #22c55e;
   display: inline-block; margin-right: 3px; box-shadow: 0 0 3px #22c55e;
 }
-.hud-title { color: #f8fafc; font-weight: 900; }
-.hud-protocol { color: #94a3b8; font-size: 5px; }
-.lain-svg-container {
+.reverso-sheet-card .hud-title, .reverso-sheet-page .hud-title { color: #f8fafc; font-weight: 900; }
+.reverso-sheet-card .hud-protocol, .reverso-sheet-page .hud-protocol { color: #94a3b8; font-size: 5px; }
+.reverso-sheet-card .lain-svg-container, .reverso-sheet-page .lain-svg-container {
   flex: 1; width: 100%; display: flex; align-items: center; justify-content: center;
   position: relative; padding: 4px 3px; box-sizing: border-box; background: #fafafc;
   background-image: 
@@ -2018,106 +2173,102 @@ body {
     linear-gradient(90deg, rgba(203, 213, 225, 0.25) 1px, transparent 1px);
   background-size: 10px 10px;
 }
-.hud-cross-tl, .hud-cross-tr, .hud-cross-bl, .hud-cross-br {
-  position: absolute; font-family: 'JetBrains Mono', monospace;
-  font-size: 7px; color: #94a3b8; line-height: 1; pointer-events: none; font-weight: 700;
-}
-.hud-cross-tl { top: 2px; left: 3px; }
-.hud-cross-tr { top: 2px; right: 3px; }
-.hud-cross-bl { bottom: 2px; left: 3px; }
-.hud-cross-br { bottom: 2px; right: 3px; }
-.lain-card-svg {
+.reverso-sheet-card .hud-cross-tl, .reverso-sheet-page .hud-cross-tl { position: absolute; font-family: 'JetBrains Mono', monospace; font-size: 7px; color: #94a3b8; line-height: 1; pointer-events: none; font-weight: 700; top: 2px; left: 3px; }
+.reverso-sheet-card .hud-cross-tr, .reverso-sheet-page .hud-cross-tr { position: absolute; font-family: 'JetBrains Mono', monospace; font-size: 7px; color: #94a3b8; line-height: 1; pointer-events: none; font-weight: 700; top: 2px; right: 3px; }
+.reverso-sheet-card .hud-cross-bl, .reverso-sheet-page .hud-cross-bl { position: absolute; font-family: 'JetBrains Mono', monospace; font-size: 7px; color: #94a3b8; line-height: 1; pointer-events: none; font-weight: 700; bottom: 2px; left: 3px; }
+.reverso-sheet-card .hud-cross-br, .reverso-sheet-page .hud-cross-br { position: absolute; font-family: 'JetBrains Mono', monospace; font-size: 7px; color: #94a3b8; line-height: 1; pointer-events: none; font-weight: 700; bottom: 2px; right: 3px; }
+
+.reverso-sheet-card .lain-card-svg, .reverso-sheet-page .lain-card-svg {
   width: 100%; height: auto; max-height: 98%; object-fit: contain;
   filter: drop-shadow(0 1px 2px rgba(15,23,42,0.1));
 }
-.figure-hud-footer {
+.reverso-sheet-card .figure-hud-footer, .reverso-sheet-page .figure-hud-footer {
   background: #f1f5f9; border-top: 1px solid #cbd5e1; color: #64748b;
   font-family: 'JetBrains Mono', monospace; font-size: 5.2px; font-weight: 800;
   padding: 2px 5px; display: flex; justify-content: space-between; align-items: center;
   line-height: 1; letter-spacing: 0.3px; text-transform: uppercase;
 }
-.hud-chip { color: #475569; }
-.hud-pass { color: #059669; font-weight: 900; }
+.reverso-sheet-card .hud-chip, .reverso-sheet-page .hud-chip { color: #475569; }
+.reverso-sheet-card .hud-pass, .reverso-sheet-page .hud-pass { color: #059669; font-weight: 900; }
 
-.lain-reward-col {
+.reverso-sheet-card .lain-reward-col, .reverso-sheet-page .lain-reward-col {
   flex: 0.92; background: #ffffff; border: 1.5px solid #0f172a; border-radius: 5px;
   padding: 5px 5px; box-shadow: 2px 2px 0px rgba(15, 23, 42, 0.12);
   display: flex; flex-direction: column; align-items: center; justify-content: space-between;
   box-sizing: border-box; min-width: 0;
 }
-.reward-tag {
+.reverso-sheet-card .reward-tag, .reverso-sheet-page .reward-tag {
   font-family: 'JetBrains Mono', monospace; font-size: 6px; font-weight: 900;
   color: #ffffff; background: #0f172a; letter-spacing: 0.6px; text-transform: uppercase;
   line-height: 1; padding: 2px 5px; border-radius: 3px; display: flex; align-items: center; gap: 3px;
 }
-.reward-icon { color: #38bdf8; font-size: 6px; }
-.reward-points-row {
+.reverso-sheet-card .reward-icon, .reverso-sheet-page .reward-icon { color: #38bdf8; font-size: 6px; }
+.reverso-sheet-card .reward-points-row, .reverso-sheet-page .reward-points-row {
   display: flex; align-items: center; justify-content: center; gap: 3.5px;
   line-height: 1; margin: 2px 0; background: #f8fafc; border: 1px solid #e2e8f0;
   border-radius: 4px; padding: 2px 6px; width: 90%; box-sizing: border-box;
 }
-.reward-plus { font-size: 14px; font-weight: 900; color: #0f172a; line-height: 1; }
-.reward-pencil-box {
+.reverso-sheet-card .reward-plus, .reverso-sheet-page .reward-plus { font-size: 14px; font-weight: 900; color: #0f172a; line-height: 1; }
+.reverso-sheet-card .reward-pencil-box, .reverso-sheet-page .reward-pencil-box {
   width: 40px; height: 18px; background: #ffffff; border: 1.2px dashed #94a3b8;
   border-bottom: 2px solid #0f172a; border-radius: 2px; display: flex;
   align-items: center; justify-content: center;
 }
-.reward-wp { font-size: 11px; font-weight: 900; color: #e11d48; letter-spacing: -0.3px; }
-.reward-qr-frame { position: relative; display: flex; align-items: center; justify-content: center; margin: 2px 0; padding: 3px; }
-.qr-reticle-tl, .qr-reticle-tr, .qr-reticle-bl, .qr-reticle-br {
-  position: absolute; font-family: 'JetBrains Mono', monospace;
-  font-size: 8px; color: #4f46e5; line-height: 1; font-weight: 900; pointer-events: none;
-}
-.qr-reticle-tl { top: 0px; left: 0px; }
-.qr-reticle-tr { top: 0px; right: 0px; }
-.qr-reticle-bl { bottom: 0px; left: 0px; }
-.qr-reticle-br { bottom: 0px; right: 0px; }
-.qr-canvas-box {
+.reverso-sheet-card .reward-wp, .reverso-sheet-page .reward-wp { font-size: 11px; font-weight: 900; color: #e11d48; letter-spacing: -0.3px; }
+.reverso-sheet-card .reward-qr-frame, .reverso-sheet-page .reward-qr-frame { position: relative; display: flex; align-items: center; justify-content: center; margin: 2px 0; padding: 3px; }
+.reverso-sheet-card .qr-reticle-tl, .reverso-sheet-page .qr-reticle-tl { position: absolute; font-family: 'JetBrains Mono', monospace; font-size: 8px; color: #4f46e5; line-height: 1; font-weight: 900; pointer-events: none; top: 0px; left: 0px; }
+.reverso-sheet-card .qr-reticle-tr, .reverso-sheet-page .qr-reticle-tr { position: absolute; font-family: 'JetBrains Mono', monospace; font-size: 8px; color: #4f46e5; line-height: 1; font-weight: 900; pointer-events: none; top: 0px; right: 0px; }
+.reverso-sheet-card .qr-reticle-bl, .reverso-sheet-page .qr-reticle-bl { position: absolute; font-family: 'JetBrains Mono', monospace; font-size: 8px; color: #4f46e5; line-height: 1; font-weight: 900; pointer-events: none; bottom: 0px; left: 0px; }
+.reverso-sheet-card .qr-reticle-br, .reverso-sheet-page .qr-reticle-br { position: absolute; font-family: 'JetBrains Mono', monospace; font-size: 8px; color: #4f46e5; line-height: 1; font-weight: 900; pointer-events: none; bottom: 0px; right: 0px; }
+.reverso-sheet-card .qr-canvas-box, .reverso-sheet-page .qr-canvas-box {
   width: 21mm; height: 21mm; background: #ffffff; border: 1.2px solid #0f172a;
   border-radius: 4px; padding: 1.2mm; display: flex; align-items: center;
   justify-content: center; box-shadow: 1px 1px 0px rgba(0,0,0,0.1); box-sizing: border-box;
 }
-.qr-canvas-box img, .qr-canvas-box canvas { width: 100% !important; height: 100% !important; display: block; }
-.reward-pin-tag {
+.reverso-sheet-card .qr-canvas-box img, .reverso-sheet-page .qr-canvas-box img,
+.reverso-sheet-card .qr-canvas-box canvas, .reverso-sheet-page .qr-canvas-box canvas { width: 100% !important; height: 100% !important; display: block; }
+.reverso-sheet-card .reward-pin-tag, .reverso-sheet-page .reward-pin-tag {
   font-family: 'JetBrains Mono', monospace; font-size: 7px; font-weight: 900;
   color: #0f172a; letter-spacing: 0.8px; background: #f1f5f9; border: 1px solid #cbd5e1;
   padding: 1.5px 6px; border-radius: 3px; line-height: 1; display: flex; align-items: center; gap: 3px;
 }
-.reward-pin-tag strong { color: #4338ca; font-size: 7.5px; }
-.reward-sub { font-size: 5.2px; color: #64748b; text-align: center; line-height: 1.2; font-weight: 700; text-transform: uppercase; letter-spacing: 0.2px; }
+.reverso-sheet-card .reward-pin-tag strong, .reverso-sheet-page .reward-pin-tag strong { color: #4338ca; font-size: 7.5px; }
+.reverso-sheet-card .reward-sub, .reverso-sheet-page .reward-sub { font-size: 5.2px; color: #64748b; text-align: center; line-height: 1.2; font-weight: 700; text-transform: uppercase; letter-spacing: 0.2px; }
 
-.lain-quote-box {
+.reverso-sheet-card .lain-quote-box, .reverso-sheet-page .lain-quote-box {
   background: #ffffff; border-left: 2.5px solid #4f46e5; border-right: 1px solid #cbd5e1;
   border-top: 1px solid #cbd5e1; border-bottom: 1px solid #cbd5e1; border-radius: 3px;
   padding: 2.5px 5px; display: flex; flex-direction: column; gap: 1px; margin: 1px 0 2px 0;
 }
-.lain-kanji { font-size: 6.8px; font-weight: 800; color: #4338ca; letter-spacing: 0.5px; }
-.lain-quote-text { font-size: 6.2px; font-style: italic; color: #334155; line-height: 1.2; font-weight: 600; }
-.specs-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 3px; margin: 1px 0 2px 0; }
-.spec-cell {
+.reverso-sheet-card .lain-kanji, .reverso-sheet-page .lain-kanji { font-size: 6.8px; font-weight: 800; color: #4338ca; letter-spacing: 0.5px; }
+.reverso-sheet-card .lain-quote-text, .reverso-sheet-page .lain-quote-text { font-size: 6.2px; font-style: italic; color: #334155; line-height: 1.2; font-weight: 600; }
+.reverso-sheet-card .specs-grid, .reverso-sheet-page .specs-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 3px; margin: 1px 0 2px 0; }
+.reverso-sheet-card .spec-cell, .reverso-sheet-page .spec-cell {
   background: #ffffff; border: 1px solid #cbd5e1; border-radius: 3px;
   padding: 2px 4px; display: flex; flex-direction: column; gap: 0.5px;
 }
-.spec-k { font-family: 'JetBrains Mono', monospace; font-size: 5px; font-weight: 800; color: #64748b; letter-spacing: 0.4px; }
-.spec-v { font-family: 'JetBrains Mono', monospace; font-size: 6.2px; font-weight: 900; color: #0f172a; line-height: 1.1; }
-.lain-footer {
+.reverso-sheet-card .spec-k, .reverso-sheet-page .spec-k { font-family: 'JetBrains Mono', monospace; font-size: 5px; font-weight: 800; color: #64748b; letter-spacing: 0.4px; }
+.reverso-sheet-card .spec-v, .reverso-sheet-page .spec-v { font-family: 'JetBrains Mono', monospace; font-size: 6.2px; font-weight: 900; color: #0f172a; line-height: 1.1; }
+.reverso-sheet-card .lain-footer, .reverso-sheet-page .lain-footer {
   display: flex; justify-content: space-between; align-items: flex-end;
   border-top: 1px dashed #cbd5e1; padding-top: 2.5px; margin-top: 1px;
 }
-.barcode-wrapper { display: flex; flex-direction: column; gap: 1.5px; }
-.vector-barcode { display: flex; align-items: flex-end; height: 12px; gap: 0px; }
-.b-line { display: inline-block; height: 100%; background: #0f172a; }
-.b-w1 { width: 1.2px; } .b-w2 { width: 2.2px; } .b-w3 { width: 3.2px; }
-.b-gap { display: inline-block; width: 1.2px; height: 100%; }
-.b-g2 { width: 2.2px; }
-.barcode-text { font-family: 'JetBrains Mono', monospace; font-size: 5.5px; font-weight: 800; color: #475569; letter-spacing: 0.6px; }
-.lain-seal-badge {
+.reverso-sheet-card .barcode-wrapper, .reverso-sheet-page .barcode-wrapper { display: flex; flex-direction: column; gap: 1.5px; }
+.reverso-sheet-card .vector-barcode, .reverso-sheet-page .vector-barcode { display: flex; align-items: flex-end; height: 12px; gap: 0px; }
+.reverso-sheet-card .b-line, .reverso-sheet-page .b-line { display: inline-block; height: 100%; background: #0f172a; }
+.reverso-sheet-card .b-w1, .reverso-sheet-page .b-w1 { width: 1.2px; }
+.reverso-sheet-card .b-w2, .reverso-sheet-page .b-w2 { width: 2.2px; }
+.reverso-sheet-card .b-w3, .reverso-sheet-page .b-w3 { width: 3.2px; }
+.reverso-sheet-card .b-gap, .reverso-sheet-page .b-gap { display: inline-block; width: 1.2px; height: 100%; }
+.reverso-sheet-card .b-g2, .reverso-sheet-page .b-g2 { width: 2.2px; }
+.reverso-sheet-card .barcode-text, .reverso-sheet-page .barcode-text { font-family: 'JetBrains Mono', monospace; font-size: 5.5px; font-weight: 800; color: #475569; letter-spacing: 0.6px; }
+.reverso-sheet-card .lain-seal-badge, .reverso-sheet-page .lain-seal-badge {
   border: 1px dashed #4f46e5; border-radius: 3px; padding: 1.5px 5px;
   text-align: center; background: #eef2ff; line-height: 1;
 }
-.seal-auth-line { font-family: 'JetBrains Mono', monospace; font-size: 4.8px; font-weight: 900; color: #3730a3; letter-spacing: 0.5px; }
-.seal-star-row { font-size: 4.5px; font-weight: 800; color: #4f46e5; margin: 1px 0; }
-.seal-org-line { font-family: 'JetBrains Mono', monospace; font-size: 4.8px; font-weight: 900; color: #1e1b4b; }
+.reverso-sheet-card .seal-auth-line, .reverso-sheet-page .seal-auth-line { font-family: 'JetBrains Mono', monospace; font-size: 4.8px; font-weight: 900; color: #3730a3; letter-spacing: 0.5px; }
+.reverso-sheet-card .seal-star-row, .reverso-sheet-page .seal-star-row { font-size: 4.5px; font-weight: 800; color: #4f46e5; margin: 1px 0; }
+.reverso-sheet-card .seal-org-line, .reverso-sheet-page .seal-org-line { font-family: 'JetBrains Mono', monospace; font-size: 4.8px; font-weight: 900; color: #1e1b4b; }
 
 /* ========================================================
    ESTILOS DE NAVEGACIÓN Y GESTIÓN DE CLIENTES EN ADMIN NOC

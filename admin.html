@@ -94,47 +94,67 @@
   <!-- PANEL DE ADMINISTRACIÓN COMPLETO (DESBLOQUEADO) -->
   <main class="main-container" id="admin-main-panel" style="display: none;">
     
-    <!-- STATS GENERALES -->
-    <div class="cyberpass-wrapper" style="margin-bottom: 2rem;">
-      <div class="lain-card">
-        <div class="tech-corner top-left">+</div>
-        <div class="tech-corner top-right">+</div>
-        <div class="tech-corner bottom-left">+</div>
-        <div class="tech-corner bottom-right">+</div>
+    <!-- DASHBOARD DE CONTROL NOC (MÉTRICAS Y TELEMETRÍA EN TIEMPO REAL) -->
+    <div class="noc-dashboard-card">
+      <div class="tech-corner top-left">+</div>
+      <div class="tech-corner top-right">+</div>
+      <div class="tech-corner bottom-left">+</div>
+      <div class="tech-corner bottom-right">+</div>
 
-        <div class="lain-header">
-          <div>
-            <span class="badge-navi">MELTYDEAYS · NOC MÉTRICAS</span>
-            <span class="badge-layer">ESTADO: EN LÍNEA</span>
+      <!-- Header Técnico Lain HUD -->
+      <div class="noc-hud-header">
+        <div class="noc-hud-title-col">
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <span class="noc-badge-main">MELTYDEAYS // NOC MONITOR</span>
+            <span class="noc-pulse-chip">
+              <span class="pulse-dot"></span> EN LÍNEA
+            </span>
           </div>
-          <div class="lain-os-tag">SISTEMA ATÓMICO OCC · FIRESTORE</div>
+          <div class="noc-sub-tag">TELEMETRÍA EN TIEMPO REAL · SERVIDOR FIRESTORE OCC</div>
+        </div>
+        <div class="noc-hud-right">
+          <div class="noc-telemetry-item">NODE: <strong>NCA-MGA-01</strong></div>
+          <div class="noc-telemetry-item">LATENCY: <strong>18ms</strong></div>
+          <div class="noc-telemetry-item">OCC: <strong>ACTIVE</strong></div>
+        </div>
+      </div>
+
+      <!-- Grid de 6 Tarjetas de Métricas -->
+      <div class="noc-stats-grid">
+        <div class="noc-stat-box">
+          <div class="noc-stat-label">PUNTOS EN CIRCULACIÓN</div>
+          <div class="noc-stat-val" id="stat-points-circ">0</div>
+          <div class="noc-stat-sub">Saldo total activo de socios</div>
         </div>
 
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; margin-top: 1rem;">
-          <div>
-            <div style="font-size: 0.72rem; font-family: var(--font-mono); color: var(--gray-500); font-weight: 700;">PUNTOS EN CIRCULACIÓN</div>
-            <div id="stat-points-circ" style="font-size: 1.8rem; font-weight: 900; color: var(--dark); font-family: var(--font-mono);">0</div>
-          </div>
-          <div>
-            <div style="font-size: 0.72rem; font-family: var(--font-mono); color: var(--gray-500); font-weight: 700;">SOCIOS REGISTRADOS</div>
-            <div id="stat-users-count" style="font-size: 1.8rem; font-weight: 900; color: #4338ca; font-family: var(--font-mono);">0</div>
-          </div>
-          <div>
-            <div style="font-size: 0.72rem; font-family: var(--font-mono); color: var(--gray-500); font-weight: 700;">VALES PENDIENTES MOSTRADOR</div>
-            <div id="stat-vouchers-pending" style="font-size: 1.8rem; font-weight: 900; color: var(--accent); font-family: var(--font-mono);">0</div>
-          </div>
-          <div>
-            <div style="font-size: 0.72rem; font-family: var(--font-mono); color: var(--gray-500); font-weight: 700;">VALES ENTREGADOS</div>
-            <div id="stat-vouchers-delivered" style="font-size: 1.8rem; font-weight: 900; color: #059669; font-family: var(--font-mono);">0</div>
-          </div>
-          <div>
-            <div style="font-size: 0.72rem; font-family: var(--font-mono); color: var(--gray-500); font-weight: 700;">PRODUCTOS EN CATÁLOGO</div>
-            <div id="stat-catalog-count" style="font-size: 1.8rem; font-weight: 900; color: var(--dark); font-family: var(--font-mono);">0</div>
-          </div>
-          <div>
-            <div style="font-size: 0.72rem; font-family: var(--font-mono); color: var(--gray-500); font-weight: 700;">TOKENS FACTURAS GENERADOS</div>
-            <div id="stat-tokens-count" style="font-size: 1.8rem; font-weight: 900; color: var(--dark); font-family: var(--font-mono);">0</div>
-          </div>
+        <div class="noc-stat-box accent-indigo">
+          <div class="noc-stat-label">SOCIOS REGISTRADOS</div>
+          <div class="noc-stat-val text-indigo" id="stat-users-count">0</div>
+          <div class="noc-stat-sub">Clientes en base de datos</div>
+        </div>
+
+        <div class="noc-stat-box accent-amber">
+          <div class="noc-stat-label">VALES PENDIENTES</div>
+          <div class="noc-stat-val text-amber" id="stat-vouchers-pending">0</div>
+          <div class="noc-stat-sub">Por despachar en mostrador</div>
+        </div>
+
+        <div class="noc-stat-box accent-emerald">
+          <div class="noc-stat-label">VALES ENTREGADOS</div>
+          <div class="noc-stat-val text-emerald" id="stat-vouchers-delivered">0</div>
+          <div class="noc-stat-sub">Canjes completados con éxito</div>
+        </div>
+
+        <div class="noc-stat-box">
+          <div class="noc-stat-label">PRODUCTOS EN CATÁLOGO</div>
+          <div class="noc-stat-val" id="stat-catalog-count">0</div>
+          <div class="noc-stat-sub">Premios físicos en stock</div>
+        </div>
+
+        <div class="noc-stat-box">
+          <div class="noc-stat-label">TOKENS FACTURA 4X1</div>
+          <div class="noc-stat-val" id="stat-tokens-count">0</div>
+          <div class="noc-stat-sub">Folios con QR generados</div>
         </div>
       </div>
     </div>
@@ -309,7 +329,9 @@
               Cerrar Ficha
             </button>
           </div>
-    </div>
+        </div>
+      </div>
+      </div>
     </div>
 
     <!-- SECCIÓN 2: GESTIÓN DE CLIENTES / SOCIOS WIRED -->
