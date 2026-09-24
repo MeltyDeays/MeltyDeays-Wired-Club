@@ -107,17 +107,40 @@ export class AdminViewModel {
     return voucher;
   }
 
-  async generateLot(startFolio, count, pointsPerQr) {
+  async verifyToken(tokenCode) {
+    let clean = (tokenCode || "").trim().toUpperCase();
+    if (clean.includes("CLAIM=")) {
+      clean = clean.split("CLAIM=")[1].split("&")[0].trim().toUpperCase();
+    }
+    const raw = await FirestoreService.getToken(clean);
+    if (!raw) return null;
+    return new TokenModel(raw);
+  }
+
+  async assignTokenPoints(tokenCode, points, cashierUid = "admin_melty") {
+    const token = await this.verifyToken(tokenCode);
+    if (!token) throw new Error("El código de factura [" + tokenCode + "] no existe.");
+    if (token.isClaimed()) {
+      throw new Error("Esta factura ya fue reclamada el " + new Date(token.claimedAt).toLocaleString());
+    }
+    token.assignPoints(points, cashierUid);
+    await FirestoreService.saveToken(token.toJSON());
+    await this.refreshData();
+    return token;
+  }
+
+  async generateLot(startFolio, count, pointsPerQr = 0) {
     const sFolio = Number(startFolio) || 104;
     const nTokens = Number(count) || 4;
-    const points = Number(pointsPerQr) || 100;
+    const points = Number(pointsPerQr) || 0;
     const batchId = "BATCH-" + Date.now();
     const created = [];
 
     for (let i = 0; i < nTokens; i++) {
       const folio = String(sFolio + i).padStart(4, "0");
       const hash = Math.random().toString(36).substring(2, 6).toUpperCase() + 
-                   Math.random().toString(36).substring(2, 6).toUpperCase();
+                   Math.random().toString(36).substring(2, 6).toUpperCase() +
+                   Date.now().toString(36).substring(4, 7).toUpperCase();
       const code = "WP-2026-F" + folio + "-" + hash;
       const pin = Math.floor(1000 + Math.random() * 9000).toString();
 
@@ -127,7 +150,7 @@ export class AdminViewModel {
         invoiceFolio: folio,
         pointsValue: points,
         securityPin: pin,
-        status: "ACTIVE"
+        status: points > 0 ? "ACTIVE" : "PENDING_ASSIGNMENT"
       });
 
       await FirestoreService.saveToken(token.toJSON());

@@ -85,6 +85,7 @@
                style="text-align: center; font-size: 1.6rem; letter-spacing: 6px; font-family: var(--font-mono); font-weight: 800;">
       </div>
 
+      <div id="lock-feedback" class="pos-feedback-banner error" style="display: none; margin-bottom: 1rem;"></div>
       <button class="btn-primary" style="width: 100%;" onclick="submitAdminPin()">Desbloquear Panel</button>
       
     </div>
@@ -131,32 +132,155 @@
     </div>
 
     <!-- MÓDULO 1: TERMINAL 1-SCAN POS DE ENTREGA EN MOSTRADOR -->
-    <div class="admin-section">
+    <div class="admin-section pos-terminal-section">
       <div class="admin-section-header">
-        <h2>⚡ Terminal de Mostrador (1-Scan POS)</h2>
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+          <h2>⚡ Terminal de Mostrador (1-Scan POS)</h2>
+          <span class="pos-status-badge">
+            <span class="pulse-dot"></span> MODO ESCÁNER ACTIVO
+          </span>
+        </div>
+        <div style="font-family: var(--font-mono); font-size: 0.72rem; color: var(--gray-500); font-weight: 700;">
+          LECTOR DE CÓDIGO DE BARRAS & QR
+        </div>
       </div>
+
       <p style="color: var(--gray-700); font-size: 0.85rem; margin-bottom: 1.25rem;">
-        Escanea con la pistola o escribe el código de canje presentado por el cliente (ej. <code>CANJE-4891</code>) para validar su autenticidad y despachar el artículo.
+        Escanea con la pistola lectora o digita el código de canje del cliente (ej. <code>CANJE-4891</code>). El sistema valida al instante contra Firestore OCC para confirmar autenticidad y prevenir duplicados.
       </p>
 
-      <div style="display: flex; gap: 0.75rem; max-width: 520px;">
-        <input type="text" id="input-scan-voucher" class="form-input" placeholder="Ej: CANJE-4891" style="font-size: 1rem; text-transform: uppercase; font-family: var(--font-mono); font-weight: 700;" onkeydown="if(event.key==='Enter') verifyVoucherAdmin()">
-        <button class="btn-primary" onclick="verifyVoucherAdmin()">Validar Vale</button>
+      <!-- ÁREA DE ENTRADA DEL ESCÁNER -->
+      <div class="pos-scanner-box">
+        <div class="pos-input-group" id="pos-input-group-wrapper">
+          <div class="pos-input-prefix">⌕ VALE:</div>
+          <input type="text" id="input-scan-voucher" class="pos-scanner-input" placeholder="CANJE-XXXX" maxlength="20"
+                 onkeydown="if(event.key==='Enter') verifyVoucherAdmin()"
+                 oninput="clearPosFeedback()">
+          <button class="btn-primary pos-btn-scan" onclick="verifyVoucherAdmin()">
+            ⚡ Validar Vale
+          </button>
+          <button class="btn-secondary" style="border-radius:0; border:none; border-left:1px solid #cbd5e1; padding:0 0.85rem;" onclick="clearPosScanner()" title="Limpiar campo">
+            ✕
+          </button>
+        </div>
+
+        <!-- Feedback Visual Inline (Cero Alertas del Navegador) -->
+        <div id="pos-feedback" class="pos-feedback-banner" style="display: none;"></div>
       </div>
 
-      <!-- Cuadro de Validación -->
-      <div id="scan-result-box" style="display: none; padding: 1.25rem; background: #f8fafc; border: 1.5px solid var(--dark); border-radius: 4px; margin-top: 1.25rem; max-width: 520px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
-          <strong id="scan-res-code" style="font-family: var(--font-mono); font-size: 1.2rem; color: var(--dark);">CANJE-0000</strong>
-          <span id="scan-res-status"></span>
+      <!-- Cuadro de Validación de Despacho Técnico (Vales) -->
+      <div id="scan-result-box" class="dispatch-ticket-card" style="display: none;">
+        <div class="tech-corner top-left">+</div>
+        <div class="tech-corner top-right">+</div>
+        <div class="tech-corner bottom-left">+</div>
+        <div class="tech-corner bottom-right">+</div>
+
+        <div class="dispatch-header">
+          <div>
+            <span class="badge-navi">VALE VERIFICADO // POS MOSTRADOR</span>
+            <div id="scan-res-code" class="dispatch-code-title">CANJE-0000</div>
+          </div>
+          <div id="scan-res-status-wrap">
+            <span id="scan-res-status" class="dispatch-status-pill"></span>
+          </div>
         </div>
-        <div style="font-size: 0.85rem; color: var(--gray-700); line-height: 1.6;">
-          <div>Artículo: <strong id="scan-res-product" style="color: var(--dark);">-</strong></div>
-          <div>Cliente: <strong id="scan-res-client" style="color: var(--dark);">-</strong></div>
-          <div>Puntos Canjeados: <strong id="scan-res-points" style="color: var(--dark);">-</strong></div>
+
+        <div class="dispatch-grid">
+          <div class="dispatch-item">
+            <div class="dispatch-label">ARTÍCULO A ENTREGAR</div>
+            <div id="scan-res-product" class="dispatch-val-highlight">-</div>
+          </div>
+          <div class="dispatch-item">
+            <div class="dispatch-label">SOCIO TITULAR</div>
+            <div id="scan-res-client" class="dispatch-val">-</div>
+          </div>
+          <div class="dispatch-item">
+            <div class="dispatch-label">PUNTOS CANJEADOS</div>
+            <div id="scan-res-points" class="dispatch-val-points">-</div>
+          </div>
+          <div class="dispatch-item">
+            <div class="dispatch-label">FECHA DE EMISIÓN</div>
+            <div id="scan-res-date" class="dispatch-val">-</div>
+          </div>
         </div>
-        <div style="margin-top: 1rem;">
-          <button id="btn-confirm-delivery" class="btn-primary" onclick="confirmDeliveryAdmin()">✓ Despachar y Entregar Artículo</button>
+
+        <div class="dispatch-actions">
+          <button id="btn-confirm-delivery" class="btn-primary btn-dispatch-action" onclick="confirmDeliveryAdmin()">
+            ✓ Despachar y Entregar Artículo (Confirmar Salida)
+          </button>
+          <button class="btn-secondary" onclick="closePosResult()">
+            Cerrar Ficha
+          </button>
+        </div>
+      </div>
+
+      <!-- Cuadro de Asignación y Carga de Puntos a Factura (Escaneo en Mostrador) -->
+      <div id="scan-invoice-box" class="dispatch-ticket-card" style="display: none;">
+        <div class="tech-corner top-left">+</div>
+        <div class="tech-corner top-right">+</div>
+        <div class="tech-corner bottom-left">+</div>
+        <div class="tech-corner bottom-right">+</div>
+
+        <div class="dispatch-header">
+          <div>
+            <span class="badge-navi">FACTURA DETECTADA // CARGA DE PUNTOS EN MOSTRADOR</span>
+            <div id="scan-inv-code" class="dispatch-code-title">WP-2026-F0104-XXXX</div>
+          </div>
+          <div id="scan-inv-status-wrap">
+            <span id="scan-inv-status" class="dispatch-status-pill"></span>
+          </div>
+        </div>
+
+        <div class="dispatch-grid">
+          <div class="dispatch-item">
+            <div class="dispatch-label">Nº DE FACTURA FÍSICA</div>
+            <div id="scan-inv-folio" class="dispatch-val-highlight">#MD-2026-0104</div>
+          </div>
+          <div class="dispatch-item">
+            <div class="dispatch-label">PIN DE SEGURIDAD (EN REVERSO)</div>
+            <div id="scan-inv-pin" class="dispatch-val" style="font-family: var(--font-mono); font-size: 1.15rem; font-weight: 900; letter-spacing: 2px;">••••</div>
+          </div>
+          <div class="dispatch-item">
+            <div class="dispatch-label">ESTADO ACTUAL</div>
+            <div id="scan-inv-points-current" class="dispatch-val-points">0 WP</div>
+          </div>
+          <div class="dispatch-item">
+            <div class="dispatch-label">FECHA DE GENERACIÓN</div>
+            <div id="scan-inv-date" class="dispatch-val">Hoy</div>
+          </div>
+        </div>
+
+        <!-- ÁREA DE ASIGNACIÓN DE PUNTOS (CERO POPUPS) -->
+        <div id="scan-inv-assign-area" style="background: #f8fafc; border: 1.5px dashed var(--dark); padding: 1.15rem; border-radius: 6px; margin-top: 1.25rem;">
+          <label class="form-label" style="display: block; margin-bottom: 0.5rem; font-size: 0.85rem; font-weight: 800;">
+            ⚡ DESIGNAR PUNTOS PARA ESTA FACTURA (ANTES DE ENTREGAR AL CLIENTE):
+          </label>
+          <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; margin-bottom: 0.85rem;">
+            <div style="display: flex; align-items: center; gap: 0.4rem;">
+              <input type="number" id="input-assign-points" class="form-input" placeholder="100" min="1" max="100000"
+                     style="max-width: 160px; text-align: center; font-size: 1.35rem; font-weight: 900; font-family: var(--font-mono); padding: 0.4rem 0.6rem;"
+                     onkeydown="if(event.key==='Enter') submitAssignPoints()">
+              <span style="font-family: var(--font-mono); font-weight: 900; font-size: 1.1rem; color: var(--accent);">WP</span>
+            </div>
+            
+            <!-- Botones de Carga Rápida -->
+            <div style="display: flex; gap: 0.35rem; margin-left: auto; flex-wrap: wrap;">
+              <button type="button" class="btn-secondary" style="padding: 4px 8px; font-size: 0.72rem;" onclick="setQuickPoints(50)">+50 WP</button>
+              <button type="button" class="btn-secondary" style="padding: 4px 8px; font-size: 0.72rem;" onclick="setQuickPoints(100)">+100 WP</button>
+              <button type="button" class="btn-secondary" style="padding: 4px 8px; font-size: 0.72rem;" onclick="setQuickPoints(150)">+150 WP</button>
+              <button type="button" class="btn-secondary" style="padding: 4px 8px; font-size: 0.72rem;" onclick="setQuickPoints(200)">+200 WP</button>
+              <button type="button" class="btn-secondary" style="padding: 4px 8px; font-size: 0.72rem;" onclick="setQuickPoints(500)">+500 WP</button>
+            </div>
+          </div>
+
+          <div class="dispatch-actions" style="margin-top: 0.75rem;">
+            <button id="btn-save-inv-points" class="btn-primary btn-dispatch-action" onclick="submitAssignPoints()">
+              ⚡ Guardar Puntos y Activar Factura (Listo para entregar)
+            </button>
+            <button type="button" class="btn-secondary" onclick="closePosResult()">
+              Cerrar Ficha
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -187,49 +311,218 @@
       </div>
     </div>
 
-    <!-- MÓDULO 3: GENERADOR DE LOTES PARA FACTURA 4X1 -->
+    <!-- MÓDULO 3: GENERADOR DE QRS Y REVERSOS PARA FACTURA 4X1 -->
     <div class="admin-section">
       <div class="admin-section-header">
-        <h2>🖨️ Generador de QRs para Factura 4x1 (Reverso)</h2>
+        <div>
+          <h2>🖨️ Generador de Facturas 4x1 (Anverso Oficial + Contraportada Coleccionable)</h2>
+          <div style="font-size: 0.8rem; color: var(--gray-500); font-family: var(--font-mono); margin-top: 2px;">
+            SISTEMA DE FACTURACIÓN & FIDELIZACIÓN INTEGRADA · THE WIRED CLUB
+          </div>
+        </div>
+        <span class="badge-layer">FORMATO: 4 FACTURAS DOBLE CARA POR PLIEGO</span>
       </div>
-      <p style="color: var(--gray-700); font-size: 0.85rem; margin-bottom: 1.25rem;">
-        Genera códigos sincronizados con los folios de tus facturas para imprimirlos en el reverso coleccionable de la hoja A4.
-      </p>
 
-      <div class="form-grid">
+      <!-- GUÍA CLARA: FUNCIÓN Y FLUJO DE LAS FACTURAS Y QR -->
+      <div class="qr-explainer-banner">
+        <div class="qr-step-card">
+          <div class="qr-step-num">01</div>
+          <div class="qr-step-text">
+            <strong>Facturas Físicas Oficiales</strong>
+            <span>Cada pliego imprime el anverso oficial de venta (folio físico) y la contraportada artística temática Lain.</span>
+          </div>
+        </div>
+        <div class="qr-step-card">
+          <div class="qr-step-num">02</div>
+          <div class="qr-step-text">
+            <strong>QR Único y PIN Aleatorio</strong>
+            <span>Cada reverso genera un QR dinámico irrepetible con su PIN de seguridad aleatorio visible debajo del código.</span>
+          </div>
+        </div>
+        <div class="qr-step-card">
+          <div class="qr-step-num">03</div>
+          <div class="qr-step-text">
+            <strong>Carga en Mostrador</strong>
+            <span>Al entregar la compra, escaneas el QR en el Mostrador para asignar los puntos de la venta antes de dárselo al cliente.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- FORMULARIO DE GENERACIÓN DE FACTURAS -->
+      <div class="form-grid" style="grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));">
         <div class="form-group">
           <label class="form-label">Folio Inicial de Factura</label>
-          <input type="number" id="lot-start-folio" class="form-input" value="104">
+          <input type="number" id="lot-start-folio" class="form-input" value="104" placeholder="104">
         </div>
         <div class="form-group">
-          <label class="form-label">Cantidad de QRs (1 hoja = 4)</label>
-          <input type="number" id="lot-count" class="form-input" value="4">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Puntos por Factura</label>
-          <input type="number" id="lot-points" class="form-input" value="100">
+          <label class="form-label">Cantidad de Facturas (1 Pliego = 4)</label>
+          <input type="number" id="lot-count" class="form-input" value="4" min="1" max="100">
         </div>
       </div>
 
-      <button class="btn-primary" onclick="generateBatchAdmin()">Generar Lote de Tokens</button>
+      <!-- ESPECIFICACIÓN DEL TAMAÑO DE HOJA Y MEDIDAS (DESACOPLADO) -->
+      <div class="paper-setup-card">
+        <div class="paper-setup-header">
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <span class="badge-navi">CALIBRACIÓN DE IMPRESIÓN</span>
+            <strong style="font-size: 0.85rem; color: var(--dark);">Formato de Hoja para Impresora</strong>
+          </div>
+          <span class="paper-auto-badge">📐 AUTO-ESCALADO 4X1</span>
+        </div>
 
+        <div class="paper-setup-grid">
+          <!-- Selector de tamaño predeterminado -->
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label">Tamaño de Hoja de Impresión</label>
+            <select id="lot-paper-size" class="form-select" onchange="toggleCustomPaperInputs()">
+              <option value="letter" selected>Carta (Letter - 8.5" × 11" / 215.9 × 279.4 mm) [Recomendado]</option>
+              <option value="a4">A4 (210 × 297 mm) [Estándar Internacional]</option>
+              <option value="legal">Oficio / Legal (8.5" × 14" / 215.9 × 355.6 mm)</option>
+              <option value="custom">Personalizado (Medida manual exacta en mm)</option>
+            </select>
+            <div style="font-size: 0.72rem; color: var(--gray-700); margin-top: 0.25rem;">
+              La hoja se adaptará para alinear exactamente el anverso con el reverso coleccionable.
+            </div>
+          </div>
+
+          <!-- Campos para tamaño personalizado (solo visible si se elige Personalizado) -->
+          <div id="custom-paper-fields" class="custom-paper-box" style="display: none;">
+            <div class="form-group" style="flex: 1; min-width: 90px; margin-bottom: 0;">
+              <label class="form-label">Ancho (mm)</label>
+              <input type="number" id="custom-paper-width" class="form-input" value="216" placeholder="216" min="50" max="1000">
+            </div>
+            <div class="custom-paper-multiply">×</div>
+            <div class="form-group" style="flex: 1; min-width: 90px; margin-bottom: 0;">
+              <label class="form-label">Alto (mm)</label>
+              <input type="number" id="custom-paper-height" class="form-input" value="279" placeholder="279" min="50" max="1000">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- BARRA DE ACCIÓN DEDICADA DEL GENERADOR (CERO SUPERPOSICIONES) -->
+      <div class="generator-action-bar">
+        <div class="generator-summary-tag">
+          <span style="font-weight: 800; color: var(--dark);">⚡ PRODUCCIÓN DE FACTURAS 4X1:</span>
+          <span>Imprime facturas físicas con QR en blanco para activar en caja al momento de la venta.</span>
+        </div>
+        <div class="generator-btn-group">
+          <button class="btn-secondary" id="btn-quick-preview-sheet" onclick="openPrintSheetModal()">
+            👁️ Previsualizar Facturas 4x1
+          </button>
+          <button class="btn-primary" onclick="generateBatchAdmin()" style="font-size: 0.85rem; padding: 0.65rem 1.25rem;">
+            ⚡ Generar Lote de Facturas
+          </button>
+          <button class="btn-secondary" id="btn-print-active-sheet" onclick="openPrintSheetModal()" style="font-size: 0.85rem; padding: 0.65rem 1.25rem;">
+            🖨️ Imprimir Facturas 4x1 (Doble Cara)
+          </button>
+        </div>
+      </div>
+
+      <!-- TABLA DE TOKENS REGISTRADOS -->
       <div class="table-responsive" style="margin-top: 1.5rem;">
         <table class="admin-table">
           <thead>
             <tr>
               <th>Código Token</th>
               <th>Folio Factura</th>
-              <th>Valor WP</th>
+              <th>Puntos Asignados</th>
               <th>PIN Seguridad</th>
               <th>Estado</th>
+              <th style="text-align: right;">Acciones</th>
             </tr>
           </thead>
           <tbody id="tokens-table-body"></tbody>
         </table>
       </div>
     </div>
-
   </main>
+
+  <!-- MODAL: PREVISUALIZACIÓN E IMPRESIÓN DEL PLIEGO 4X1 -->
+  <div id="modal-print-sheet" class="modal-overlay" style="display: none; padding: 12px;">
+    <div class="modal-content" style="max-width: 900px; width: 95%; max-height: 94vh; overflow-y: auto; text-align: left; padding: 1.5rem;">
+      <button class="modal-close-btn" onclick="closeModal('modal-print-sheet')" aria-label="Cerrar">&times;</button>
+      
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--dark); padding-bottom: 0.75rem; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+        <div>
+          <span class="badge-navi">PLIEGO 4X1 // FACTURACIÓN & FIDELIZACIÓN</span>
+          <h3 style="font-size: 1.2rem; font-weight: 900; color: var(--dark); margin-top: 4px;">Previsualización de Facturas 4x1</h3>
+        </div>
+        <div style="display: flex; gap: 0.5rem; align-items: center;">
+          <button class="btn-primary" onclick="triggerNativeSheetPrint()">🖨️ Enviar a Imprimir</button>
+          <button class="btn-secondary" onclick="closeModal('modal-print-sheet')">Cerrar</button>
+        </div>
+      </div>
+
+      <!-- Selector de Modo de Impresión y Tamaño de Papel dentro del Modal -->
+      <div style="display: flex; gap: 1rem; align-items: center; background: #f1f5f9; padding: 0.65rem 1rem; border: 1.5px solid var(--dark); border-radius: 6px; margin-bottom: 1.25rem; flex-wrap: wrap;">
+        <div style="display: flex; align-items: center; gap: 0.4rem;">
+          <span style="font-family: var(--font-mono); font-size: 0.75rem; font-weight: 800; color: var(--gray-700);">CARAS A IMPRIMIR:</span>
+          <select id="print-duplex-mode" class="form-select" style="font-size: 0.8rem; padding: 0.35rem 0.6rem;" onchange="updatePreviewSheetDimensions()">
+            <option value="both" selected>Doble Cara (Anverso Facturas + Contraportada Lain)</option>
+            <option value="front">Solo Anverso (4 Facturas Oficiales)</option>
+            <option value="back">Solo Contraportada (4 Reversos Lain con QR y PIN)</option>
+          </select>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 0.4rem;">
+          <span style="font-family: var(--font-mono); font-size: 0.75rem; font-weight: 800; color: var(--gray-700);">TAMAÑO DE HOJA:</span>
+          <select id="preview-paper-size" class="form-select" style="font-size: 0.8rem; padding: 0.35rem 0.6rem;" onchange="updatePreviewSheetDimensions()">
+            <option value="letter" selected>Carta (Letter - 8.5" × 11" / 215.9 × 279.4 mm)</option>
+            <option value="a4">A4 (210 × 297 mm)</option>
+            <option value="legal">Oficio / Legal (8.5" × 14" / 215.9 × 355.6 mm)</option>
+            <option value="custom">Personalizado (especificar mm)</option>
+          </select>
+        </div>
+        
+        <div id="preview-custom-dims" style="display: none; gap: 0.4rem; align-items: center;">
+          <input type="number" id="preview-custom-w" class="form-input" value="216" style="width: 80px; font-size: 0.78rem; padding: 0.35rem 0.5rem;" oninput="updatePreviewSheetDimensions()">
+          <span>×</span>
+          <input type="number" id="preview-custom-h" class="form-input" value="279" style="width: 80px; font-size: 0.78rem; padding: 0.35rem 0.5rem;" oninput="updatePreviewSheetDimensions()">
+          <span style="font-family: var(--font-mono); font-size: 0.75rem;">mm</span>
+        </div>
+
+        <div id="preview-dims-label" style="font-family: var(--font-mono); font-size: 0.75rem; font-weight: 800; color: var(--primary); margin-left: auto;">
+          Carta: 215.9 mm × 279.4 mm
+        </div>
+      </div>
+
+      <!-- Contenedor del pliego con 4 tarjetas -->
+      <div class="sheet-preview-scroll-wrapper">
+        <div id="reverso-sheet-container" class="reverso-sheet-page">
+          <div class="reverso-cut-guide">✂ CORTE 4X1</div>
+          <!-- 4 cuadrantes reverso -->
+          <div class="reverso-sheet-card" id="card-slot-0"></div>
+          <div class="reverso-sheet-card" id="card-slot-1"></div>
+          <div class="reverso-sheet-card" id="card-slot-2"></div>
+          <div class="reverso-sheet-card" id="card-slot-3"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: VISUALIZACIÓN DE QR INDIVIDUAL -->
+  <div id="modal-single-qr" class="modal-overlay" style="display: none;">
+    <div class="modal-content" style="max-width: 420px; text-align: center;">
+      <button class="modal-close-btn" onclick="closeModal('modal-single-qr')" aria-label="Cerrar">&times;</button>
+      <span class="badge-navi">TOKEN OFICIAL DE FACTURA</span>
+      <h3 id="single-qr-folio" style="font-size: 1.25rem; font-weight: 900; color: var(--dark); margin: 0.5rem 0 0.25rem 0;">Factura #MD-2026-0104</h3>
+      <p style="font-size: 0.8rem; color: var(--gray-700); margin-bottom: 1rem;">
+        Valor: <strong id="single-qr-points" style="color:var(--dark);">100 WP</strong> · PIN: <strong id="single-qr-pin" style="font-family:var(--font-mono);">0000</strong>
+      </p>
+
+      <div id="single-qr-canvas" style="display: flex; justify-content: center; margin: 1rem 0;"></div>
+      
+      <div id="single-qr-code" style="font-family: var(--font-mono); font-size: 1rem; font-weight: 900; color: var(--dark); margin-bottom: 0.5rem;">
+        WP-2026-F0104-XXXX
+      </div>
+
+      <div style="margin-top: 1rem; display: flex; gap: 0.5rem;">
+        <button class="btn-secondary" style="flex: 1;" onclick="copySingleQrUrl()">Copiar Enlace</button>
+        <button class="btn-primary" style="flex: 1;" onclick="testSingleQrUrl()">Probar Auto-Reclamo</button>
+      </div>
+    </div>
+  </div>
 
   <!-- MODAL: AGREGAR PRODUCTO AL CATÁLOGO -->
   <div id="modal-new-product" class="modal-overlay" style="display: none;">
@@ -267,6 +560,7 @@
   </div>
 
   <!-- CONTROLADOR MVVM -->
+  <div id="toast-container" class="toast-container"></div>
   <script type="module" src="./js/admin-app.js"></script>
 </body>
 </html>

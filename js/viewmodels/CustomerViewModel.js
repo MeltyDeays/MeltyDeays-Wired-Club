@@ -141,6 +141,10 @@ export class CustomerViewModel {
       throw new Error("Este código de puntos ya fue utilizado.");
     }
 
+    if (token.isPendingAssignment() || token.pointsValue <= 0) {
+      throw new Error("Esta factura aún no ha sido activada en caja. Solicita en mostrador la asignación de tus puntos.");
+    }
+
     if (token.securityPin && pin && token.securityPin !== pin.trim()) {
       throw new Error("El PIN de seguridad impreso en la factura es incorrecto.");
     }

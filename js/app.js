@@ -3,6 +3,43 @@ import { CustomerViewModel } from "./viewmodels/CustomerViewModel.js";
 
 const vm = new CustomerViewModel();
 
+// SISTEMA TOAST MODERNO (CERO ALERTAS MOLESTAS DE NAVEGADOR)
+export function showToast(message, type = "info") {
+  const container = document.getElementById("toast-container");
+  if (!container) return;
+
+  const icons = {
+    success: "✓",
+    error: "✕",
+    info: "⚡"
+  };
+
+  const toast = document.createElement("div");
+  toast.className = "toast " + type;
+  toast.innerHTML = `<span style="font-weight:900; font-size:1rem;">${icons[type] || '•'}</span><span>${message}</span>`;
+  container.appendChild(toast);
+
+  setTimeout(() => {
+    toast.style.opacity = "0";
+    toast.style.transform = "translateY(10px)";
+    setTimeout(() => toast.remove(), 300);
+  }, 3500);
+}
+
+function setAuthFeedback(message, type = "info") {
+  const banner = document.getElementById("auth-feedback");
+  if (!banner) return;
+  if (!message) {
+    banner.style.display = "none";
+    banner.textContent = "";
+    banner.className = "auth-feedback-banner";
+  } else {
+    banner.className = "auth-feedback-banner " + type;
+    banner.textContent = message;
+    banner.style.display = "block";
+  }
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   // Suscribirse a cambios en el ViewModel
   vm.subscribe(render);
@@ -27,6 +64,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   window.showVoucherModal = showVoucherModal;
   window.closeVoucherModal = closeVoucherModal;
+  window.showToast = showToast;
 
   // Iniciar ViewModel
   vm.init();
@@ -61,15 +99,15 @@ function render(model) {
     if (passName) passName.textContent = user.displayName;
     if (passPhone) passPhone.textContent = user.phone || "Sin Teléfono";
     if (passBalance) passBalance.textContent = user.wiredPoints.toLocaleString();
-    if (passTier) passTier.textContent = user.tier;
-    if (passMemberId) passMemberId.textContent = user.memberCode;
+    if (passTier) passTier.textContent = user.tier || "NAVI_USER";
+    if (passMemberId) passMemberId.textContent = "● " + user.memberCode;
     renderUserQr(user.memberCode);
   } else {
     if (passName) passName.textContent = "Socio Invitado";
     if (passPhone) passPhone.textContent = "Inicia sesión con tu WhatsApp";
     if (passBalance) passBalance.textContent = "0";
     if (passTier) passTier.textContent = "NAVI_GUEST";
-    if (passMemberId) passMemberId.textContent = "MC-INVITADO";
+    if (passMemberId) passMemberId.textContent = "● MC-INVITADO";
     renderUserQr("MELTY-WIRED-CLUB-GUEST");
   }
 
@@ -99,12 +137,23 @@ function renderCatalog(catalog, user) {
 
   if (catalog.length === 0) {
     container.innerHTML = `
-      <div class="empty-state-box" style="grid-column: 1 / -1; text-align: center; padding: 3rem 1.5rem; background: var(--white); border: 2px dashed var(--gray-300);">
-        <div style="font-size: 2.5rem; margin-bottom: 0.75rem;">🔌</div>
-        <h3 style="font-size: 1.15rem; font-weight: 900; color: var(--dark); margin-bottom: 0.35rem;">Catálogo en Preparación</h3>
-        <p style="color: var(--gray-700); font-size: 0.85rem; max-width: 420px; margin: 0 auto;">
-          El administrador de MeltyDeays está configurando las recompensas disponibles. ¡Acumula tus Wired Points mientras tanto!
+      <div class="cyber-empty-box">
+        <div class="empty-icon-wrap">
+          <svg viewBox="0 0 24 24" width="34" height="34" stroke="currentColor" stroke-width="1.8" fill="none">
+            <rect x="2" y="3" width="20" height="14" rx="2" />
+            <line x1="8" y1="21" x2="16" y2="21" />
+            <line x1="12" y1="17" x2="12" y2="21" />
+            <path d="M7 8h10M7 12h6" stroke-dasharray="2 2" />
+          </svg>
+        </div>
+        <div class="empty-tag">COPLAND OS // STANDBY</div>
+        <h3 class="empty-title">Catálogo en Preparación</h3>
+        <p class="empty-desc">
+          El administrador de <strong>MeltyDeays</strong> está configurando las recompensas disponibles en vitrina. ¡Acumula tus Wired Points con tus compras mientras tanto!
         </p>
+        <button class="btn-primary" onclick="openClaimModal()" style="margin-top: 1.25rem;">
+          + Acreditar Factura de Compra
+        </button>
       </div>
     `;
     return;
@@ -119,7 +168,7 @@ function renderCatalog(catalog, user) {
         <div class="reward-img-wrap" style="${!item.imageUrl ? 'background: linear-gradient(135deg, #0d131f 0%, #17243b 100%); display:flex; align-items:center; justify-content:center;' : ''}">
           ${item.imageUrl 
             ? `<img src="${item.imageUrl}" alt="${item.title}" class="reward-img" onerror="this.onerror=null; this.src=''; this.parentElement.style.background='#0d131f';">`
-            : `<div style="text-align:center; padding:1rem;"><span style="font-size:2rem;">🎮</span><div style="font-family:var(--font-mono); font-size:0.7rem; color:var(--cyan); margin-top:4px;">TECH_REWARD</div></div>`
+            : `<div style="text-align:center; padding:1rem;"><span style="font-size:2rem;">🎁</span><div style="font-family:var(--font-mono); font-size:0.7rem; color:#38bdf8; margin-top:4px;">TECH_REWARD</div></div>`
           }
           <div class="stock-tag ${isOut ? 'out' : ''}">${isOut ? 'AGOTADO' : item.stock + ' DISP.'}</div>
         </div>
@@ -127,7 +176,7 @@ function renderCatalog(catalog, user) {
           <div class="reward-title">${item.title}</div>
           <div class="reward-desc">${item.description || 'Recompensa oficial MeltyDeays.'}</div>
           <div class="reward-footer">
-            <div class="reward-cost">${item.pointsCost.toLocaleString()} <span style="font-size:0.75rem;">WP</span></div>
+            <div class="reward-cost">${item.pointsCost.toLocaleString()} <span>WP</span></div>
             <button class="btn-redeem" ${isOut ? 'disabled' : ''} onclick="confirmRedeem('${item.id}')">
               ${isOut ? 'Agotado' : 'Canjear'}
             </button>
@@ -148,11 +197,17 @@ function renderVouchers(vouchers) {
 
   if (vouchers.length === 0) {
     container.innerHTML = `
-      <div class="empty-state-box" style="text-align: center; padding: 3rem 1.5rem; background: var(--white); border: 2px dashed var(--gray-300);">
-        <div style="font-size: 2.5rem; margin-bottom: 0.75rem;">🎟️</div>
-        <h3 style="font-size: 1.15rem; font-weight: 900; color: var(--dark); margin-bottom: 0.35rem;">No Tienes Vales Activos</h3>
-        <p style="color: var(--gray-700); font-size: 0.85rem; max-width: 420px; margin: 0 auto;">
-          Cuando canjees un producto en el catálogo, aquí aparecerá tu vale digital con QR para retirar en mostrador.
+      <div class="cyber-empty-box">
+        <div class="empty-icon-wrap" style="color: var(--accent); background: #fff1f2; border-color: #fecdd3;">
+          <svg viewBox="0 0 24 24" width="34" height="34" stroke="currentColor" stroke-width="1.8" fill="none">
+            <path d="M4 8V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2a2 2 0 0 0 0-4Z" />
+            <path d="M10 4v16M14 4v16" stroke-dasharray="2 2" />
+          </svg>
+        </div>
+        <div class="empty-tag">VALES // HISTORIAL VACÍO</div>
+        <h3 class="empty-title">No Tienes Vales Activos</h3>
+        <p class="empty-desc">
+          Cuando canjees un producto en el catálogo, aquí aparecerá tu vale digital con QR para retirar directamente en mostrador.
         </p>
       </div>
     `;
@@ -185,30 +240,42 @@ function renderLedger(ledger) {
 
   if (ledger.length === 0) {
     container.innerHTML = `
-      <div style="text-align: center; padding: 2rem; color: var(--gray-500); font-size: 0.85rem;">
-        No hay movimientos registrados en tu cuenta todavía.
+      <div class="cyber-empty-box">
+        <div class="empty-icon-wrap" style="color: #0284c7; background: #e0f2fe; border-color: #bae6fd;">
+          <svg viewBox="0 0 24 24" width="34" height="34" stroke="currentColor" stroke-width="1.8" fill="none">
+            <line x1="12" y1="20" x2="12" y2="10" />
+            <line x1="18" y1="20" x2="18" y2="4" />
+            <line x1="6" y1="20" x2="6" y2="16" />
+          </svg>
+        </div>
+        <div class="empty-tag">LEDGER // AUDITORÍA</div>
+        <h3 class="empty-title">Sin Movimientos Aún</h3>
+        <p class="empty-desc">
+          Aquí podrás consultar el historial contable de puntos acreditados por facturas y canjes realizados.
+        </p>
       </div>
     `;
     return;
   }
 
-  container.innerHTML = ledger.map(entry => {
-    const isCredit = entry.delta > 0;
-    return `
-      <div class="ledger-item">
-        <div class="ledger-icon" style="background: ${isCredit ? '#e0f2fe' : '#fee2e2'}; color: ${isCredit ? '#0369a1' : '#b91c1c'};">
-          ${isCredit ? '➕' : '➖'}
-        </div>
-        <div class="ledger-details">
-          <div class="ledger-note">${entry.note}</div>
-          <div class="ledger-time">${new Date(entry.created_at).toLocaleString()}</div>
-        </div>
-        <div class="ledger-amount" style="color: ${isCredit ? 'var(--dark)' : 'var(--red)'};">
-          ${isCredit ? '+' : ''}${entry.delta} WP
-        </div>
-      </div>
-    `;
-  }).join("");
+  container.innerHTML = `
+    <div class="ledger-list">
+      ${ledger.map(entry => {
+        const isCredit = entry.delta > 0;
+        return `
+          <div class="ledger-item">
+            <div class="ledger-info">
+              <h4>${entry.note || 'Movimiento de Wired Points'}</h4>
+              <div class="ledger-date">${new Date(entry.created_at).toLocaleString()}</div>
+            </div>
+            <div class="ledger-delta ${isCredit ? 'positive' : 'negative'}">
+              ${isCredit ? '+' : ''}${entry.delta} WP
+            </div>
+          </div>
+        `;
+      }).join("")}
+    </div>
+  `;
 }
 
 function renderUserQr(text) {
@@ -218,9 +285,9 @@ function renderUserQr(text) {
   try {
     new QRCode(el, {
       text: text,
-      width: 72,
-      height: 72,
-      colorDark: "#0d131f",
+      width: 76,
+      height: 76,
+      colorDark: "#0f172a",
       colorLight: "#ffffff",
       correctLevel: QRCode.CorrectLevel.M
     });
@@ -230,15 +297,21 @@ function renderUserQr(text) {
 // CONTROL DE MODALES Y ACCIONES DE VISTA
 let selectedRewardId = null;
 
-function openAuthModal(tab = "login") {
+function openAuthModal(tab = "login", feedback = null) {
   const modal = document.getElementById("modal-client-auth");
   if (modal) modal.style.display = "flex";
   switchAuthTab(tab);
+  if (feedback) {
+    setAuthFeedback(feedback, "info");
+  } else {
+    setAuthFeedback(null);
+  }
 }
 
 function closeAuthModal() {
   const modal = document.getElementById("modal-client-auth");
   if (modal) modal.style.display = "none";
+  setAuthFeedback(null);
 }
 
 function switchAuthTab(tab) {
@@ -246,6 +319,8 @@ function switchAuthTab(tab) {
   const btnReg = document.getElementById("tab-btn-auth-reg");
   const formLogin = document.getElementById("form-client-login");
   const formReg = document.getElementById("form-client-reg");
+
+  setAuthFeedback(null);
 
   if (tab === "login") {
     if (btnLogin) btnLogin.classList.add("active");
@@ -261,36 +336,59 @@ function switchAuthTab(tab) {
 }
 
 async function submitClientLogin() {
-  const phone = document.getElementById("login-phone").value;
-  const pin = document.getElementById("login-pin").value;
+  const phone = document.getElementById("login-phone").value.trim();
+  const pin = document.getElementById("login-pin").value.trim();
+
+  if (!phone) {
+    setAuthFeedback("Ingresa tu número de teléfono o WhatsApp", "error");
+    return;
+  }
+  if (!pin || pin.length < 4) {
+    setAuthFeedback("Ingresa tu PIN de 4 dígitos", "error");
+    return;
+  }
 
   try {
     const user = await vm.login(phone, pin);
     closeAuthModal();
-    alert("✓ ¡Bienvenido de nuevo, " + user.displayName + "!");
+    showToast("¡Bienvenido de nuevo, " + user.displayName + "!", "success");
   } catch (err) {
-    alert("❌ Error de acceso: " + err.message);
+    setAuthFeedback(err.message || "Error al iniciar sesión", "error");
+    showToast(err.message, "error");
   }
 }
 
 async function submitClientRegister() {
-  const name = document.getElementById("reg-name").value;
-  const phone = document.getElementById("reg-phone").value;
-  const pin = document.getElementById("reg-pin").value;
+  const name = document.getElementById("reg-name").value.trim();
+  const phone = document.getElementById("reg-phone").value.trim();
+  const pin = document.getElementById("reg-pin").value.trim();
+
+  if (!name) {
+    setAuthFeedback("Ingresa tu nombre y apellido", "error");
+    return;
+  }
+  if (!phone) {
+    setAuthFeedback("Ingresa tu número de teléfono o WhatsApp", "error");
+    return;
+  }
+  if (!pin || pin.length < 4) {
+    setAuthFeedback("Crea un PIN de 4 dígitos", "error");
+    return;
+  }
 
   try {
     const user = await vm.register(name, phone, pin);
     closeAuthModal();
-    alert("🎉 ¡Cuenta creada con éxito! Tu CyberPass está listo, " + user.displayName);
+    showToast("¡Cuenta creada con éxito! CyberPass activado", "success");
   } catch (err) {
-    alert("❌ Error en registro: " + err.message);
+    setAuthFeedback(err.message || "Error al crear cuenta", "error");
+    showToast(err.message, "error");
   }
 }
 
 function logoutClient() {
-  if (confirm("¿Deseas cerrar la sesión de tu CyberPass?")) {
-    vm.logout();
-  }
+  vm.logout();
+  showToast("Sesión cerrada correctamente", "info");
 }
 
 function switchTab(tabId) {
@@ -304,8 +402,7 @@ function switchTab(tabId) {
 
 function openClaimModal() {
   if (!vm.currentUser) {
-    alert("Por favor inicia sesión con tu WhatsApp para acreditar tus puntos.");
-    openAuthModal("login");
+    openAuthModal("login", "Inicia sesión con tu WhatsApp para acreditar tus Wired Points.");
     return;
   }
   const modal = document.getElementById("modal-manual-claim");
@@ -321,40 +418,37 @@ async function submitManualClaim() {
   const token = document.getElementById("manual-input-token").value;
   const pin = document.getElementById("manual-input-pin").value;
 
-  if (!token) return alert("Ingresa el código de la factura.");
+  if (!token) {
+    showToast("Ingresa el código de la factura", "error");
+    return;
+  }
 
   try {
     const res = await vm.claimToken(token.trim().toUpperCase(), pin);
     closeClaimModal();
-    alert("✓ ¡Éxito! Se han acreditado +" + res.pointsAdded + " WP a tu cuenta. Saldo actual: " + res.newBalance + " WP");
+    showToast("¡Éxito! +" + res.pointsAdded + " WP acreditados. Saldo: " + res.newBalance + " WP", "success");
   } catch (err) {
-    alert("❌ Error: " + err.message);
+    showToast(err.message || "Error al acreditar factura", "error");
   }
 }
 
 async function claimFromBanner() {
   if (!vm.currentUser) {
-    alert("Inicia sesión o regístrate con tu WhatsApp para reclamar tus puntos de factura.");
-    openAuthModal("login");
+    openAuthModal("login", "Inicia sesión o regístrate con tu WhatsApp para reclamar tus puntos de factura.");
     return;
   }
 
-  const token = vm.pendingClaimToken;
-  const pin = prompt("Ingresa el PIN de seguridad de 4 dígitos impreso en tu factura:");
-  if (pin === null) return;
-
   try {
-    const res = await vm.claimToken(token, pin);
-    alert("✓ ¡Puntos Acreditados con éxito! +" + res.pointsAdded + " WP.");
+    const res = await vm.claimPendingToken();
+    showToast("¡Puntos acreditados con éxito! +" + res.pointsAdded + " WP", "success");
   } catch (err) {
-    alert("❌ " + err.message);
+    showToast(err.message || "No se pudo acreditar el código", "error");
   }
 }
 
 function confirmRedeem(rewardId) {
   if (!vm.currentUser) {
-    alert("Debes iniciar sesión con tu WhatsApp para canjear recompensas.");
-    openAuthModal("login");
+    openAuthModal("login", "Inicia sesión para canjear recompensas con tus Wired Points.");
     return;
   }
 
@@ -362,15 +456,17 @@ function confirmRedeem(rewardId) {
   if (!reward) return;
 
   if (vm.currentUser.wiredPoints < reward.pointsCost) {
-    return alert("Puntos insuficientes. Tienes " + vm.currentUser.wiredPoints + " WP y requieres " + reward.pointsCost + " WP.");
+    showToast("Puntos insuficientes. Requiere " + reward.pointsCost + " WP", "error");
+    return;
   }
 
   selectedRewardId = rewardId;
-  const modal = document.getElementById("modal-confirm-redeem");
-  const txt = document.getElementById("confirm-redeem-text");
-  if (txt) {
-    txt.innerHTML = "¿Confirmas canjear <strong>" + reward.title + "</strong> por <strong>" + reward.pointsCost + " WP</strong>?<br><br>Se generará tu vale digital de mostrador.";
+  const text = document.getElementById("confirm-redeem-text");
+  if (text) {
+    text.textContent = "¿Deseas canjear '" + reward.title + "' por " + reward.pointsCost.toLocaleString() + " WP?";
   }
+
+  const modal = document.getElementById("modal-confirm-redeem");
   if (modal) modal.style.display = "flex";
 }
 
@@ -384,38 +480,39 @@ async function executeRedeem() {
   if (!selectedRewardId) return;
 
   try {
-    const voucher = await vm.redeemReward(selectedRewardId);
+    const res = await vm.redeemReward(selectedRewardId);
     closeRedeemModal();
-    showVoucherModal(voucher.voucherCode);
-    switchTab("vouchers");
+    showToast("¡Canje exitoso! Vale emitido: " + res.voucher.voucherCode, "success");
+    showVoucherModal(res.voucher.voucherCode);
   } catch (err) {
-    alert("❌ Error al canjear: " + err.message);
+    showToast(err.message || "Error en el canje", "error");
   }
 }
 
 function showVoucherModal(voucherCode) {
-  const v = vm.vouchers.find(item => item.voucherCode === voucherCode);
-  if (!v) return;
+  const voucher = vm.vouchers.find(v => v.voucherCode === voucherCode);
+  if (!voucher) return;
 
-  const modal = document.getElementById("modal-voucher");
-  const title = document.getElementById("modal-voucher-title");
-  const codeEl = document.getElementById("modal-voucher-code");
-  const canvasHolder = document.getElementById("voucher-qr-canvas");
+  const modalTitle = document.getElementById("modal-voucher-title");
+  const modalCode = document.getElementById("modal-voucher-code");
+  const qrCanvas = document.getElementById("voucher-qr-canvas");
 
-  if (title) title.textContent = v.rewardTitle;
-  if (codeEl) codeEl.textContent = v.voucherCode;
+  if (modalTitle) modalTitle.textContent = voucher.rewardTitle;
+  if (modalCode) modalCode.textContent = voucher.voucherCode;
 
-  if (canvasHolder && typeof QRCode !== "undefined") {
-    canvasHolder.innerHTML = "";
-    new QRCode(canvasHolder, {
-      text: "MELTY-DELIVERY:" + v.voucherCode,
+  if (qrCanvas && typeof QRCode !== "undefined") {
+    qrCanvas.innerHTML = "";
+    new QRCode(qrCanvas, {
+      text: voucher.voucherCode,
       width: 140,
       height: 140,
-      colorDark: "#0d131f",
-      colorLight: "#ffffff"
+      colorDark: "#0f172a",
+      colorLight: "#ffffff",
+      correctLevel: QRCode.CorrectLevel.H
     });
   }
 
+  const modal = document.getElementById("modal-voucher");
   if (modal) modal.style.display = "flex";
 }
 
