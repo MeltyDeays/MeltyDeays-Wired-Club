@@ -126,7 +126,7 @@ function submitAdminPin() {
   const success = vm.unlock(pin);
 
   if (!success) {
-    alert("❌ PIN Incorrecto. El PIN maestro es 110805.");
+    alert("❌ PIN Incorrecto. Acceso denegado.");
     if (input) {
       input.value = "";
       input.focus();
