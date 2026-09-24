@@ -1,18 +1,22 @@
 {
   "version": 2,
-  "cleanUrls": true,
-  "rewrites": [
+  "builds": [
     {
-      "source": "/admin",
-      "destination": "/admin.html"
+      "src": "**/*",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/admin",
+      "dest": "/admin.html"
     },
     {
-      "source": "/claim",
-      "destination": "/index.html"
+      "handle": "filesystem"
     },
     {
-      "source": "/(.*)",
-      "destination": "/index.html"
+      "src": "/(.*)",
+      "dest": "/index.html"
     }
   ]
 }
