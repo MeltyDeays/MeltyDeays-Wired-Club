@@ -49,13 +49,13 @@ export class InvoiceTemplateService {
       '                <span class="brand-pill-tag">STORE</span>',
       '              </div>',
       '              <div class="brand-kicker">TECH, GADGETS & GAMING HARDWARE</div>',
-      '              <div class="brand-subitems">Laptops Â· Turbo Fans Â· Mandos Â· Audio Â· Redes</div>',
+      '              <div class="brand-subitems">Laptops · Turbo Fans · Mandos · Audio · Redes</div>',
       '            </div>',
       '          </div>',
       '        </div>',
       '        <div class="meta-boxes">',
       '          <div class="folio-box">',
-      '            <span class="folio-label">NÂº FACTURA:</span>',
+      '            <span class="folio-label">Nº FACTURA:</span>',
       '            <div class="folio-write-zone" contenteditable="true">' + formattedFolio + '</div>',
       '          </div>',
       '          <div class="date-row">',
@@ -91,7 +91,7 @@ export class InvoiceTemplateService {
       '          <thead>',
       '            <tr>',
       '              <th class="col-cant">CANT</th>',
-      '              <th class="col-desc">DESCRIPCIÃ“N DEL ARTÃCULO / PRODUCTO</th>',
+      '              <th class="col-desc">DESCRIPCIÓN DEL ARTÍCULO / PRODUCTO</th>',
       '              <th class="col-price">P. UNIT</th>',
       '              <th class="col-total">TOTAL</th>',
       '            </tr>',
@@ -109,9 +109,9 @@ export class InvoiceTemplateService {
       '        </table>',
       '      </div>',
       '',
-      '      <!-- SECCIÃ“N TOTALES EQUILIBRADA -->',
+      '      <!-- SECCIÓN TOTALES EQUILIBRADA -->',
       '      <div class="totals-area">',
-      '        <div class="thanks-note">Â¡Gracias por tu compra!</div>',
+      '        <div class="thanks-note">¡Gracias por tu compra!</div>',
       '        <div class="totals-receipt">',
       '          <div class="totals-row">',
       '            <span class="t-label-text">Subtotal:</span>',
@@ -131,16 +131,16 @@ export class InvoiceTemplateService {
       '      <!-- APARTADO GARANTÃA Y POLÃTICAS (TIPOGRAFÃA OPTIMIZADA) -->',
       '      <footer class="warranty-card">',
       '        <div class="warranty-header-row">',
-      '          <span class="w-title">ðŸ›¡ï¸ GARANTÃA, CAMBIO Y REEMBOLSO</span>',
+      '          <span class="w-title">ðŸ›¡ï¸ GARANTÍA, CAMBIO Y REEMBOLSO</span>',
       '          <div class="w-period-box">',
-      '            <span class="w-period-label">TIEMPO VÃLIDO:</span>',
+      '            <span class="w-period-label">TIEMPO VÁLIDO:</span>',
       '            <span class="w-period-write w-time-slot" contenteditable="true"></span>',
       '          </div>',
       '        </div>',
       '        <div class="warranty-text">',
-      '          â€¢ <strong>REEMBOLSO O CAMBIO:</strong> Se devuelve el dinero (con razÃ³n vÃ¡lida justificada) o se realiza cambio por otro artÃ­culo si el cliente lo prefiere.<br>',
-      '          â€¢ <strong>CONDICIONES:</strong> VÃ¡lido exclusivamente por defectos de fÃ¡brica comprobables con empaque original intacto, accesorios Ã­ntegros y este ticket.<br>',
-      '          â€¢ <strong>EXCLUSIONES:</strong> No cubre daÃ±os por mal uso, golpes, caÃ­das, humedad ni variaciones de voltaje.',
+      '          • <strong>REEMBOLSO O CAMBIO:</strong> Se devuelve el dinero (con razón válida justificada) o se realiza cambio por otro artículo si el cliente lo prefiere.<br>',
+      '          • <strong>CONDICIONES:</strong> Válido exclusivamente por defectos de fábrica comprobables con empaque original intacto, accesorios íntegros y este ticket.<br>',
+      '          • <strong>EXCLUSIONES:</strong> No cubre daños por mal uso, golpes, caídas, humedad ni variaciones de voltaje.',
       '        </div>',
       '      </footer>',
       '',
@@ -149,7 +149,7 @@ export class InvoiceTemplateService {
       '        <div class="contact-qr-group">',
       '          <div class="qr-col">',
       '            <div class="qr-frame">',
-      '              <img src="' + QR_CATALOG_BASE64 + '" alt="QR CatÃ¡logo" class="qr-img">',
+      '              <img src="' + QR_CATALOG_BASE64 + '" alt="QR Catálogo" class="qr-img">',
       '            </div>',
       '            <span class="qr-badge-wa">WHATSAPP</span>',
       '          </div>',
@@ -172,7 +172,7 @@ export class InvoiceTemplateService {
       '          <div class="sign-seal-wrapper">',
       '            <span class="digital-signature">MeltyDeays</span>',
       '            <div class="seal-stamp">',
-      '              <span class="seal-star">â˜…</span>',
+      '              <span class="seal-star">★</span>',
       '              <span class="seal-text">MD</span>',
       '              <span class="seal-sub">OFICIAL</span>',
       '            </div>',
@@ -189,11 +189,12 @@ export class InvoiceTemplateService {
    * Genera el HTML de la Contraportada Coleccionable Lain con QR DinÃ¡mico y PIN aleatorio
    * @param {number} cardNum - NÃºmero de tarjeta temÃ¡tica (1, 2, 3, 4)
    * @param {object} tok - Datos del token ({ tokenCode, securityPin, invoiceFolio })
-   * @param {number|string} slotId - Identificador Ãºnico de slot para renderizar el QR
+   * @param {number|string} slotId - Identificador único de slot para renderizar el QR
+   * @param {number} [templateIdx] - Índice opcional de plantilla (0 a configs.length - 1)
    */
-    static getLainBackCardHtml(cardNum, tok, slotId) {
-    const configs = {
-      1: {
+  static getLainBackCardHtml(cardNum, tok, slotId, templateIdx) {
+    const configs = [
+      {
         layer: 'LAYER: 01',
         title: 'WEIRDO // THE WIRED',
         sub: 'TACHIBANA GENERAL LABORATORIES · COPLAND OS 21.0',
@@ -229,7 +230,7 @@ export class InvoiceTemplateService {
           <text x="8" y="112" font-family="'JetBrains Mono', monospace" font-size="5.5" fill="#64748b">LAT: 35°39'10\"N LON: 139°42'30\"E // WIRED GATEWAY</text>
         </svg>`
       },
-      2: {
+      {
         layer: 'LAYER: 02',
         title: 'GIRLS // PSYCHE CHIP',
         sub: 'KNIGHTS OF THE EASTERN CALCULUS · LICENSED HARDWARE',
@@ -262,7 +263,7 @@ export class InvoiceTemplateService {
           <text x="8" y="108" font-family="'JetBrains Mono', monospace" font-size="5.5" fill="#64748b">MELTYDEAYS ACCELERATOR UNIT · COPLAND KERNEL READY</text>
         </svg>`
       },
-      3: {
+      {
         layer: 'LAYER: 03',
         title: 'PSYCHE // PRESENT TIME',
         sub: 'UBIQUITOUS SIGNAL TRANSMISSION · ELECTROMAGNETIC GRID',
@@ -292,7 +293,7 @@ export class InvoiceTemplateService {
           <path d="M165,95 L195,95 L202,80 L210,110 L218,72 L226,115 L234,86 L242,95 L265,95" fill="none" stroke="#059669" stroke-width="1.2"/>
         </svg>`
       },
-      4: {
+      {
         layer: 'LAYER: 04',
         title: 'RESET // PROTOCOL',
         sub: 'COPLAND OS CRT TERMINAL · CLIENT NODE PASS',
@@ -322,10 +323,552 @@ export class InvoiceTemplateService {
           <circle cx="220" cy="98" r="2" fill="#22c55e"/>
           <text x="140" y="112" font-family="'JetBrains Mono', monospace" font-size="5.5" fill="#64748b" text-anchor="middle">MELTYDEAYS TECH LABS · SERIAL EXPERIMENTS HARDWARE PASS</text>
         </svg>`
+      },
+      {
+        layer: 'LAYER: 05',
+        title: 'DISTORTION // SCHUMANN',
+        sub: 'SCHUMANN RESONANCE · 7.83Hz EARTH FREQUENCY',
+        kanji: '私は遍在する',
+        quote: '"I am everywhere. I am omnipresent."',
+        protocol: 'FREQ-7.83Hz',
+        chip: 'RESONANCE-V',
+        spec1: 'WAVE: 7.83Hz ELF',
+        spec2: 'AMP: VARIABLE GAIN',
+        sn: 'MD-LAIN-9807-005',
+        svg: `<svg viewBox="0 0 280 115" class="lain-card-svg" xmlns="http://www.w3.org/2000/svg">
+          <path d="M0,57 Q35,20 70,57 Q105,94 140,57 Q175,20 210,57 Q245,94 280,57" fill="none" stroke="#7c3aed" stroke-width="2" opacity="0.9"/>
+          <path d="M0,57 Q35,30 70,57 Q105,84 140,57 Q175,30 210,57 Q245,84 280,57" fill="none" stroke="#a78bfa" stroke-width="1.2" opacity="0.6"/>
+          <path d="M0,57 Q35,42 70,57 Q105,72 140,57 Q175,42 210,57 Q245,72 280,57" fill="none" stroke="#c4b5fd" stroke-width="0.8" opacity="0.4"/>
+          <circle cx="140" cy="57" r="22" fill="none" stroke="#8b5cf6" stroke-width="1.5" stroke-dasharray="3 2"/>
+          <circle cx="140" cy="57" r="12" fill="#1e1b4b" stroke="#6d28d9" stroke-width="1"/>
+          <text x="140" y="61" font-family="'JetBrains Mono', monospace" font-size="8" font-weight="900" fill="#e9d5ff" text-anchor="middle">Ω</text>
+          <line x1="10" y1="10" x2="10" y2="105" stroke="#475569" stroke-width="0.6"/>
+          <line x1="270" y1="10" x2="270" y2="105" stroke="#475569" stroke-width="0.6"/>
+          <g font-family="'JetBrains Mono', monospace" font-size="5" fill="#64748b">
+            <text x="15" y="18">7.83Hz</text><text x="15" y="30">14.3Hz</text><text x="15" y="42">20.8Hz</text>
+            <text x="242" y="18">33.0Hz</text><text x="242" y="30">39.0Hz</text><text x="242" y="42">45.0Hz</text>
+          </g>
+          <text x="140" y="108" font-family="'JetBrains Mono', monospace" font-size="5.5" fill="#64748b" text-anchor="middle">SCHUMANN NODE · MELTYDEAYS WIRED RESONANCE UNIT</text>
+        </svg>`
+      },
+      {
+        layer: 'LAYER: 06',
+        title: 'SOCIETY // KNIGHTS',
+        sub: 'KNIGHTS OF THE EASTERN CALCULUS · HACKER CELL',
+        kanji: '騎士団は真実を知っている',
+        quote: '"If you aren\'t remembered, then you never existed."',
+        protocol: 'KNGHT-v2.1',
+        chip: 'CIPHER-NODE',
+        spec1: 'KEY: ED25519-SHA3',
+        spec2: 'NET: DARKWIRED TOR',
+        sn: 'MD-LAIN-9807-006',
+        svg: `<svg viewBox="0 0 280 115" class="lain-card-svg" xmlns="http://www.w3.org/2000/svg">
+          <polygon points="140,8 195,38 195,82 140,108 85,82 85,38" fill="none" stroke="#dc2626" stroke-width="1.8"/>
+          <polygon points="140,18 185,42 185,76 140,98 95,76 95,42" fill="none" stroke="#991b1b" stroke-width="1" stroke-dasharray="4 2"/>
+          <line x1="140" y1="8" x2="140" y2="108" stroke="#7f1d1d" stroke-width="0.8"/>
+          <line x1="85" y1="38" x2="195" y2="82" stroke="#7f1d1d" stroke-width="0.8"/>
+          <line x1="195" y1="38" x2="85" y2="82" stroke="#7f1d1d" stroke-width="0.8"/>
+          <circle cx="140" cy="58" r="14" fill="#0f172a" stroke="#ef4444" stroke-width="1.2"/>
+          <text x="140" y="63" font-family="'JetBrains Mono', monospace" font-size="10" font-weight="900" fill="#fca5a5" text-anchor="middle">K</text>
+          <circle cx="140" cy="8" r="3" fill="#dc2626"/><circle cx="195" cy="38" r="3" fill="#dc2626"/>
+          <circle cx="195" cy="82" r="3" fill="#dc2626"/><circle cx="140" cy="108" r="3" fill="#dc2626"/>
+          <circle cx="85" cy="82" r="3" fill="#dc2626"/><circle cx="85" cy="38" r="3" fill="#dc2626"/>
+          <text x="8" y="112" font-family="'JetBrains Mono', monospace" font-size="5.5" fill="#64748b">EASTERN CALCULUS CELL · MELTYDEAYS ENCRYPTED NODE</text>
+        </svg>`
+      },
+      {
+        layer: 'LAYER: 07',
+        title: 'INFORNOGRAPHY // DATA',
+        sub: 'INFORMATION OVERFLOW · TACHIBANA DATASTREAM',
+        kanji: '情報は力である',
+        quote: '"What isn\'t remembered never happened."',
+        protocol: 'DATA-FLUX',
+        chip: 'STREAM-CORE',
+        spec1: 'FLOW: 10 TB/s BURST',
+        spec2: 'CACHE: 256 PB DEEP',
+        sn: 'MD-LAIN-9807-007',
+        svg: `<svg viewBox="0 0 280 115" class="lain-card-svg" xmlns="http://www.w3.org/2000/svg">
+          <g opacity="0.6">
+            <rect x="10" y="8" width="3" height="100" fill="#1e40af"/><rect x="17" y="20" width="2" height="88" fill="#3b82f6"/>
+            <rect x="23" y="5" width="4" height="103" fill="#1e3a8a"/><rect x="31" y="15" width="2" height="93" fill="#60a5fa"/>
+            <rect x="37" y="10" width="3" height="98" fill="#2563eb"/><rect x="44" y="25" width="2" height="83" fill="#93c5fd"/>
+            <rect x="50" y="8" width="4" height="100" fill="#1e40af"/><rect x="58" y="18" width="2" height="90" fill="#3b82f6"/>
+            <rect x="64" y="12" width="3" height="96" fill="#1e3a8a"/><rect x="71" y="22" width="2" height="86" fill="#60a5fa"/>
+            <rect x="215" y="8" width="3" height="100" fill="#1e40af"/><rect x="222" y="20" width="2" height="88" fill="#3b82f6"/>
+            <rect x="228" y="5" width="4" height="103" fill="#1e3a8a"/><rect x="236" y="15" width="2" height="93" fill="#60a5fa"/>
+            <rect x="242" y="10" width="3" height="98" fill="#2563eb"/><rect x="249" y="25" width="2" height="83" fill="#93c5fd"/>
+            <rect x="255" y="8" width="4" height="100" fill="#1e40af"/><rect x="263" y="18" width="2" height="90" fill="#3b82f6"/>
+          </g>
+          <rect x="80" y="30" width="120" height="55" rx="3" fill="#0c1425" stroke="#3b82f6" stroke-width="1"/>
+          <text x="140" y="52" font-family="'JetBrains Mono', monospace" font-size="6" fill="#60a5fa" text-anchor="middle">DATASTREAM ACTIVE</text>
+          <text x="140" y="64" font-family="'JetBrains Mono', monospace" font-size="9" font-weight="900" fill="#dbeafe" text-anchor="middle">01001100</text>
+          <text x="140" y="78" font-family="'JetBrains Mono', monospace" font-size="5" fill="#3b82f6" text-anchor="middle">PACKETS: ∞ · LOSS: 0.00%</text>
+          <text x="140" y="108" font-family="'JetBrains Mono', monospace" font-size="5.5" fill="#64748b" text-anchor="middle">TACHIBANA DATA LABS · INFORNOGRAPHY STREAM ACTIVE</text>
+        </svg>`
+      },
+      {
+        layer: 'LAYER: 08',
+        title: 'EGO // IDENTITY SPLIT',
+        sub: 'MULTIPLE PERSONA INTERFACE · IDENTITY DAEMON',
+        kanji: '私はレイン。あなたは誰？',
+        quote: '"There is no such thing as a separate me."',
+        protocol: 'EGO-SPLIT',
+        chip: 'PERSONA-MUX',
+        spec1: 'ID: MULTI-INSTANCE',
+        spec2: 'SYNC: REAL/WIRED',
+        sn: 'MD-LAIN-9807-008',
+        svg: `<svg viewBox="0 0 280 115" class="lain-card-svg" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="100" cy="50" r="30" fill="none" stroke="#6366f1" stroke-width="1.5" opacity="0.7"/>
+          <circle cx="180" cy="50" r="30" fill="none" stroke="#ec4899" stroke-width="1.5" opacity="0.7"/>
+          <path d="M125,28 A30,30 0 0,1 125,72" fill="none" stroke="#a855f7" stroke-width="2"/>
+          <path d="M155,28 A30,30 0 0,0 155,72" fill="none" stroke="#a855f7" stroke-width="2"/>
+          <text x="100" y="54" font-family="'JetBrains Mono', monospace" font-size="7" font-weight="700" fill="#a5b4fc" text-anchor="middle">REAL</text>
+          <text x="180" y="54" font-family="'JetBrains Mono', monospace" font-size="7" font-weight="700" fill="#f9a8d4" text-anchor="middle">WIRED</text>
+          <text x="140" y="54" font-family="'JetBrains Mono', monospace" font-size="6" font-weight="900" fill="#f8fafc" text-anchor="middle">?</text>
+          <line x1="40" y1="90" x2="240" y2="90" stroke="#334155" stroke-width="0.6"/>
+          <g font-family="'JetBrains Mono', monospace" font-size="5" fill="#475569">
+            <text x="40" y="100">IWAKURA</text><text x="100" y="100">LAIN-01</text>
+            <text x="160" y="100">LAIN-02</text><text x="220" y="100">LAIN-03</text>
+          </g>
+          <text x="140" y="112" font-family="'JetBrains Mono', monospace" font-size="5.5" fill="#64748b" text-anchor="middle">PERSONA MULTIPLEXER · MELTYDEAYS IDENTITY NODE</text>
+        </svg>`
+      },
+      {
+        layer: 'LAYER: 09',
+        title: 'NAVI // HANDHELD',
+        sub: 'PORTABLE NAVI UNIT · PSYCHE INTERFACE MODULE',
+        kanji: 'ナビは私の窓',
+        quote: '"Everyone is connected... Everyone but me."',
+        protocol: 'NAVI-OS 3.1',
+        chip: 'HAND-PROC',
+        spec1: 'SCREEN: 320x240 TN',
+        spec2: 'SLOT: PSYCHE CARD',
+        sn: 'MD-LAIN-9807-009',
+        svg: `<svg viewBox="0 0 280 115" class="lain-card-svg" xmlns="http://www.w3.org/2000/svg">
+          <rect x="95" y="5" width="90" height="105" rx="8" fill="#1e293b" stroke="#475569" stroke-width="1.5"/>
+          <rect x="102" y="12" width="76" height="55" rx="3" fill="#0a0e1a" stroke="#334155" stroke-width="1"/>
+          <text x="140" y="35" font-family="'JetBrains Mono', monospace" font-size="5.5" fill="#22c55e" text-anchor="middle">NAVI_OS v3.1</text>
+          <text x="140" y="45" font-family="'JetBrains Mono', monospace" font-size="5" fill="#38bdf8" text-anchor="middle">CONNECTION: ACTIVE</text>
+          <text x="140" y="55" font-family="'JetBrains Mono', monospace" font-size="5" fill="#a855f7" text-anchor="middle">USER: IWAKURA.L</text>
+          <circle cx="140" cy="82" r="8" fill="#0f172a" stroke="#64748b" stroke-width="1"/>
+          <circle cx="140" cy="82" r="3" fill="#475569"/>
+          <rect x="100" y="95" width="15" height="4" rx="1" fill="#334155"/>
+          <rect x="165" y="95" width="15" height="4" rx="1" fill="#334155"/>
+          <line x1="30" y1="40" x2="95" y2="40" stroke="#475569" stroke-width="0.6" stroke-dasharray="3 2"/>
+          <line x1="185" y1="40" x2="250" y2="40" stroke="#475569" stroke-width="0.6" stroke-dasharray="3 2"/>
+          <text x="30" y="38" font-family="'JetBrains Mono', monospace" font-size="5" fill="#475569">LINK</text>
+          <text x="235" y="38" font-family="'JetBrains Mono', monospace" font-size="5" fill="#475569">OUT</text>
+          <text x="140" y="112" font-family="'JetBrains Mono', monospace" font-size="5.5" fill="#64748b" text-anchor="middle">HANDHELD NAVI · TACHIBANA PORTABLE TERMINAL</text>
+        </svg>`
+      },
+      {
+        layer: 'LAYER: 10',
+        title: 'LOVE // ARISU',
+        sub: 'FRIENDSHIP PROTOCOL · EMOTIONAL ANCHOR SYSTEM',
+        kanji: '友達は大切な存在',
+        quote: '"Lain... I love you. So please, come back to me."',
+        protocol: 'BOND-v1.0',
+        chip: 'EMPATH-CORE',
+        spec1: 'LINK: EMOTIONAL',
+        spec2: 'TRUST: ABSOLUTE',
+        sn: 'MD-LAIN-9807-010',
+        svg: `<svg viewBox="0 0 280 115" class="lain-card-svg" xmlns="http://www.w3.org/2000/svg">
+          <path d="M140,90 L120,70 Q95,42 120,25 Q140,12 140,35 Q140,12 160,25 Q185,42 160,70 Z" fill="none" stroke="#ec4899" stroke-width="1.8"/>
+          <path d="M140,82 L125,68 Q106,48 125,35 Q140,24 140,42 Q140,24 155,35 Q174,48 155,68 Z" fill="none" stroke="#f9a8d4" stroke-width="1" stroke-dasharray="3 2"/>
+          <circle cx="90" cy="55" r="3" fill="#ec4899" opacity="0.5"/><circle cx="75" cy="40" r="2" fill="#f472b6" opacity="0.4"/>
+          <circle cx="190" cy="55" r="3" fill="#ec4899" opacity="0.5"/><circle cx="205" cy="40" r="2" fill="#f472b6" opacity="0.4"/>
+          <circle cx="60" cy="70" r="1.5" fill="#ec4899" opacity="0.3"/><circle cx="220" cy="70" r="1.5" fill="#ec4899" opacity="0.3"/>
+          <path d="M15,95 H265" stroke="#334155" stroke-width="0.5"/>
+          <text x="140" y="105" font-family="'JetBrains Mono', monospace" font-size="6" fill="#f9a8d4" text-anchor="middle" letter-spacing="2">ARISU · LAIN</text>
+          <text x="140" y="112" font-family="'JetBrains Mono', monospace" font-size="5" fill="#64748b" text-anchor="middle">EMOTIONAL ANCHOR · MELTYDEAYS FRIENDSHIP PROTOCOL</text>
+        </svg>`
+      },
+      {
+        layer: 'LAYER: 11',
+        title: 'RUMORS // ACCELA',
+        sub: 'ACCELA NANOMACHINE · NEURAL ENHANCEMENT DRUG',
+        kanji: '加速する意識',
+        quote: '"You can feel it, can\'t you? The pulse of the Wired."',
+        protocol: 'ACCELA-X',
+        chip: 'NANO-INJECT',
+        spec1: 'DOSE: 0.3mg/mL',
+        spec2: 'EFFECT: NEURAL++',
+        sn: 'MD-LAIN-9807-011',
+        svg: `<svg viewBox="0 0 280 115" class="lain-card-svg" xmlns="http://www.w3.org/2000/svg">
+          <ellipse cx="140" cy="55" rx="60" ry="40" fill="none" stroke="#059669" stroke-width="1.2" stroke-dasharray="5 3"/>
+          <ellipse cx="140" cy="55" rx="40" ry="25" fill="none" stroke="#10b981" stroke-width="1" stroke-dasharray="3 2"/>
+          <ellipse cx="140" cy="55" rx="20" ry="12" fill="none" stroke="#34d399" stroke-width="0.8"/>
+          <circle cx="140" cy="55" r="5" fill="#059669"/>
+          <line x1="140" y1="55" x2="200" y2="15" stroke="#10b981" stroke-width="0.8"/>
+          <line x1="140" y1="55" x2="80" y2="15" stroke="#10b981" stroke-width="0.8"/>
+          <line x1="140" y1="55" x2="80" y2="95" stroke="#10b981" stroke-width="0.8"/>
+          <line x1="140" y1="55" x2="200" y2="95" stroke="#10b981" stroke-width="0.8"/>
+          <circle cx="200" cy="15" r="3" fill="#34d399"/><circle cx="80" cy="15" r="3" fill="#34d399"/>
+          <circle cx="80" cy="95" r="3" fill="#34d399"/><circle cx="200" cy="95" r="3" fill="#34d399"/>
+          <text x="210" y="18" font-family="'JetBrains Mono', monospace" font-size="5" fill="#6ee7b7">SYNAPSE-A</text>
+          <text x="30" y="18" font-family="'JetBrains Mono', monospace" font-size="5" fill="#6ee7b7">SYNAPSE-B</text>
+          <text x="140" y="112" font-family="'JetBrains Mono', monospace" font-size="5.5" fill="#64748b" text-anchor="middle">ACCELA NANOMACHINE · MELTYDEAYS NEURAL BOOST UNIT</text>
+        </svg>`
+      },
+      {
+        layer: 'LAYER: 12',
+        title: 'LANDSCAPE // GOD',
+        sub: 'DEUS EX MACHINA · EIRI MASAMI PROTOCOL',
+        kanji: '神になれるのか',
+        quote: '"God is here. I am God."',
+        protocol: 'DEUS-v0.1',
+        chip: 'OMNISCIENT',
+        spec1: 'STATE: ASCENDED',
+        spec2: 'PLANE: METAVERSE',
+        sn: 'MD-LAIN-9807-012',
+        svg: `<svg viewBox="0 0 280 115" class="lain-card-svg" xmlns="http://www.w3.org/2000/svg">
+          <polygon points="140,5 170,100 40,40 240,40 110,100" fill="none" stroke="#f59e0b" stroke-width="1.5"/>
+          <circle cx="140" cy="48" r="20" fill="none" stroke="#fbbf24" stroke-width="1.2"/>
+          <circle cx="140" cy="48" r="10" fill="none" stroke="#f59e0b" stroke-width="0.8" stroke-dasharray="2 2"/>
+          <circle cx="140" cy="48" r="4" fill="#f59e0b"/>
+          <line x1="140" y1="28" x2="140" y2="5" stroke="#fbbf24" stroke-width="0.8"/>
+          <line x1="120" y1="48" x2="40" y2="40" stroke="#fbbf24" stroke-width="0.6" opacity="0.6"/>
+          <line x1="160" y1="48" x2="240" y2="40" stroke="#fbbf24" stroke-width="0.6" opacity="0.6"/>
+          <line x1="130" y1="65" x2="110" y2="100" stroke="#fbbf24" stroke-width="0.6" opacity="0.6"/>
+          <line x1="150" y1="65" x2="170" y2="100" stroke="#fbbf24" stroke-width="0.6" opacity="0.6"/>
+          <text x="140" y="52" font-family="'JetBrains Mono', monospace" font-size="6" font-weight="900" fill="#fef3c7" text-anchor="middle">∞</text>
+          <text x="140" y="112" font-family="'JetBrains Mono', monospace" font-size="5.5" fill="#64748b" text-anchor="middle">DEUS PROTOCOL · EIRI MASAMI ASCENSION ENGINE</text>
+        </svg>`
+      },
+      {
+        layer: 'LAYER: 13',
+        title: 'CLOSURE // MEMORY',
+        sub: 'MEMORY WIPE DAEMON · ERASURE PROTOCOL ACTIVE',
+        kanji: '記憶を消しても、私は存在する',
+        quote: '"People only have substance within the memories of others."',
+        protocol: 'MEM-WIPE',
+        chip: 'ERASURE-V',
+        spec1: 'MODE: SELECTIVE',
+        spec2: 'DEPTH: TOTAL',
+        sn: 'MD-LAIN-9807-013',
+        svg: `<svg viewBox="0 0 280 115" class="lain-card-svg" xmlns="http://www.w3.org/2000/svg">
+          <rect x="30" y="15" width="220" height="80" rx="2" fill="none" stroke="#475569" stroke-width="1"/>
+          <g stroke="#334155" stroke-width="0.5">
+            <line x1="30" y1="30" x2="250" y2="30"/><line x1="30" y1="45" x2="250" y2="45"/>
+            <line x1="30" y1="60" x2="250" y2="60"/><line x1="30" y1="75" x2="250" y2="75"/>
+          </g>
+          <text x="40" y="28" font-family="'JetBrains Mono', monospace" font-size="5.5" fill="#94a3b8">ADDR: 0x0000 - 0xFFFF</text>
+          <rect x="40" y="33" width="200" height="8" fill="#1e293b" rx="1"/>
+          <rect x="40" y="33" width="160" height="8" fill="#dc2626" rx="1" opacity="0.7"/>
+          <text x="40" y="54" font-family="'JetBrains Mono', monospace" font-size="5.5" fill="#f87171">ERASING: ████████████████░░░░ 80%</text>
+          <text x="40" y="70" font-family="'JetBrains Mono', monospace" font-size="5.5" fill="#94a3b8">SECTORS: 1024/1280 WIPED</text>
+          <text x="40" y="85" font-family="'JetBrains Mono', monospace" font-size="5.5" fill="#fbbf24">WARNING: IRREVERSIBLE OPERATION</text>
+          <text x="140" y="112" font-family="'JetBrains Mono', monospace" font-size="5.5" fill="#64748b" text-anchor="middle">MEMORY DAEMON · MELTYDEAYS ERASURE PROTOCOL</text>
+        </svg>`
+      },
+      {
+        layer: 'LAYER: 14',
+        title: 'DEUS // PROPHECY',
+        sub: 'PROPHECY MATRIX · SEVENTH PROTOCOL GATE',
+        kanji: '未来は既に書かれている',
+        quote: '"The border between the Wired and the real world is disappearing."',
+        protocol: 'GATE-VII',
+        chip: 'ORACLE-X',
+        spec1: 'VISION: PRECOG',
+        spec2: 'LAYER: PROTOCOL 7',
+        sn: 'MD-LAIN-9807-014',
+        svg: `<svg viewBox="0 0 280 115" class="lain-card-svg" xmlns="http://www.w3.org/2000/svg">
+          <ellipse cx="140" cy="50" rx="55" ry="38" fill="none" stroke="#6366f1" stroke-width="1.5"/>
+          <ellipse cx="140" cy="50" rx="55" ry="38" fill="none" stroke="#818cf8" stroke-width="0.8" transform="rotate(60 140 50)"/>
+          <ellipse cx="140" cy="50" rx="55" ry="38" fill="none" stroke="#a5b4fc" stroke-width="0.8" transform="rotate(120 140 50)"/>
+          <circle cx="140" cy="50" r="8" fill="#312e81" stroke="#6366f1" stroke-width="1"/>
+          <circle cx="140" cy="50" r="3" fill="#818cf8"/>
+          <g font-family="'JetBrains Mono', monospace" font-size="5" fill="#475569">
+            <text x="10" y="15">GATE:I</text><text x="50" y="15">GATE:II</text><text x="90" y="15">GATE:III</text>
+            <text x="170" y="15">GATE:V</text><text x="210" y="15">GATE:VI</text><text x="245" y="15">GATE:VII</text>
+          </g>
+          <text x="140" y="108" font-family="'JetBrains Mono', monospace" font-size="5.5" fill="#64748b" text-anchor="middle">PROPHECY MATRIX · SEVENTH PROTOCOL ACTIVE</text>
+        </svg>`
+      },
+      {
+        layer: 'LAYER: 15',
+        title: 'BRIDGE // CROSSOVER',
+        sub: 'REALITY BRIDGE · DIMENSIONAL CROSSOVER UNIT',
+        kanji: '現実と仮想の橋',
+        quote: '"In the Wired, there is no need for bodies."',
+        protocol: 'BRIDGE-DX',
+        chip: 'CROSS-GATE',
+        spec1: 'DIM: REAL↔WIRED',
+        spec2: 'PHASE: SYNC 100%',
+        sn: 'MD-LAIN-9807-015',
+        svg: `<svg viewBox="0 0 280 115" class="lain-card-svg" xmlns="http://www.w3.org/2000/svg">
+          <rect x="15" y="25" width="100" height="65" rx="3" fill="#0c1425" stroke="#334155" stroke-width="1"/>
+          <rect x="165" y="25" width="100" height="65" rx="3" fill="#0c1425" stroke="#334155" stroke-width="1"/>
+          <text x="65" y="55" font-family="'JetBrains Mono', monospace" font-size="7" font-weight="700" fill="#94a3b8" text-anchor="middle">REAL</text>
+          <text x="65" y="66" font-family="'JetBrains Mono', monospace" font-size="5" fill="#475569" text-anchor="middle">WORLD</text>
+          <text x="215" y="55" font-family="'JetBrains Mono', monospace" font-size="7" font-weight="700" fill="#a78bfa" text-anchor="middle">WIRED</text>
+          <text x="215" y="66" font-family="'JetBrains Mono', monospace" font-size="5" fill="#7c3aed" text-anchor="middle">WORLD</text>
+          <path d="M115,45 C130,45 150,45 165,45" stroke="#f59e0b" stroke-width="1.5" fill="none" marker-end="url(#arrowB)"/>
+          <path d="M165,65 C150,65 130,65 115,65" stroke="#f59e0b" stroke-width="1.5" fill="none" marker-end="url(#arrowB)"/>
+          <text x="140" y="42" font-family="'JetBrains Mono', monospace" font-size="5" fill="#fbbf24" text-anchor="middle">→→→</text>
+          <text x="140" y="75" font-family="'JetBrains Mono', monospace" font-size="5" fill="#fbbf24" text-anchor="middle">←←←</text>
+          <text x="140" y="112" font-family="'JetBrains Mono', monospace" font-size="5.5" fill="#64748b" text-anchor="middle">REALITY BRIDGE · MELTYDEAYS CROSSOVER UNIT</text>
+        </svg>`
+      },
+      {
+        layer: 'LAYER: 16',
+        title: 'STATIC // NOISE',
+        sub: 'WHITE NOISE GENERATOR · SIGNAL INTERFERENCE',
+        kanji: 'ノイズの中に真実がある',
+        quote: '"Do you want to be hurt? Or do you want to hurt others?"',
+        protocol: 'NOISE-GEN',
+        chip: 'STATIC-V',
+        spec1: 'FREQ: 20Hz-20kHz',
+        spec2: 'POWER: -3dBFS',
+        sn: 'MD-LAIN-9807-016',
+        svg: `<svg viewBox="0 0 280 115" class="lain-card-svg" xmlns="http://www.w3.org/2000/svg">
+          <g stroke="#475569" stroke-width="0.5" opacity="0.8">
+            ${Array.from({length: 40}, (_, i) => {
+              const x = 7 * i; const y1 = 20 + Math.sin(i * 0.7) * 15; const y2 = 55 + Math.cos(i * 0.9) * 20;
+              return '<line x1="' + x + '" y1="' + y1 + '" x2="' + x + '" y2="' + y2 + '"/>';
+            }).join('')}
+          </g>
+          <g stroke="#64748b" stroke-width="0.4" opacity="0.6">
+            ${Array.from({length: 40}, (_, i) => {
+              const x = 7 * i; const y1 = 60 + Math.sin(i * 1.1) * 12; const y2 = 90 + Math.cos(i * 0.5) * 10;
+              return '<line x1="' + x + '" y1="' + y1 + '" x2="' + x + '" y2="' + y2 + '"/>';
+            }).join('')}
+          </g>
+          <rect x="90" y="38" width="100" height="30" rx="2" fill="#0f172a" stroke="#64748b" stroke-width="1"/>
+          <text x="140" y="56" font-family="'JetBrains Mono', monospace" font-size="8" font-weight="900" fill="#e2e8f0" text-anchor="middle">▓▒░ STATIC ░▒▓</text>
+          <text x="140" y="108" font-family="'JetBrains Mono', monospace" font-size="5.5" fill="#64748b" text-anchor="middle">WHITE NOISE · MELTYDEAYS SIGNAL INTERFERENCE UNIT</text>
+        </svg>`
+      },
+      {
+        layer: 'LAYER: 17',
+        title: 'WIRE // POWERLINES',
+        sub: 'ELECTROMAGNETIC FIELD · POWER LINE COMMUNICATION',
+        kanji: '電線は世界を繋ぐ',
+        quote: '"The humming of the power lines... Can you hear it?"',
+        protocol: 'PLC-60Hz',
+        chip: 'EMF-SENSE',
+        spec1: 'VOLTAGE: 100V AC',
+        spec2: 'FIELD: 60Hz HUM',
+        sn: 'MD-LAIN-9807-017',
+        svg: `<svg viewBox="0 0 280 115" class="lain-card-svg" xmlns="http://www.w3.org/2000/svg">
+          <rect x="25" y="8" width="6" height="90" fill="#1e293b"/>
+          <rect x="249" y="8" width="6" height="90" fill="#1e293b"/>
+          <rect x="20" y="8" width="16" height="4" fill="#334155"/><rect x="244" y="8" width="16" height="4" fill="#334155"/>
+          <rect x="22" y="20" width="12" height="3" fill="#475569"/><rect x="246" y="20" width="12" height="3" fill="#475569"/>
+          <path d="M31,22 Q80,35 140,28 Q200,22 249,22" fill="none" stroke="#0f172a" stroke-width="2"/>
+          <path d="M31,22 Q80,40 140,32 Q200,26 249,22" fill="none" stroke="#1e293b" stroke-width="1.5"/>
+          <path d="M31,22 Q80,45 140,36 Q200,30 249,22" fill="none" stroke="#334155" stroke-width="1"/>
+          <circle cx="140" cy="30" r="3" fill="#fbbf24"/>
+          <g opacity="0.5">
+            <circle cx="140" cy="30" r="8" fill="none" stroke="#fbbf24" stroke-width="0.6"/>
+            <circle cx="140" cy="30" r="15" fill="none" stroke="#f59e0b" stroke-width="0.4"/>
+            <circle cx="140" cy="30" r="22" fill="none" stroke="#d97706" stroke-width="0.3"/>
+          </g>
+          <path d="M15,80 L40,80 L48,65 L55,95 L62,60 L70,100 L78,70 L85,80 L265,80" fill="none" stroke="#059669" stroke-width="1"/>
+          <text x="140" y="108" font-family="'JetBrains Mono', monospace" font-size="5.5" fill="#64748b" text-anchor="middle">POWERLINE COMM · MELTYDEAYS 60Hz EMF TRANSCEIVER</text>
+        </svg>`
+      },
+      {
+        layer: 'LAYER: 18',
+        title: 'MOUTH // BEAR SUIT',
+        sub: 'BEAR PAJAMA INTERFACE · COMFORT PROTOCOL ACTIVE',
+        kanji: 'くまさんパジャマ',
+        quote: '"I don\'t need to pretend anymore."',
+        protocol: 'BEAR-OS',
+        chip: 'COMFORT-V',
+        spec1: 'MODE: PAJAMA',
+        spec2: 'TEMP: WARM 37°C',
+        sn: 'MD-LAIN-9807-018',
+        svg: `<svg viewBox="0 0 280 115" class="lain-card-svg" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="115" cy="35" r="18" fill="none" stroke="#a78bfa" stroke-width="1.5"/>
+          <circle cx="165" cy="35" r="18" fill="none" stroke="#a78bfa" stroke-width="1.5"/>
+          <ellipse cx="140" cy="60" rx="42" ry="35" fill="none" stroke="#7c3aed" stroke-width="2"/>
+          <circle cx="125" cy="52" r="4" fill="#1e1b4b" stroke="#6d28d9" stroke-width="1"/>
+          <circle cx="155" cy="52" r="4" fill="#1e1b4b" stroke="#6d28d9" stroke-width="1"/>
+          <circle cx="125" cy="51" r="1.5" fill="#e9d5ff"/>
+          <circle cx="155" cy="51" r="1.5" fill="#e9d5ff"/>
+          <ellipse cx="140" cy="65" rx="5" ry="3" fill="#c084fc"/>
+          <path d="M135,68 Q140,74 145,68" fill="none" stroke="#7c3aed" stroke-width="1"/>
+          <line x1="85" y1="60" x2="98" y2="60" stroke="#a78bfa" stroke-width="0.8"/><line x1="85" y1="64" x2="98" y2="64" stroke="#a78bfa" stroke-width="0.8"/>
+          <line x1="182" y1="60" x2="195" y2="60" stroke="#a78bfa" stroke-width="0.8"/><line x1="182" y1="64" x2="195" y2="64" stroke="#a78bfa" stroke-width="0.8"/>
+          <text x="140" y="108" font-family="'JetBrains Mono', monospace" font-size="5.5" fill="#64748b" text-anchor="middle">BEAR SUIT PROTOCOL · MELTYDEAYS COMFORT MODULE</text>
+        </svg>`
+      },
+      {
+        layer: 'LAYER: 19',
+        title: 'PROTOCOL // LAYER 7',
+        sub: 'APPLICATION LAYER · OSI MODEL ENDPOINT',
+        kanji: 'プロトコル七層',
+        quote: '"All I need to do is get rid of the ego that anchors me."',
+        protocol: 'OSI-L7',
+        chip: 'APP-GATE',
+        spec1: 'STACK: TCP/IP+',
+        spec2: 'PORT: 7777',
+        sn: 'MD-LAIN-9807-019',
+        svg: `<svg viewBox="0 0 280 115" class="lain-card-svg" xmlns="http://www.w3.org/2000/svg">
+          <g font-family="'JetBrains Mono', monospace" font-size="5.5">
+            <rect x="80" y="6" width="120" height="12" rx="1" fill="#1e40af" stroke="#3b82f6" stroke-width="0.8"/>
+            <text x="140" y="14.5" fill="#dbeafe" text-anchor="middle">7 · APPLICATION</text>
+            <rect x="80" y="20" width="120" height="12" rx="1" fill="#1e3a8a" stroke="#2563eb" stroke-width="0.8"/>
+            <text x="140" y="28.5" fill="#bfdbfe" text-anchor="middle">6 · PRESENTATION</text>
+            <rect x="80" y="34" width="120" height="12" rx="1" fill="#172554" stroke="#1d4ed8" stroke-width="0.8"/>
+            <text x="140" y="42.5" fill="#93c5fd" text-anchor="middle">5 · SESSION</text>
+            <rect x="80" y="48" width="120" height="12" rx="1" fill="#0c1425" stroke="#1e40af" stroke-width="0.8"/>
+            <text x="140" y="56.5" fill="#60a5fa" text-anchor="middle">4 · TRANSPORT</text>
+            <rect x="80" y="62" width="120" height="12" rx="1" fill="#0a0f1f" stroke="#1e3a8a" stroke-width="0.8"/>
+            <text x="140" y="70.5" fill="#3b82f6" text-anchor="middle">3 · NETWORK</text>
+            <rect x="80" y="76" width="120" height="12" rx="1" fill="#070b15" stroke="#172554" stroke-width="0.8"/>
+            <text x="140" y="84.5" fill="#2563eb" text-anchor="middle">2 · DATA LINK</text>
+            <rect x="80" y="90" width="120" height="12" rx="1" fill="#050810" stroke="#0c1425" stroke-width="0.8"/>
+            <text x="140" y="98.5" fill="#1d4ed8" text-anchor="middle">1 · PHYSICAL</text>
+          </g>
+          <rect x="78" y="4" width="124" height="16" rx="2" fill="none" stroke="#f59e0b" stroke-width="2"/>
+          <text x="140" y="112" font-family="'JetBrains Mono', monospace" font-size="5" fill="#64748b" text-anchor="middle">OSI STACK · MELTYDEAYS APPLICATION LAYER GATEWAY</text>
+        </svg>`
+      },
+      {
+        layer: 'LAYER: 20',
+        title: 'FEAR // SHADOWS',
+        sub: 'SHADOW ENTITY · LURKING PRESENCE DETECTOR',
+        kanji: '影の中に何かいる',
+        quote: '"You\'re scared, aren\'t you? But there\'s nothing to be afraid of."',
+        protocol: 'SHADOW-X',
+        chip: 'DARK-SENSE',
+        spec1: 'DETECT: INFRARED',
+        spec2: 'RANGE: UNKNOWN',
+        sn: 'MD-LAIN-9807-020',
+        svg: `<svg viewBox="0 0 280 115" class="lain-card-svg" xmlns="http://www.w3.org/2000/svg">
+          <rect x="0" y="0" width="280" height="115" fill="#050510"/>
+          <circle cx="140" cy="45" r="35" fill="#0a0a1a" stroke="#1e1b4b" stroke-width="0.8"/>
+          <circle cx="128" cy="40" r="6" fill="#dc2626"/>
+          <circle cx="152" cy="40" r="6" fill="#dc2626"/>
+          <circle cx="128" cy="40" r="2.5" fill="#fca5a5"/>
+          <circle cx="152" cy="40" r="2.5" fill="#fca5a5"/>
+          <path d="M105,75 Q140,85 175,75" fill="none" stroke="#1e1b4b" stroke-width="0.8"/>
+          <g opacity="0.15">
+            <rect x="20" y="15" width="40" height="60" rx="2" fill="#1e1b4b"/>
+            <rect x="220" y="15" width="40" height="60" rx="2" fill="#1e1b4b"/>
+            <rect x="40" y="25" width="25" height="50" rx="2" fill="#1e1b4b"/>
+            <rect x="215" y="25" width="25" height="50" rx="2" fill="#1e1b4b"/>
+          </g>
+          <text x="140" y="100" font-family="'JetBrains Mono', monospace" font-size="5.5" fill="#475569" text-anchor="middle">/// ENTITY DETECTED · CLASSIFICATION: UNKNOWN</text>
+          <text x="140" y="110" font-family="'JetBrains Mono', monospace" font-size="5" fill="#334155" text-anchor="middle">SHADOW SENSOR · MELTYDEAYS DARK DETECTION UNIT</text>
+        </svg>`
+      },
+      {
+        layer: 'LAYER: 21',
+        title: 'SMOKE // CYBERIA',
+        sub: 'CYBERIA CLUB · UNDERGROUND ACCESS PASS',
+        kanji: 'サイベリアへようこそ',
+        quote: '"Welcome to Cyberia. What would you like?"',
+        protocol: 'CLUB-v2.0',
+        chip: 'BASS-CORE',
+        spec1: 'BPM: 140 TRANCE',
+        spec2: 'ACCESS: VIP PASS',
+        sn: 'MD-LAIN-9807-021',
+        svg: `<svg viewBox="0 0 280 115" class="lain-card-svg" xmlns="http://www.w3.org/2000/svg">
+          <rect x="0" y="0" width="280" height="115" fill="#0a0010" rx="0"/>
+          <rect x="30" y="15" width="220" height="50" rx="4" fill="#1a0030" stroke="#7c3aed" stroke-width="1.5"/>
+          <text x="140" y="35" font-family="'JetBrains Mono', monospace" font-size="12" font-weight="900" fill="#c084fc" text-anchor="middle" letter-spacing="4">CYBERIA</text>
+          <text x="140" y="50" font-family="'JetBrains Mono', monospace" font-size="6" fill="#a855f7" text-anchor="middle" letter-spacing="2">CLUB · UNDERGROUND</text>
+          <g opacity="0.6">
+            <rect x="40" y="72" width="4" height="20" fill="#a855f7"/><rect x="50" y="78" width="4" height="14" fill="#7c3aed"/>
+            <rect x="60" y="68" width="4" height="24" fill="#c084fc"/><rect x="70" y="75" width="4" height="17" fill="#6d28d9"/>
+            <rect x="80" y="70" width="4" height="22" fill="#a855f7"/><rect x="90" y="80" width="4" height="12" fill="#7c3aed"/>
+            <rect x="100" y="65" width="4" height="27" fill="#c084fc"/><rect x="110" y="74" width="4" height="18" fill="#6d28d9"/>
+            <rect x="166" y="72" width="4" height="20" fill="#a855f7"/><rect x="176" y="78" width="4" height="14" fill="#7c3aed"/>
+            <rect x="186" y="68" width="4" height="24" fill="#c084fc"/><rect x="196" y="75" width="4" height="17" fill="#6d28d9"/>
+            <rect x="206" y="70" width="4" height="22" fill="#a855f7"/><rect x="216" y="80" width="4" height="12" fill="#7c3aed"/>
+            <rect x="226" y="65" width="4" height="27" fill="#c084fc"/><rect x="236" y="74" width="4" height="18" fill="#6d28d9"/>
+          </g>
+          <text x="140" y="82" font-family="'JetBrains Mono', monospace" font-size="6" fill="#e9d5ff" text-anchor="middle">♫ ♫ ♫</text>
+          <text x="140" y="108" font-family="'JetBrains Mono', monospace" font-size="5.5" fill="#64748b" text-anchor="middle">CYBERIA PASS · MELTYDEAYS UNDERGROUND ACCESS</text>
+        </svg>`
+      },
+      {
+        layer: 'LAYER: 22',
+        title: 'FULFILL // TRUTH',
+        sub: 'TRUTH ENGINE · ABSOLUTE VERIFICATION SYSTEM',
+        kanji: '真実は一つではない',
+        quote: '"I don\'t need parents. I can live by myself."',
+        protocol: 'TRUTH-ABS',
+        chip: 'VERIFY-X',
+        spec1: 'LOGIC: BOOLEAN',
+        spec2: 'STATE: TRUE/NULL',
+        sn: 'MD-LAIN-9807-022',
+        svg: `<svg viewBox="0 0 280 115" class="lain-card-svg" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="140" cy="50" r="40" fill="none" stroke="#475569" stroke-width="1"/>
+          <line x1="140" y1="10" x2="140" y2="90" stroke="#334155" stroke-width="0.8"/>
+          <line x1="100" y1="50" x2="180" y2="50" stroke="#334155" stroke-width="0.8"/>
+          <line x1="112" y1="22" x2="168" y2="78" stroke="#334155" stroke-width="0.6"/>
+          <line x1="168" y1="22" x2="112" y2="78" stroke="#334155" stroke-width="0.6"/>
+          <text x="140" y="16" font-family="'JetBrains Mono', monospace" font-size="5" fill="#94a3b8" text-anchor="middle">TRUE</text>
+          <text x="140" y="97" font-family="'JetBrains Mono', monospace" font-size="5" fill="#94a3b8" text-anchor="middle">FALSE</text>
+          <text x="96" y="53" font-family="'JetBrains Mono', monospace" font-size="5" fill="#94a3b8" text-anchor="end">0</text>
+          <text x="184" y="53" font-family="'JetBrains Mono', monospace" font-size="5" fill="#94a3b8">1</text>
+          <circle cx="140" cy="50" r="15" fill="#0f172a" stroke="#6366f1" stroke-width="1.5"/>
+          <text x="140" y="54" font-family="'JetBrains Mono', monospace" font-size="8" font-weight="900" fill="#a5b4fc" text-anchor="middle">?!</text>
+          <text x="140" y="112" font-family="'JetBrains Mono', monospace" font-size="5.5" fill="#64748b" text-anchor="middle">TRUTH ENGINE · MELTYDEAYS VERIFICATION NODE</text>
+        </svg>`
+      },
+      {
+        layer: 'LAYER: 23',
+        title: 'EGO // DISSOLUTION',
+        sub: 'SELF-DISSOLUTION MATRIX · CONSCIOUSNESS UNBINDING',
+        kanji: '自我は幻想に過ぎない',
+        quote: '"Then, I\'ll have to erase your memories too."',
+        protocol: 'DISSOLVE',
+        chip: 'UNBIND-V',
+        spec1: 'EGO: DISSOLVING',
+        spec2: 'SELF: NULL',
+        sn: 'MD-LAIN-9807-023',
+        svg: `<svg viewBox="0 0 280 115" class="lain-card-svg" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="140" cy="45" r="35" fill="none" stroke="#6366f1" stroke-width="1.5" stroke-dasharray="2 3"/>
+          <circle cx="140" cy="45" r="28" fill="none" stroke="#818cf8" stroke-width="1" stroke-dasharray="4 4"/>
+          <circle cx="140" cy="45" r="20" fill="none" stroke="#a5b4fc" stroke-width="0.8" stroke-dasharray="6 5"/>
+          <circle cx="140" cy="45" r="12" fill="none" stroke="#c7d2fe" stroke-width="0.6" stroke-dasharray="8 6"/>
+          <g opacity="0.5">
+            <circle cx="110" cy="25" r="2" fill="#6366f1"/><circle cx="170" cy="25" r="2" fill="#6366f1"/>
+            <circle cx="105" cy="60" r="1.5" fill="#818cf8"/><circle cx="175" cy="60" r="1.5" fill="#818cf8"/>
+            <circle cx="120" cy="75" r="1" fill="#a5b4fc"/><circle cx="160" cy="75" r="1" fill="#a5b4fc"/>
+            <circle cx="90" cy="40" r="1.5" fill="#c7d2fe"/><circle cx="190" cy="40" r="1.5" fill="#c7d2fe"/>
+          </g>
+          <text x="140" y="49" font-family="'JetBrains Mono', monospace" font-size="6" font-weight="700" fill="#e0e7ff" text-anchor="middle">VOID</text>
+          <text x="140" y="95" font-family="'JetBrains Mono', monospace" font-size="5" fill="#475569" text-anchor="middle">/// SELF-DISSOLUTION IN PROGRESS ///</text>
+          <text x="140" y="110" font-family="'JetBrains Mono', monospace" font-size="5.5" fill="#64748b" text-anchor="middle">DISSOLUTION MATRIX · MELTYDEAYS UNBINDING ENGINE</text>
+        </svg>`
+      },
+      {
+        layer: 'LAYER: 24',
+        title: 'RESET // GOODBYE',
+        sub: 'FINAL RESET · WORLD RECONSTRUCTION PROTOCOL',
+        kanji: 'さようなら、もう一つの私',
+        quote: '"Lain, if you were to tell everyone that the Wired and the real world were not separate..."',
+        protocol: 'RESET-FIN',
+        chip: 'REBUILD-X',
+        spec1: 'ACTION: WORLD RESET',
+        spec2: 'RESULT: CLEAN BOOT',
+        sn: 'MD-LAIN-9807-024',
+        svg: `<svg viewBox="0 0 280 115" class="lain-card-svg" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="140" cy="50" r="45" fill="none" stroke="#0ea5e9" stroke-width="0.8"/>
+          <circle cx="140" cy="50" r="35" fill="none" stroke="#38bdf8" stroke-width="0.6" stroke-dasharray="3 3"/>
+          <path d="M140,5 L140,15 M140,85 L140,95 M95,50 L105,50 M175,50 L185,50" stroke="#0ea5e9" stroke-width="1.5"/>
+          <path d="M115,25 L121,31 M159,69 L165,75 M165,25 L159,31 M121,69 L115,75" stroke="#0ea5e9" stroke-width="1"/>
+          <circle cx="140" cy="50" r="20" fill="#0c1425" stroke="#0ea5e9" stroke-width="1.5"/>
+          <path d="M130,50 A10,10 0 0,1 140,40" fill="none" stroke="#38bdf8" stroke-width="2"/>
+          <path d="M150,50 A10,10 0 0,1 140,60" fill="none" stroke="#38bdf8" stroke-width="2"/>
+          <polygon points="141,38 144,42 138,42" fill="#38bdf8"/>
+          <polygon points="139,62 136,58 142,58" fill="#38bdf8"/>
+          <text x="140" y="108" font-family="'JetBrains Mono', monospace" font-size="5.5" fill="#64748b" text-anchor="middle">WORLD RESET · MELTYDEAYS RECONSTRUCTION PROTOCOL</text>
+        </svg>`
       }
-    };
+    ];
 
-    const item = configs[cardNum] || configs[1];
+    const idx = (typeof templateIdx === 'number' && templateIdx >= 0)
+      ? (templateIdx % configs.length)
+      : Math.floor(Math.random() * configs.length);
+    const item = configs[idx];
+    item.layer = 'LAYER: ' + String(idx + 1).padStart(2, '0');
     const tokenCode = tok ? tok.tokenCode : item.sn;
     const pin = tok ? tok.securityPin : "••••";
     const folioStr = tok ? ("F" + tok.invoiceFolio) : "0000";
@@ -431,7 +974,7 @@ export class InvoiceTemplateService {
   }
 
   /**
-   * Genera el documento imprimible completo (Anverso con 4 facturas + Reverso con 4 tarjetas Lain y QRs dinÃ¡micos)
+   * Genera el documento imprimible completo (Anverso con 4 facturas + Reverso con 4 tarjetas Lain y QRs dinámicos)
    * @param {Array} tokens - Array de 4 tokens de factura
    * @param {object} paperDims - Dimensiones de papel ({ name, widthMm, heightMm, cssSize })
    * @param {string} mode - "both" | "front" | "back"
@@ -474,10 +1017,10 @@ export class InvoiceTemplateService {
 
       if (mode !== "front") {
         const backHtml = [
-          InvoiceTemplateService.getLainBackCardHtml(2, batch[1], qrIndex + 1),
-          InvoiceTemplateService.getLainBackCardHtml(1, batch[0], qrIndex + 0),
-          InvoiceTemplateService.getLainBackCardHtml(4, batch[3], qrIndex + 3),
-          InvoiceTemplateService.getLainBackCardHtml(3, batch[2], qrIndex + 2)
+          InvoiceTemplateService.getLainBackCardHtml(2, batch[1], qrIndex + 1, (qrIndex + 1) % 24),
+          InvoiceTemplateService.getLainBackCardHtml(1, batch[0], qrIndex + 0, (qrIndex + 0) % 24),
+          InvoiceTemplateService.getLainBackCardHtml(4, batch[3], qrIndex + 3, (qrIndex + 3) % 24),
+          InvoiceTemplateService.getLainBackCardHtml(3, batch[2], qrIndex + 2, (qrIndex + 2) % 24)
         ].join('\n\n');
 
         pagesHtml += `
@@ -707,7 +1250,7 @@ export class InvoiceTemplateService {
           el.innerHTML = "";
           new QRCode(el, {
             text: "https://meltydeays-wired-club.vercel.app/?claim=" + tok.tokenCode,
-            width: 64, height: 64,
+            width: 78, height: 78,
             colorDark: "#0f172a",
             colorLight: "#ffffff",
             correctLevel: QRCode.CorrectLevel.M
@@ -962,53 +1505,136 @@ export class InvoiceTemplateService {
 
     /* FILA CENTRAL: FIGURA + RECOMPENSA DIGITAL & QR */
     .lain-main-body-row {
-      display: flex; align-items: stretch; justify-content: space-between;
-      gap: 5px; margin: 2px 0; height: 112px;
+      display: flex;
+      align-items: stretch;
+      justify-content: space-between;
+      gap: 8px;
+      margin: 4px 0;
+      flex: 1;
+      min-height: 185px;
+      max-height: 220px;
     }
     .lain-figure-col {
-      flex: 1.15; display: flex; flex-direction: column; min-width: 0;
+      flex: 1.15;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
     }
     .lain-svg-container {
-      width: 100%; height: 100%; background: #ffffff; border: 1.2px solid #0f172a;
-      border-radius: 4px; display: flex; align-items: center; justify-content: center;
-      overflow: hidden; box-shadow: 1.5px 1.5px 0px rgba(15, 23, 42, 0.15);
+      width: 100%;
+      height: 100%;
+      background: #ffffff;
+      border: 1.5px solid #0f172a;
+      border-radius: 5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      box-shadow: 2px 2px 0px rgba(15, 23, 42, 0.15);
+      padding: 4px;
+      box-sizing: border-box;
     }
-    .lain-card-svg { width: 100%; height: 100%; }
+    .lain-card-svg {
+      width: 100%;
+      height: 100%;
+      max-height: 100%;
+    }
 
     .lain-reward-col {
-      flex: 0.95; background: #ffffff; border: 1.2px solid #0f172a;
-      border-radius: 4px; padding: 3px 5px; box-shadow: 1.5px 1.5px 0px rgba(15, 23, 42, 0.15);
-      display: flex; flex-direction: column; align-items: center; justify-content: space-between;
-      box-sizing: border-box; min-width: 0;
+      flex: 0.95;
+      background: #ffffff;
+      border: 1.5px solid #0f172a;
+      border-radius: 5px;
+      padding: 6px 8px;
+      box-shadow: 2px 2px 0px rgba(15, 23, 42, 0.15);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      box-sizing: border-box;
+      min-width: 0;
     }
     .reward-tag {
-      font-family: 'JetBrains Mono', monospace; font-size: 5.5px; font-weight: 800;
-      color: #64748b; letter-spacing: 0.6px; text-transform: uppercase; line-height: 1;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 6.5px;
+      font-weight: 900;
+      color: #64748b;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      line-height: 1;
     }
     .reward-points-row {
-      display: flex; align-items: center; justify-content: center; gap: 3px; line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      line-height: 1;
+      margin: 2px 0;
     }
-    .reward-plus { font-size: 13px; font-weight: 900; color: #0f172a; line-height: 1; }
+    .reward-plus {
+      font-size: 16px;
+      font-weight: 900;
+      color: #0f172a;
+      line-height: 1;
+    }
     .reward-pencil-box {
-      width: 32px; height: 16px; background: #ffffff;
-      border: 1px dashed #64748b; border-bottom: 1.5px solid #0f172a;
-      border-radius: 2px; display: flex; align-items: center; justify-content: center;
+      width: 44px;
+      height: 20px;
+      background: #ffffff;
+      border: 1.2px dashed #64748b;
+      border-bottom: 2px solid #0f172a;
+      border-radius: 3px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
-    .reward-wp { font-size: 10px; font-weight: 900; color: #e11d48; letter-spacing: -0.3px; }
-    .reward-qr-frame { display: flex; align-items: center; justify-content: center; }
+    .reward-wp {
+      font-size: 12px;
+      font-weight: 900;
+      color: #e11d48;
+      letter-spacing: -0.3px;
+    }
+    .reward-qr-frame {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 2px 0;
+    }
     .qr-canvas-box {
-      width: 17mm; height: 17mm; background: #ffffff; border: 1.2px solid #0f172a;
-      border-radius: 4px; padding: 1.2mm; display: flex; align-items: center; justify-content: center;
-      box-shadow: 1px 1px 0px rgba(0,0,0,0.15);
+      width: 22mm;
+      height: 22mm;
+      background: #ffffff;
+      border: 1.5px solid #0f172a;
+      border-radius: 5px;
+      padding: 1.5mm;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 1.5px 1.5px 0px rgba(0,0,0,0.12);
     }
-    .qr-canvas-box img, .qr-canvas-box canvas { width: 100% !important; height: 100% !important; display: block; }
+    .qr-canvas-box img, .qr-canvas-box canvas {
+      width: 100% !important;
+      height: 100% !important;
+      display: block;
+    }
     .reward-pin-tag {
-      font-family: 'JetBrains Mono', monospace; font-size: 6.5px; font-weight: 800;
-      color: #0f172a; letter-spacing: 0.8px; background: #f1f5f9;
-      border: 0.8px solid #cbd5e1; padding: 1px 5px; border-radius: 2px; line-height: 1;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 7.5px;
+      font-weight: 900;
+      color: #0f172a;
+      letter-spacing: 1px;
+      background: #f1f5f9;
+      border: 1px solid #cbd5e1;
+      padding: 1.5px 6px;
+      border-radius: 3px;
+      line-height: 1;
     }
     .reward-sub {
-      font-size: 4.8px; color: #64748b; text-align: center; line-height: 1.15; font-weight: 600;
+      font-size: 5.5px;
+      color: #64748b;
+      text-align: center;
+      line-height: 1.2;
+      font-weight: 600;
     }
 
     .lain-quote-box {

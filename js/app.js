@@ -57,6 +57,9 @@ document.addEventListener("DOMContentLoaded", () => {
   window.closeClaimModal = closeClaimModal;
   window.submitManualClaim = submitManualClaim;
   window.claimFromBanner = claimFromBanner;
+  window.openAdminAssignModal = openAdminAssignModal;
+  window.closeAdminAssignModal = closeAdminAssignModal;
+  window.submitAdminAssignFromScan = submitAdminAssignFromScan;
 
   window.confirmRedeem = confirmRedeem;
   window.executeRedeem = executeRedeem;
@@ -117,6 +120,33 @@ function render(model) {
   if (model.pendingClaimToken) {
     if (claimBanner) claimBanner.style.display = "flex";
     if (detectedToken) detectedToken.textContent = model.pendingClaimToken;
+
+    import("./services/FirestoreService.js").then(({ FirestoreService }) => {
+      FirestoreService.getToken(model.pendingClaimToken).then(tok => {
+        const bannerText = document.getElementById("claim-banner-text");
+        const btnClaim = document.getElementById("btn-execute-claim");
+        if (tok) {
+          if (tok.pointsValue > 0 && tok.status !== "CLAIMED") {
+            if (bannerText) bannerText.innerHTML = `Factura #MD-2026-<strong>${tok.invoiceFolio || "0000"}</strong> · Recompensa: <strong style="color:#059669; font-size:1.05rem;">+${tok.pointsValue} WP</strong>`;
+            if (btnClaim) {
+              btnClaim.textContent = `Acreditar +${tok.pointsValue} WP`;
+              btnClaim.onclick = claimFromBanner;
+              btnClaim.style.display = "inline-block";
+            }
+          } else if (tok.pointsValue <= 0) {
+            if (bannerText) bannerText.innerHTML = `Factura #MD-2026-<strong>${tok.invoiceFolio || "0000"}</strong> · <span style="color:#e11d48; font-weight:800;">Pendiente de Asignar Puntos</span>`;
+            if (btnClaim) {
+              btnClaim.textContent = "⚡ Asignar Puntos (Admin)";
+              btnClaim.onclick = openAdminAssignModal;
+              btnClaim.style.display = "inline-block";
+            }
+          } else if (tok.status === "CLAIMED") {
+            if (bannerText) bannerText.innerHTML = `Factura #MD-2026-<strong>${tok.invoiceFolio || "0000"}</strong> · <span style="color:#e11d48; font-weight:800;">Esta factura ya fue reclamada</span>`;
+            if (btnClaim) btnClaim.style.display = "none";
+          }
+        }
+      });
+    });
   } else {
     if (claimBanner) claimBanner.style.display = "none";
   }
@@ -519,4 +549,72 @@ function showVoucherModal(voucherCode) {
 function closeVoucherModal() {
   const modal = document.getElementById("modal-voucher");
   if (modal) modal.style.display = "none";
+}
+
+
+function openAdminAssignModal() {
+  const modal = document.getElementById("modal-admin-assign-scan");
+  const folioEl = document.getElementById("assign-scan-folio");
+  const ptsInput = document.getElementById("assign-scan-points");
+  const pinInput = document.getElementById("assign-scan-admin-pin");
+
+  if (folioEl && vm.pendingClaimToken) {
+    folioEl.textContent = vm.pendingClaimToken;
+  }
+  if (ptsInput) ptsInput.value = "";
+  if (pinInput) {
+    const isAuth = localStorage.getItem("melty_admin_session") === "AUTHENTICATED";
+    if (isAuth) {
+      pinInput.value = "110805";
+      pinInput.closest(".form-group").style.display = "none";
+    } else {
+      pinInput.value = "";
+      pinInput.closest(".form-group").style.display = "block";
+    }
+  }
+  if (modal) modal.style.display = "flex";
+  if (ptsInput) ptsInput.focus();
+}
+
+function closeAdminAssignModal() {
+  const modal = document.getElementById("modal-admin-assign-scan");
+  if (modal) modal.style.display = "none";
+}
+
+async function submitAdminAssignFromScan() {
+  const pinInput = document.getElementById("assign-scan-admin-pin");
+  const ptsInput = document.getElementById("assign-scan-points");
+  const points = Number(ptsInput ? ptsInput.value : 0);
+  const pin = (pinInput ? pinInput.value : "").trim();
+
+  const isAuth = localStorage.getItem("melty_admin_session") === "AUTHENTICATED";
+  if (!isAuth && pin !== "110805") {
+    showToast("PIN de administrador incorrecto", "error");
+    return;
+  }
+
+  if (points <= 0) {
+    showToast("Ingresa una cantidad de puntos válida mayor a 0", "info");
+    return;
+  }
+
+  try {
+    const { FirestoreService } = await import("./services/FirestoreService.js");
+    const tok = await FirestoreService.getToken(vm.pendingClaimToken);
+    if (!tok) {
+      showToast("Factura no encontrada", "error");
+      return;
+    }
+    tok.pointsValue = points;
+    tok.status = "ACTIVE";
+    tok.activatedAt = new Date().toISOString();
+    await FirestoreService.saveToken(tok);
+    
+    closeAdminAssignModal();
+    showToast("¡Listo! Asignados +" + points + " WP a la factura. Escribe '" + points + "' a lápiz en el reverso físico.", "success");
+    
+    renderUI(vm);
+  } catch (err) {
+    showToast("Error al guardar puntos: " + err.message, "error");
+  }
 }

@@ -351,12 +351,18 @@
       <!-- FORMULARIO DE GENERACIÓN DE FACTURAS -->
       <div class="form-grid" style="grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));">
         <div class="form-group">
-          <label class="form-label">Folio Inicial de Factura</label>
-          <input type="number" id="lot-start-folio" class="form-input" value="104" placeholder="104">
+          <label class="form-label">Número de Folio Inicial</label>
+          <input type="number" id="lot-start-folio" class="form-input" value="1" placeholder="Ej: 1 para empezar en #0001">
+          <div style="font-size: 0.72rem; color: var(--gray-600); margin-top: 0.25rem;">
+            Número con el que empezará el talonario (ej. 1 genera #0001, #0002...).
+          </div>
         </div>
         <div class="form-group">
-          <label class="form-label">Cantidad de Facturas (1 Pliego = 4)</label>
-          <input type="number" id="lot-count" class="form-input" value="4" min="1" max="100">
+          <label class="form-label">Cantidad Total de Facturas Deseadas</label>
+          <input type="number" id="lot-count" class="form-input" value="40" min="1" max="200" placeholder="Ej: 40">
+          <div style="font-size: 0.72rem; color: var(--gray-600); margin-top: 0.25rem;">
+            Cada factura tiene su propio QR único e irrepetible (se imprimen 4 por pliego doble cara).
+          </div>
         </div>
       </div>
 
