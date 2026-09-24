@@ -1,0 +1,78 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && 
+        (request.auth.token.role == 'admin' || 
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin');
+    }
+
+    // USUARIOS Y PERFILES
+    match /users/{userId} {
+      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      
+      // Creación inicial con saldo cero forzado
+      allow create: if isAuthenticated() && request.auth.uid == userId
+        && request.resource.data.wired_points == 0
+        && request.resource.data.lifetime_points == 0
+        && request.resource.data.role == 'customer';
+
+      // Modificación de datos de perfil (el saldo solo muta por transacción autorizada)
+      allow update: if isAdmin() || (
+        isAuthenticated() && request.auth.uid == userId
+        && request.resource.data.wired_points >= 0
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName', 'phone', 'updated_at'])
+      );
+
+      // LIBRO CONTABLE (LEDGER INMUTABLE)
+      match /ledger/{txId} {
+        allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+        allow write: if isAdmin();
+      }
+    }
+
+    // TOKENS QR DE FACTURA
+    match /qr_tokens/{tokenId} {
+      allow read: if isAuthenticated();
+      allow create, delete: if isAdmin();
+      
+      // Actualización atómica de reclamo
+      allow update: if isAdmin() || (
+        isAuthenticated()
+        && resource.data.status == 'ACTIVE'
+        && request.resource.data.status == 'CLAIMED'
+        && request.resource.data.claimed_by == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'claimed_by', 'claimed_at'])
+      );
+    }
+
+    // CATÁLOGO DE PRODUCTOS (Lectura pública, escritura Admin)
+    match /rewards_catalog/{rewardId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // VALES DE CANJE
+    match /redemptions/{voucherId} {
+      allow read: if isAuthenticated() && 
+        (resource.data.user_uid == request.auth.uid || isAdmin());
+      
+      allow create: if isAuthenticated() 
+        && request.resource.data.user_uid == request.auth.uid
+        && request.resource.data.status == 'PENDING_DELIVERY';
+
+      allow update: if isAdmin() && 
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'delivered_at', 'delivered_by', 'delivery_notes']);
+    }
+
+    // LOTES DE FACTURACIÓN
+    match /batches_registry/{batchId} {
+      allow read, write: if isAdmin();
+    }
+  }
+}
