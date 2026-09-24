@@ -77,11 +77,57 @@ function switchAdminTab(tabName) {
   });
 }
 
+let html5QrCodeScanner = null;
+
+async function startCameraScanner() {
+  const modal = document.getElementById("modal-camera-scanner");
+  if (modal) modal.style.display = "flex";
+
+  if (typeof Html5Qrcode !== "undefined") {
+    try {
+      if (html5QrCodeScanner) {
+        await html5QrCodeScanner.stop().catch(() => {});
+        html5QrCodeScanner = null;
+      }
+      html5QrCodeScanner = new Html5Qrcode("camera-scanner-reader");
+      await html5QrCodeScanner.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: { width: 250, height: 250 } },
+        (decodedText) => {
+          stopCameraScanner();
+          const input = document.getElementById("input-scan-voucher");
+          if (input) {
+            input.value = decodedText.trim();
+            verifyVoucherAdmin();
+          }
+        },
+        () => {}
+      );
+    } catch (err) {
+      showToast("No se pudo iniciar la cámara: " + (err.message || err), "error");
+    }
+  } else {
+    showToast("Librería de escáner no disponible.", "error");
+  }
+}
+
+function stopCameraScanner() {
+  if (html5QrCodeScanner) {
+    html5QrCodeScanner.stop().catch(() => {}).finally(() => {
+      html5QrCodeScanner = null;
+    });
+  }
+  const modal = document.getElementById("modal-camera-scanner");
+  if (modal) modal.style.display = "none";
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   vm.subscribe(renderAdmin);
 
   window.switchAdminTab = switchAdminTab;
   window.submitAdminPin = submitAdminPin;
+  window.startCameraScanner = startCameraScanner;
+  window.stopCameraScanner = stopCameraScanner;
   window.clearPosFeedback = clearPosFeedback;
   window.clearPosScanner = clearPosScanner;
   window.closePosResult = closePosResult;
@@ -123,6 +169,20 @@ document.addEventListener("DOMContentLoaded", () => {
   window.testSingleQrUrl = testSingleQrUrl;
 
   vm.init();
+
+  // Detección automática si el admin escanea un QR físico o abre con ?scan= o ?claim=
+  const params = new URLSearchParams(window.location.search);
+  const autoScan = params.get("scan") || params.get("claim");
+  if (autoScan) {
+    setTimeout(() => {
+      switchAdminTab("pos");
+      const scanInput = document.getElementById("input-scan-voucher");
+      if (scanInput) {
+        scanInput.value = autoScan.trim();
+        verifyVoucherAdmin();
+      }
+    }, 350);
+  }
 });
 
 function renderAdmin(model) {
@@ -163,6 +223,17 @@ function renderAdmin(model) {
 
   const statTokens = document.getElementById("stat-tokens-count");
   if (statTokens) statTokens.textContent = model.tokens.length;
+
+  // Auto-completar el siguiente folio disponible para evitar talonarios duplicados
+  const folioEl = document.getElementById("lot-start-folio");
+  if (folioEl && !folioEl.dataset.userEdited) {
+    const nextFolio = vm.getNextAvailableFolio();
+    folioEl.value = nextFolio;
+    const helper = document.getElementById("lot-folio-helper");
+    if (helper) {
+      helper.innerHTML = `Siguiente folio libre detectado: <strong>#${String(nextFolio).padStart(4, "0")}</strong> (garantiza unicidad)`;
+    }
+  }
 
   renderCatalogTable(model.catalog);
   renderTokensTable(model.tokens);
@@ -227,27 +298,27 @@ function renderTokensTable(tokens) {
 
     let pointsBadge = "";
     if (isPending) {
-      pointsBadge = `<span class="badge-navi" style="background:#fef3c7; color:#b45309; border:1px solid #fde68a;">⏳ Sin Asignar (0 WP)</span>`;
+      pointsBadge = `<span class="badge-navi" style="background:#fef3c7; color:#b45309; border:1px solid #fde68a; white-space:nowrap; display:inline-flex; align-items:center; gap:4px; padding:3px 8px; font-size:0.72rem;">⏳ Sin Asignar (0 WP)</span>`;
     } else {
-      pointsBadge = `<span class="badge-navi" style="background:#eef2ff; color:#4338ca; border:1px solid #c7d2fe;">${t.pointsValue} WP</span>`;
+      pointsBadge = `<span class="badge-navi" style="background:#eef2ff; color:#4338ca; border:1px solid #c7d2fe; white-space:nowrap; display:inline-flex; align-items:center; gap:4px; padding:3px 8px; font-size:0.72rem;">⚡ ${t.pointsValue} WP</span>`;
     }
 
     let statusBadge = "";
     if (isClaimed) {
-      statusBadge = `<span class="badge-navi" style="background:#fee2e2; color:#b91c1c; border: 1px solid #fecdd3;">✔ RECLAMADO</span>`;
+      statusBadge = `<span class="badge-navi" style="background:#fee2e2; color:#b91c1c; border: 1px solid #fecdd3; white-space:nowrap; display:inline-flex; align-items:center; gap:4px; padding:3px 8px; font-size:0.72rem;">✔ RECLAMADO</span>`;
     } else if (isActive) {
-      statusBadge = `<span class="badge-navi" style="background:#ecfdf5; color:#065f46; border: 1px solid #a7f3d0;">● SIN RECLAMAR (${t.pointsValue} WP)</span>`;
+      statusBadge = `<span class="badge-navi" style="background:#ecfdf5; color:#065f46; border: 1px solid #a7f3d0; white-space:nowrap; display:inline-flex; align-items:center; gap:4px; padding:3px 8px; font-size:0.72rem;">● SIN RECLAMAR (${t.pointsValue} WP)</span>`;
     } else {
-      statusBadge = `<span class="badge-navi" style="background:#fffbeb; color:#92400e; border: 1px solid #fcd34d;">⏳ EN ESPERA DE VALOR</span>`;
+      statusBadge = `<span class="badge-navi" style="background:#fffbeb; color:#92400e; border: 1px solid #fcd34d; white-space:nowrap; display:inline-flex; align-items:center; gap:4px; padding:3px 8px; font-size:0.72rem;">⏳ EN ESPERA DE VALOR</span>`;
     }
 
     return `
       <tr>
-        <td style="font-family:var(--font-mono); font-size:0.8rem;"><strong>${t.tokenCode}</strong></td>
-        <td><strong>Factura #MD-2026-${t.invoiceFolio}</strong></td>
-        <td>${pointsBadge}</td>
-        <td style="font-family:var(--font-mono); letter-spacing: 2px;">${t.securityPin || "••••"}</td>
-        <td>${statusBadge}</td>
+        <td style="font-family:var(--font-mono); font-size:0.8rem; white-space:nowrap;"><strong>${t.tokenCode}</strong></td>
+        <td style="white-space:nowrap;"><strong>Factura #MD-2026-${t.invoiceFolio}</strong></td>
+        <td style="white-space:nowrap;">${pointsBadge}</td>
+        <td style="font-family:var(--font-mono); letter-spacing: 2px; white-space:nowrap;">${t.securityPin || "••••"}</td>
+        <td style="white-space:nowrap;">${statusBadge}</td>
         <td style="text-align: right; white-space: nowrap;">
           ${!isClaimed ? `
             <button class="btn-primary" style="padding: 3px 8px; font-size: 0.72rem; margin-right: 4px;" onclick="promptAssignPoints('${t.tokenCode}', '${t.invoiceFolio}')">
@@ -461,6 +532,7 @@ function setQuickPoints(val) {
 }
 
 function promptAssignPoints(tokenCode, folio) {
+  switchAdminTab("pos");
   const input = document.getElementById("input-scan-voucher");
   if (input) {
     input.value = tokenCode;

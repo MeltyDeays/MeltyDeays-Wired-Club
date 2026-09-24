@@ -182,12 +182,41 @@ export class AdminViewModel {
     return token;
   }
 
+  getNextAvailableFolio() {
+    if (!this.tokens || this.tokens.length === 0) return 1;
+    let maxFolio = 0;
+    for (const t of this.tokens) {
+      const num = parseInt(t.invoiceFolio, 10);
+      if (!isNaN(num) && num > maxFolio) {
+        maxFolio = num;
+      }
+    }
+    return maxFolio + 1;
+  }
+
   async generateLot(startFolio, count, pointsPerQr = 0) {
-    const sFolio = Number(startFolio) || 104;
+    let sFolio = Number(startFolio);
+    if (!sFolio || isNaN(sFolio) || sFolio <= 0) {
+      sFolio = this.getNextAvailableFolio();
+    }
     let nTokens = Number(count) || 4;
     if (nTokens < 4) nTokens = 4;
     if (nTokens % 4 !== 0) nTokens = Math.ceil(nTokens / 4) * 4;
     const points = Number(pointsPerQr) || 0;
+
+    // Prevención de duplicados: si el rango solicitado se solapa con folios existentes, avanzar automáticamente
+    const existingFolios = new Set(this.tokens.map(t => parseInt(t.invoiceFolio, 10)).filter(n => !isNaN(n)));
+    let hasOverlap = false;
+    for (let i = 0; i < nTokens; i++) {
+      if (existingFolios.has(sFolio + i)) {
+        hasOverlap = true;
+        break;
+      }
+    }
+    if (hasOverlap) {
+      sFolio = this.getNextAvailableFolio();
+    }
+
     const batchId = "BATCH-" + Date.now();
     const created = [];
 
@@ -213,6 +242,6 @@ export class AdminViewModel {
 
     await FirestoreService.saveTokensBatch(created.map(t => t.toJSON()));
     await this.refreshData();
-    return { batchId, tokens: created };
+    return { batchId, tokens: created, startFolio: sFolio };
   }
 }

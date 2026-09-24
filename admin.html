@@ -11,8 +11,9 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   
-  <!-- QRCode.js -->
+  <!-- QRCode.js & Html5Qrcode Scanner -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
 </head>
 <body>
 
@@ -201,11 +202,14 @@
       <div class="pos-scanner-box">
         <div class="pos-input-group" id="pos-input-group-wrapper">
           <div class="pos-input-prefix">⌕ VALE:</div>
-          <input type="text" id="input-scan-voucher" class="pos-scanner-input" placeholder="CANJE-XXXX" maxlength="20"
+          <input type="text" id="input-scan-voucher" class="pos-scanner-input" placeholder="CANJE-XXXX o WP-XXXX o Escanea QR" maxlength="120"
                  onkeydown="if(event.key==='Enter') verifyVoucherAdmin()"
                  oninput="clearPosFeedback()">
           <button class="btn-primary pos-btn-scan" onclick="verifyVoucherAdmin()">
-            ⚡ Validar Vale
+            ⚡ Validar Vale / Factura
+          </button>
+          <button type="button" class="btn-secondary" style="border-radius:0; border:none; border-left:1px solid #cbd5e1; padding:0 0.85rem;" onclick="startCameraScanner()" title="Escanear con Cámara">
+            📷
           </button>
           <button class="btn-secondary" style="border-radius:0; border:none; border-left:1px solid #cbd5e1; padding:0 0.85rem;" onclick="clearPosScanner()" title="Limpiar campo">
             ✕
@@ -452,10 +456,10 @@
       <!-- FORMULARIO DE GENERACIÓN DE FACTURAS -->
       <div class="form-grid" style="grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));">
         <div class="form-group">
-          <label class="form-label">Número de Folio Inicial</label>
-          <input type="number" id="lot-start-folio" class="form-input" value="1" placeholder="Ej: 1 para empezar en #0001">
-          <div style="font-size: 0.72rem; color: var(--gray-600); margin-top: 0.25rem;">
-            Número con el que empezará el talonario (ej. 1 genera #0001, #0002...).
+          <label class="form-label">Número de Folio Inicial (Auto-incremental)</label>
+          <input type="number" id="lot-start-folio" class="form-input" min="1" placeholder="Ej: 1" oninput="this.dataset.userEdited='true'">
+          <div id="lot-folio-helper" style="font-size: 0.72rem; color: var(--gray-600); margin-top: 0.25rem; font-family: var(--font-mono);">
+            Siguiente folio disponible detectado automáticamente.
           </div>
         </div>
         <div class="form-group">
@@ -822,6 +826,22 @@
       <div style="display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 1.25rem;">
         <button class="btn-secondary" onclick="closeModal('modal-new-user')">Cancelar</button>
         <button class="btn-primary" onclick="saveNewUserAdmin()">Registrar Socio</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: ESCÁNER DE CÁMARA (ADMIN POS) -->
+  <div id="modal-camera-scanner" class="modal-overlay" style="display: none;">
+    <div class="modal-content" style="max-width: 480px; width: 95%; text-align: center;">
+      <button class="modal-close-btn" onclick="stopCameraScanner()" aria-label="Cerrar">&times;</button>
+      <span class="badge-navi">ESCÁNER ÓPTICO // CÁMARA</span>
+      <h3 style="margin: 0.5rem 0; font-size: 1.15rem; font-weight: 900; color: var(--dark);">Escanear Código QR o Vale</h3>
+      <p style="font-size: 0.78rem; color: var(--gray-700); margin-bottom: 0.75rem;">
+        Apunta la cámara del dispositivo al código QR de la factura o al vale digital.
+      </p>
+      <div id="camera-scanner-reader" style="width: 100%; border: 2px solid var(--dark); border-radius: 6px; overflow: hidden; background: #000; min-height: 250px;"></div>
+      <div style="margin-top: 1rem; display: flex; justify-content: center;">
+        <button type="button" class="btn-secondary" onclick="stopCameraScanner()">Cerrar Cámara</button>
       </div>
     </div>
   </div>

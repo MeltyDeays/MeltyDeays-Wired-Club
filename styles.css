@@ -908,12 +908,18 @@ body {
   background: var(--dark);
   color: #ffffff;
   font-family: var(--font-mono);
-  font-size: 8.5px;
+  font-size: 0.72rem;
   font-weight: 800;
-  letter-spacing: 0.8px;
+  letter-spacing: 0.5px;
   padding: 3px 8px;
-  border-radius: 3px;
+  border-radius: 4px;
   text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+  line-height: 1.25;
+  box-sizing: border-box;
 }
 
 .badge-layer {

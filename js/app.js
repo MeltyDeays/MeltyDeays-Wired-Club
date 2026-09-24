@@ -381,7 +381,16 @@ async function submitClientLogin() {
   try {
     const user = await vm.login(phone, pin);
     closeAuthModal();
-    showToast("¡Bienvenido de nuevo, " + user.displayName + "!", "success");
+    if (vm.pendingClaimToken) {
+      try {
+        const claimRes = await vm.claimPendingToken();
+        showToast(`¡Bienvenido ${user.displayName}! Se acreditaron +${claimRes.pointsAdded} WP de tu factura.`, "success");
+      } catch (claimErr) {
+        showToast("Sesión iniciada. " + (claimErr.message || ""), "info");
+      }
+    } else {
+      showToast("¡Bienvenido de nuevo, " + user.displayName + "!", "success");
+    }
   } catch (err) {
     setAuthFeedback(err.message || "Error al iniciar sesión", "error");
     showToast(err.message, "error");
@@ -409,7 +418,16 @@ async function submitClientRegister() {
   try {
     const user = await vm.register(name, phone, pin);
     closeAuthModal();
-    showToast("¡Cuenta creada con éxito! CyberPass activado", "success");
+    if (vm.pendingClaimToken) {
+      try {
+        const claimRes = await vm.claimPendingToken();
+        showToast(`¡Cuenta creada con éxito! Se acreditaron +${claimRes.pointsAdded} WP a tu CyberPass.`, "success");
+      } catch (claimErr) {
+        showToast("¡Cuenta creada! CyberPass activado.", "success");
+      }
+    } else {
+      showToast("¡Cuenta creada con éxito! CyberPass activado", "success");
+    }
   } catch (err) {
     setAuthFeedback(err.message || "Error al crear cuenta", "error");
     showToast(err.message, "error");

@@ -1170,8 +1170,6 @@ export class InvoiceTemplateService {
       box-shadow: 0 12px 30px rgba(0,0,0,0.5);
       overflow: hidden;
       transition: filter 0.2s ease;
-      page-break-after: always;
-      break-after: page;
     }
 
     .sheet-front {
@@ -1842,13 +1840,29 @@ export class InvoiceTemplateService {
 
     /* REGLAS DE IMPRESIÓN */
     @media print {
-      body { background: transparent !important; padding: 0 !important; gap: 0 !important; }
+      html, body {
+        background: transparent !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        height: auto !important;
+      }
       .toolbar { display: none !important; }
-      .sheet-letter { box-shadow: none !important; margin: 0 !important; }
+      .sheet-letter {
+        box-shadow: none !important;
+        margin: 0 !important;
+        page-break-after: page !important;
+        break-after: page !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+      }
       body.bw-mode .sheet-letter { filter: grayscale(100%) contrast(112%) !important; }
-      .sheet-front { page-break-after: always !important; break-after: page !important; }
-      .sheet-back { page-break-after: always !important; break-after: page !important; }
-      .sheet-letter:last-child { page-break-after: avoid !important; break-after: avoid !important; }
+      .sheet-letter:last-of-type,
+      .sheet-front:last-of-type,
+      .sheet-back:last-of-type,
+      main:last-of-type {
+        page-break-after: avoid !important;
+        break-after: avoid !important;
+      }
       @page { size: ${dims.cssSize}; margin: 0; }
     }
     `;
