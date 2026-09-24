@@ -1,7 +1,12 @@
+# Dependencias y cache
 node_modules/
-.env
-.env.local
+.vercel
+.vercel/
 *.log
 .DS_Store
 Thumbs.db
-.vercel
+
+# Variables de entorno y secretos
+.env
+.env.*
+!.env.example

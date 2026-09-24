@@ -1,3 +1,4 @@
-server.js
-build_full_invoice.js
 .git
+.gitignore
+README.md
+*.log
