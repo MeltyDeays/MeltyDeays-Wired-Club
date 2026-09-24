@@ -110,14 +110,22 @@
           <div class="lain-os-tag">SISTEMA ATÓMICO OCC · FIRESTORE</div>
         </div>
 
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1.25rem; margin-top: 1rem;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; margin-top: 1rem;">
           <div>
             <div style="font-size: 0.72rem; font-family: var(--font-mono); color: var(--gray-500); font-weight: 700;">PUNTOS EN CIRCULACIÓN</div>
             <div id="stat-points-circ" style="font-size: 1.8rem; font-weight: 900; color: var(--dark); font-family: var(--font-mono);">0</div>
           </div>
           <div>
+            <div style="font-size: 0.72rem; font-family: var(--font-mono); color: var(--gray-500); font-weight: 700;">SOCIOS REGISTRADOS</div>
+            <div id="stat-users-count" style="font-size: 1.8rem; font-weight: 900; color: #4338ca; font-family: var(--font-mono);">0</div>
+          </div>
+          <div>
             <div style="font-size: 0.72rem; font-family: var(--font-mono); color: var(--gray-500); font-weight: 700;">VALES PENDIENTES MOSTRADOR</div>
             <div id="stat-vouchers-pending" style="font-size: 1.8rem; font-weight: 900; color: var(--accent); font-family: var(--font-mono);">0</div>
+          </div>
+          <div>
+            <div style="font-size: 0.72rem; font-family: var(--font-mono); color: var(--gray-500); font-weight: 700;">VALES ENTREGADOS</div>
+            <div id="stat-vouchers-delivered" style="font-size: 1.8rem; font-weight: 900; color: #059669; font-family: var(--font-mono);">0</div>
           </div>
           <div>
             <div style="font-size: 0.72rem; font-family: var(--font-mono); color: var(--gray-500); font-weight: 700;">PRODUCTOS EN CATÁLOGO</div>
@@ -131,8 +139,28 @@
       </div>
     </div>
 
+    <!-- PESTAÑAS DE NAVEGACIÓN ADMINISTRATIVA (MODO MULTI-HERRAMIENTA) -->
+    <nav class="admin-nav-tabs">
+      <button class="admin-tab-btn active" id="tab-btn-pos" onclick="switchAdminTab('pos')">
+        ⚡ Mostrador POS
+      </button>
+      <button class="admin-tab-btn" id="tab-btn-clients" onclick="switchAdminTab('clients')">
+        👥 Socios / Clientes
+      </button>
+      <button class="admin-tab-btn" id="tab-btn-invoices" onclick="switchAdminTab('invoices')">
+        🖨️ Facturas & QR 4x1
+      </button>
+      <button class="admin-tab-btn" id="tab-btn-catalog" onclick="switchAdminTab('catalog')">
+        📦 Catálogo de Canjes
+      </button>
+      <button class="admin-tab-btn" id="tab-btn-history" onclick="switchAdminTab('history')">
+        📜 Historial de Canjes
+      </button>
+    </nav>
+
     <!-- MÓDULO 1: TERMINAL 1-SCAN POS DE ENTREGA EN MOSTRADOR -->
-    <div class="admin-section pos-terminal-section">
+    <div id="sec-pos" class="admin-tab-content">
+      <div class="admin-section pos-terminal-section">
       <div class="admin-section-header">
         <div style="display: flex; align-items: center; gap: 0.75rem;">
           <h2>⚡ Terminal de Mostrador (1-Scan POS)</h2>
@@ -281,12 +309,61 @@
               Cerrar Ficha
             </button>
           </div>
+    </div>
+    </div>
+
+    <!-- SECCIÓN 2: GESTIÓN DE CLIENTES / SOCIOS WIRED -->
+    <div id="sec-clients" class="admin-tab-content" style="display: none;">
+      <div class="admin-section">
+        <div class="admin-section-header">
+          <div>
+            <h2>👥 Gestión de Socios Wired & Puntos</h2>
+            <div style="font-size: 0.8rem; color: var(--gray-500); font-family: var(--font-mono); margin-top: 2px;">
+              BASE DE CLIENTES · ASIGNACIÓN DIRECTA DE PUNTOS · AUDITORÍA DE LEDGER
+            </div>
+          </div>
+          <button class="btn-primary" onclick="openNewUserModal()">+ Registrar Nuevo Socio</button>
+        </div>
+
+        <p style="color: var(--gray-700); font-size: 0.85rem; margin-bottom: 1.25rem;">
+          Administra a todos los clientes del club. Puedes consultar sus saldos acumulados, otorgar o deducir Wired Points manualmente por compras en mostrador y auditar el historial de transacciones.
+        </p>
+
+        <!-- Barra de búsqueda y filtros -->
+        <div class="admin-filter-bar">
+          <input type="text" id="search-users-input" class="admin-search-input" placeholder="🔍 Buscar por nombre, teléfono o código de socio..." oninput="filterUsers()">
+          <div style="display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap;">
+            <span style="font-family: var(--font-mono); font-size: 0.72rem; font-weight: 700; color: var(--gray-500);">FILTRAR RANGO:</span>
+            <button class="btn-secondary" style="padding: 3px 8px; font-size: 0.72rem;" onclick="filterUsersByTier('ALL')">Todos</button>
+            <button class="btn-secondary" style="padding: 3px 8px; font-size: 0.72rem;" onclick="filterUsersByTier('NAVI')">NAVI</button>
+            <button class="btn-secondary" style="padding: 3px 8px; font-size: 0.72rem;" onclick="filterUsersByTier('RUNNER')">RUNNER</button>
+            <button class="btn-secondary" style="padding: 3px 8px; font-size: 0.72rem;" onclick="filterUsersByTier('ELITE')">ELITE</button>
+            <button class="btn-secondary" style="padding: 3px 8px; font-size: 0.72rem;" onclick="filterUsersByTier('DEUS')">DEUS</button>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Socio / Titular</th>
+                <th>Contacto & ID</th>
+                <th>Rango / Tier</th>
+                <th>Saldo Actual</th>
+                <th>Puntos Históricos</th>
+                <th>Fecha Alta</th>
+                <th style="text-align: right;">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="clients-table-body"></tbody>
+          </table>
         </div>
       </div>
     </div>
 
-    <!-- MÓDULO 2: GESTOR DE CATÁLOGO (CRUD 100% EN BLANCO) -->
-    <div class="admin-section">
+    <!-- SECCIÓN: GESTOR DE CATÁLOGO (CRUD 100% EN BLANCO) -->
+    <div id="sec-catalog" class="admin-tab-content" style="display: none;">
+      <div class="admin-section">
       <div class="admin-section-header">
         <h2>📦 Catálogo de Productos Canjeables</h2>
         <button class="btn-primary" onclick="openNewProductModal()">+ Agregar Producto</button>
@@ -310,9 +387,11 @@
         </table>
       </div>
     </div>
+    </div>
 
-    <!-- MÓDULO 3: GENERADOR DE QRS Y REVERSOS PARA FACTURA 4X1 -->
-    <div class="admin-section">
+    <!-- SECCIÓN 3: GENERADOR DE FACTURAS 4X1 -->
+    <div id="sec-invoices" class="admin-tab-content" style="display: none;">
+      <div class="admin-section">
       <div class="admin-section-header">
         <div>
           <h2>🖨️ Generador de Facturas 4x1 (Anverso Oficial + Contraportada Coleccionable)</h2>
@@ -359,9 +438,9 @@
         </div>
         <div class="form-group">
           <label class="form-label">Cantidad Total de Facturas Deseadas</label>
-          <input type="number" id="lot-count" class="form-input" value="40" min="1" max="200" placeholder="Ej: 40">
+          <input type="number" id="lot-count" class="form-input" value="40" min="4" step="4" placeholder="Ej: 40">
           <div style="font-size: 0.72rem; color: var(--gray-600); margin-top: 0.25rem;">
-            Cada factura tiene su propio QR único e irrepetible (se imprimen 4 por pliego doble cara).
+            Mínimo 4 y en múltiplos de 4 (cada hoja carta son 4 facturas a doble cara con QR únicos).
           </div>
         </div>
       </div>
@@ -419,7 +498,7 @@
           <button class="btn-primary" onclick="generateBatchAdmin()" style="font-size: 0.85rem; padding: 0.65rem 1.25rem;">
             ⚡ Generar Lote de Facturas
           </button>
-          <button class="btn-secondary" id="btn-print-active-sheet" onclick="openPrintSheetModal()" style="font-size: 0.85rem; padding: 0.65rem 1.25rem;">
+          <button class="btn-secondary" id="btn-print-active-sheet" onclick="generateBatchAdmin()" style="font-size: 0.85rem; padding: 0.65rem 1.25rem;">
             🖨️ Imprimir Facturas 4x1 (Doble Cara)
           </button>
         </div>
@@ -442,6 +521,47 @@
         </table>
       </div>
     </div>
+    </div>
+
+    <!-- SECCIÓN 5: HISTORIAL DE CANJES Y AUDITORÍA DE VALES -->
+    <div id="sec-history" class="admin-tab-content" style="display: none;">
+      <div class="admin-section">
+        <div class="admin-section-header">
+          <div>
+            <h2>📜 Auditoría de Vales y Canjes de Premios</h2>
+            <div style="font-size: 0.8rem; color: var(--gray-500); font-family: var(--font-mono); margin-top: 2px;">
+              REGISTRO DE SALIDAS FÍSICAS DE MOSTRADOR · CONTROL DE ENTREGA
+            </div>
+          </div>
+          <div style="display: flex; gap: 0.4rem;">
+            <button class="btn-secondary" style="padding: 4px 9px; font-size: 0.75rem;" onclick="filterVouchersTable('ALL')">Todos</button>
+            <button class="btn-secondary" style="padding: 4px 9px; font-size: 0.75rem;" onclick="filterVouchersTable('PENDING')">⏳ Pendientes</button>
+            <button class="btn-secondary" style="padding: 4px 9px; font-size: 0.75rem;" onclick="filterVouchersTable('DELIVERED')">✓ Despachados</button>
+          </div>
+        </div>
+
+        <p style="color: var(--gray-700); font-size: 0.85rem; margin-bottom: 1.25rem;">
+          Historial completo de vales emitidos por clientes para canjear productos del catálogo físico. Los vales despachados quedan inhabilitados para evitar entregas duplicadas.
+        </p>
+
+        <div class="table-responsive">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Código Vale</th>
+                <th>Artículo Físico</th>
+                <th>Socio Titular</th>
+                <th>Costo (WP)</th>
+                <th>Fecha Canje</th>
+                <th>Estado</th>
+                <th style="text-align: right;">Acción</th>
+              </tr>
+            </thead>
+            <tbody id="vouchers-table-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
   </main>
 
   <!-- MODAL: PREVISUALIZACIÓN E IMPRESIÓN DEL PLIEGO 4X1 -->
@@ -455,7 +575,7 @@
           <h3 style="font-size: 1.2rem; font-weight: 900; color: var(--dark); margin-top: 4px;">Previsualización de Facturas 4x1</h3>
         </div>
         <div style="display: flex; gap: 0.5rem; align-items: center;">
-          <button class="btn-primary" onclick="triggerNativeSheetPrint()">🖨️ Enviar a Imprimir</button>
+          <button class="btn-primary" onclick="printFromModal()">🖨️ Enviar a Imprimir</button>
           <button class="btn-secondary" onclick="closeModal('modal-print-sheet')">Cerrar</button>
         </div>
       </div>
@@ -561,6 +681,125 @@
       <div style="display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 1.25rem;">
         <button class="btn-secondary" onclick="closeModal('modal-new-product')">Cancelar</button>
         <button class="btn-primary" onclick="saveProductAdmin()">Guardar Artículo</button>
+      </div>
+  <!-- MODAL: AJUSTE DIRECTO DE PUNTOS (+ / - WP) -->
+  <div id="modal-adjust-points" class="modal-overlay" style="display: none;">
+    <div class="modal-content" style="max-width: 500px; text-align: left;">
+      <button class="modal-close-btn" onclick="closeModal('modal-adjust-points')" aria-label="Cerrar">&times;</button>
+      <span class="badge-navi">OPERACIÓN DIRECTA DE PUNTOS</span>
+      <h3 style="font-size: 1.25rem; font-weight: 900; color: var(--dark); margin: 0.5rem 0 0.25rem 0;">
+        Ajustar Saldo: <span id="adjust-user-name" style="color:var(--primary);">-</span>
+      </h3>
+      <div style="font-size: 0.8rem; color: var(--gray-700); margin-bottom: 1.25rem;">
+        Saldo actual en cuenta: <strong id="adjust-user-current" style="font-family:var(--font-mono); font-size:1rem; color:var(--dark);">0 WP</strong>
+      </div>
+
+      <input type="hidden" id="adjust-user-uid">
+
+      <div class="form-group" style="margin-bottom: 1rem;">
+        <label class="form-label">Tipo de Movimiento</label>
+        <div style="display: flex; gap: 0.75rem;">
+          <label style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; font-weight: 800; cursor: pointer;">
+            <input type="radio" name="adjust-type" value="ADD" checked onchange="toggleAdjustType()">
+            <span style="color: #059669;">➕ Cargar / Otorgar Puntos</span>
+          </label>
+          <label style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; font-weight: 800; cursor: pointer;">
+            <input type="radio" name="adjust-type" value="SUB" onchange="toggleAdjustType()">
+            <span style="color: #e11d48;">➖ Deducir Puntos</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 1rem;">
+        <label class="form-label">Cantidad de Wired Points (WP)</label>
+        <div style="display: flex; gap: 0.5rem; align-items: center;">
+          <input type="number" id="adjust-points-amount" class="form-input" placeholder="100" min="1" max="100000"
+                 style="font-family:var(--font-mono); font-size:1.3rem; font-weight:900; text-align:center; max-width:180px;">
+          <div style="display: flex; gap: 0.35rem; flex-wrap: wrap;">
+            <button type="button" class="btn-secondary" style="padding: 4px 8px; font-size: 0.72rem;" onclick="setAdjustQuickPoints(50)">+50</button>
+            <button type="button" class="btn-secondary" style="padding: 4px 8px; font-size: 0.72rem;" onclick="setAdjustQuickPoints(100)">+100</button>
+            <button type="button" class="btn-secondary" style="padding: 4px 8px; font-size: 0.72rem;" onclick="setAdjustQuickPoints(200)">+200</button>
+            <button type="button" class="btn-secondary" style="padding: 4px 8px; font-size: 0.72rem;" onclick="setAdjustQuickPoints(500)">+500</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 1.25rem;">
+        <label class="form-label">Concepto o Razón del Ajuste</label>
+        <input type="text" id="adjust-points-reason" class="form-input" placeholder="Ej: Compra de periféricos en mostrador / Bono especial">
+        <div style="font-size: 0.72rem; color: var(--gray-500); margin-top: 0.25rem;">
+          Este concepto quedará registrado permanentemente en el libro de transacciones (Ledger) del cliente.
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 0.75rem; justify-content: flex-end;">
+        <button class="btn-secondary" onclick="closeModal('modal-adjust-points')">Cancelar</button>
+        <button class="btn-primary" onclick="submitAdjustPoints()">Confirmar Ajuste</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: HISTORIAL / LEDGER DE TRANSACCIONES DEL CLIENTE -->
+  <div id="modal-user-ledger" class="modal-overlay" style="display: none;">
+    <div class="modal-content" style="max-width: 720px; width: 95%; max-height: 85vh; overflow-y: auto; text-align: left;">
+      <button class="modal-close-btn" onclick="closeModal('modal-user-ledger')" aria-label="Cerrar">&times;</button>
+      <span class="badge-navi">LIBRO DE TRANSACCIONES // LEDGER AUDIT</span>
+      <h3 id="ledger-user-name" style="font-size: 1.25rem; font-weight: 900; color: var(--dark); margin: 0.5rem 0 0.25rem 0;">Historial del Socio</h3>
+      <div id="ledger-user-uid" style="font-size: 0.78rem; font-family: var(--font-mono); color: var(--gray-500); margin-bottom: 1rem;">UID: -</div>
+
+      <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+        <table class="ledger-table">
+          <thead>
+            <tr>
+              <th>Fecha y Hora</th>
+              <th>Tipo</th>
+              <th>Concepto / Detalle</th>
+              <th style="text-align: right;">Variación</th>
+              <th style="text-align: right;">Saldo Posterior</th>
+            </tr>
+          </thead>
+          <tbody id="user-ledger-tbody"></tbody>
+        </table>
+      </div>
+
+      <div style="margin-top: 1.25rem; display: flex; justify-content: flex-end;">
+        <button class="btn-secondary" onclick="closeModal('modal-user-ledger')">Cerrar Historial</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: REGISTRAR NUEVO SOCIO DESDE MOSTRADOR -->
+  <div id="modal-new-user" class="modal-overlay" style="display: none;">
+    <div class="modal-content" style="max-width: 500px; text-align: left;">
+      <button class="modal-close-btn" onclick="closeModal('modal-new-user')" aria-label="Cerrar">&times;</button>
+      <span class="badge-navi">ALTA DE SOCIOS // MOSTRADOR</span>
+      <h3 style="font-size: 1.25rem; font-weight: 900; color: var(--dark); margin: 0.5rem 0 0.25rem 0;">+ Registrar Nuevo Socio Wired</h3>
+      <p style="font-size: 0.8rem; color: var(--gray-700); margin-bottom: 1.25rem;">
+        Crea una cuenta para un cliente nuevo al instante en el mostrador. Podrá acumular y canjear puntos de inmediato.
+      </p>
+
+      <div class="form-grid">
+        <div class="form-group" style="grid-column: span 2;">
+          <label class="form-label">Nombre Completo del Cliente</label>
+          <input type="text" id="new-user-name" class="form-input" placeholder="Ej: Kenji Sato" autofocus>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Número Telefónico</label>
+          <input type="tel" id="new-user-phone" class="form-input" placeholder="88888888">
+        </div>
+        <div class="form-group">
+          <label class="form-label">PIN de Seguridad (4-6 dígitos)</label>
+          <input type="password" id="new-user-pin" class="form-input" placeholder="••••" maxlength="6" value="1234">
+        </div>
+        <div class="form-group" style="grid-column: span 2;">
+          <label class="form-label">Puntos Iniciales de Bienvenida / Venta (Opcional)</label>
+          <input type="number" id="new-user-points" class="form-input" value="0" min="0" placeholder="0">
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 1.25rem;">
+        <button class="btn-secondary" onclick="closeModal('modal-new-user')">Cancelar</button>
+        <button class="btn-primary" onclick="saveNewUserAdmin()">Registrar Socio</button>
       </div>
     </div>
   </div>

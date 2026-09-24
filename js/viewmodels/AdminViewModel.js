@@ -3,6 +3,7 @@ import { FirestoreService } from "../services/FirestoreService.js";
 import { RewardModel } from "../models/RewardModel.js";
 import { VoucherModel } from "../models/VoucherModel.js";
 import { TokenModel } from "../models/TokenModel.js";
+import { UserModel } from "../models/UserModel.js";
 
 const MASTER_PIN = "110805";
 
@@ -12,6 +13,7 @@ export class AdminViewModel {
     this.catalog = [];
     this.tokens = [];
     this.vouchers = [];
+    this.users = [];
     this.listeners = [];
   }
 
@@ -56,9 +58,60 @@ export class AdminViewModel {
   async refreshData() {
     const rawRewards = await FirestoreService.fetchRewards();
     this.catalog = rawRewards.map(r => new RewardModel(r));
-    this.tokens = FirestoreService.getAllTokens().map(t => new TokenModel(t));
-    this.vouchers = FirestoreService.getAllVouchers().map(v => new VoucherModel(v));
+    const rawTokens = await FirestoreService.fetchTokens();
+    this.tokens = rawTokens.map(t => new TokenModel(t));
+    const rawVouchers = await FirestoreService.fetchVouchers();
+    this.vouchers = rawVouchers.map(v => new VoucherModel(v));
+    const rawUsers = await FirestoreService.fetchUsers();
+    this.users = rawUsers.map(u => new UserModel(u));
     this.notify();
+  }
+
+  async registerUserFromAdmin(userData) {
+    const name = (userData.displayName || "").trim();
+    if (!name) throw new Error("El nombre del socio es obligatorio.");
+    const cleanPhone = (userData.phone || "").replace(/\D/g, "");
+    if (cleanPhone.length < 8) throw new Error("Ingresa un número telefónico válido (mínimo 8 dígitos).");
+    const pin = (userData.pin || "1234").trim();
+    const initialPts = Number(userData.initialPoints) || 0;
+
+    const uid = "USR-" + cleanPhone;
+    const existing = await FirestoreService.getUser(uid);
+    if (existing) throw new Error("Ya existe un socio registrado con este número telefónico.");
+
+    const newUser = new UserModel({
+      uid,
+      displayName: name,
+      phone: cleanPhone,
+      pin,
+      wiredPoints: initialPts,
+      lifetimePoints: initialPts
+    });
+
+    await FirestoreService.saveUser(newUser.toJSON());
+    if (initialPts > 0) {
+      FirestoreService.addLedgerEntry(uid, {
+        id: "TX-INIT-" + Date.now(),
+        type: "ADMIN_CREDIT",
+        amount: initialPts,
+        reason: "Bono Inicial / Acreditación en Mostrador",
+        timestamp: new Date().toISOString(),
+        balanceAfter: initialPts
+      });
+    }
+
+    await this.refreshData();
+    return newUser;
+  }
+
+  async adjustUserPoints(uid, deltaPoints, reason = "Ajuste Administrativo") {
+    const res = await FirestoreService.adjustUserPoints(uid, deltaPoints, reason);
+    await this.refreshData();
+    return res;
+  }
+
+  getUserLedger(uid) {
+    return FirestoreService.getLedger(uid);
   }
 
   async addReward(productData) {
@@ -131,7 +184,9 @@ export class AdminViewModel {
 
   async generateLot(startFolio, count, pointsPerQr = 0) {
     const sFolio = Number(startFolio) || 104;
-    const nTokens = Number(count) || 4;
+    let nTokens = Number(count) || 4;
+    if (nTokens < 4) nTokens = 4;
+    if (nTokens % 4 !== 0) nTokens = Math.ceil(nTokens / 4) * 4;
     const points = Number(pointsPerQr) || 0;
     const batchId = "BATCH-" + Date.now();
     const created = [];
@@ -153,10 +208,10 @@ export class AdminViewModel {
         status: points > 0 ? "ACTIVE" : "PENDING_ASSIGNMENT"
       });
 
-      await FirestoreService.saveToken(token.toJSON());
       created.push(token);
     }
 
+    await FirestoreService.saveTokensBatch(created.map(t => t.toJSON()));
     await this.refreshData();
     return { batchId, tokens: created };
   }

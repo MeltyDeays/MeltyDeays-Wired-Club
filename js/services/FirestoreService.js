@@ -1,5 +1,6 @@
 /* Servicio de Persistencia y Transacciones Atómicas (Cloud Firestore + Local Mirror) */
 import { db } from "../config/firebase.js";
+import { INITIAL_TOKENS } from "../data/initialTokens.js";
 
 const LOCAL_STORAGE_KEY = "wired_club_mvvm_db_v1";
 
@@ -9,7 +10,8 @@ class StorageEngine {
   }
 
   init() {
-    if (!localStorage.getItem(LOCAL_STORAGE_KEY)) {
+    const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
+    if (!raw) {
       const blankDb = {
         users: {},
         rewards: {},
@@ -18,7 +20,21 @@ class StorageEngine {
         batches: [],
         ledger: {}
       };
+      INITIAL_TOKENS.forEach(tok => {
+        blankDb.tokens[tok.token_code] = tok;
+      });
       localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(blankDb));
+    } else {
+      try {
+        const snap = JSON.parse(raw);
+        if (!snap.tokens || Object.keys(snap.tokens).length === 0) {
+          if (!snap.tokens) snap.tokens = {};
+          INITIAL_TOKENS.forEach(tok => {
+            snap.tokens[tok.token_code] = tok;
+          });
+          localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(snap));
+        }
+      } catch (e) {}
     }
   }
 
@@ -114,6 +130,59 @@ export class FirestoreService {
     return snap.users[uid] || null;
   }
 
+  static async fetchUsers() {
+    if (db) {
+      try {
+        const snap = await db.collection("users").get();
+        const local = engine.getSnapshot();
+        snap.forEach(doc => {
+          local.users[doc.id] = doc.data();
+        });
+        engine.saveSnapshot(local);
+        return Object.values(local.users);
+      } catch (e) {
+        console.warn("Firestore fetchUsers fallback:", e.message);
+      }
+    }
+    const snap = engine.getSnapshot();
+    return Object.values(snap.users);
+  }
+
+  static getAllUsers() {
+    const snap = engine.getSnapshot();
+    return Object.values(snap.users);
+  }
+
+  static async adjustUserPoints(uid, deltaPoints, reason = "Ajuste Administrativo") {
+    let user = await this.getUser(uid);
+    if (!user) throw new Error("Socio no encontrado");
+    const delta = Number(deltaPoints);
+    if (isNaN(delta) || delta === 0) throw new Error("Indica una cantidad de puntos válida");
+    
+    const currentPoints = Number(user.wiredPoints !== undefined ? user.wiredPoints : (user.wired_points || 0));
+    const newBalance = Math.max(0, currentPoints + delta);
+    user.wiredPoints = newBalance;
+    user.wired_points = newBalance;
+    if (delta > 0) {
+      const lifetime = Number(user.lifetimePoints !== undefined ? user.lifetimePoints : (user.lifetime_points || 0));
+      user.lifetimePoints = lifetime + delta;
+      user.lifetime_points = lifetime + delta;
+    }
+    user.updated_at = new Date().toISOString();
+    await this.saveUser(user);
+
+    const ledgerEntry = {
+      id: "TX-" + Date.now() + "-" + Math.random().toString(36).substring(2, 6).toUpperCase(),
+      type: delta > 0 ? "ADMIN_CREDIT" : "ADMIN_DEBIT",
+      amount: Math.abs(delta),
+      reason,
+      timestamp: new Date().toISOString(),
+      balanceAfter: newBalance
+    };
+    this.addLedgerEntry(uid, ledgerEntry);
+    return { user, ledgerEntry };
+  }
+
   static async saveUser(user) {
     const snap = engine.getSnapshot();
     snap.users[user.uid] = user;
@@ -143,6 +212,24 @@ export class FirestoreService {
     return snap.tokens[tokenCode] || null;
   }
 
+  static async fetchTokens() {
+    if (db) {
+      try {
+        const snap = await db.collection("qr_tokens").get();
+        const local = engine.getSnapshot();
+        snap.forEach(doc => {
+          local.tokens[doc.id] = doc.data();
+        });
+        engine.saveSnapshot(local);
+        return Object.values(local.tokens);
+      } catch (e) {
+        console.warn("Firestore fetchTokens fallback a local:", e.message);
+      }
+    }
+    const snap = engine.getSnapshot();
+    return Object.values(snap.tokens);
+  }
+
   static async saveToken(token) {
     const snap = engine.getSnapshot();
     snap.tokens[token.token_code] = token;
@@ -158,7 +245,48 @@ export class FirestoreService {
     return token;
   }
 
+  static async saveTokensBatch(tokens) {
+    if (!tokens || tokens.length === 0) return [];
+    const snap = engine.getSnapshot();
+    tokens.forEach(tok => {
+      snap.tokens[tok.token_code] = tok;
+    });
+    engine.saveSnapshot(snap);
+
+    if (db) {
+      try {
+        const batch = db.batch();
+        tokens.forEach(tok => {
+          const docRef = db.collection("qr_tokens").doc(tok.token_code);
+          batch.set(docRef, tok, { merge: true });
+        });
+        await batch.commit();
+      } catch (e) {
+        console.warn("Firestore saveTokensBatch error:", e.message);
+      }
+    }
+    return tokens;
+  }
+
   // Vales de Canje
+  static async fetchVouchers() {
+    if (db) {
+      try {
+        const snap = await db.collection("redemptions").get();
+        const local = engine.getSnapshot();
+        snap.forEach(doc => {
+          local.vouchers[doc.id] = doc.data();
+        });
+        engine.saveSnapshot(local);
+        return Object.values(local.vouchers);
+      } catch (e) {
+        console.warn("Firestore fetchVouchers fallback:", e.message);
+      }
+    }
+    const snap = engine.getSnapshot();
+    return Object.values(snap.vouchers);
+  }
+
   static async getVoucher(voucherCode) {
     if (db) {
       try {

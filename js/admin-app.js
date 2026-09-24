@@ -6,6 +6,10 @@ const vm = new AdminViewModel();
 
 let currentSingleTokenUrl = "";
 let currentSheetTokens = [];
+let currentTab = "pos";
+let usersFilterQuery = "";
+let usersTierFilter = "ALL";
+let vouchersFilterState = "ALL";
 
 export function showToast(message, type = "info") {
   let container = document.getElementById("toast-container");
@@ -57,9 +61,26 @@ function closePosResult() {
   if (resultBox) resultBox.style.display = "none";
 }
 
+function switchAdminTab(tabName) {
+  currentTab = tabName;
+  const tabs = ["pos", "clients", "invoices", "catalog", "history"];
+  tabs.forEach(t => {
+    const btn = document.getElementById("tab-btn-" + t);
+    const sec = document.getElementById("sec-" + t);
+    if (btn) {
+      if (t === tabName) btn.classList.add("active");
+      else btn.classList.remove("active");
+    }
+    if (sec) {
+      sec.style.display = t === tabName ? "block" : "none";
+    }
+  });
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   vm.subscribe(renderAdmin);
 
+  window.switchAdminTab = switchAdminTab;
   window.submitAdminPin = submitAdminPin;
   window.clearPosFeedback = clearPosFeedback;
   window.clearPosScanner = clearPosScanner;
@@ -77,10 +98,26 @@ document.addEventListener("DOMContentLoaded", () => {
   window.removeProductAdmin = removeProductAdmin;
   window.closeModal = closeModal;
 
+  // Clientes y Puntos
+  window.filterUsers = filterUsers;
+  window.filterUsersByTier = filterUsersByTier;
+  window.openAdjustPointsModal = openAdjustPointsModal;
+  window.toggleAdjustType = toggleAdjustType;
+  window.setAdjustQuickPoints = setAdjustQuickPoints;
+  window.submitAdjustPoints = submitAdjustPoints;
+  window.openUserLedgerModal = openUserLedgerModal;
+  window.openNewUserModal = openNewUserModal;
+  window.saveNewUserAdmin = saveNewUserAdmin;
+
+  // Historial de Vales
+  window.filterVouchersTable = filterVouchersTable;
+  window.deliverVoucherFromTable = deliverVoucherFromTable;
+
   window.toggleCustomPaperInputs = toggleCustomPaperInputs;
   window.openPrintSheetModal = openPrintSheetModal;
   window.updatePreviewSheetDimensions = updatePreviewSheetDimensions;
   window.triggerNativeSheetPrint = triggerNativeSheetPrint;
+  window.printFromModal = printFromModal;
   window.viewSingleTokenQr = viewSingleTokenQr;
   window.copySingleQrUrl = copySingleQrUrl;
   window.testSingleQrUrl = testSingleQrUrl;
@@ -107,14 +144,30 @@ function renderAdmin(model) {
   model.tokens.forEach(t => { if (t.isClaimed()) totalCirc += t.pointsValue; });
 
   const pendingVouchers = model.vouchers.filter(v => !v.isDelivered()).length;
+  const deliveredVouchers = model.vouchers.filter(v => v.isDelivered()).length;
 
-  document.getElementById("stat-points-circ").textContent = totalCirc.toLocaleString();
-  document.getElementById("stat-vouchers-pending").textContent = pendingVouchers;
-  document.getElementById("stat-catalog-count").textContent = model.catalog.length;
-  document.getElementById("stat-tokens-count").textContent = model.tokens.length;
+  const statCirc = document.getElementById("stat-points-circ");
+  if (statCirc) statCirc.textContent = totalCirc.toLocaleString();
+
+  const statUsers = document.getElementById("stat-users-count");
+  if (statUsers) statUsers.textContent = model.users.length;
+
+  const statVouchersPending = document.getElementById("stat-vouchers-pending");
+  if (statVouchersPending) statVouchersPending.textContent = pendingVouchers;
+
+  const statDelivered = document.getElementById("stat-vouchers-delivered");
+  if (statDelivered) statDelivered.textContent = deliveredVouchers;
+
+  const statCat = document.getElementById("stat-catalog-count");
+  if (statCat) statCat.textContent = model.catalog.length;
+
+  const statTokens = document.getElementById("stat-tokens-count");
+  if (statTokens) statTokens.textContent = model.tokens.length;
 
   renderCatalogTable(model.catalog);
   renderTokensTable(model.tokens);
+  renderUsersTable(model.users);
+  renderVouchersTable(model.vouchers);
 }
 
 function renderCatalogTable(catalog) {
@@ -167,14 +220,14 @@ function renderTokensTable(tokens) {
 
   currentSheetTokens = tokens.slice(0, 4);
 
-  tbody.innerHTML = tokens.slice(0, 25).map(t => {
+  tbody.innerHTML = tokens.slice(0, 100).map(t => {
     const isClaimed = t.isClaimed();
     const isPending = t.isPendingAssignment();
     const isActive = t.isActive();
 
     let pointsBadge = "";
     if (isPending) {
-      pointsBadge = `<span class="badge-navi" style="background:#fef3c7; color:#b45309; border:1px solid #fde68a;">⏳ Sin Asignar</span>`;
+      pointsBadge = `<span class="badge-navi" style="background:#fef3c7; color:#b45309; border:1px solid #fde68a;">⏳ Sin Asignar (0 WP)</span>`;
     } else {
       pointsBadge = `<span class="badge-navi" style="background:#eef2ff; color:#4338ca; border:1px solid #c7d2fe;">${t.pointsValue} WP</span>`;
     }
@@ -183,9 +236,9 @@ function renderTokensTable(tokens) {
     if (isClaimed) {
       statusBadge = `<span class="badge-navi" style="background:#fee2e2; color:#b91c1c; border: 1px solid #fecdd3;">✔ RECLAMADO</span>`;
     } else if (isActive) {
-      statusBadge = `<span class="badge-navi" style="background:#ecfdf5; color:#065f46; border: 1px solid #a7f3d0;">● ACTIVO</span>`;
+      statusBadge = `<span class="badge-navi" style="background:#ecfdf5; color:#065f46; border: 1px solid #a7f3d0;">● SIN RECLAMAR (${t.pointsValue} WP)</span>`;
     } else {
-      statusBadge = `<span class="badge-navi" style="background:#fffbeb; color:#92400e; border: 1px solid #fcd34d;">⏳ PENDIENTE</span>`;
+      statusBadge = `<span class="badge-navi" style="background:#fffbeb; color:#92400e; border: 1px solid #fcd34d;">⏳ EN ESPERA DE VALOR</span>`;
     }
 
     return `
@@ -417,17 +470,30 @@ function promptAssignPoints(tokenCode, folio) {
 }
 
 async function generateBatchAdmin() {
-  const folio = document.getElementById("lot-start-folio")?.value || 104;
-  const count = document.getElementById("lot-count")?.value || 4;
+  const folioEl = document.getElementById("lot-start-folio");
+  const countEl = document.getElementById("lot-count");
+  const folio = folioEl?.value || 1;
+  let count = parseInt(countEl?.value, 10) || 4;
+
+  if (count < 4) count = 4;
+  if (count % 4 !== 0) count = Math.ceil(count / 4) * 4;
+  if (countEl) countEl.value = count;
+
+  showToast(`Generando y guardando lote de ${count} facturas con QR únicos...`, "info");
 
   try {
     const res = await vm.generateLot(folio, count, 0);
     currentSheetTokens = res.tokens;
-    showToast("¡Lote generado! " + res.tokens.length + " facturas con QR únicos en estado 'En espera de valor'.", "success");
+    showToast(`¡Lote guardado! ${res.tokens.length} facturas registradas en estado 'En espera de valor'.`, "success");
     triggerNativeSheetPrint(res.tokens);
   } catch (err) {
     showToast("❌ " + err.message, "error");
   }
+}
+
+async function printFromModal() {
+  closeModal("modal-print-sheet");
+  await generateBatchAdmin();
 }
 
 function openNewProductModal() {
@@ -567,16 +633,18 @@ function openPrintSheetModal() {
 function triggerNativeSheetPrint(explicitTokens) {
   const dims = getSelectedPaperDimensions("preview");
   const mode = document.getElementById("print-duplex-mode")?.value || "both";
+  
+  if (!explicitTokens && currentSheetTokens.length === 0 && vm.tokens.length === 0) {
+    // Si no hay tokens generados aún, generar el lote directamente para guardar en sistema
+    generateBatchAdmin();
+    return;
+  }
+
   const tokensToPrint = explicitTokens && explicitTokens.length > 0
     ? explicitTokens
     : (currentSheetTokens.length > 0 
         ? currentSheetTokens 
-        : (vm.tokens.length > 0 ? vm.tokens : [
-            { tokenCode: "WP-2026-F0104-A98B", invoiceFolio: "0104", pointsValue: 0, securityPin: "4891" },
-            { tokenCode: "WP-2026-F0105-C34D", invoiceFolio: "0105", pointsValue: 0, securityPin: "7124" },
-            { tokenCode: "WP-2026-F0106-E56F", invoiceFolio: "0106", pointsValue: 0, securityPin: "8390" },
-            { tokenCode: "WP-2026-F0107-G78H", invoiceFolio: "0107", pointsValue: 0, securityPin: "1923" }
-          ]));
+        : vm.tokens);
 
   const printWindow = window.open("", "_blank");
   if (!printWindow) {
@@ -629,5 +697,295 @@ function copySingleQrUrl() {
 function testSingleQrUrl() {
   if (currentSingleTokenUrl) {
     window.open(currentSingleTokenUrl, "_blank");
+  }
+}
+
+// ========================================================
+// GESTIÓN DE CLIENTES / SOCIOS WIRED & PUNTOS
+// ========================================================
+function renderUsersTable(users) {
+  const tbody = document.getElementById("clients-table-body");
+  if (!tbody) return;
+
+  let filtered = users || [];
+  if (usersTierFilter !== "ALL") {
+    filtered = filtered.filter(u => (u.tier || "").toUpperCase() === usersTierFilter);
+  }
+  if (usersFilterQuery) {
+    const q = usersFilterQuery.toLowerCase();
+    filtered = filtered.filter(u =>
+      (u.displayName || "").toLowerCase().includes(q) ||
+      (u.phone || "").toLowerCase().includes(q) ||
+      (u.uid || "").toLowerCase().includes(q) ||
+      (u.memberCode || "").toLowerCase().includes(q)
+    );
+  }
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="7" style="text-align: center; padding: 2.5rem 1rem; color: var(--gray-500);">
+          <div style="font-size: 1.6rem; margin-bottom: 0.4rem;">👥</div>
+          <strong>No se encontraron socios con los filtros aplicados.</strong>
+          <div style="font-size: 0.8rem; margin-top: 4px;">Haz clic en "+ Registrar Nuevo Socio" para dar de alta al primer cliente.</div>
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(u => {
+    const tier = (u.tier || "NAVI").toUpperCase();
+    let tierBadgeClass = "badge-tier-navi";
+    if (tier === "RUNNER") tierBadgeClass = "badge-tier-runner";
+    else if (tier === "ELITE") tierBadgeClass = "badge-tier-elite";
+    else if (tier === "DEUS") tierBadgeClass = "badge-tier-deus";
+
+    const joinDate = u.createdAt ? new Date(u.createdAt).toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" }) : "Reciente";
+
+    return `
+      <tr>
+        <td>
+          <strong style="color:var(--dark); font-size:0.9rem;">${u.displayName || "Socio Sin Nombre"}</strong>
+          <div style="font-size:0.72rem; color:var(--gray-500); font-family:var(--font-mono);">${u.memberCode || u.uid}</div>
+        </td>
+        <td>
+          <div style="font-family:var(--font-mono); font-size:0.8rem; color:var(--dark);">📞 ${u.phone || "-"}</div>
+          <div style="font-size:0.7rem; color:var(--gray-500);">PIN: ••••</div>
+        </td>
+        <td><span class="${tierBadgeClass}">${tier}</span></td>
+        <td><strong style="font-family:var(--font-mono); font-size:0.95rem; color:#4338ca;">${(u.wiredPoints || 0).toLocaleString()} WP</strong></td>
+        <td><span style="font-family:var(--font-mono); font-size:0.8rem; color:var(--gray-700);">${(u.lifetimePoints || 0).toLocaleString()} WP</span></td>
+        <td style="font-size:0.75rem; color:var(--gray-600);">${joinDate}</td>
+        <td style="text-align: right; white-space: nowrap;">
+          <button class="btn-primary" style="padding: 3px 8px; font-size: 0.72rem; margin-right: 4px;" onclick="openAdjustPointsModal('${u.uid}', '${(u.displayName || '').replace(/'/g, "\\'")}', ${u.wiredPoints || 0})">
+            ⚡ +/- Puntos
+          </button>
+          <button class="btn-secondary" style="padding: 3px 8px; font-size: 0.72rem;" onclick="openUserLedgerModal('${u.uid}', '${(u.displayName || '').replace(/'/g, "\\'")}')">
+            📜 Historial
+          </button>
+        </td>
+      </tr>
+    `;
+  }).join("");
+}
+
+function filterUsers() {
+  const input = document.getElementById("search-users-input");
+  usersFilterQuery = (input ? input.value : "").trim();
+  renderUsersTable(vm.users);
+}
+
+function filterUsersByTier(tier) {
+  usersTierFilter = tier;
+  renderUsersTable(vm.users);
+}
+
+function openAdjustPointsModal(uid, name, currentPts) {
+  const modal = document.getElementById("modal-adjust-points");
+  if (!modal) return;
+  document.getElementById("adjust-user-uid").value = uid;
+  document.getElementById("adjust-user-name").textContent = name;
+  document.getElementById("adjust-user-current").textContent = currentPts.toLocaleString() + " WP";
+  document.getElementById("adjust-points-amount").value = "";
+  document.getElementById("adjust-points-reason").value = "";
+  const radios = document.getElementsByName("adjust-type");
+  radios.forEach(r => { if (r.value === "ADD") r.checked = true; });
+  modal.style.display = "flex";
+  setTimeout(() => {
+    const input = document.getElementById("adjust-points-amount");
+    if (input) input.focus();
+  }, 100);
+}
+
+function toggleAdjustType() {
+  // Estado visual
+}
+
+function setAdjustQuickPoints(pts) {
+  const input = document.getElementById("adjust-points-amount");
+  if (input) {
+    input.value = pts;
+    input.focus();
+  }
+}
+
+async function submitAdjustPoints() {
+  const uid = document.getElementById("adjust-user-uid").value;
+  const amountStr = document.getElementById("adjust-points-amount").value;
+  const amount = parseInt(amountStr, 10);
+  const reason = document.getElementById("adjust-points-reason").value.trim() || "Ajuste de Mostrador";
+
+  if (!amount || isNaN(amount) || amount <= 0) {
+    showToast("⚠️ Ingresa una cantidad de puntos válida mayor a 0.", "error");
+    return;
+  }
+
+  const radios = document.getElementsByName("adjust-type");
+  let type = "ADD";
+  radios.forEach(r => { if (r.checked) type = r.value; });
+
+  const delta = type === "ADD" ? amount : -amount;
+
+  try {
+    const updatedUser = await vm.adjustUserPoints(uid, delta, reason);
+    closeModal("modal-adjust-points");
+    showToast(`✓ Saldo actualizado: ${updatedUser.displayName} ahora tiene ${updatedUser.wiredPoints.toLocaleString()} WP`, "success");
+  } catch (err) {
+    showToast("❌ " + err.message, "error");
+  }
+}
+
+function openUserLedgerModal(uid, name) {
+  const modal = document.getElementById("modal-user-ledger");
+  if (!modal) return;
+  document.getElementById("ledger-user-name").textContent = "Historial: " + name;
+  document.getElementById("ledger-user-uid").textContent = "UID: " + uid;
+  const tbody = document.getElementById("user-ledger-tbody");
+  if (tbody) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:1.5rem; color:var(--gray-500);">Cargando movimientos...</td></tr>`;
+  }
+  modal.style.display = "flex";
+
+  const ledger = vm.getUserLedger(uid);
+  if (!ledger || ledger.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="5" style="text-align: center; padding: 2rem; color: var(--gray-500);">
+          No hay movimientos registrados para este socio aún.
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  tbody.innerHTML = ledger.map(entry => {
+    const isCredit = (entry.amount || 0) >= 0;
+    const diffClass = isCredit ? "ledger-credit" : "ledger-debit";
+    const sign = isCredit ? "+" : "";
+    const dateStr = entry.timestamp ? new Date(entry.timestamp).toLocaleString("es-ES") : "-";
+
+    return `
+      <tr>
+        <td style="font-size:0.75rem; color:var(--gray-600); font-family:var(--font-mono);">${dateStr}</td>
+        <td><span class="badge-navi" style="font-size:0.65rem;">${entry.type || "AJUSTE"}</span></td>
+        <td style="color:var(--dark); font-weight:600;">${entry.reason || "-"}</td>
+        <td class="${diffClass}" style="text-align:right;">${sign}${(entry.amount || 0).toLocaleString()} WP</td>
+        <td style="text-align:right; font-family:var(--font-mono); font-weight:800; color:var(--dark);">${(entry.balanceAfter || 0).toLocaleString()} WP</td>
+      </tr>
+    `;
+  }).join("");
+}
+
+function openNewUserModal() {
+  const modal = document.getElementById("modal-new-user");
+  if (!modal) return;
+  document.getElementById("new-user-name").value = "";
+  document.getElementById("new-user-phone").value = "";
+  document.getElementById("new-user-pin").value = "1234";
+  document.getElementById("new-user-points").value = "0";
+  modal.style.display = "flex";
+  setTimeout(() => {
+    const input = document.getElementById("new-user-name");
+    if (input) input.focus();
+  }, 100);
+}
+
+async function saveNewUserAdmin() {
+  const name = document.getElementById("new-user-name").value.trim();
+  const phone = document.getElementById("new-user-phone").value.trim();
+  const pin = document.getElementById("new-user-pin").value.trim() || "1234";
+  const points = parseInt(document.getElementById("new-user-points").value, 10) || 0;
+
+  if (!name) {
+    showToast("⚠️ El nombre del socio es obligatorio.", "error");
+    return;
+  }
+  if (!phone || phone.length < 8) {
+    showToast("⚠️ Ingresa un número telefónico válido (mínimo 8 dígitos).", "error");
+    return;
+  }
+
+  try {
+    const user = await vm.registerUserFromAdmin({ displayName: name, phone, pin, initialPoints: points });
+    closeModal("modal-new-user");
+    showToast(`✓ Socio ${user.displayName} registrado con éxito. Saldo: ${user.wiredPoints} WP`, "success");
+    switchAdminTab("clients");
+  } catch (err) {
+    showToast("❌ " + err.message, "error");
+  }
+}
+
+// ========================================================
+// HISTORIAL Y AUDITORÍA DE VALES DE CANJE
+// ========================================================
+function renderVouchersTable(vouchers) {
+  const tbody = document.getElementById("vouchers-table-body");
+  if (!tbody) return;
+
+  let filtered = vouchers || [];
+  if (vouchersFilterState === "PENDING") {
+    filtered = filtered.filter(v => !v.isDelivered());
+  } else if (vouchersFilterState === "DELIVERED") {
+    filtered = filtered.filter(v => v.isDelivered());
+  }
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="7" style="text-align: center; padding: 2.5rem 1rem; color: var(--gray-500);">
+          <div style="font-size: 1.6rem; margin-bottom: 0.4rem;">📜</div>
+          <strong>No hay registros de vales bajo este filtro.</strong>
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(v => {
+    const isDelivered = v.isDelivered();
+    const dateStr = v.createdAt ? new Date(v.createdAt).toLocaleDateString("es-ES", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }) : "-";
+    const statusBadge = isDelivered
+      ? `<span class="badge-navi" style="background:#ecfdf5; color:#065f46; border:1px solid #a7f3d0;">✓ DESPACHADO</span>`
+      : `<span class="badge-navi" style="background:#fffbeb; color:#92400e; border:1px solid #fcd34d;">⏳ PENDIENTE</span>`;
+
+    return `
+      <tr>
+        <td style="font-family:var(--font-mono); font-weight:800; font-size:0.85rem; color:var(--dark);">${v.voucherCode}</td>
+        <td><strong style="color:var(--dark);">${v.rewardTitle || "Artículo"}</strong></td>
+        <td>
+          <div style="font-size:0.82rem; font-weight:700; color:var(--dark);">${v.userDisplayName || v.userId}</div>
+          <div style="font-size:0.7rem; font-family:var(--font-mono); color:var(--gray-500);">${v.userId}</div>
+        </td>
+        <td><span class="badge-navi">${(v.pointsCost || 0).toLocaleString()} WP</span></td>
+        <td style="font-size:0.75rem; color:var(--gray-600);">${dateStr}</td>
+        <td>${statusBadge}</td>
+        <td style="text-align: right; white-space: nowrap;">
+          ${!isDelivered ? `
+            <button class="btn-primary" style="padding: 3px 8px; font-size: 0.72rem;" onclick="deliverVoucherFromTable('${v.voucherCode}')">
+              ✓ Entregar
+            </button>
+          ` : `
+            <span style="font-size:0.75rem; color:var(--gray-500); font-family:var(--font-mono);">Entregado</span>
+          `}
+        </td>
+      </tr>
+    `;
+  }).join("");
+}
+
+function filterVouchersTable(state) {
+  vouchersFilterState = state;
+  renderVouchersTable(vm.vouchers);
+}
+
+async function deliverVoucherFromTable(voucherCode) {
+  if (confirm(`¿Confirmar entrega y despacho físico del vale [${voucherCode}]?`)) {
+    try {
+      await vm.deliverVoucher(voucherCode);
+      showToast(`✓ Vale [${voucherCode}] entregado y marcado como despachado.`, "success");
+    } catch (err) {
+      showToast("❌ " + err.message, "error");
+    }
   }
 }
