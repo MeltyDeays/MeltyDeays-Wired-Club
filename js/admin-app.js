@@ -423,8 +423,8 @@ async function generateBatchAdmin() {
   try {
     const res = await vm.generateLot(folio, count, 0);
     currentSheetTokens = res.tokens;
-    showToast("¡Lote generado! " + res.tokens.length + " facturas con QR listos para asignar en mostrador.", "success");
-    openPrintSheetModal();
+    showToast("¡Lote generado! " + res.tokens.length + " facturas con QR únicos en estado 'En espera de valor'.", "success");
+    triggerNativeSheetPrint(res.tokens);
   } catch (err) {
     showToast("❌ " + err.message, "error");
   }
@@ -542,43 +542,10 @@ function openPrintSheetModal() {
     const pinStr = tok.securityPin || "••••";
     const folioStr = tok.invoiceFolio || "0104";
 
-    slot.innerHTML = `
-      <div class="reverso-head">
-        <div class="reverso-brand-title">
-          Melty<span>Deays</span> <span style="font-family:var(--font-mono); font-size:0.65rem; background:#0f172a; color:#38bdf8; border:1px solid #334155; padding:1px 5px; border-radius:3px;">WIRED</span>
-        </div>
-        <div style="font-family:var(--font-mono); font-size:0.68rem; font-weight:800; color:var(--dark);">
-          FACTURA #MD-2026-${folioStr}
-        </div>
-      </div>
-
-      <div class="reverso-body" style="display:flex; align-items:center; justify-content:space-between; gap:10px; margin:0.6rem 0;">
-        <div class="reverso-points-box" style="flex:1;">
-          <div style="font-family:var(--font-mono); font-size:0.65rem; font-weight:800; color:var(--gray-500); text-transform:uppercase;">RECOMPENSA DIGITAL</div>
-          <div style="display:flex; align-items:baseline; gap:3px; margin:4px 0;">
-            <span style="font-size:1.3rem; font-weight:900; color:var(--dark);">+</span>
-            <span style="display:inline-block; width:44px; height:20px; border:1px dashed #64748b; border-bottom:1.8px solid #0f172a; background:#ffffff; border-radius:3px;" title="Apartado para escribir a lápiz"></span>
-            <span style="font-size:1rem; font-weight:900; color:#e11d48;">WP</span>
-          </div>
-          <div style="font-size:0.68rem; color:var(--gray-700); line-height:1.25; margin-top:3px;">
-            Escanea para acreditar tus puntos en tu CyberPass.
-          </div>
-        </div>
-
-        <div style="display:flex; flex-direction:column; align-items:center; gap:3px; flex-shrink:0;">
-          <div class="reverso-qr-box" id="sheet-qr-slot-${idx}"></div>
-          <div style="font-family:var(--font-mono); font-size:0.75rem; font-weight:900; color:var(--dark); letter-spacing:1px; background:#f1f5f9; padding:1px 5px; border-radius:3px; border:1px solid #cbd5e1;">PIN: ${pinStr}</div>
-        </div>
-      </div>
-
-      <div class="reverso-foot">
-        <div>CÓDIGO: <strong style="color:var(--dark);">${tok.tokenCode}</strong></div>
-        <div>PIN: <strong style="color:var(--dark);">${pinStr}</strong></div>
-      </div>
-    `;
+    slot.innerHTML = InvoiceTemplateService.getLainBackCardHtml(idx + 1, tok, "slot-" + idx, idx);
 
     setTimeout(() => {
-      const qrEl = document.getElementById("sheet-qr-slot-" + idx);
+      const qrEl = document.getElementById("print-qr-slot-" + idx);
       if (qrEl && typeof QRCode !== "undefined") {
         qrEl.innerHTML = "";
         new QRCode(qrEl, {
@@ -597,17 +564,19 @@ function openPrintSheetModal() {
   if (modal) modal.style.display = "flex";
 }
 
-function triggerNativeSheetPrint() {
+function triggerNativeSheetPrint(explicitTokens) {
   const dims = getSelectedPaperDimensions("preview");
   const mode = document.getElementById("print-duplex-mode")?.value || "both";
-  const tokensToPrint = currentSheetTokens.length > 0 
-    ? currentSheetTokens 
-    : (vm.tokens.length > 0 ? vm.tokens : [
-        { tokenCode: "WP-2026-F0104-A98B", invoiceFolio: "0104", pointsValue: 0, securityPin: "4891" },
-        { tokenCode: "WP-2026-F0105-C34D", invoiceFolio: "0105", pointsValue: 0, securityPin: "7124" },
-        { tokenCode: "WP-2026-F0106-E56F", invoiceFolio: "0106", pointsValue: 0, securityPin: "8390" },
-        { tokenCode: "WP-2026-F0107-G78H", invoiceFolio: "0107", pointsValue: 0, securityPin: "1923" }
-      ]);
+  const tokensToPrint = explicitTokens && explicitTokens.length > 0
+    ? explicitTokens
+    : (currentSheetTokens.length > 0 
+        ? currentSheetTokens 
+        : (vm.tokens.length > 0 ? vm.tokens : [
+            { tokenCode: "WP-2026-F0104-A98B", invoiceFolio: "0104", pointsValue: 0, securityPin: "4891" },
+            { tokenCode: "WP-2026-F0105-C34D", invoiceFolio: "0105", pointsValue: 0, securityPin: "7124" },
+            { tokenCode: "WP-2026-F0106-E56F", invoiceFolio: "0106", pointsValue: 0, securityPin: "8390" },
+            { tokenCode: "WP-2026-F0107-G78H", invoiceFolio: "0107", pointsValue: 0, securityPin: "1923" }
+          ]));
 
   const printWindow = window.open("", "_blank");
   if (!printWindow) {
