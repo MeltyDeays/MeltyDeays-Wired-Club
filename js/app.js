@@ -100,6 +100,7 @@ function render(model) {
   const passBalance = document.getElementById("client-balance-val");
   const passTier = document.getElementById("client-tier-badge");
   const passMemberId = document.getElementById("pass-member-id");
+  const passUsdEquiv = document.getElementById("client-usd-equiv");
 
   if (user) {
     if (passName) passName.textContent = user.displayName;
@@ -107,6 +108,7 @@ function render(model) {
     if (passBalance) passBalance.textContent = user.wiredPoints.toLocaleString();
     if (passTier) passTier.textContent = user.tier || "NAVI_USER";
     if (passMemberId) passMemberId.textContent = "● " + user.memberCode;
+    if (passUsdEquiv) passUsdEquiv.textContent = `$${(user.wiredPoints / 50).toFixed(2)} USD`;
     renderUserQr(user.memberCode);
   } else {
     if (passName) passName.textContent = "Socio Invitado";
@@ -114,6 +116,7 @@ function render(model) {
     if (passBalance) passBalance.textContent = "0";
     if (passTier) passTier.textContent = "NAVI_GUEST";
     if (passMemberId) passMemberId.textContent = "● MC-INVITADO";
+    if (passUsdEquiv) passUsdEquiv.textContent = "$0.00 USD";
     renderUserQr("MELTY-WIRED-CLUB-GUEST");
   }
 

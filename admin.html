@@ -57,6 +57,9 @@
     </div>
 
     <div class="nav-controls">
+      <button type="button" class="btn-secondary" style="font-size:0.75rem; padding:0.4rem 0.75rem; background: linear-gradient(135deg, #ecfdf5, #d1fae5); border: 1.5px solid #059669; color: #065f46; font-weight: 800; display: inline-flex; align-items: center; gap: 4px;" onclick="openSalePointsCalculatorModal('navbar')">
+        🧮 Calc WP
+      </button>
       <a href="/" target="_blank" class="btn-secondary" style="font-size:0.75rem; padding:0.4rem 0.75rem; text-decoration:none;">
         👁️ Ver Vista Cliente ↗
       </a>
@@ -176,9 +179,6 @@
       </button>
       <button class="admin-tab-btn" id="tab-btn-history" onclick="switchAdminTab('history')">
         📜 Historial de Canjes
-      </button>
-      <button type="button" style="margin-left: auto; padding: 0.4rem 0.75rem; font-size: 0.72rem; font-weight: 900; background: linear-gradient(135deg, #ecfdf5, #d1fae5); border: 2px solid #059669; color: #065f46; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 4px; white-space: nowrap; font-family: var(--font-mono); box-shadow: 0 2px 8px rgba(5,150,105,0.15); transition: all 0.2s ease;" onclick="openSalePointsCalculatorModal('navbar')">
-        🧮 Calc WP
       </button>
     </nav>
 
@@ -1412,7 +1412,8 @@
 
   <!-- MODAL: CALCULADORA DE PUNTOS POR VENTA EN FACTURA (REGULADOR DE RETORNO) -->
   <div id="modal-sale-calculator" class="modal-overlay" style="display: none;">
-    <div class="modal-content lain-card" style="max-width: 660px; text-align: left; padding: 1.6rem; position: relative; max-height: 92vh; overflow-y: auto;">
+    <div class="modal-content lain-card" style="max-width: 660px; text-align: left; padding: 1.6rem; position: relative; max-height: 92vh; overflow-y: auto; overflow-x: hidden;">
+      <div class="dispatch-crt-scanline"></div>
       <div class="tech-corner top-left">+</div>
       <div class="tech-corner top-right">+</div>
       <div class="tech-corner bottom-left">+</div>
