@@ -1037,12 +1037,24 @@ function setSaleFreightPreset(rate) {
   recalculateSalePoints();
 }
 
+const SALE_BTN_ACTIVE = "border: 2px solid #059669; background: linear-gradient(135deg, #ecfdf5, #d1fae5); color: #065f46; box-shadow: 0 2px 8px rgba(5,150,105,0.15);";
+const SALE_BTN_INACTIVE = "border: 2px solid #e2e8f0; background: #f8fafc; color: #64748b; box-shadow: none;";
+const SALE_PILL_ACTIVE = "border: 2px solid #059669; background: linear-gradient(135deg, #ecfdf5, #d1fae5); color: #065f46; box-shadow: 0 2px 8px rgba(5,150,105,0.2);";
+const SALE_PILL_INACTIVE = "border: 2px solid #e2e8f0; background: #f8fafc; color: #475569; box-shadow: none;";
+
+function applySaleBtnStyle(el, active, pill) {
+  if (!el) return;
+  const s = active ? (pill ? SALE_PILL_ACTIVE : SALE_BTN_ACTIVE) : (pill ? SALE_PILL_INACTIVE : SALE_BTN_INACTIVE);
+  s.split(";").forEach(r => {
+    const [k, v] = r.split(":").map(x => x.trim());
+    if (k && v) el.style[k.replace(/-([a-z])/g, (_, c) => c.toUpperCase())] = v;
+  });
+}
+
 function setSaleReturnBase(base) {
   saleReturnBase = base;
-  const btnProfit = document.getElementById("btn-sale-base-profit");
-  const btnRev = document.getElementById("btn-sale-base-revenue");
-  if (btnProfit) btnProfit.classList.toggle("active", base === "profit");
-  if (btnRev) btnRev.classList.toggle("active", base === "revenue");
+  applySaleBtnStyle(document.getElementById("btn-sale-base-profit"), base === "profit", false);
+  applySaleBtnStyle(document.getElementById("btn-sale-base-revenue"), base === "revenue", false);
   recalculateSalePoints();
 }
 
@@ -1051,8 +1063,7 @@ function setSaleReturnPct(pct) {
   const pctInput = document.getElementById("sale-calc-return-pct");
   if (pctInput) pctInput.value = saleReturnPct;
   [30, 40, 50, 60].forEach(p => {
-    const b = document.getElementById(`btn-sale-pct-${p}`);
-    if (b) b.classList.toggle("active", p === saleReturnPct);
+    applySaleBtnStyle(document.getElementById(`btn-sale-pct-${p}`), p === saleReturnPct, true);
   });
   recalculateSalePoints();
 }

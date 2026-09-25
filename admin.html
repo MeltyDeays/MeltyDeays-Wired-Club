@@ -177,8 +177,8 @@
       <button class="admin-tab-btn" id="tab-btn-history" onclick="switchAdminTab('history')">
         📜 Historial de Canjes
       </button>
-      <button type="button" class="btn-secondary" style="margin-left: auto; padding: 0.35rem 0.85rem; font-size: 0.75rem; font-weight: 800; background: #ecfdf5; border-color: #059669; color: #065f46; display: flex; align-items: center; gap: 5px; box-shadow: 2px 2px 0px var(--dark);" onclick="openSalePointsCalculatorModal('navbar')">
-        🧮 Calculadora de Venta
+      <button type="button" style="margin-left: auto; padding: 0.4rem 0.75rem; font-size: 0.72rem; font-weight: 900; background: linear-gradient(135deg, #ecfdf5, #d1fae5); border: 2px solid #059669; color: #065f46; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 4px; white-space: nowrap; font-family: var(--font-mono); box-shadow: 0 2px 8px rgba(5,150,105,0.15); transition: all 0.2s ease;" onclick="openSalePointsCalculatorModal('navbar')">
+        🧮 Calc WP
       </button>
     </nav>
 
@@ -1412,8 +1412,7 @@
 
   <!-- MODAL: CALCULADORA DE PUNTOS POR VENTA EN FACTURA (REGULADOR DE RETORNO) -->
   <div id="modal-sale-calculator" class="modal-overlay" style="display: none;">
-    <div class="modal-content lain-card" style="max-width: 660px; text-align: left; padding: 1.6rem; position: relative; overflow: hidden; max-height: 92vh; overflow-y: auto;">
-      <div class="dispatch-crt-scanline"></div>
+    <div class="modal-content lain-card" style="max-width: 660px; text-align: left; padding: 1.6rem; position: relative; max-height: 92vh; overflow-y: auto;">
       <div class="tech-corner top-left">+</div>
       <div class="tech-corner top-right">+</div>
       <div class="tech-corner bottom-left">+</div>
@@ -1523,53 +1522,59 @@
         </div>
 
         <!-- SELECTOR DE BASE (SOBRE GANANCIA O SOBRE VENTA) -->
-        <div style="display: flex; gap: 0.4rem; margin-bottom: 0.55rem;">
-          <button type="button" class="btn-secondary active" id="btn-sale-base-profit" style="flex: 1; padding: 5px; font-size: 0.72rem; font-weight: 800;" onclick="setSaleReturnBase('profit')">
-            🎯 50% de la Ganancia Neta (Recomendado)
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-bottom: 0.65rem;">
+          <button type="button" id="btn-sale-base-profit" onclick="setSaleReturnBase('profit')"
+                  style="display: flex; align-items: center; justify-content: center; gap: 6px; padding: 10px 8px; border-radius: 8px; border: 2px solid #059669; background: linear-gradient(135deg, #ecfdf5, #d1fae5); color: #065f46; font-family: var(--font-mono); font-size: 0.72rem; font-weight: 900; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 2px 8px rgba(5,150,105,0.15);">
+            🎯 Sobre Ganancia Neta
           </button>
-          <button type="button" class="btn-secondary" id="btn-sale-base-revenue" style="flex: 1; padding: 5px; font-size: 0.72rem; font-weight: 800;" onclick="setSaleReturnBase('revenue')">
-            🏷️ % del Precio de Venta Total
+          <button type="button" id="btn-sale-base-revenue" onclick="setSaleReturnBase('revenue')"
+                  style="display: flex; align-items: center; justify-content: center; gap: 6px; padding: 10px 8px; border-radius: 8px; border: 2px solid #e2e8f0; background: #f8fafc; color: #64748b; font-family: var(--font-mono); font-size: 0.72rem; font-weight: 900; cursor: pointer; transition: all 0.2s ease;">
+            🏷️ Sobre Venta Total
           </button>
         </div>
 
         <!-- SELECTOR DE PORCENTAJE DE RETORNO -->
-        <div style="display: grid; grid-template-columns: repeat(4, 1fr) 1.2fr; gap: 0.4rem; align-items: center; margin-bottom: 0.65rem;">
-          <button type="button" class="btn-secondary" id="btn-sale-pct-30" style="padding: 5px; font-size: 0.72rem; font-weight: 800;" onclick="setSaleReturnPct(30)">
+        <div style="display: flex; gap: 0.4rem; align-items: center; margin-bottom: 0.65rem; flex-wrap: wrap;">
+          <button type="button" id="btn-sale-pct-30" onclick="setSaleReturnPct(30)"
+                  style="flex: 1; min-width: 52px; padding: 8px 4px; border-radius: 20px; border: 2px solid #e2e8f0; background: #f8fafc; color: #475569; font-family: var(--font-mono); font-size: 0.78rem; font-weight: 900; cursor: pointer; transition: all 0.2s ease; text-align: center;">
             30%
           </button>
-          <button type="button" class="btn-secondary" id="btn-sale-pct-40" style="padding: 5px; font-size: 0.72rem; font-weight: 800;" onclick="setSaleReturnPct(40)">
+          <button type="button" id="btn-sale-pct-40" onclick="setSaleReturnPct(40)"
+                  style="flex: 1; min-width: 52px; padding: 8px 4px; border-radius: 20px; border: 2px solid #e2e8f0; background: #f8fafc; color: #475569; font-family: var(--font-mono); font-size: 0.78rem; font-weight: 900; cursor: pointer; transition: all 0.2s ease; text-align: center;">
             40%
           </button>
-          <button type="button" class="btn-secondary active" id="btn-sale-pct-50" style="padding: 5px; font-size: 0.72rem; font-weight: 800;" onclick="setSaleReturnPct(50)">
+          <button type="button" id="btn-sale-pct-50" onclick="setSaleReturnPct(50)"
+                  style="flex: 1; min-width: 52px; padding: 8px 4px; border-radius: 20px; border: 2px solid #059669; background: linear-gradient(135deg, #ecfdf5, #d1fae5); color: #065f46; font-family: var(--font-mono); font-size: 0.78rem; font-weight: 900; cursor: pointer; transition: all 0.2s ease; text-align: center; box-shadow: 0 2px 8px rgba(5,150,105,0.2);">
             ⭐ 50%
           </button>
-          <button type="button" class="btn-secondary" id="btn-sale-pct-60" style="padding: 5px; font-size: 0.72rem; font-weight: 800;" onclick="setSaleReturnPct(60)">
+          <button type="button" id="btn-sale-pct-60" onclick="setSaleReturnPct(60)"
+                  style="flex: 1; min-width: 52px; padding: 8px 4px; border-radius: 20px; border: 2px solid #e2e8f0; background: #f8fafc; color: #475569; font-family: var(--font-mono); font-size: 0.78rem; font-weight: 900; cursor: pointer; transition: all 0.2s ease; text-align: center;">
             60%
           </button>
-          <div style="display: flex; align-items: center; gap: 3px;">
+          <div style="display: flex; align-items: center; gap: 3px; background: #f1f5f9; border-radius: 20px; padding: 2px 8px 2px 2px; border: 2px solid #cbd5e1;">
             <input type="number" id="sale-calc-return-pct" class="form-input" value="50" min="5" max="100" step="5"
-                   style="height: 30px; width: 60px; font-family: var(--font-mono); font-weight: 800; font-size: 0.85rem; text-align: center; padding: 2px 4px;"
+                   style="height: 28px; width: 48px; font-family: var(--font-mono); font-weight: 900; font-size: 0.82rem; text-align: center; padding: 2px; border: none; background: transparent; outline: none;"
                    oninput="recalculateSalePoints()">
-            <span style="font-family: var(--font-mono); font-size: 0.75rem; font-weight: 900;">%</span>
+            <span style="font-family: var(--font-mono); font-size: 0.75rem; font-weight: 900; color: #475569;">%</span>
           </div>
         </div>
 
         <!-- RESUMEN DE IMPACTO FINANCIERO -->
-        <div style="background: #ffffff; border: 1.5px solid var(--dark); border-radius: 4px; padding: 0.75rem 0.95rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
-          <div style="font-family: var(--font-mono); font-size: 0.75rem;">
-            <div style="color: var(--gray-700);">
+        <div style="background: linear-gradient(135deg, #f0fdf4, #ecfdf5); border: 2px solid #a7f3d0; border-radius: 10px; padding: 0.85rem 1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+          <div style="font-family: var(--font-mono); font-size: 0.75rem; flex: 1;">
+            <div style="color: var(--gray-700); margin-bottom: 3px;">
               Valor devuelto en premios: <strong id="sale-calc-reward-val" style="color: #059669; font-weight: 900;">$12.00 USD</strong>
               <span id="sale-calc-base-note" style="font-size: 0.68rem; color: var(--gray-500);">(50% de ganancia $24.00)</span>
             </div>
-            <div style="color: #4338ca; font-size: 0.72rem; margin-top: 2px;">
-              Ganancia líquida retenida por MeltyDeays: <strong id="sale-calc-retained-profit" style="color: #1e1b4b; font-weight: 900;">$12.00 USD</strong>
+            <div style="color: #4338ca; font-size: 0.72rem; margin-bottom: 3px;">
+              Ganancia líquida retenida: <strong id="sale-calc-retained-profit" style="color: #1e1b4b; font-weight: 900;">$12.00 USD</strong>
             </div>
-            <div style="color: #059669; font-size: 0.68rem; margin-top: 2px;">
-              ⚡ Regla de Canje: Cada 50 WP = $1 USD de premio físico en catálogo (ej: $20 = 1,000 WP).
+            <div style="color: #047857; font-size: 0.65rem; opacity: 0.85;">
+              ⚡ 50 WP = $1 USD de premio en catálogo
             </div>
           </div>
-          <div style="text-align: right;">
-            <div style="font-family: var(--font-mono); font-size: 0.68rem; color: var(--gray-500); font-weight: 800;">PUNTOS FACTURA:</div>
+          <div style="text-align: center; background: #ffffff; border: 2px solid #059669; border-radius: 12px; padding: 0.6rem 1rem; min-width: 110px; box-shadow: 0 3px 12px rgba(5,150,105,0.15);">
+            <div style="font-family: var(--font-mono); font-size: 0.6rem; color: #059669; font-weight: 800; letter-spacing: 1px; margin-bottom: 2px;">PUNTOS FACTURA</div>
             <div id="sale-calc-suggested-points" style="font-family: var(--font-mono); font-size: 1.55rem; font-weight: 900; color: #059669; line-height: 1;">600 WP</div>
           </div>
         </div>
