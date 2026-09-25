@@ -174,6 +174,11 @@ export class AdminViewModel {
     const reward = new RewardModel({
       id: productData.id || ("REW-" + Math.random().toString(36).substring(2, 8).toUpperCase()),
       title,
+      rewardType: productData.rewardType || "FREE_REWARD",
+      priceUsd: Number(productData.priceUsd) || 0,
+      maxDiscountPct: Number(productData.maxDiscountPct) || 0,
+      maxDiscountUsd: Number(productData.maxDiscountUsd) || 0,
+      cashToPayUsd: Number(productData.cashToPayUsd) || 0,
       pointsCost: cost,
       stock,
       imageUrl: (productData.imageUrl || "").trim(),
@@ -316,6 +321,17 @@ export class AdminViewModel {
     this.tokens = [];
     this.batches = [];
     await this.refreshData();
+    this.notify();
+    return res;
+  }
+
+  async purgeEntireDatabase() {
+    const res = await FirestoreService.purgeEntireDatabase();
+    this.catalog = [];
+    this.tokens = [];
+    this.vouchers = [];
+    this.users = [];
+    this.batches = [];
     this.notify();
     return res;
   }

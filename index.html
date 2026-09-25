@@ -265,6 +265,20 @@
         </div>
       </div>
 
+      <!-- INFO MODALIDAD: CANJE 100% GRATIS O DESCUENTO TOPE -->
+      <div id="confirm-type-callout" style="display: none; background: #fffbeb; border: 1.5px solid #f59e0b; border-radius: 4px; padding: 0.65rem 0.85rem; margin-bottom: 1rem; font-family: var(--font-mono); font-size: 0.75rem; color: #78350f;">
+        <div style="font-weight: 900; margin-bottom: 3px; display: flex; align-items: center; gap: 4px; color: #b45309;">
+          <span>🏷️</span> VALE DE DESCUENTO PARCIAL (<span id="confirm-type-pct">5%</span> OFF)
+        </div>
+        <div style="font-size: 0.78rem; line-height: 1.35;">
+          Ahorro con puntos: <strong id="confirm-type-discount" style="color: #059669;">-$0.00 USD</strong><br>
+          <strong style="color: #1e1b4b;">Efectivo a pagar en tienda:</strong> <strong id="confirm-type-cash" style="color: #dc2626; font-size: 0.88rem;">$0.00 USD</strong>
+        </div>
+        <div style="font-size: 0.68rem; color: #92400e; margin-top: 4px; border-top: 1px dashed #fcd34d; padding-top: 4px;">
+          * Presenta este vale en mostrador para aplicar tu descuento y cancelar la diferencia en efectivo.
+        </div>
+      </div>
+
       <div class="ledger-preview-box" style="border: 1.5px solid var(--dark); border-radius: 4px; overflow: hidden; margin-bottom: 1.15rem; font-family: var(--font-mono); font-size: 0.78rem;">
         <div style="background: #0f172a; color: #ffffff; padding: 0.4rem 0.75rem; font-weight: 800; font-size: 0.7rem; letter-spacing: 0.5px;">
           BALANCE PREVISTO // AUDITORÍA EN TIEMPO REAL
@@ -283,9 +297,9 @@
         </div>
       </div>
 
-      <p style="font-size: 0.78rem; color: var(--gray-700); line-height: 1.35; margin-bottom: 1.25rem;">
-        ℹ️ Al confirmar, se emitirá un vale anti-fraude inmutable con código QR para entrega física en tienda.
-      </p>
+      <div id="confirm-warranty-notice" style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 4px; padding: 0.55rem 0.75rem; margin-bottom: 1.15rem; font-family: var(--font-mono); font-size: 0.7rem; color: #475569; line-height: 1.35;">
+        🛡️ <strong>CONDICIÓN DE GARANTÍA:</strong> Los artículos gratuitos por lealtad ($0 en efectivo) se entregan probados a satisfacción en mostrador y están <strong>estrictamente exentos de garantía técnica posterior</strong>.
+      </div>
 
       <div style="display: flex; gap: 0.75rem; justify-content: flex-end;">
         <button class="btn-secondary" onclick="closeRedeemModal()">CANCELAR</button>
@@ -317,8 +331,13 @@
       <h2 id="modal-voucher-title" style="font-size: 1.25rem; color: var(--dark); margin: 0.25rem 0; font-weight: 900; line-height: 1.2;">
         Combo Gamer
       </h2>
-      <div id="modal-voucher-subtitle" style="font-size: 0.78rem; color: var(--gray-600); margin-bottom: 1rem;">
+      <div id="modal-voucher-subtitle" style="font-size: 0.78rem; color: var(--gray-600); margin-bottom: 0.6rem;">
         Válido para reclamo de producto físico en tienda MeltyDeays
+      </div>
+
+      <!-- AVISO DE PAGO EN EFECTIVO SI ES VALE DE DESCUENTO PARCIAL -->
+      <div id="modal-voucher-cash-pill" style="display: none; margin: 0 auto 0.85rem auto; padding: 5px 12px; background: #fffbeb; border: 1.5px solid #d97706; border-radius: 4px; font-family: var(--font-mono); font-size: 0.78rem; color: #78350f; max-width: 320px;">
+        💵 <strong>A PAGAR EN TIENDA:</strong> <span id="modal-voucher-cash-val" style="color: #dc2626; font-weight: 900; font-size: 0.92rem;">$0.00 USD</span>
       </div>
 
       <!-- CONTENEDOR QR CON HOLOGRAPHIC SCANLINE -->
@@ -422,6 +441,6 @@
   <div id="toast-container" class="toast-container"></div>
 
   <!-- CONTROLADOR MVVM -->
-  <script type="module" src="./js/app.js"></script>
+  <script type="module" src="./js/app.js?v=2.2.0"></script>
 </body>
 </html>

@@ -8,8 +8,12 @@ export class VoucherModel {
     this.userDisplayName = this.userName;
     this.rewardId = data.rewardId || data.reward_id || "";
     this.rewardTitle = data.rewardTitle || data.reward_title || "";
+    this.rewardType = data.rewardType || data.reward_type || "FREE_REWARD";
     this.pointsSpent = Number(data.pointsSpent || data.points_spent || data.pointsCost || data.points_cost || 0);
     this.pointsCost = this.pointsSpent;
+    this.priceUsd = Number(data.priceUsd || data.price_usd || 0);
+    this.discountUsd = Number(data.discountUsd || data.discount_usd || 0);
+    this.cashToPayUsd = Number(data.cashToPayUsd || data.cash_to_pay_usd || 0);
     this.status = data.status || "PENDING_DELIVERY"; // PENDING_DELIVERY | DELIVERED
     this.createdAt = data.createdAt || data.created_at || new Date().toISOString();
     this.expiresAt = data.expiresAt || data.expires_at || new Date(Date.now() + 7 * 86400000).toISOString();
@@ -19,6 +23,10 @@ export class VoucherModel {
 
   isDelivered() {
     return this.status === "DELIVERED";
+  }
+
+  isPartialDiscount() {
+    return this.rewardType === "PARTIAL_DISCOUNT";
   }
 
   isExpired() {
@@ -38,8 +46,12 @@ export class VoucherModel {
       user_name: this.userName,
       reward_id: this.rewardId,
       reward_title: this.rewardTitle,
+      reward_type: this.rewardType,
       points_spent: this.pointsSpent,
       points_cost: this.pointsSpent,
+      price_usd: this.priceUsd,
+      discount_usd: this.discountUsd,
+      cash_to_pay_usd: this.cashToPayUsd,
       status: this.status,
       created_at: this.createdAt,
       expires_at: this.expiresAt,

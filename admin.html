@@ -615,7 +615,10 @@
             🖨️ Imprimir Facturas 4x1 (Doble Cara)
           </button>
           <button class="btn-secondary" style="border-color: #f87171; background: #fff1f2; color: #b91c1c; font-weight: 800; font-size: 0.82rem; padding: 0.65rem 1rem; display: inline-flex; align-items: center; gap: 6px; box-shadow: 2px 2px 0px #b91c1c; transition: all 0.15s ease;" onclick="openPurgeModal()" title="Vaciar facturas de prueba en Firestore/Local y reiniciar correlativo a #0001">
-            <span>🗑️</span> LIMPIAR / RESETEAR FACTURAS (BD)
+            <span>🗑️</span> RESETEAR FACTURAS
+          </button>
+          <button class="btn-secondary" style="border-color: #dc2626; background: #450a0a; color: #fecaca; font-weight: 900; font-size: 0.82rem; padding: 0.65rem 1rem; display: inline-flex; align-items: center; gap: 6px; box-shadow: 2px 2px 0px #991b1b; transition: all 0.15s ease;" onclick="openPurgeAllDbModal()" title="Limpiar todos los datos de la base de datos (Socios, Vales, Facturas, Ledger) preservando solo el PIN del Admin">
+            <span>💥</span> PURGAR TODA LA BD
           </button>
         </div>
       </div>
@@ -625,12 +628,12 @@
         <table class="admin-table">
           <thead>
             <tr>
-              <th>Código Token</th>
-              <th>Folio Factura</th>
-              <th>Puntos Asignados</th>
-              <th>PIN Seguridad</th>
-              <th>Estado</th>
-              <th style="text-align: right;">Acciones</th>
+              <th style="width: 24%;">Código Token</th>
+              <th style="width: 15%;">Folio Factura</th>
+              <th style="width: 18%;">Puntos Asignados</th>
+              <th style="width: 10%; text-align: center;">PIN</th>
+              <th style="width: 18%;">Estado</th>
+              <th style="width: 15%; text-align: right;">Acciones</th>
             </tr>
           </thead>
           <tbody id="tokens-table-body"></tbody>
@@ -766,6 +769,55 @@
     </div>
   </div>
 
+  <!-- MODAL: MENÚ DE OPCIONES DE FACTURA / TOKEN (BOTÓN ...) -->
+  <div id="modal-token-actions" class="modal-overlay" style="display: none;">
+    <div class="modal-content lain-card" style="max-width: 450px; text-align: left; padding: 1.5rem;">
+      <div class="modal-scanline-holder"><div class="modal-scanline-bar"></div></div>
+      <div class="tech-corner top-left">+</div>
+      <div class="tech-corner top-right">+</div>
+      <div class="tech-corner bottom-left">+</div>
+      <div class="tech-corner bottom-right">+</div>
+      <button class="modal-close-btn" onclick="closeModal('modal-token-actions')" aria-label="Cerrar">&times;</button>
+
+      <div class="lain-modal-header">
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <span class="badge-navi" style="background:#0f172a; color:#38bdf8;">COPLAND OS 21.0 // FACTURA</span>
+          <span class="badge-layer">OPCIONES RÁPIDAS</span>
+        </div>
+      </div>
+
+      <div style="margin: 0.8rem 0 1rem 0;">
+        <h3 id="token-actions-title" style="font-size: 1.2rem; font-weight: 900; color: var(--dark); margin: 0 0 0.35rem 0; font-family: var(--font-mono);">
+          Factura #MD-2026-0000
+        </h3>
+        <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 0.5rem;">
+          <code id="token-actions-code" class="token-code-pill">WP-2026-F0000-XXXX</code>
+          <span id="token-actions-pin-badge" class="pin-badge">PIN: 0000</span>
+        </div>
+        <div id="token-actions-status-row" style="margin-top: 0.35rem;"></div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 0.55rem;">
+        <button type="button" class="btn-primary" id="btn-token-opt-assign" style="justify-content: flex-start; gap: 8px; padding: 0.65rem 0.9rem; font-size: 0.82rem;" onclick="executeTokenOptAssign()">
+          <span>⚡</span> <strong>Cargar / Asignar Puntos WP</strong>
+        </button>
+        <button type="button" class="btn-secondary" style="justify-content: flex-start; gap: 8px; padding: 0.65rem 0.9rem; font-size: 0.82rem;" onclick="executeTokenOptQr()">
+          <span>🔍</span> <strong>Inspeccionar Código QR Oficial</strong>
+        </button>
+        <button type="button" class="btn-secondary" style="justify-content: flex-start; gap: 8px; padding: 0.65rem 0.9rem; font-size: 0.82rem;" onclick="executeTokenOptCopyLink()">
+          <span>📋</span> <strong>Copiar Enlace de Auto-Reclamo</strong>
+        </button>
+        <button type="button" class="btn-secondary" style="justify-content: flex-start; gap: 8px; padding: 0.65rem 0.9rem; font-size: 0.82rem;" onclick="executeTokenOptTestUrl()">
+          <span>🔗</span> <strong>Probar Enlace en Nueva Pestaña</strong>
+        </button>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; margin-top: 1.25rem;">
+        <button type="button" class="btn-secondary" onclick="closeModal('modal-token-actions')">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL: AGREGAR PRODUCTO AL CATÁLOGO CON CALCULADORA DE FLETE & RENTABILIDAD (COPLAND OS 21.0) -->
   <div id="modal-new-product" class="modal-overlay" style="display: none;">
     <div class="modal-content lain-card" style="max-width: 640px; text-align: left; padding: 1.6rem; position: relative; overflow: hidden; max-height: 92vh; overflow-y: auto;">
@@ -786,12 +838,34 @@
       <h3 style="font-size: 1.25rem; font-weight: 900; color: var(--dark); margin: 0.2rem 0 0.25rem 0; font-family: var(--font-mono);">
         📦 + AGREGAR PRODUCTO AL CATÁLOGO
       </h3>
-      <p style="font-size: 0.8rem; color: var(--gray-700); margin-bottom: 1rem;">
-        Calcula el flete Miami → Managua y fija puntos para que <strong>tu negocio siempre gane con cada compra</strong>.
+      <p style="font-size: 0.8rem; color: var(--gray-700); margin-bottom: 0.85rem;">
+        Publica recompensas 100% canjeables (regalos) o productos de venta con <strong>límite / tope de descuento en puntos</strong>.
       </p>
 
-      <!-- SECCIÓN A: CALCULADORA DE COSTO ATERRIZADO & PUNTOS SUGERIDOS -->
-      <div style="background: #f1f5f9; border: 1.5px solid var(--dark); border-radius: 6px; padding: 0.95rem; margin-bottom: 1.25rem; box-shadow: 3px 3px 0px var(--dark);">
+      <!-- SELECTOR DE MODALIDAD DEL PRODUCTO -->
+      <div style="background: #ffffff; border: 1.5px solid var(--dark); border-radius: 6px; padding: 0.6rem; margin-bottom: 1rem; box-shadow: 2px 2px 0px var(--dark);">
+        <div style="font-family: var(--font-mono); font-size: 0.68rem; font-weight: 900; color: var(--gray-700); margin-bottom: 0.4rem; display: flex; align-items: center; justify-content: space-between;">
+          <span>TIPO DE PUBLICACIÓN EN CATÁLOGO:</span>
+          <span id="prod-mode-badge" class="badge-navi" style="background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0;">
+            MODO: 🎁 100% CANJEABLE
+          </span>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+          <button type="button" id="btn-prod-mode-free" class="btn-secondary active" style="padding: 0.55rem 0.5rem; font-size: 0.75rem; font-weight: 800; border-radius: 4px; display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; border: 2px solid #059669; background: #ecfdf5; color: #065f46;" onclick="setProductPublicationMode('FREE_REWARD')">
+            <span style="font-size: 1.15rem;">🎁</span>
+            <strong>100% CANJEABLE (GRATIS)</strong>
+            <span style="font-size: 0.65rem; color: #047857; font-weight: 600;">Premio por fidelidad ($0 en mostrador)</span>
+          </button>
+          <button type="button" id="btn-prod-mode-discount" class="btn-secondary" style="padding: 0.55rem 0.5rem; font-size: 0.75rem; font-weight: 800; border-radius: 4px; display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; border: 1.5px solid #cbd5e1; background: #f8fafc; color: #475569;" onclick="setProductPublicationMode('PARTIAL_DISCOUNT')">
+            <span style="font-size: 1.15rem;">🏷️</span>
+            <strong>VENTA CON DESCUENTO TOPE</strong>
+            <span style="font-size: 0.65rem; color: #b45309; font-weight: 600;">Precio de venta + Tope de descuento en WP</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- SECCIÓN A: CALCULADORA DE COSTO ATERRIZADO & PUNTOS SUGERIDOS (MODO 100% CANJEABLE) -->
+      <div id="sec-product-free-calc" style="background: #f1f5f9; border: 1.5px solid var(--dark); border-radius: 6px; padding: 0.95rem; margin-bottom: 1.25rem; box-shadow: 3px 3px 0px var(--dark);">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.65rem; border-bottom: 1px dashed #cbd5e1; padding-bottom: 0.35rem;">
           <div style="font-family: var(--font-mono); font-size: 0.75rem; font-weight: 900; color: #1e293b; display: flex; align-items: center; gap: 5px;">
             <span>🧮</span> CALCULADORA DE FLETE Y CANJE PROGRAMADO
@@ -904,11 +978,88 @@
         </div>
       </div>
 
+      <!-- SECCIÓN A-BIS: CALCULADORA DE TOPE DE DESCUENTO COMERCIAL (MODO VENTA CON DESCUENTO) -->
+      <div id="sec-product-discount-calc" style="display: none; background: #fffbeb; border: 1.5px solid #d97706; border-radius: 6px; padding: 0.95rem; margin-bottom: 1.25rem; box-shadow: 3px 3px 0px #b45309;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.65rem; border-bottom: 1px dashed #fcd34d; padding-bottom: 0.35rem;">
+          <div style="font-family: var(--font-mono); font-size: 0.75rem; font-weight: 900; color: #78350f; display: flex; align-items: center; gap: 5px;">
+            <span>🏷️</span> REGULADOR DE DESCUENTO TOPE EN PUNTOS
+          </div>
+          <span class="noc-pulse-chip" style="background: #fef3c7; color: #b45309; border-color: #f59e0b; font-size: 0.65rem; padding: 1px 6px;">
+            <span class="pulse-dot" style="background: #d97706;"></span> PROTECCIÓN DE NEGOCIO
+          </span>
+        </div>
+
+        <!-- FILA PRECIO DE VENTA Y TOPE % -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 0.65rem;">
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" style="height: 18px; line-height: 18px; font-size: 0.68rem; margin-bottom: 3px; color: #78350f;">💵 PRECIO DE VENTA OFICIAL ($ USD)</label>
+            <input type="number" id="calc-sale-prod-price-usd" class="form-input" placeholder="40.00" step="1.0" value="40.00" min="1"
+                   style="height: 38px; width: 100%; box-sizing: border-box; font-family: var(--font-mono); font-weight: 900; font-size: 1.05rem; text-align: center; color: #1e1b4b;"
+                   oninput="recalculateProductDiscount()">
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" style="height: 18px; line-height: 18px; font-size: 0.68rem; margin-bottom: 3px; color: #78350f;">🎯 TOPE MÁXIMO DE DESCUENTO (%)</label>
+            <div style="display: flex; gap: 4px; align-items: center;">
+              <input type="number" id="calc-sale-prod-discount-pct" class="form-input" placeholder="5" step="1" value="5" min="1" max="100"
+                     style="height: 38px; width: 100%; box-sizing: border-box; font-family: var(--font-mono); font-weight: 900; font-size: 1.05rem; text-align: center; color: #b45309;"
+                     oninput="recalculateProductDiscount()">
+              <span style="font-family: var(--font-mono); font-weight: 900; color: #78350f; font-size: 0.95rem;">%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- PRESETS RÁPIDOS DE TOPE DE DESCUENTO (5%, 10%, 15%, 20%, 25%, 30%) -->
+        <div style="display: flex; gap: 0.35rem; justify-content: flex-end; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap;">
+          <span style="font-family: var(--font-mono); font-size: 0.65rem; color: #78350f; font-weight: 800;">TOPES COMUNES:</span>
+          <button type="button" class="btn-secondary active" id="btn-disc-preset-5" style="padding: 2px 8px; font-size: 0.7rem; font-weight: 800;" onclick="setProductDiscountPreset(5)">5%</button>
+          <button type="button" class="btn-secondary" id="btn-disc-preset-10" style="padding: 2px 8px; font-size: 0.7rem; font-weight: 800;" onclick="setProductDiscountPreset(10)">10%</button>
+          <button type="button" class="btn-secondary" id="btn-disc-preset-15" style="padding: 2px 8px; font-size: 0.7rem; font-weight: 800;" onclick="setProductDiscountPreset(15)">15%</button>
+          <button type="button" class="btn-secondary" id="btn-disc-preset-20" style="padding: 2px 8px; font-size: 0.7rem; font-weight: 800;" onclick="setProductDiscountPreset(20)">20%</button>
+          <button type="button" class="btn-secondary" id="btn-disc-preset-25" style="padding: 2px 8px; font-size: 0.7rem; font-weight: 800;" onclick="setProductDiscountPreset(25)">25%</button>
+          <button type="button" class="btn-secondary" id="btn-disc-preset-30" style="padding: 2px 8px; font-size: 0.7rem; font-weight: 800;" onclick="setProductDiscountPreset(30)">30%</button>
+        </div>
+
+        <!-- RESUMEN FINANCIERO DEL DESCUENTO PARCIAL -->
+        <div style="background: #ffffff; border: 1.5px solid #d97706; border-radius: 4px; padding: 0.65rem 0.85rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+          <div style="font-family: var(--font-mono); font-size: 0.75rem;">
+            <div style="color: #78350f;">
+              Ahorro Máx en Puntos: <strong id="calc-disc-max-usd" style="color: #059669; font-weight: 900;">-$2.00 USD</strong>
+              <span style="font-size: 0.68rem; color: var(--gray-600);">(a tasa oficial 50 WP = $1 USD)</span>
+            </div>
+            <div style="color: #1e1b4b; font-size: 0.75rem; margin-top: 2px;">
+              Efectivo Obligatorio en Mostrador: <strong id="calc-disc-cash-due" style="color: #dc2626; font-weight: 900;">$38.00 USD</strong>
+            </div>
+            <div style="color: #64748b; font-size: 0.65rem; margin-top: 2px;">
+              🛡️ Protección de tienda: El cliente nunca podrá descontar más de este porcentaje con puntos.
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <div style="text-align: right;">
+              <div style="font-family: var(--font-mono); font-size: 0.65rem; color: var(--gray-500); font-weight: 800;">PUNTOS REQUERIDOS:</div>
+              <div id="calc-disc-suggested-points" style="font-family: var(--font-mono); font-size: 1.35rem; font-weight: 900; color: #b45309; line-height: 1;">100 WP</div>
+            </div>
+            <button type="button" class="btn-primary" onclick="applyCalculatedDiscountToProduct()" style="padding: 0.45rem 0.75rem; font-size: 0.75rem; font-weight: 800; white-space: nowrap; background: #d97706; border-color: #b45309;">
+              ⚡ Aplicar Parámetros
+            </button>
+          </div>
+        </div>
+      </div>
+
       <!-- SECCIÓN B: DATOS DEL ARTÍCULO FÍSICO -->
+      <input type="hidden" id="prod-reward-type" value="FREE_REWARD">
+      <input type="hidden" id="prod-price-usd" value="0">
+      <input type="hidden" id="prod-max-discount-pct" value="0">
+      <input type="hidden" id="prod-max-discount-usd" value="0">
+      <input type="hidden" id="prod-cash-to-pay-usd" value="0">
+
       <div class="form-grid" style="margin-bottom: 0.85rem;">
+        <div id="prod-commercial-summary-pill" style="display: none; grid-column: span 2; background: #fef3c7; border: 1.5px solid #f59e0b; border-radius: 4px; padding: 6px 10px; font-family: var(--font-mono); font-size: 0.72rem; color: #92400e;">
+          🏷️ <strong>VENTA TOPADA:</strong> Precio <span id="pill-summary-price">$40.00 USD</span> · Descuento Tope <span id="pill-summary-pct">5%</span> (-<span id="pill-summary-disc">$2.00 USD</span> con <span id="pill-summary-wp">100 WP</span>) · <strong>Cobrar en tienda: <span id="pill-summary-cash" style="color: #dc2626;">$38.00 USD</span></strong>
+        </div>
+
         <div class="form-group" style="grid-column: span 2; margin-bottom: 0;">
           <label class="form-label" style="height: 18px; line-height: 18px; margin-bottom: 4px;">👤 NOMBRE DEL PRODUCTO FÍSICO</label>
-          <input type="text" id="prod-title" class="form-input" placeholder="Ej: Mouse Gamer Inalámbrico Attack Shark R1" style="height: 40px;">
+          <input type="text" id="prod-title" class="form-input" placeholder="Ej: Mando Inalámbrico GameSir Nova Lite / Mouse Gamer" style="height: 40px;">
         </div>
 
         <div class="form-group" style="margin-bottom: 0;">
@@ -968,7 +1119,7 @@
         <h3 style="font-size: 1.15rem; font-weight: 900; color: #b91c1c; margin: 0;">Limpiar Facturas de Prueba</h3>
       </div>
       <p style="font-size: 0.85rem; color: var(--gray-700); line-height: 1.4; margin-bottom: 0.75rem;">
-        Esta acción eliminará todas las facturas y códigos QR generados actualmente en la base de datos y <strong>reiniciará el contador correlativo al folio #0001</strong>.
+        Esta acción eliminará todas las facturas y códigos QR generados actualmente (<span id="purge-tokens-count-badge" style="font-weight: 700; color: #b91c1c;">0 facturas</span>) y <strong>reiniciará el contador correlativo al folio #0001</strong>.
       </p>
       <p style="font-size: 0.8rem; color: var(--gray-600); margin-bottom: 1.25rem;">
         ✓ Los socios registrados, sus saldos de puntos y el catálogo de artículos se mantendrán intactos.
@@ -981,6 +1132,42 @@
       </div>
     </div>
   </div>
+
+  <!-- MODAL: CONFIRMACIÓN DE PURGA TOTAL DE LA BASE DE DATOS -->
+  <div id="modal-purge-all-db" class="modal-overlay" style="display: none;">
+    <div class="modal-content lain-card" style="max-width: 500px; text-align: left; padding: 1.6rem; border: 2px solid #ef4444; box-shadow: 0 0 25px rgba(239, 68, 68, 0.35);">
+      <button class="modal-close-btn" onclick="closeModal('modal-purge-all-db')" aria-label="Cerrar">&times;</button>
+      <div class="lain-modal-header" style="border-bottom-color: rgba(239, 68, 68, 0.3);">
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <span class="badge-navi" style="background: #7f1d1d; color: #fecaca; border: 1px solid #ef4444;">DANGER // NUCLEAR PURGE</span>
+          <span style="font-family: var(--font-mono); font-size: 0.68rem; color: #ef4444; font-weight: 700;">DB_FULL_PURGE</span>
+        </div>
+      </div>
+      <div style="margin: 1rem 0;">
+        <h3 style="font-size: 1.2rem; font-weight: 900; color: #b91c1c; margin: 0 0 0.5rem 0;">¿Purgar absolutamente toda la Base de Datos?</h3>
+        <p style="font-size: 0.85rem; color: var(--gray-700); line-height: 1.45; margin-bottom: 0.75rem;">
+          Esta acción <strong>eliminará de forma irreversible</strong> todos los datos de Firestore y LocalStorage:
+        </p>
+        <ul style="font-size: 0.82rem; color: var(--gray-700); line-height: 1.5; margin: 0 0 1rem 1.2rem; padding: 0;">
+          <li>Todos los Socios / Clientes registrados</li>
+          <li>Todos los Vales de canje emitidos o pendientes</li>
+          <li>Todo el Catálogo de Premios</li>
+          <li>Todas las Facturas y códigos QR generados</li>
+          <li>Todo el Historial y Ledger de Movimientos</li>
+        </ul>
+        <div style="background: #f0fdf4; border: 1px solid #86efac; border-radius: 6px; padding: 0.65rem 0.85rem; font-size: 0.8rem; color: #166534; font-family: var(--font-mono); display: flex; align-items: center; gap: 6px;">
+          <span>🔒</span> <strong>PROTEGIDO:</strong> El PIN Maestro de Administración (110805) NO se alterará ni se borrará.
+        </div>
+      </div>
+      <div style="display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1.25rem;">
+        <button class="btn-secondary" onclick="closeModal('modal-purge-all-db')">Cancelar</button>
+        <button class="btn-primary" style="background: #dc2626; border-color: #991b1b; color: #fff; font-weight: 900;" onclick="executePurgeAllDb()">
+          💥 Sí, Purgar Toda la BD
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL: AJUSTE DIRECTO DE PUNTOS (+ / - WP) [ESTILO LAIN-LIKE / COPLAND OS] -->
   <div id="modal-adjust-points" class="modal-overlay" style="display: none;">
     <div class="modal-content lain-card" style="max-width: 520px; text-align: left; padding: 1.6rem;">
@@ -1383,6 +1570,23 @@
           <div class="dispatch-label">🕒 FECHA DE EMISIÓN DEL VALE</div>
           <div id="modal-deliver-date" class="dispatch-val" style="font-size: 0.82rem;">-</div>
         </div>
+
+        <!-- CALLOUT DE COBRO OBLIGATORIO EN CAJA (VENTA CON DESCUENTO TOPE) -->
+        <div id="modal-deliver-cash-callout" style="display: none; grid-column: span 2; background: #fffbeb; border: 2px solid #d97706; border-radius: 6px; padding: 0.75rem 1rem; color: #78350f; box-shadow: 0 2px 8px rgba(217, 119, 6, 0.15);">
+          <div style="font-family: var(--font-mono); font-size: 0.75rem; font-weight: 900; letter-spacing: 0.5px; color: #b45309; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+            <span>💵</span> ATENCIÓN EN CAJA: COBRO EN EFECTIVO OBLIGATORIO
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+            <div style="font-size: 0.78rem; line-height: 1.35;">
+              <div>Precio oficial: <strong id="modal-deliver-price-usd" style="color: #1e1b4b;">$0.00 USD</strong></div>
+              <div>Descuento con puntos: <strong id="modal-deliver-discount-usd" style="color: #059669;">-$0.00 USD</strong></div>
+            </div>
+            <div style="text-align: right;">
+              <div style="font-family: var(--font-mono); font-size: 0.65rem; font-weight: 800; color: #b45309;">COBRAR EN EFECTIVO:</div>
+              <div id="modal-deliver-cash-due" style="font-family: var(--font-mono); font-size: 1.4rem; font-weight: 900; color: #dc2626; line-height: 1;">$0.00 USD</div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div style="display: flex; gap: 0.75rem; justify-content: flex-end;" id="modal-deliver-actions">
@@ -1413,7 +1617,7 @@
   <!-- MODAL: CALCULADORA DE PUNTOS POR VENTA EN FACTURA (REGULADOR DE RETORNO) -->
   <div id="modal-sale-calculator" class="modal-overlay" style="display: none;">
     <div class="modal-content lain-card" style="max-width: 660px; text-align: left; padding: 1.6rem; position: relative; max-height: 92vh; overflow-y: auto; overflow-x: hidden;">
-      <div class="dispatch-crt-scanline"></div>
+      <div class="modal-scanline-holder"><div class="modal-scanline-bar"></div></div>
       <div class="tech-corner top-left">+</div>
       <div class="tech-corner top-right">+</div>
       <div class="tech-corner bottom-left">+</div>
@@ -1535,26 +1739,38 @@
         </div>
 
         <!-- SELECTOR DE PORCENTAJE DE RETORNO -->
-        <div style="display: flex; gap: 0.4rem; align-items: center; margin-bottom: 0.65rem; flex-wrap: wrap;">
+        <div style="display: flex; gap: 0.35rem; align-items: center; margin-bottom: 0.65rem; flex-wrap: wrap;">
+          <button type="button" id="btn-sale-pct-5" onclick="setSaleReturnPct(5)"
+                  style="flex: 1; min-width: 44px; padding: 7px 4px; border-radius: 20px; border: 2px solid #e2e8f0; background: #f8fafc; color: #475569; font-family: var(--font-mono); font-size: 0.74rem; font-weight: 900; cursor: pointer; transition: all 0.2s ease; text-align: center;">
+            5%
+          </button>
+          <button type="button" id="btn-sale-pct-10" onclick="setSaleReturnPct(10)"
+                  style="flex: 1; min-width: 44px; padding: 7px 4px; border-radius: 20px; border: 2px solid #e2e8f0; background: #f8fafc; color: #475569; font-family: var(--font-mono); font-size: 0.74rem; font-weight: 900; cursor: pointer; transition: all 0.2s ease; text-align: center;">
+            10%
+          </button>
+          <button type="button" id="btn-sale-pct-20" onclick="setSaleReturnPct(20)"
+                  style="flex: 1; min-width: 44px; padding: 7px 4px; border-radius: 20px; border: 2px solid #e2e8f0; background: #f8fafc; color: #475569; font-family: var(--font-mono); font-size: 0.74rem; font-weight: 900; cursor: pointer; transition: all 0.2s ease; text-align: center;">
+            20%
+          </button>
           <button type="button" id="btn-sale-pct-30" onclick="setSaleReturnPct(30)"
-                  style="flex: 1; min-width: 52px; padding: 8px 4px; border-radius: 20px; border: 2px solid #e2e8f0; background: #f8fafc; color: #475569; font-family: var(--font-mono); font-size: 0.78rem; font-weight: 900; cursor: pointer; transition: all 0.2s ease; text-align: center;">
+                  style="flex: 1; min-width: 44px; padding: 7px 4px; border-radius: 20px; border: 2px solid #e2e8f0; background: #f8fafc; color: #475569; font-family: var(--font-mono); font-size: 0.74rem; font-weight: 900; cursor: pointer; transition: all 0.2s ease; text-align: center;">
             30%
           </button>
           <button type="button" id="btn-sale-pct-40" onclick="setSaleReturnPct(40)"
-                  style="flex: 1; min-width: 52px; padding: 8px 4px; border-radius: 20px; border: 2px solid #e2e8f0; background: #f8fafc; color: #475569; font-family: var(--font-mono); font-size: 0.78rem; font-weight: 900; cursor: pointer; transition: all 0.2s ease; text-align: center;">
+                  style="flex: 1; min-width: 44px; padding: 7px 4px; border-radius: 20px; border: 2px solid #e2e8f0; background: #f8fafc; color: #475569; font-family: var(--font-mono); font-size: 0.74rem; font-weight: 900; cursor: pointer; transition: all 0.2s ease; text-align: center;">
             40%
           </button>
           <button type="button" id="btn-sale-pct-50" onclick="setSaleReturnPct(50)"
-                  style="flex: 1; min-width: 52px; padding: 8px 4px; border-radius: 20px; border: 2px solid #059669; background: linear-gradient(135deg, #ecfdf5, #d1fae5); color: #065f46; font-family: var(--font-mono); font-size: 0.78rem; font-weight: 900; cursor: pointer; transition: all 0.2s ease; text-align: center; box-shadow: 0 2px 8px rgba(5,150,105,0.2);">
+                  style="flex: 1; min-width: 44px; padding: 7px 4px; border-radius: 20px; border: 2px solid #059669; background: linear-gradient(135deg, #ecfdf5, #d1fae5); color: #065f46; font-family: var(--font-mono); font-size: 0.74rem; font-weight: 900; cursor: pointer; transition: all 0.2s ease; text-align: center; box-shadow: 0 2px 8px rgba(5,150,105,0.2);">
             ⭐ 50%
           </button>
           <button type="button" id="btn-sale-pct-60" onclick="setSaleReturnPct(60)"
-                  style="flex: 1; min-width: 52px; padding: 8px 4px; border-radius: 20px; border: 2px solid #e2e8f0; background: #f8fafc; color: #475569; font-family: var(--font-mono); font-size: 0.78rem; font-weight: 900; cursor: pointer; transition: all 0.2s ease; text-align: center;">
+                  style="flex: 1; min-width: 44px; padding: 7px 4px; border-radius: 20px; border: 2px solid #e2e8f0; background: #f8fafc; color: #475569; font-family: var(--font-mono); font-size: 0.74rem; font-weight: 900; cursor: pointer; transition: all 0.2s ease; text-align: center;">
             60%
           </button>
           <div style="display: flex; align-items: center; gap: 3px; background: #f1f5f9; border-radius: 20px; padding: 2px 8px 2px 2px; border: 2px solid #cbd5e1;">
-            <input type="number" id="sale-calc-return-pct" class="form-input" value="50" min="5" max="100" step="5"
-                   style="height: 28px; width: 48px; font-family: var(--font-mono); font-weight: 900; font-size: 0.82rem; text-align: center; padding: 2px; border: none; background: transparent; outline: none;"
+            <input type="number" id="sale-calc-return-pct" class="form-input" value="50" min="1" max="100" step="1"
+                   style="height: 28px; width: 44px; font-family: var(--font-mono); font-weight: 900; font-size: 0.8rem; text-align: center; padding: 2px; border: none; background: transparent; outline: none;"
                    oninput="recalculateSalePoints()">
             <span style="font-family: var(--font-mono); font-size: 0.75rem; font-weight: 900; color: #475569;">%</span>
           </div>
@@ -1593,6 +1809,6 @@
 
   <!-- CONTROLADOR MVVM -->
   <div id="toast-container" class="toast-container"></div>
-  <script type="module" src="./js/admin-app.js"></script>
+  <script type="module" src="./js/admin-app.js?v=2.2.0"></script>
 </body>
 </html>

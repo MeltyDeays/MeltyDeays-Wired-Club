@@ -201,12 +201,17 @@ export class CustomerViewModel {
     this.currentUser.deductPoints(reward.pointsCost);
     reward.decrementStock();
 
+    const isPartial = reward.isPartialDiscount && reward.isPartialDiscount();
     const voucher = new VoucherModel({
       userUid: this.currentUser.uid,
       userName: this.currentUser.displayName,
       rewardId: reward.id,
       rewardTitle: reward.title,
-      pointsSpent: reward.pointsCost
+      rewardType: reward.rewardType || "FREE_REWARD",
+      pointsSpent: reward.pointsCost,
+      priceUsd: reward.priceUsd || 0,
+      discountUsd: reward.maxDiscountUsd || 0,
+      cashToPayUsd: reward.cashToPayUsd || 0
     });
 
     await FirestoreService.saveUser(this.currentUser.toJSON());
@@ -214,13 +219,17 @@ export class CustomerViewModel {
     await FirestoreService.saveVoucher(voucher.toJSON());
 
     // Ledger
+    const noteText = isPartial
+      ? `Vale Descuento (-$${reward.maxDiscountUsd.toFixed(2)} USD) en ${reward.title} [Paga $${reward.cashToPayUsd.toFixed(2)} USD en mostrador]`
+      : `Canje 100% Gratis de ${reward.title}`;
+
     const entry = {
       id: "TX-" + Date.now(),
       type: "DEBIT_REWARD",
       delta: -reward.pointsCost,
       balance_after: this.currentUser.wiredPoints,
       ref_id: voucher.voucherCode,
-      note: "Canje de " + reward.title,
+      note: noteText,
       created_at: new Date().toISOString()
     };
     FirestoreService.addLedgerEntry(this.currentUser.uid, entry);

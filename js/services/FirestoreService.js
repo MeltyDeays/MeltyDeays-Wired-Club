@@ -406,6 +406,29 @@ export class FirestoreService {
     return { success: true, count };
   }
 
+  // Purga integral de toda la base de datos (Socios, Vales, Facturas, Ledger, Catálogo)
+  static async purgeEntireDatabase() {
+    const snap = engine.getBlank();
+    engine.saveSnapshot(snap);
+
+    if (db) {
+      try {
+        const collections = ["users", "vouchers", "rewards_catalog", "qr_tokens", "point_batches", "point_ledger"];
+        for (const col of collections) {
+          const docs = await db.collection(col).get().catch(() => ({ empty: true }));
+          if (docs && !docs.empty) {
+            const batch = db.batch();
+            docs.forEach(d => batch.delete(d.ref));
+            await batch.commit();
+          }
+        }
+      } catch (e) {
+        console.warn("Firestore purgeEntireDatabase error:", e.message);
+      }
+    }
+    return { success: true };
+  }
+
   // Búsqueda inteligente de socio por Member Code (MC-2026-XXXX), Teléfono o UID
   static async findUserByCodeOrPhone(query) {
     if (!query) return null;

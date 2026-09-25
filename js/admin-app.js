@@ -168,6 +168,10 @@ document.addEventListener("DOMContentLoaded", () => {
   window.setTicketPreset = setTicketPreset;
   window.applyCalculatedPointsToProduct = applyCalculatedPointsToProduct;
   window.onManualPointsCostChange = onManualPointsCostChange;
+  window.setProductPublicationMode = setProductPublicationMode;
+  window.setProductDiscountPreset = setProductDiscountPreset;
+  window.recalculateProductDiscount = recalculateProductDiscount;
+  window.applyCalculatedDiscountToProduct = applyCalculatedDiscountToProduct;
 
   // Calculadora de Puntos por Venta (Factura 4x1)
   window.openSalePointsCalculatorModal = openSalePointsCalculatorModal;
@@ -210,6 +214,8 @@ document.addEventListener("DOMContentLoaded", () => {
   window.enforceMultipleOfFour = enforceMultipleOfFour;
   window.openPurgeModal = openPurgeModal;
   window.executePurgeInvoices = executePurgeInvoices;
+  window.openPurgeAllDbModal = openPurgeAllDbModal;
+  window.executePurgeAllDb = executePurgeAllDb;
 
   // Manejo de Imágenes Base64 Catálogo
   window.handleProductImageFile = handleProductImageFile;
@@ -232,6 +238,11 @@ document.addEventListener("DOMContentLoaded", () => {
   window.viewSingleTokenQr = viewSingleTokenQr;
   window.copySingleQrUrl = copySingleQrUrl;
   window.testSingleQrUrl = testSingleQrUrl;
+  window.openTokenActionsModal = openTokenActionsModal;
+  window.executeTokenOptAssign = executeTokenOptAssign;
+  window.executeTokenOptQr = executeTokenOptQr;
+  window.executeTokenOptCopyLink = executeTokenOptCopyLink;
+  window.executeTokenOptTestUrl = executeTokenOptTestUrl;
 
   // Sincronización entre pestañas del navegador en tiempo real
   window.addEventListener("storage", (e) => {
@@ -328,20 +339,39 @@ function renderCatalogTable(catalog) {
     return;
   }
 
-  tbody.innerHTML = catalog.map(p => `
-    <tr>
-      <td>
-        <strong style="color:var(--dark);">${p.title}</strong>
-        <div style="font-size:0.75rem; color:var(--gray-500); font-family:var(--font-mono);">${p.id}</div>
-      </td>
-      <td><span class="badge-navi">${p.pointsCost.toLocaleString()} WP</span></td>
-      <td><strong>${p.stock}</strong> un.</td>
-      <td style="font-size:0.8rem; color:var(--gray-700);">${p.description || "-"}</td>
-      <td style="text-align: right;">
-        <button class="btn-outline-sm" style="color:var(--accent); border-color:#fca5a5; font-size:0.75rem; padding: 3px 8px; border-radius:3px; cursor:pointer;" onclick="removeProductAdmin('${p.id}')">Eliminar</button>
-      </td>
-    </tr>
-  `).join("");
+  tbody.innerHTML = catalog.map(p => {
+    const isPartial = p.rewardType === "PARTIAL_DISCOUNT" || (typeof p.isPartialDiscount === "function" && p.isPartialDiscount());
+    const typeBadge = isPartial
+      ? `<span class="badge-navi" style="background:#fef3c7; color:#92400e; border:1px solid #fcd34d; font-size:0.68rem;">🏷️ VENTA TOPADA (${p.maxDiscountPct || 5}%)</span>`
+      : `<span class="badge-navi" style="background:#ecfdf5; color:#065f46; border:1px solid #a7f3d0; font-size:0.68rem;">🎁 100% CANJE</span>`;
+
+    const costDisplay = isPartial
+      ? `<div><strong style="color:#b45309;">${p.pointsCost.toLocaleString()} WP</strong></div><div style="font-size:0.7rem; color:#059669; font-weight:700;">-$${(p.maxDiscountUsd || 0).toFixed(2)} USD</div>`
+      : `<strong style="color:var(--dark);">${p.pointsCost.toLocaleString()} WP</strong>`;
+
+    const priceInfo = isPartial
+      ? `<div style="font-size:0.72rem; font-family:var(--font-mono); color:var(--dark); margin-top:3px;">Precio: $${(p.priceUsd || 0).toFixed(2)} · <span style="color:#dc2626; font-weight:800;">Cobrar: $${(p.cashToPayUsd || 0).toFixed(2)} USD</span></div>`
+      : "";
+
+    return `
+      <tr>
+        <td>
+          <div style="display:flex; align-items:center; gap:6px; margin-bottom:2px;">
+            ${typeBadge}
+            <strong style="color:var(--dark);">${p.title}</strong>
+          </div>
+          <div style="font-size:0.72rem; color:var(--gray-500); font-family:var(--font-mono);">${p.id}</div>
+          ${priceInfo}
+        </td>
+        <td>${costDisplay}</td>
+        <td><strong>${p.stock}</strong> un.</td>
+        <td style="font-size:0.8rem; color:var(--gray-700);">${p.description || "-"}</td>
+        <td style="text-align: right;">
+          <button class="btn-outline-sm" style="color:var(--accent); border-color:#fca5a5; font-size:0.75rem; padding: 3px 8px; border-radius:3px; cursor:pointer;" onclick="removeProductAdmin('${p.id}')">Eliminar</button>
+        </td>
+      </tr>
+    `;
+  }).join("");
 }
 
 function renderTokensTable(tokens) {
@@ -386,20 +416,25 @@ function renderTokensTable(tokens) {
 
     return `
       <tr>
-        <td style="font-family:var(--font-mono); font-size:0.8rem; white-space:nowrap;"><strong>${t.tokenCode}</strong></td>
-        <td style="white-space:nowrap;"><strong>Factura #MD-2026-${t.invoiceFolio}</strong></td>
+        <td style="white-space:nowrap;"><code class="token-code-pill">${t.tokenCode}</code></td>
+        <td style="white-space:nowrap;"><strong>#MD-${t.invoiceFolio}</strong></td>
         <td style="white-space:nowrap;">${pointsBadge}</td>
-        <td style="font-family:var(--font-mono); letter-spacing: 2px; white-space:nowrap;">${t.securityPin || "••••"}</td>
+        <td style="white-space:nowrap; text-align: center;"><span class="pin-badge">${t.securityPin || "••••"}</span></td>
         <td style="white-space:nowrap;">${statusBadge}</td>
         <td style="text-align: right; white-space: nowrap;">
-          ${!isClaimed ? `
-            <button class="btn-primary" style="padding: 3px 8px; font-size: 0.72rem; margin-right: 4px;" onclick="promptAssignPoints('${t.tokenCode}', '${t.invoiceFolio}')">
-              ⚡ Cargar Puntos
+          <div style="display: inline-flex; align-items: center; justify-content: flex-end; gap: 4px;">
+            ${!isClaimed ? `
+              <button class="btn-primary btn-compact" onclick="promptAssignPoints('${t.tokenCode}', '${t.invoiceFolio}')" title="Asignar puntos a esta factura">
+                ⚡ Cargar
+              </button>
+            ` : ""}
+            <button class="btn-secondary btn-compact" onclick="viewSingleTokenQr('${t.tokenCode}', '${t.invoiceFolio}', ${t.pointsValue}, '${t.securityPin}')" title="Ver código QR oficial">
+              🔍 QR
             </button>
-          ` : ""}
-          <button class="btn-secondary" style="padding: 3px 9px; font-size: 0.72rem;" onclick="viewSingleTokenQr('${t.tokenCode}', '${t.invoiceFolio}', ${t.pointsValue}, '${t.securityPin}')">
-            🔍 Ver QR
-          </button>
+            <button class="btn-secondary btn-dots" onclick="openTokenActionsModal('${t.tokenCode}')" title="Más opciones">
+              ···
+            </button>
+          </div>
         </td>
       </tr>
     `;
@@ -1018,6 +1053,156 @@ function onManualPointsCostChange() {
 }
 
 // -----------------------------------------------------------------------------
+// CATÁLOGO MIXTO: RECOMPENSAS 100% CANJEABLES VS VENTA CON TOPE DE DESCUENTO
+// -----------------------------------------------------------------------------
+let activeProductMode = "FREE_REWARD"; // "FREE_REWARD" | "PARTIAL_DISCOUNT"
+let activeProductDiscountPct = 5; // 5% por defecto
+
+function setProductPublicationMode(mode) {
+  activeProductMode = mode;
+  const isFree = mode === "FREE_REWARD";
+
+  const badge = document.getElementById("prod-mode-badge");
+  const btnFree = document.getElementById("btn-prod-mode-free");
+  const btnDisc = document.getElementById("btn-prod-mode-discount");
+  const secFree = document.getElementById("sec-product-free-calc");
+  const secDisc = document.getElementById("sec-product-discount-calc");
+  const typeInput = document.getElementById("prod-reward-type");
+  const summaryPill = document.getElementById("prod-commercial-summary-pill");
+
+  if (typeInput) typeInput.value = mode;
+
+  if (badge) {
+    badge.textContent = isFree ? "MODO: 🎁 100% CANJEABLE" : "MODO: 🏷️ VENTA TOPADA";
+    badge.style.background = isFree ? "#ecfdf5" : "#fef3c7";
+    badge.style.color = isFree ? "#065f46" : "#b45309";
+    badge.style.borderColor = isFree ? "#a7f3d0" : "#fde68a";
+  }
+
+  if (btnFree) {
+    btnFree.style.border = isFree ? "2px solid #059669" : "1.5px solid #cbd5e1";
+    btnFree.style.background = isFree ? "#ecfdf5" : "#f8fafc";
+    btnFree.style.color = isFree ? "#065f46" : "#475569";
+  }
+
+  if (btnDisc) {
+    btnDisc.style.border = !isFree ? "2px solid #d97706" : "1.5px solid #cbd5e1";
+    btnDisc.style.background = !isFree ? "#fffbeb" : "#f8fafc";
+    btnDisc.style.color = !isFree ? "#b45309" : "#475569";
+  }
+
+  if (secFree) secFree.style.display = isFree ? "block" : "none";
+  if (secDisc) secDisc.style.display = !isFree ? "block" : "none";
+
+  if (isFree) {
+    if (summaryPill) summaryPill.style.display = "none";
+    applyCalculatedPointsToProduct();
+  } else {
+    recalculateProductDiscount();
+    applyCalculatedDiscountToProduct();
+  }
+}
+
+function setProductDiscountPreset(pct) {
+  activeProductDiscountPct = Number(pct) || 5;
+  const input = document.getElementById("calc-sale-prod-discount-pct");
+  if (input) input.value = activeProductDiscountPct;
+
+  [5, 10, 15, 20, 25, 30].forEach(p => {
+    const btn = document.getElementById(`btn-disc-preset-${p}`);
+    if (btn) {
+      if (p === activeProductDiscountPct) {
+        btn.classList.add("active");
+        btn.style.border = "2px solid #d97706";
+        btn.style.background = "#fef3c7";
+        btn.style.color = "#78350f";
+      } else {
+        btn.classList.remove("active");
+        btn.style.border = "";
+        btn.style.background = "";
+        btn.style.color = "";
+      }
+    }
+  });
+
+  recalculateProductDiscount();
+  applyCalculatedDiscountToProduct();
+}
+
+function recalculateProductDiscount() {
+  const priceInput = document.getElementById("calc-sale-prod-price-usd");
+  const pctInput = document.getElementById("calc-sale-prod-discount-pct");
+
+  const salePrice = Math.max(1, parseFloat(priceInput?.value) || 40);
+  const discountPct = Math.min(100, Math.max(1, parseFloat(pctInput?.value) || 5));
+
+  // Tasa de conversión oficial: 1 USD de descuento = 50 WP
+  const WP_PER_USD = 50;
+
+  const maxDiscountUsd = Number((salePrice * (discountPct / 100)).toFixed(2));
+  let requiredPoints = Math.round(maxDiscountUsd * WP_PER_USD);
+  if (requiredPoints % 10 !== 0) {
+    requiredPoints = Math.round(requiredPoints / 10) * 10;
+  }
+  if (requiredPoints < 10) requiredPoints = 10;
+
+  const cashDue = Math.max(0, Number((salePrice - maxDiscountUsd).toFixed(2)));
+
+  const discMaxEl = document.getElementById("calc-disc-max-usd");
+  const cashDueEl = document.getElementById("calc-disc-cash-due");
+  const suggestedPtsEl = document.getElementById("calc-disc-suggested-points");
+
+  if (discMaxEl) discMaxEl.textContent = `-$${maxDiscountUsd.toFixed(2)} USD`;
+  if (cashDueEl) cashDueEl.textContent = `$${cashDue.toFixed(2)} USD`;
+  if (suggestedPtsEl) suggestedPtsEl.textContent = `${requiredPoints.toLocaleString()} WP`;
+
+  return { salePrice, discountPct, maxDiscountUsd, cashDue, requiredPoints };
+}
+
+function applyCalculatedDiscountToProduct() {
+  const { salePrice, discountPct, maxDiscountUsd, cashDue, requiredPoints } = recalculateProductDiscount();
+
+  const costInput = document.getElementById("prod-cost");
+  if (costInput) {
+    costInput.value = requiredPoints;
+    costInput.style.borderColor = "#d97706";
+    costInput.style.boxShadow = "0 0 10px rgba(217, 119, 6, 0.35)";
+    setTimeout(() => {
+      costInput.style.borderColor = "";
+      costInput.style.boxShadow = "";
+    }, 1200);
+  }
+
+  // Guardar en campos ocultos del formulario
+  const typeInput = document.getElementById("prod-reward-type");
+  const priceInput = document.getElementById("prod-price-usd");
+  const pctInput = document.getElementById("prod-max-discount-pct");
+  const discUsdInput = document.getElementById("prod-max-discount-usd");
+  const cashInput = document.getElementById("prod-cash-to-pay-usd");
+
+  if (typeInput) typeInput.value = "PARTIAL_DISCOUNT";
+  if (priceInput) priceInput.value = salePrice;
+  if (pctInput) pctInput.value = discountPct;
+  if (discUsdInput) discUsdInput.value = maxDiscountUsd;
+  if (cashInput) cashInput.value = cashDue;
+
+  // Actualizar pill de resumen
+  const summaryPill = document.getElementById("prod-commercial-summary-pill");
+  const pPrice = document.getElementById("pill-summary-price");
+  const pPct = document.getElementById("pill-summary-pct");
+  const pDisc = document.getElementById("pill-summary-disc");
+  const pWp = document.getElementById("pill-summary-wp");
+  const pCash = document.getElementById("pill-summary-cash");
+
+  if (summaryPill) summaryPill.style.display = "block";
+  if (pPrice) pPrice.textContent = `$${salePrice.toFixed(2)} USD`;
+  if (pPct) pPct.textContent = `${discountPct}%`;
+  if (pDisc) pDisc.textContent = `$${maxDiscountUsd.toFixed(2)} USD`;
+  if (pWp) pWp.textContent = `${requiredPoints.toLocaleString()} WP`;
+  if (pCash) pCash.textContent = `$${cashDue.toFixed(2)} USD`;
+}
+
+// -----------------------------------------------------------------------------
 // CALCULADORA DE PUNTOS POR VENTA (FACTURA 4X1 // REGULADOR DE RETORNO)
 // -----------------------------------------------------------------------------
 let saleReturnBase = "profit"; // "profit" (50% de ganancia) | "revenue" (% de venta)
@@ -1062,7 +1247,7 @@ function setSaleReturnPct(pct) {
   saleReturnPct = Number(pct) || 50;
   const pctInput = document.getElementById("sale-calc-return-pct");
   if (pctInput) pctInput.value = saleReturnPct;
-  [30, 40, 50, 60].forEach(p => {
+  [5, 10, 20, 30, 40, 50, 60].forEach(p => {
     applySaleBtnStyle(document.getElementById(`btn-sale-pct-${p}`), p === saleReturnPct, true);
   });
   recalculateSalePoints();
@@ -1158,11 +1343,7 @@ function openNewProductModal() {
   const modal = document.getElementById("modal-new-product");
   if (!modal) return;
   modal.style.display = "flex";
-  const { suggestedPoints } = recalculateRewardPoints();
-  const costInput = document.getElementById("prod-cost");
-  if (costInput && !costInput.value) {
-    costInput.value = suggestedPoints;
-  }
+  setProductPublicationMode("FREE_REWARD");
   setTimeout(() => {
     const input = document.getElementById("prod-title");
     if (input) input.focus();
@@ -1235,6 +1416,31 @@ async function executePurgeInvoices() {
     showToast("✓ Base de datos purgada: facturas eliminadas y correlativo restablecido a #0001.", "success");
   } catch (err) {
     showToast("❌ Error al limpiar base de datos: " + err.message, "error");
+  }
+}
+
+function openPurgeAllDbModal() {
+  const modal = document.getElementById("modal-purge-all-db");
+  if (!modal) return;
+  modal.style.display = "flex";
+}
+
+async function executePurgeAllDb() {
+  closeModal("modal-purge-all-db");
+  showToast("Ejecutando purga total de la base de datos (Firestore + Local)...", "info");
+  try {
+    const res = await vm.purgeEntireDatabase();
+    const folioEl = document.getElementById("lot-start-folio");
+    if (folioEl) {
+      folioEl.value = 1;
+      delete folioEl.dataset.userEdited;
+    }
+    const helper = document.getElementById("lot-folio-helper");
+    if (helper) helper.innerHTML = "Siguiente folio libre detectado: <strong>#0001</strong> (Base de datos limpia)";
+
+    showToast("✓ Base de datos completamente purgada. El PIN de Admin sigue intacto.", "success");
+  } catch (err) {
+    showToast("❌ Error al purgar la base de datos: " + err.message, "error");
   }
 }
 
@@ -1358,6 +1564,21 @@ async function saveProductAdmin() {
   const imageUrl = currentProductBase64 || (document.getElementById("prod-img").value || "").trim();
   const description = (document.getElementById("prod-desc").value || "").trim();
 
+  let rewardType = (document.getElementById("prod-reward-type")?.value) || activeProductMode || "FREE_REWARD";
+  let priceUsd = parseFloat(document.getElementById("prod-price-usd")?.value) || 0;
+  let maxDiscountPct = parseFloat(document.getElementById("prod-max-discount-pct")?.value) || 0;
+  let maxDiscountUsd = parseFloat(document.getElementById("prod-max-discount-usd")?.value) || 0;
+  let cashToPayUsd = parseFloat(document.getElementById("prod-cash-to-pay-usd")?.value) || 0;
+
+  if (activeProductMode === "PARTIAL_DISCOUNT" || rewardType === "PARTIAL_DISCOUNT") {
+    rewardType = "PARTIAL_DISCOUNT";
+    const calc = recalculateProductDiscount();
+    priceUsd = calc.salePrice;
+    maxDiscountPct = calc.discountPct;
+    maxDiscountUsd = calc.maxDiscountUsd;
+    cashToPayUsd = calc.cashDue;
+  }
+
   if (!title) {
     showToast("⚠️ El nombre del producto es obligatorio.", "error");
     return;
@@ -1368,13 +1589,31 @@ async function saveProductAdmin() {
   }
 
   try {
-    await vm.addReward({ title, pointsCost, stock, imageUrl, description });
+    await vm.addReward({
+      title,
+      rewardType,
+      priceUsd,
+      maxDiscountPct,
+      maxDiscountUsd,
+      cashToPayUsd,
+      pointsCost,
+      stock,
+      imageUrl,
+      description
+    });
     closeModal("modal-new-product");
     document.getElementById("prod-title").value = "";
     document.getElementById("prod-cost").value = "";
     document.getElementById("prod-stock").value = "1";
     document.getElementById("prod-img").value = "";
     document.getElementById("prod-desc").value = "";
+    document.getElementById("prod-reward-type").value = "FREE_REWARD";
+    document.getElementById("prod-price-usd").value = "0";
+    document.getElementById("prod-max-discount-pct").value = "0";
+    document.getElementById("prod-max-discount-usd").value = "0";
+    document.getElementById("prod-cash-to-pay-usd").value = "0";
+    const pill = document.getElementById("prod-commercial-summary-pill");
+    if (pill) pill.style.display = "none";
     clearProductImageUpload();
     showToast("✓ Producto registrado con éxito en el catálogo.", "success");
   } catch (err) {
@@ -1552,6 +1791,81 @@ function copySingleQrUrl() {
 function testSingleQrUrl() {
   if (currentSingleTokenUrl) {
     window.open(currentSingleTokenUrl, "_blank");
+  }
+}
+
+let selectedTokenForActions = null;
+
+function openTokenActionsModal(tokenCode) {
+  const token = (vm.tokens || []).find(t => t.tokenCode === tokenCode);
+  if (!token) return;
+  selectedTokenForActions = token;
+
+  const modal = document.getElementById("modal-token-actions");
+  if (!modal) return;
+
+  const titleEl = document.getElementById("token-actions-title");
+  const codeEl = document.getElementById("token-actions-code");
+  const pinEl = document.getElementById("token-actions-pin-badge");
+  const statusRow = document.getElementById("token-actions-status-row");
+  const btnAssign = document.getElementById("btn-token-opt-assign");
+
+  if (titleEl) titleEl.textContent = `Factura #MD-2026-${token.invoiceFolio}`;
+  if (codeEl) codeEl.textContent = token.tokenCode;
+  if (pinEl) pinEl.textContent = `PIN: ${token.securityPin || "••••"}`;
+
+  if (statusRow) {
+    statusRow.innerHTML = `
+      <span class="badge-navi" style="font-size: 0.72rem; padding: 2px 7px; margin-right: 4px;">
+        ${token.pointsValue > 0 ? `⚡ ${token.pointsValue} WP` : '⏳ Sin Asignar (0 WP)'}
+      </span>
+      <span class="badge-navi" style="font-size: 0.72rem; padding: 2px 7px;">
+        ${token.isClaimed() ? '✔ RECLAMADO' : (token.isActive() ? '● SIN RECLAMAR' : '⏳ EN ESPERA DE VALOR')}
+      </span>
+    `;
+  }
+
+  if (btnAssign) {
+    if (token.isClaimed()) {
+      btnAssign.style.display = "none";
+    } else {
+      btnAssign.style.display = "inline-flex";
+      btnAssign.innerHTML = `<span>⚡</span> <strong>${token.isPendingAssignment() ? 'Cargar Puntos de Venta' : 'Modificar Puntos Asignados'}</strong>`;
+    }
+  }
+
+  modal.style.display = "flex";
+}
+
+function executeTokenOptAssign() {
+  closeModal("modal-token-actions");
+  if (selectedTokenForActions) {
+    promptAssignPoints(selectedTokenForActions.tokenCode, selectedTokenForActions.invoiceFolio);
+  }
+}
+
+function executeTokenOptQr() {
+  closeModal("modal-token-actions");
+  if (selectedTokenForActions) {
+    viewSingleTokenQr(selectedTokenForActions.tokenCode, selectedTokenForActions.invoiceFolio, selectedTokenForActions.pointsValue, selectedTokenForActions.securityPin);
+  }
+}
+
+function executeTokenOptCopyLink() {
+  if (selectedTokenForActions) {
+    const url = "https://meltydeays-wired-club.vercel.app/?claim=" + selectedTokenForActions.tokenCode;
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(url).then(() => {
+        showToast("✓ Enlace de auto-reclamo copiado al portapapeles", "success");
+      });
+    }
+  }
+}
+
+function executeTokenOptTestUrl() {
+  if (selectedTokenForActions) {
+    const url = "https://meltydeays-wired-club.vercel.app/?claim=" + selectedTokenForActions.tokenCode;
+    window.open(url, "_blank");
   }
 }
 
@@ -2092,6 +2406,24 @@ function openDeliverVoucherModal(voucherCode) {
     pill.style.color = "#059669";
     pill.style.borderColor = "#a7f3d0";
     pill.innerHTML = '<span class="pulse-dot"></span> LISTO PARA SALIDA FÍSICA';
+  }
+
+  // Soporte de cobro obligatorio para venta con descuento tope
+  const isPartial = voucher.rewardType === "PARTIAL_DISCOUNT" || (voucher.cashToPayUsd && voucher.cashToPayUsd > 0);
+  const calloutEl = document.getElementById("modal-deliver-cash-callout");
+  const priceEl = document.getElementById("modal-deliver-price-usd");
+  const discEl = document.getElementById("modal-deliver-discount-usd");
+  const cashDueEl = document.getElementById("modal-deliver-cash-due");
+
+  if (calloutEl) {
+    if (isPartial) {
+      calloutEl.style.display = "block";
+      if (priceEl) priceEl.textContent = `$${(voucher.priceUsd || 0).toFixed(2)} USD`;
+      if (discEl) discEl.textContent = `-$${(voucher.discountUsd || 0).toFixed(2)} USD`;
+      if (cashDueEl) cashDueEl.textContent = `$${(voucher.cashToPayUsd || 0).toFixed(2)} USD`;
+    } else {
+      calloutEl.style.display = "none";
+    }
   }
 
   const actions = document.getElementById("modal-deliver-actions");
