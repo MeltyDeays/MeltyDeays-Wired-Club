@@ -307,7 +307,7 @@
         <span class="badge-navi" style="background: #0f172a; color: #38bdf8; border: 1px solid #0284c7;">
           COPLAND OS 21.0 // SECURITY VOUCHER
         </span>
-        <span class="badge-navi" style="background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0;">
+        <span id="modal-voucher-status-badge" class="badge-navi" style="background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0;">
           ● LISTO EN MOSTRADOR
         </span>
       </div>
@@ -315,7 +315,7 @@
       <h2 id="modal-voucher-title" style="font-size: 1.25rem; color: var(--dark); margin: 0.25rem 0; font-weight: 900; line-height: 1.2;">
         Combo Gamer
       </h2>
-      <div style="font-size: 0.78rem; color: var(--gray-600); margin-bottom: 1rem;">
+      <div id="modal-voucher-subtitle" style="font-size: 0.78rem; color: var(--gray-600); margin-bottom: 1rem;">
         Válido para reclamo de producto físico en tienda MeltyDeays
       </div>
 
@@ -323,6 +323,7 @@
       <div class="voucher-qr-wrapper" style="position: relative; width: 170px; height: 170px; margin: 0 auto 1.15rem auto; border: 2.5px solid var(--dark); border-radius: 6px; padding: 10px; background: #ffffff; box-shadow: 4px 4px 0px var(--dark);">
         <div id="voucher-qr-canvas" style="display: flex; justify-content: center; align-items: center; width: 100%; height: 100%;"></div>
         <div class="qr-scanline"></div>
+        <div id="voucher-delivered-stamp" style="display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-12deg); background: rgba(5, 150, 105, 0.95); color: #ffffff; border: 2.5px solid #ffffff; font-family: var(--font-mono); font-weight: 900; font-size: 1.1rem; padding: 4px 14px; border-radius: 4px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); pointer-events: none; z-index: 5; letter-spacing: 1px;">ENTREGADO</div>
       </div>
 
       <!-- CÓDIGO DEL VALE CON BOTÓN COPIAR -->
@@ -336,15 +337,26 @@
         </button>
       </div>
 
-      <div style="background: #fffbeb; border: 1px solid #fef3c7; border-left: 3px solid #f59e0b; padding: 0.5rem 0.75rem; border-radius: 4px; font-size: 0.76rem; color: #92400e; text-align: left; margin-bottom: 1.25rem;">
+      <!-- INSTRUCCIONES CUANDO ESTÁ PENDIENTE DE RETIRO -->
+      <div id="modal-voucher-instructions" style="background: #fffbeb; border: 1px solid #fef3c7; border-left: 3px solid #f59e0b; padding: 0.5rem 0.75rem; border-radius: 4px; font-size: 0.76rem; color: #92400e; text-align: left; margin-bottom: 1.25rem;">
         📌 <strong>Instrucciones:</strong> Muestra este código QR en mostrador o envíalo por WhatsApp a MeltyDeays para apartar tu producto.
+      </div>
+
+      <!-- COMPROBANTE CUANDO YA FUE ENTREGADO (CERO WHATSAPP NI RECORDATORIOS) -->
+      <div id="modal-voucher-delivered-banner" style="display: none; background: #ecfdf5; border: 1.5px solid #059669; border-radius: 4px; padding: 0.65rem 0.85rem; font-size: 0.8rem; color: #065f46; text-align: left; margin-bottom: 1.25rem;">
+        <div style="font-weight: 900; display: flex; align-items: center; gap: 6px; font-family: var(--font-mono);">
+          <span>✓</span> RECOMPENSA ENTREGADA EN MOSTRADOR
+        </div>
+        <div id="modal-voucher-delivered-detail" style="font-size: 0.75rem; color: #047857; margin-top: 3px;">
+          Este producto ya fue retirado físicamente en tienda MeltyDeays.
+        </div>
       </div>
 
       <div style="display: flex; flex-direction: column; gap: 0.6rem;">
         <a id="btn-whatsapp-voucher" href="#" target="_blank" class="btn-primary" style="background: #059669; border-color: #047857; text-decoration: none; padding: 0.65rem; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
           <span>📱</span> Notificar Canje por WhatsApp
         </a>
-        <button class="btn-secondary" style="width: 100%; padding: 0.55rem;" onclick="closeVoucherModal()">
+        <button id="btn-close-voucher" class="btn-secondary" style="width: 100%; padding: 0.55rem;" onclick="closeVoucherModal()">
           ✓ Entendido / Cerrar Vale
         </button>
       </div>

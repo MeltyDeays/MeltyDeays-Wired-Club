@@ -629,18 +629,69 @@ function showVoucherModal(voucherCode) {
   const voucher = vm.vouchers.find(v => v.voucherCode === voucherCode);
   if (!voucher) return;
 
+  const isDelivered = voucher.status === "DELIVERED" || 
+                      voucher.status === "REDEEMED" || 
+                      (typeof voucher.isDelivered === "function" && voucher.isDelivered()) || 
+                      Boolean(voucher.deliveredAt);
+
   const modalTitle = document.getElementById("modal-voucher-title");
   const modalCode = document.getElementById("modal-voucher-code");
   const qrCanvas = document.getElementById("voucher-qr-canvas");
   const waBtn = document.getElementById("btn-whatsapp-voucher");
+  const instructionsBox = document.getElementById("modal-voucher-instructions");
+  const deliveredBanner = document.getElementById("modal-voucher-delivered-banner");
+  const deliveredDetail = document.getElementById("modal-voucher-delivered-detail");
+  const deliveredStamp = document.getElementById("voucher-delivered-stamp");
+  const statusBadge = document.getElementById("modal-voucher-status-badge");
+  const subtitleEl = document.getElementById("modal-voucher-subtitle");
+  const closeBtn = document.getElementById("btn-close-voucher");
 
   if (modalTitle) modalTitle.textContent = voucher.rewardTitle || "Recompensa";
   if (modalCode) modalCode.textContent = voucher.voucherCode;
 
-  if (waBtn) {
-    const phone = "50588888888"; // Línea oficial MeltyDeays
-    const textMsg = encodeURIComponent(`Hola MeltyDeays! He canjeado mi vale [${voucher.voucherCode}] por "${voucher.rewardTitle}". Mi nombre es ${voucher.userName || "Cliente"}.`);
-    waBtn.href = `https://wa.me/${phone}?text=${textMsg}`;
+  if (isDelivered) {
+    // Si ya fue entregado, CERO WhatsApp, CERO instrucciones de retiro
+    if (waBtn) waBtn.style.display = "none";
+    if (instructionsBox) instructionsBox.style.display = "none";
+    if (deliveredBanner) deliveredBanner.style.display = "block";
+    if (deliveredStamp) deliveredStamp.style.display = "block";
+
+    if (statusBadge) {
+      statusBadge.textContent = "✓ ENTREGADO EN TIENDA";
+      statusBadge.style.background = "#ecfdf5";
+      statusBadge.style.color = "#065f46";
+      statusBadge.style.borderColor = "#a7f3d0";
+    }
+    if (subtitleEl) {
+      subtitleEl.textContent = "Comprobante digital de producto físico entregado al socio.";
+    }
+    if (deliveredDetail) {
+      const dateStr = voucher.deliveredAt ? new Date(voucher.deliveredAt).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : "Despachado en mostrador";
+      deliveredDetail.innerHTML = `Retirado exitosamente en mostrador MeltyDeays.<br><span style="font-family: var(--font-mono); font-size: 0.72rem; color: #059669;">Entrega confirmada: ${dateStr}</span>`;
+    }
+    if (closeBtn) closeBtn.textContent = "✓ Cerrar Comprobante";
+  } else {
+    // Si sigue pendiente de retiro
+    if (waBtn) {
+      waBtn.style.display = "flex";
+      const phone = "50588888888"; // Línea oficial MeltyDeays
+      const textMsg = encodeURIComponent(`Hola MeltyDeays! He canjeado mi vale [${voucher.voucherCode}] por "${voucher.rewardTitle}". Mi nombre es ${voucher.userName || "Cliente"}.`);
+      waBtn.href = `https://wa.me/${phone}?text=${textMsg}`;
+    }
+    if (instructionsBox) instructionsBox.style.display = "block";
+    if (deliveredBanner) deliveredBanner.style.display = "none";
+    if (deliveredStamp) deliveredStamp.style.display = "none";
+
+    if (statusBadge) {
+      statusBadge.textContent = "● LISTO EN MOSTRADOR";
+      statusBadge.style.background = "#fffbeb";
+      statusBadge.style.color = "#b45309";
+      statusBadge.style.borderColor = "#fde68a";
+    }
+    if (subtitleEl) {
+      subtitleEl.textContent = "Válido para reclamo de producto físico en tienda MeltyDeays.";
+    }
+    if (closeBtn) closeBtn.textContent = "✓ Entendido / Cerrar Vale";
   }
 
   if (qrCanvas && typeof QRCode !== "undefined") {
@@ -649,7 +700,7 @@ function showVoucherModal(voucherCode) {
       text: voucher.voucherCode,
       width: 148,
       height: 148,
-      colorDark: "#0f172a",
+      colorDark: isDelivered ? "#64748b" : "#0f172a",
       colorLight: "#ffffff",
       correctLevel: QRCode.CorrectLevel.H
     });

@@ -164,8 +164,18 @@ document.addEventListener("DOMContentLoaded", () => {
   window.recalculateRewardPoints = recalculateRewardPoints;
   window.setFreightPreset = setFreightPreset;
   window.setLoyaltyRatio = setLoyaltyRatio;
+  window.setSalesFrequency = setSalesFrequency;
+  window.setTicketPreset = setTicketPreset;
   window.applyCalculatedPointsToProduct = applyCalculatedPointsToProduct;
   window.onManualPointsCostChange = onManualPointsCostChange;
+
+  // Calculadora de Puntos por Venta (Factura 4x1)
+  window.openSalePointsCalculatorModal = openSalePointsCalculatorModal;
+  window.setSaleFreightPreset = setSaleFreightPreset;
+  window.setSaleReturnBase = setSaleReturnBase;
+  window.setSaleReturnPct = setSaleReturnPct;
+  window.recalculateSalePoints = recalculateSalePoints;
+  window.applySalePointsToActiveTarget = applySalePointsToActiveTarget;
 
   // Clientes y Puntos
   window.filterUsers = filterUsers;
@@ -882,80 +892,114 @@ async function printFromModal() {
   await generateBatchAdmin();
 }
 
-let activeLoyaltyRatio = 0.025; // 2.5% recomendado por defecto
+let activeSalesTarget = 4; // Meta de 4 compras recurrentes para canjear (Recomendado)
+let activeLoyaltyRatio = 0.025; // 2.5% para compatibilidad
 
 function setFreightPreset(rate, modeName) {
   const rateInput = document.getElementById("calc-freight-rate");
   if (rateInput) {
     rateInput.value = Number(rate).toFixed(2);
   }
+  const btn25 = document.getElementById("btn-freight-maritimo-250");
+  const btn30 = document.getElementById("btn-freight-maritimo-300");
+  const btn55 = document.getElementById("btn-freight-aereo-550");
+  [btn25, btn30, btn55].forEach(b => { if (b) b.classList.remove("active"); });
+  if (rate === 2.5 && btn25) btn25.classList.add("active");
+  if (rate === 3.0 && btn30) btn30.classList.add("active");
+  if (rate === 5.5 && btn55) btn55.classList.add("active");
+
   recalculateRewardPoints();
   showToast(`Tarifa de flete casillero fijada en $${rate}/lb (${modeName}).`, "info");
 }
 
-function setLoyaltyRatio(ratio, activeBtnId) {
-  activeLoyaltyRatio = ratio;
-  const btn25 = document.getElementById("btn-tier-ratio-25");
-  const btn20 = document.getElementById("btn-tier-ratio-20");
-  const btn30 = document.getElementById("btn-tier-ratio-30");
-  const badge = document.getElementById("calc-model-badge");
-
-  [btn25, btn20, btn30].forEach(b => { if (b) b.classList.remove("active"); });
+function setSalesFrequency(count, activeBtnId) {
+  activeSalesTarget = Number(count) || 4;
+  ['btn-freq-3', 'btn-freq-4', 'btn-freq-5', 'btn-freq-6'].forEach(id => {
+    const b = document.getElementById(id);
+    if (b) b.classList.remove("active");
+  });
   const activeBtn = document.getElementById(activeBtnId);
   if (activeBtn) activeBtn.classList.add("active");
 
+  const badge = document.getElementById("calc-sales-target-badge");
   if (badge) {
-    if (ratio === 0.020) {
-      badge.textContent = "ULTRA RENTABLE (2.0%)";
-      badge.style.color = "#047857";
-      badge.style.background = "#d1fae5";
-    } else if (ratio === 0.025) {
-      badge.textContent = "EQUILIBRADO (2.5%)";
-      badge.style.color = "#059669";
-      badge.style.background = "#ecfdf5";
-    } else {
-      badge.textContent = "CANJE RÁPIDO (3.0%)";
-      badge.style.color = "#4338ca";
-      badge.style.background = "#e0e7ff";
-    }
+    badge.textContent = `META: ${count} VENTAS`;
   }
 
   recalculateRewardPoints();
+  showToast(`Meta de canje fijada en ${count} compras recurrentes.`, "info");
 }
+
+function setTicketPreset(ticket) {
+  const ticketInput = document.getElementById("calc-ticket-avg-usd");
+  if (ticketInput) {
+    ticketInput.value = Number(ticket).toFixed(2);
+  }
+  recalculateRewardPoints();
+  showToast(`Ticket promedio fijado en $${ticket} USD.`, "info");
+}
+
+function setLoyaltyRatio(ratio, activeBtnId) {
+  activeLoyaltyRatio = ratio;
+  recalculateRewardPoints();
+}
+
+const WP_PER_USD = 10; // Regla oficial MeltyDeays The Wired Club: 1 USD gastado = 10 WP
 
 function recalculateRewardPoints() {
   const priceInput = document.getElementById("calc-prod-price-usd");
   const weightInput = document.getElementById("calc-prod-weight-lbs");
   const freightInput = document.getElementById("calc-freight-rate");
+  const ticketInput = document.getElementById("calc-ticket-avg-usd");
 
   const priceUsd = Math.max(0, parseFloat(priceInput?.value) || 0);
   const weightLbs = Math.max(0, parseFloat(weightInput?.value) || 0);
   const freightRate = Math.max(0, parseFloat(freightInput?.value) || 0);
+  const ticketAvg = Math.max(1, parseFloat(ticketInput?.value) || 20);
+  const salesCount = activeSalesTarget || 4;
 
   const freightCost = weightLbs * freightRate;
   const landedCost = priceUsd + freightCost;
 
-  // Venta requerida en tienda para cubrir el regalo manteniendo el ratio de lealtad
-  const salesRequired = activeLoyaltyRatio > 0 ? (landedCost / activeLoyaltyRatio) : 0;
-  // Redondeo inteligente a múltiplos de 10 puntos para estética retail
-  let suggestedPoints = Math.round(salesRequired / 10) * 10;
+  // Total acumulado por el cliente en salesCount compras
+  const totalSalesRequired = salesCount * ticketAvg;
+  // Puntos otorgados por cada compra: 1 USD = 10 WP
+  const pointsPerSale = Math.round(ticketAvg * WP_PER_USD);
+  // Puntos necesarios para el canje tras salesCount compras
+  let suggestedPoints = salesCount * pointsPerSale;
   if (landedCost > 0 && suggestedPoints < 50) suggestedPoints = 50;
+
+  // Rentabilidad del negocio en esas compras recurrentes
+  const giftInvestmentRatio = totalSalesRequired > 0 ? (landedCost / totalSalesRequired) : 0;
+  const businessRetention = Math.max(0, 100 - (giftInvestmentRatio * 100));
 
   const landedCostEl = document.getElementById("calc-landed-cost");
   const freightCostEl = document.getElementById("calc-freight-cost");
-  const salesReqEl = document.getElementById("calc-sales-required");
+  const salesSummaryEl = document.getElementById("calc-sales-summary");
+  const formulaDetailEl = document.getElementById("calc-formula-detail");
+  const roiNoteEl = document.getElementById("calc-roi-note");
   const suggestedPtsEl = document.getElementById("calc-suggested-points");
 
   if (landedCostEl) landedCostEl.textContent = `$${landedCost.toFixed(2)} USD`;
   if (freightCostEl) freightCostEl.textContent = `$${freightCost.toFixed(2)}`;
-  if (salesReqEl) salesReqEl.textContent = `$${Math.round(salesRequired).toLocaleString()} USD`;
-  if (suggestedPtsEl) suggestedPtsEl.textContent = `${suggestedPoints.toLocaleString()} WP`;
+  if (salesSummaryEl) {
+    salesSummaryEl.textContent = `${salesCount} compras de $${ticketAvg.toFixed(2)} USD ($${Math.round(totalSalesRequired)} USD total)`;
+  }
+  if (formulaDetailEl) {
+    formulaDetailEl.textContent = `${pointsPerSale} WP/compra × ${salesCount} compras = ${suggestedPoints.toLocaleString()} WP`;
+  }
+  if (roiNoteEl) {
+    roiNoteEl.innerHTML = `Retención de negocio: <strong>${businessRetention.toFixed(0)}%</strong> (Inversión en regalo: $${landedCost.toFixed(2)} de $${Math.round(totalSalesRequired)} USD)`;
+  }
+  if (suggestedPtsEl) {
+    suggestedPtsEl.textContent = `${suggestedPoints.toLocaleString()} WP`;
+  }
 
-  return { landedCost, freightCost, salesRequired, suggestedPoints };
+  return { landedCost, freightCost, salesRequired: totalSalesRequired, suggestedPoints, pointsPerSale, salesCount };
 }
 
 function applyCalculatedPointsToProduct() {
-  const { suggestedPoints } = recalculateRewardPoints();
+  const { suggestedPoints, salesRequired, landedCost, salesCount, pointsPerSale } = recalculateRewardPoints();
   const costInput = document.getElementById("prod-cost");
   if (costInput) {
     costInput.value = suggestedPoints;
@@ -966,11 +1010,137 @@ function applyCalculatedPointsToProduct() {
       costInput.style.boxShadow = "";
     }, 1200);
   }
-  showToast(`⚡ Asignado costo de ${suggestedPoints.toLocaleString()} WP calculado para rentabilidad del ${(activeLoyaltyRatio * 100).toFixed(1)}%.`, "success");
+  showToast(`⚡ Asignado: ${suggestedPoints.toLocaleString()} WP (${salesCount} compras de ${pointsPerSale} WP | Costo Landed: $${landedCost.toFixed(2)}).`, "success");
 }
 
 function onManualPointsCostChange() {
   // Sincronización libre si el usuario prefiere tipear a mano
+}
+
+// -----------------------------------------------------------------------------
+// CALCULADORA DE PUNTOS POR VENTA (FACTURA 4X1 // REGULADOR DE RETORNO)
+// -----------------------------------------------------------------------------
+let saleReturnBase = "profit"; // "profit" (50% de ganancia) | "revenue" (% de venta)
+let saleReturnPct = 50; // 50% por defecto (Recomendado)
+let activeSaleTargetSource = "pos"; // "pos" | "invoices" | "navbar"
+
+function openSalePointsCalculatorModal(target = "pos") {
+  activeSaleTargetSource = target;
+  const modal = document.getElementById("modal-sale-calculator");
+  if (modal) modal.style.display = "flex";
+  recalculateSalePoints();
+}
+
+function setSaleFreightPreset(rate) {
+  const rateInput = document.getElementById("sale-calc-freight-rate");
+  if (rateInput) rateInput.value = Number(rate).toFixed(2);
+  recalculateSalePoints();
+}
+
+function setSaleReturnBase(base) {
+  saleReturnBase = base;
+  const btnProfit = document.getElementById("btn-sale-base-profit");
+  const btnRev = document.getElementById("btn-sale-base-revenue");
+  if (btnProfit) btnProfit.classList.toggle("active", base === "profit");
+  if (btnRev) btnRev.classList.toggle("active", base === "revenue");
+  recalculateSalePoints();
+}
+
+function setSaleReturnPct(pct) {
+  saleReturnPct = Number(pct) || 50;
+  const pctInput = document.getElementById("sale-calc-return-pct");
+  if (pctInput) pctInput.value = saleReturnPct;
+  [30, 40, 50, 60].forEach(p => {
+    const b = document.getElementById(`btn-sale-pct-${p}`);
+    if (b) b.classList.toggle("active", p === saleReturnPct);
+  });
+  recalculateSalePoints();
+}
+
+function recalculateSalePoints() {
+  const costInput = document.getElementById("sale-calc-cost-usd");
+  const weightInput = document.getElementById("sale-calc-weight-lbs");
+  const freightInput = document.getElementById("sale-calc-freight-rate");
+  const extraInput = document.getElementById("sale-calc-extra-usd");
+  const priceInput = document.getElementById("sale-calc-price-usd");
+  const pctInput = document.getElementById("sale-calc-return-pct");
+
+  const costBase = Math.max(0, parseFloat(costInput?.value) || 0);
+  const weight = Math.max(0, parseFloat(weightInput?.value) || 0);
+  const freightRate = Math.max(0, parseFloat(freightInput?.value) || 0);
+  const extra = Math.max(0, parseFloat(extraInput?.value) || 0);
+  const salePrice = Math.max(0, parseFloat(priceInput?.value) || 0);
+  const returnPct = Math.max(1, parseFloat(pctInput?.value) || saleReturnPct || 50);
+
+  const freightCost = weight * freightRate;
+  const landedCost = costBase + freightCost + extra;
+  const grossProfit = Math.max(0, salePrice - landedCost);
+  const marginPct = salePrice > 0 ? ((grossProfit / salePrice) * 100) : 0;
+
+  // Valor retornado en premios ($ USD)
+  let rewardValUsd = 0;
+  if (saleReturnBase === "profit") {
+    rewardValUsd = grossProfit * (returnPct / 100);
+  } else {
+    // Sobre el total del precio de venta
+    rewardValUsd = salePrice * (returnPct / 100);
+  }
+
+  // Conversión a Wired Points (WP): 1 USD de premio físico en catálogo = 50 WP (ej. premio de $20 Landed cuesta 1,000 WP)
+  const WP_PER_REWARD_USD = 50; 
+  let suggestedPoints = Math.round(rewardValUsd * WP_PER_REWARD_USD);
+  if (suggestedPoints % 10 !== 0) {
+    suggestedPoints = Math.round(suggestedPoints / 10) * 10;
+  }
+  if (grossProfit > 0 && suggestedPoints < 50) suggestedPoints = 50;
+
+  const costOfPointsInRewards = suggestedPoints / WP_PER_REWARD_USD;
+  const retainedProfit = Math.max(0, grossProfit - costOfPointsInRewards);
+
+  // Actualizar elementos DOM
+  const resLandedEl = document.getElementById("sale-calc-res-landed");
+  const resProfitEl = document.getElementById("sale-calc-res-profit");
+  const resMarginEl = document.getElementById("sale-calc-res-margin");
+  const badgeEl = document.getElementById("sale-calc-return-badge");
+  const rewardValEl = document.getElementById("sale-calc-reward-val");
+  const baseNoteEl = document.getElementById("sale-calc-base-note");
+  const retainedProfitEl = document.getElementById("sale-calc-retained-profit");
+  const suggestedPtsEl = document.getElementById("sale-calc-suggested-points");
+
+  if (resLandedEl) resLandedEl.textContent = `$${landedCost.toFixed(2)} USD`;
+  if (resProfitEl) resProfitEl.textContent = `$${grossProfit.toFixed(2)} USD`;
+  if (resMarginEl) resMarginEl.textContent = `${marginPct.toFixed(1)}% margen`;
+  if (badgeEl) {
+    badgeEl.textContent = saleReturnBase === "profit" 
+      ? `${returnPct}% DE GANANCIA REGRESADO EN PUNTOS` 
+      : `${returnPct}% DE VENTA REGRESADO EN PUNTOS`;
+  }
+  if (rewardValEl) rewardValEl.textContent = `$${rewardValUsd.toFixed(2)} USD`;
+  if (baseNoteEl) {
+    baseNoteEl.textContent = saleReturnBase === "profit" 
+      ? `(${returnPct}% de ganancia $${grossProfit.toFixed(2)})`
+      : `(${returnPct}% de venta $${salePrice.toFixed(2)})`;
+  }
+  if (retainedProfitEl) retainedProfitEl.textContent = `$${retainedProfit.toFixed(2)} USD`;
+  if (suggestedPtsEl) suggestedPtsEl.textContent = `${suggestedPoints.toLocaleString()} WP`;
+
+  return { landedCost, grossProfit, marginPct, rewardValUsd, retainedProfit, suggestedPoints };
+}
+
+function applySalePointsToActiveTarget() {
+  const { suggestedPoints } = recalculateSalePoints();
+  const assignInput = document.getElementById("input-assign-points");
+  if (assignInput) {
+    assignInput.value = suggestedPoints;
+    assignInput.style.borderColor = "#059669";
+    assignInput.style.boxShadow = "0 0 10px rgba(5, 150, 105, 0.35)";
+    setTimeout(() => {
+      assignInput.style.borderColor = "";
+      assignInput.style.boxShadow = "";
+    }, 1200);
+  }
+  closeModal("modal-sale-calculator");
+  showToast(`⚡ Asignados ${suggestedPoints.toLocaleString()} WP calculados para esta factura.`, "success");
 }
 
 function openNewProductModal() {
