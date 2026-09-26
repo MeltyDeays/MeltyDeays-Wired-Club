@@ -45,6 +45,7 @@ body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  overflow-x: hidden;
 }
 
 /* NAVBAR TÉCNICA ESTILO ENCABEZADO DE FACTURA */
@@ -56,6 +57,8 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
   position: sticky;
   top: 0;
   z-index: 100;
@@ -177,8 +180,9 @@ body {
 }
 
 #admin-main-panel {
-  max-width: 1440px;
-  width: 96%;
+  max-width: 100%;
+  width: 100%;
+  padding: 1.5rem 1.25rem;
 }
 
 /* BOTONES TÉCNICOS ESTILO FACTURA */
@@ -876,6 +880,53 @@ body {
   to { transform: scale(1.3); opacity: 1; }
 }
 
+@media (max-width: 1280px) {
+  #admin-main-panel {
+    padding: 1.25rem 1rem;
+  }
+  .noc-stats-grid {
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  }
+  .admin-section {
+    padding: 1.25rem;
+  }
+  .form-grid {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  }
+}
+
+@media (max-width: 1024px) {
+  #admin-main-panel {
+    padding: 1rem 0.85rem;
+  }
+  .noc-stats-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .noc-hud-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .admin-section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.65rem;
+  }
+  .modal-content {
+    max-width: calc(100vw - 2rem);
+    padding: 1.35rem;
+  }
+  .form-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .dispatch-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .generator-action-bar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
 @media (max-width: 768px) {
   .navbar {
     padding: 0.75rem 1rem;
@@ -885,6 +936,37 @@ body {
   }
   .balance-amount {
     font-size: 2.3rem;
+  }
+  .noc-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .admin-nav-tabs {
+    gap: 0.35rem;
+  }
+  .admin-tab-btn {
+    font-size: 0.72rem;
+    padding: 0.45rem 0.75rem;
+  }
+  .admin-section {
+    padding: 1rem;
+    margin-bottom: 1.25rem;
+  }
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+  .dispatch-grid {
+    grid-template-columns: 1fr;
+  }
+  .table-responsive {
+    font-size: 0.75rem;
+  }
+  .modal-content {
+    padding: 1.15rem;
+    max-width: calc(100vw - 1.5rem);
+  }
+  .pos-scanner-input {
+    font-size: 1rem;
+    letter-spacing: 1px;
   }
 }
 
@@ -2323,6 +2405,9 @@ body {
   margin-bottom: 1.75rem;
   overflow-x: auto;
   flex-wrap: nowrap;
+  scrollbar-width: thin;
+  scrollbar-color: var(--dark) var(--gray-200);
+  -webkit-overflow-scrolling: touch;
 }
 
 .admin-tab-btn {

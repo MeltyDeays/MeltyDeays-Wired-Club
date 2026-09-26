@@ -720,52 +720,41 @@ function showVoucherModal(voucherCode) {
   if (modalCode) modalCode.textContent = voucher.voucherCode;
 
   if (isDelivered) {
-    // Si ya fue entregado, CERO WhatsApp, CERO instrucciones de retiro
     if (waBtn) waBtn.style.display = "none";
     if (instructionsBox) instructionsBox.style.display = "none";
     if (deliveredBanner) deliveredBanner.style.display = "block";
     if (deliveredStamp) deliveredStamp.style.display = "block";
-
+    const cashPillD = document.getElementById("modal-voucher-cash-pill");
+    if (cashPillD) cashPillD.style.display = "none";
     if (statusBadge) {
       statusBadge.textContent = "✓ ENTREGADO EN TIENDA";
       statusBadge.style.background = "#ecfdf5";
       statusBadge.style.color = "#065f46";
       statusBadge.style.borderColor = "#a7f3d0";
     }
-    if (subtitleEl) {
-      subtitleEl.textContent = "Comprobante digital de producto físico entregado al socio.";
-    }
+    if (subtitleEl) subtitleEl.textContent = "Comprobante digital de producto físico entregado al socio.";
     if (deliveredDetail) {
       const dateStr = voucher.deliveredAt ? new Date(voucher.deliveredAt).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : "Despachado en mostrador";
       deliveredDetail.innerHTML = `Retirado exitosamente en mostrador MeltyDeays.<br><span style="font-family: var(--font-mono); font-size: 0.72rem; color: #059669;">Entrega confirmada: ${dateStr}</span>`;
     }
     if (closeBtn) closeBtn.textContent = "✓ Cerrar Comprobante";
-    // Soporte para vale de venta con descuento tope
+  } else {
     const isPartial = voucher.rewardType === "PARTIAL_DISCOUNT" || (voucher.cashToPayUsd && voucher.cashToPayUsd > 0);
     const cashPill = document.getElementById("modal-voucher-cash-pill");
     const cashVal = document.getElementById("modal-voucher-cash-val");
-
     if (cashPill) {
-      if (isPartial && !isDelivered) {
-        cashPill.style.display = "block";
-        if (cashVal) cashVal.textContent = `$${(voucher.cashToPayUsd || 0).toFixed(2)} USD`;
-      } else {
-        cashPill.style.display = "none";
-      }
+      cashPill.style.display = isPartial ? "block" : "none";
+      if (isPartial && cashVal) cashVal.textContent = `$${(voucher.cashToPayUsd || 0).toFixed(2)} USD`;
     }
-
     if (instructionsBox) {
       instructionsBox.style.display = "block";
-      if (isPartial) {
-        instructionsBox.innerHTML = `📌 <strong>Vale de Descuento:</strong> Muestra este código QR en mostrador para aplicar tu descuento de -$${(voucher.discountUsd || 0).toFixed(2)} USD. Saldo restante a abonar en efectivo: <strong>$${(voucher.cashToPayUsd || 0).toFixed(2)} USD</strong>.<div style="margin-top:4px; font-size:0.68rem; color:#78350f; font-family:var(--font-mono);">🛡️ Garantía técnica de 30 días amparada por el abono en efectivo en tienda.</div>`;
-      } else {
-        instructionsBox.innerHTML = `📌 <strong>Instrucciones:</strong> Muestra este código QR en mostrador o envíalo por WhatsApp a MeltyDeays para apartar tu producto 100% gratis.<div style="margin-top:4px; font-size:0.68rem; color:#64748b; font-family:var(--font-mono);">🛡️ Premio gratuito por fidelidad: Se entrega probado en tienda. Exento de garantía técnica posterior de 30 días.</div>`;
-      }
+      instructionsBox.innerHTML = isPartial
+        ? `📌 <strong>Vale de Descuento:</strong> Muestra este QR en mostrador para aplicar tu descuento de -$${(voucher.discountUsd || 0).toFixed(2)} USD. Saldo restante a abonar en efectivo: <strong>$${(voucher.cashToPayUsd || 0).toFixed(2)} USD</strong>.<div style="margin-top:4px; font-size:0.68rem; color:#78350f; font-family:var(--font-mono);">🛡️ Garantía técnica de 30 días amparada por el abono en efectivo en tienda.</div>`
+        : `📌 <strong>Instrucciones:</strong> Muestra este código QR en mostrador o envíalo por WhatsApp a MeltyDeays para apartar tu producto 100% gratis.<div style="margin-top:4px; font-size:0.68rem; color:#64748b; font-family:var(--font-mono);">🛡️ Premio gratuito por fidelidad: Se entrega probado en tienda. Exento de garantía técnica posterior de 30 días.</div>`;
     }
-
     if (waBtn) {
       waBtn.style.display = "flex";
-      const phone = "50588888888"; // Línea oficial MeltyDeays
+      const phone = "50588888888";
       const textMsg = isPartial
         ? encodeURIComponent(`Hola MeltyDeays! He generado mi vale [${voucher.voucherCode}] con descuento de -$${(voucher.discountUsd || 0).toFixed(2)} USD en "${voucher.rewardTitle}". Saldo a pagar en tienda: $${(voucher.cashToPayUsd || 0).toFixed(2)} USD. Mi nombre es ${voucher.userName || "Cliente"}.`)
         : encodeURIComponent(`Hola MeltyDeays! He canjeado mi vale [${voucher.voucherCode}] por "${voucher.rewardTitle}". Mi nombre es ${voucher.userName || "Cliente"}.`);
@@ -773,7 +762,6 @@ function showVoucherModal(voucherCode) {
     }
     if (deliveredBanner) deliveredBanner.style.display = "none";
     if (deliveredStamp) deliveredStamp.style.display = "none";
-
     if (statusBadge) {
       statusBadge.textContent = "● LISTO EN MOSTRADOR";
       statusBadge.style.background = "#fffbeb";
@@ -781,7 +769,7 @@ function showVoucherModal(voucherCode) {
       statusBadge.style.borderColor = "#fde68a";
     }
     if (subtitleEl) {
-      subtitleEl.textContent = isPartial 
+      subtitleEl.textContent = isPartial
         ? "Vale de descuento comercial para canje físico en mostrador."
         : "Válido para reclamo de producto físico en tienda MeltyDeays.";
     }
