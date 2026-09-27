@@ -240,7 +240,10 @@ export class CustomerViewModel {
       pointsSpent: pointsSpent,
       priceUsd: reward.priceUsd || 0,
       discountUsd: discountUsd,
-      cashToPayUsd: cashToPayUsd
+      cashToPayUsd: cashToPayUsd,
+      expiresAt: (isPartial || cashToPayUsd > 0)
+        ? new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString()
+        : null
     });
 
     await FirestoreService.saveUser(this.currentUser.toJSON());
@@ -286,5 +289,95 @@ export class CustomerViewModel {
     voucher.cost = pointsSpent;
 
     return voucher;
+  }
+
+  async cancelVoucher(voucherCode) {
+    if (!this.currentUser) {
+      throw new Error("Debes iniciar sesión para gestionar tus vales.");
+    }
+
+    const cleanCode = (voucherCode || "").trim().toUpperCase();
+    let voucher = (this.vouchers || []).find(v => (v.voucherCode || "").trim().toUpperCase() === cleanCode);
+    if (!voucher) {
+      const raw = await FirestoreService.getVoucher(cleanCode);
+      if (raw) voucher = new VoucherModel(raw);
+    }
+
+    if (!voucher) {
+      throw new Error("El vale [" + cleanCode + "] no fue encontrado.");
+    }
+
+    const voucherUserUid = voucher.userUid || voucher.userId;
+    if (voucherUserUid && voucherUserUid !== this.currentUser.uid) {
+      throw new Error("No tienes autorización para cancelar este vale.");
+    }
+
+    if (voucher.isDelivered()) {
+      throw new Error("Este vale ya fue despachado y entregado en mostrador. No puede ser cancelado.");
+    }
+
+    if (voucher.isCancelled()) {
+      throw new Error("Este vale ya fue cancelado previamente.");
+    }
+
+    const pointsToRefund = voucher.pointsSpent || 0;
+
+    // 1. Reintegro de puntos si aplicó saldo
+    if (pointsToRefund > 0) {
+      this.currentUser.addPoints(pointsToRefund);
+      const refundEntry = {
+        id: "TX-" + Date.now(),
+        type: "REFUND_CANCEL",
+        delta: pointsToRefund,
+        balance_after: this.currentUser.wiredPoints,
+        ref_id: voucher.voucherCode,
+        note: `Reembolso por Cancelación de Vale [${voucher.voucherCode}]: +${pointsToRefund} WP devueltos por ${voucher.rewardTitle}`,
+        created_at: new Date().toISOString()
+      };
+      FirestoreService.addLedgerEntry(this.currentUser.uid, refundEntry);
+    } else {
+      const cancelEntry = {
+        id: "TX-" + Date.now(),
+        type: "CANCEL_PURCHASE",
+        delta: 0,
+        balance_after: this.currentUser.wiredPoints,
+        ref_id: voucher.voucherCode,
+        note: `Cancelación de Reserva de Compra [${voucher.voucherCode}] para ${voucher.rewardTitle}`,
+        created_at: new Date().toISOString()
+      };
+      FirestoreService.addLedgerEntry(this.currentUser.uid, cancelEntry);
+    }
+
+    // 2. Restaurar stock del artículo en catálogo
+    let reward = (this.catalog || []).find(r => r.id === voucher.rewardId);
+    if (!reward && voucher.rewardId) {
+      const rawReward = await FirestoreService.getReward(voucher.rewardId);
+      if (rawReward) reward = new RewardModel(rawReward);
+    }
+    if (reward) {
+      if (typeof reward.incrementStock === "function") {
+        reward.incrementStock();
+      } else {
+        reward.stock = (reward.stock || 0) + 1;
+      }
+      await FirestoreService.saveReward(reward.toJSON());
+    }
+
+    // 3. Marcar vale como cancelado
+    voucher.markCancelled(this.currentUser.uid);
+    await FirestoreService.saveVoucher(voucher.toJSON());
+
+    // 4. Guardar usuario actualizado y refrescar datos
+    await FirestoreService.saveUser(this.currentUser.toJSON());
+    await this.refreshUserData();
+    await this.refreshCatalog();
+
+    return {
+      success: true,
+      voucherCode: voucher.voucherCode,
+      rewardTitle: voucher.rewardTitle,
+      pointsRefunded: pointsToRefund,
+      newBalance: this.currentUser.wiredPoints
+    };
   }
 }

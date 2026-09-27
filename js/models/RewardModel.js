@@ -30,6 +30,11 @@ export class RewardModel {
     this.updatedAt = new Date().toISOString();
   }
 
+  incrementStock() {
+    this.stock += 1;
+    this.updatedAt = new Date().toISOString();
+  }
+
   toJSON() {
     return {
       id: this.id,

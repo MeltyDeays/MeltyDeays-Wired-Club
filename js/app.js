@@ -71,6 +71,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   window.showVoucherModal = showVoucherModal;
   window.closeVoucherModal = closeVoucherModal;
+  window.promptCancelCurrentVoucher = promptCancelCurrentVoucher;
+  window.promptCancelVoucher = promptCancelVoucher;
+  window.closeCancelVoucherModal = closeCancelVoucherModal;
+  window.executeCancelVoucher = executeCancelVoucher;
   window.copyMemberCode = copyMemberCode;
   window.copyVoucherCode = copyVoucherCode;
   window.showToast = showToast;
@@ -202,6 +206,23 @@ function renderCatalog(catalog, user) {
     const isOut = item.stock <= 0;
     const canAfford = user && user.wiredPoints >= item.pointsCost;
     const isPartial = item.rewardType === "PARTIAL_DISCOUNT" || (typeof item.isPartialDiscount === "function" && item.isPartialDiscount());
+    const userPts = user ? (user.wiredPoints || 0) : 0;
+    const maxCapPts = item.pointsCost || 0;
+    const maxPct = item.maxDiscountPct || 5;
+
+    let appliedPts = 0;
+    let appliedPct = 0;
+    let appliedDiscountUsd = 0;
+    let cashToPayWithPts = item.priceUsd || 0;
+
+    if (isPartial) {
+      appliedPts = Math.min(userPts, maxCapPts);
+      appliedPct = maxCapPts > 0 ? Number(((appliedPts / maxCapPts) * maxPct).toFixed(2)) : 0;
+      const usdPerPoint = (maxCapPts > 0 && item.maxDiscountUsd > 0) ? (item.maxDiscountUsd / maxCapPts) : 0;
+      appliedDiscountUsd = Number(Math.min(item.maxDiscountUsd || 0, appliedPts * usdPerPoint).toFixed(2));
+      cashToPayWithPts = Math.max(0, Number(((item.priceUsd || 0) - appliedDiscountUsd).toFixed(2)));
+    }
+    const formattedAppliedPct = appliedPct % 1 === 0 ? appliedPct.toFixed(0) : appliedPct.toFixed(1);
 
     let btnHtml = "";
     if (isOut) {
@@ -209,9 +230,8 @@ function renderCatalog(catalog, user) {
     } else if (!user) {
       btnHtml = `<button class="btn-redeem login-req" onclick="openAuthModal('login', 'Inicia sesión para canjear')">🔒 Iniciar Sesión</button>`;
     } else if (isPartial) {
-      const userPts = user.wiredPoints || 0;
       if (userPts > 0) {
-        btnHtml = `<button class="btn-redeem active-canje" style="background: linear-gradient(135deg, #d97706, #b45309);" onclick="confirmRedeem('${item.id}')">🏷️ APLICAR DESCUENTO</button>`;
+        btnHtml = `<button class="btn-redeem active-canje" style="background: linear-gradient(135deg, #d97706, #b45309);" onclick="confirmRedeem('${item.id}')">🏷️ APLICAR DESCUENTO (${formattedAppliedPct}%)</button>`;
       } else {
         btnHtml = `<button class="btn-redeem active-canje" style="background: linear-gradient(135deg, #0284c7, #0369a1);" onclick="confirmRedeem('${item.id}')">🛒 COMPRAR EN TIENDA</button>`;
       }
@@ -222,29 +242,105 @@ function renderCatalog(catalog, user) {
       btnHtml = `<button class="btn-redeem active-canje" onclick="confirmRedeem('${item.id}')">⚡ CANJEAR AHORA</button>`;
     }
 
-    const modeBadge = isPartial
-      ? `<div class="badge-tag" style="position: absolute; top: 8px; left: 8px; background: rgba(15, 23, 42, 0.9); color: #fbbf24; border: 1px solid #d97706; font-family: var(--font-mono); font-size: 0.65rem; font-weight: 800; padding: 2px 6px; border-radius: 3px; z-index: 2;">🏷️ TOPE ${item.maxDiscountPct || 5}% OFF</div>`
-      : `<div class="badge-tag" style="position: absolute; top: 8px; left: 8px; background: rgba(5, 150, 105, 0.9); color: #ffffff; border: 1px solid #059669; font-family: var(--font-mono); font-size: 0.65rem; font-weight: 800; padding: 2px 6px; border-radius: 3px; z-index: 2;">🎁 100% CANJEABLE</div>`;
+    let modeBadge = "";
+    if (isPartial) {
+      if (user && userPts >= maxCapPts) {
+        modeBadge = `<div class="badge-tag" style="position: absolute; top: 8px; left: 8px; background: rgba(15, 23, 42, 0.9); color: #fbbf24; border: 1px solid #d97706; font-family: var(--font-mono); font-size: 0.65rem; font-weight: 800; padding: 2px 6px; border-radius: 3px; z-index: 2;">🏷️ TOPE ${maxPct}% OFF</div>`;
+      } else if (user && userPts > 0) {
+        modeBadge = `<div class="badge-tag" style="position: absolute; top: 8px; left: 8px; background: rgba(15, 23, 42, 0.9); color: #fbbf24; border: 1px solid #d97706; font-family: var(--font-mono); font-size: 0.65rem; font-weight: 800; padding: 2px 6px; border-radius: 3px; z-index: 2;">🏷️ ${formattedAppliedPct}% OFF / MÁX ${maxPct}%</div>`;
+      } else {
+        modeBadge = `<div class="badge-tag" style="position: absolute; top: 8px; left: 8px; background: rgba(15, 23, 42, 0.9); color: #fbbf24; border: 1px solid #d97706; font-family: var(--font-mono); font-size: 0.65rem; font-weight: 800; padding: 2px 6px; border-radius: 3px; z-index: 2;">🏷️ HASTA ${maxPct}% OFF</div>`;
+      }
+    } else {
+      modeBadge = `<div class="badge-tag" style="position: absolute; top: 8px; left: 8px; background: rgba(5, 150, 105, 0.9); color: #ffffff; border: 1px solid #059669; font-family: var(--font-mono); font-size: 0.65rem; font-weight: 800; padding: 2px 6px; border-radius: 3px; z-index: 2;">🎁 100% CANJEABLE</div>`;
+    }
 
-    const partialBreakdown = isPartial ? `
-      <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px; padding: 5px 8px; margin: 0.4rem 0; font-family: var(--font-mono); font-size: 0.72rem;">
-        <div style="display: flex; justify-content: space-between; align-items: center; color: var(--gray-500);">
-          <span>Precio oficial:</span>
-          <span>$${(item.priceUsd || 0).toFixed(2)} USD</span>
-        </div>
-        <div style="display: flex; justify-content: space-between; align-items: center; color: #059669; font-weight: 800;">
-          <span>Descuento tope en WP:</span>
-          <span>Hasta -$${(item.maxDiscountUsd || 0).toFixed(2)} USD</span>
-        </div>
-        <div style="display: flex; justify-content: space-between; align-items: center; color: var(--dark); font-weight: 900; margin-top: 2px; border-top: 1px dashed #cbd5e1; padding-top: 3px;">
-          <span>Pagas en tienda (con tope):</span>
-          <span style="color: #dc2626; font-size: 0.85rem;">$${(item.cashToPayUsd || 0).toFixed(2)} USD</span>
-        </div>
-      </div>
-    ` : "";
+    let partialBreakdown = "";
+    if (isPartial) {
+      if (user && userPts >= maxCapPts) {
+        partialBreakdown = `
+          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px; padding: 6px 8px; margin: 0.4rem 0; font-family: var(--font-mono); font-size: 0.72rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; color: var(--gray-500);">
+              <span>Precio oficial:</span>
+              <span>$${(item.priceUsd || 0).toFixed(2)} USD</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; color: #059669; font-weight: 800; margin-top: 2px;">
+              <span>Tu descuento (Tope):</span>
+              <span>${maxPct}% OFF (-$${(item.maxDiscountUsd || 0).toFixed(2)} USD)</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; color: var(--dark); font-weight: 900; margin-top: 2px; border-top: 1px dashed #cbd5e1; padding-top: 3px;">
+              <span>Pagas en tienda:</span>
+              <span style="color: #dc2626; font-size: 0.85rem;">$${(item.cashToPayUsd || 0).toFixed(2)} USD</span>
+            </div>
+          </div>
+        `;
+      } else if (user && userPts > 0) {
+        partialBreakdown = `
+          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px; padding: 6px 8px; margin: 0.4rem 0; font-family: var(--font-mono); font-size: 0.72rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; color: var(--gray-500);">
+              <span>Precio oficial:</span>
+              <span>$${(item.priceUsd || 0).toFixed(2)} USD</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; color: #b45309; font-weight: 800; margin-top: 2px;">
+              <span>Tu descuento (${appliedPts} WP):</span>
+              <span style="color: #059669;">${formattedAppliedPct}% de desc. / Máximo ${maxPct}% (-$${appliedDiscountUsd.toFixed(2)} USD)</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; color: var(--dark); font-weight: 900; margin-top: 2px; border-top: 1px dashed #cbd5e1; padding-top: 3px;">
+              <span>Pagas con tus puntos:</span>
+              <span style="color: #dc2626; font-size: 0.86rem;">$${cashToPayWithPts.toFixed(2)} USD</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; color: #64748b; font-size: 0.65rem; margin-top: 2px;">
+              <span>Tope de tienda (${maxCapPts} WP):</span>
+              <span>-$${(item.maxDiscountUsd || 0).toFixed(2)} USD (${maxPct}% OFF)</span>
+            </div>
+          </div>
+        `;
+      } else if (user) {
+        partialBreakdown = `
+          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px; padding: 6px 8px; margin: 0.4rem 0; font-family: var(--font-mono); font-size: 0.72rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; color: var(--gray-500);">
+              <span>Precio oficial:</span>
+              <span>$${(item.priceUsd || 0).toFixed(2)} USD</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; color: #64748b; font-weight: 700; margin-top: 2px;">
+              <span>Tu descuento (0 WP):</span>
+              <span style="color: #64748b;">0% de desc. / Máximo ${maxPct}%</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; color: var(--dark); font-weight: 900; margin-top: 2px; border-top: 1px dashed #cbd5e1; padding-top: 3px;">
+              <span>Pagas en tienda:</span>
+              <span style="color: #dc2626; font-size: 0.85rem;">$${(item.priceUsd || 0).toFixed(2)} USD</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; color: #059669; font-size: 0.65rem; margin-top: 2px;">
+              <span>Tope con ${maxCapPts} WP:</span>
+              <span>Hasta -$${(item.maxDiscountUsd || 0).toFixed(2)} USD (${maxPct}% OFF)</span>
+            </div>
+          </div>
+        `;
+      } else {
+        partialBreakdown = `
+          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px; padding: 6px 8px; margin: 0.4rem 0; font-family: var(--font-mono); font-size: 0.72rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; color: var(--gray-500);">
+              <span>Precio oficial:</span>
+              <span>$${(item.priceUsd || 0).toFixed(2)} USD</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; color: #059669; font-weight: 800; margin-top: 2px;">
+              <span>Descuento tope en WP:</span>
+              <span>Hasta ${maxPct}% OFF (-$${(item.maxDiscountUsd || 0).toFixed(2)} USD)</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; color: var(--dark); font-weight: 900; margin-top: 2px; border-top: 1px dashed #cbd5e1; padding-top: 3px;">
+              <span>Pagas en tienda:</span>
+              <span style="color: #dc2626; font-size: 0.85rem;">Desde $${(item.cashToPayUsd || 0).toFixed(2)} USD</span>
+            </div>
+          </div>
+        `;
+      }
+    }
 
     const costDisplay = isPartial
-      ? `<div class="reward-cost" style="color: #b45309; font-size: 0.92rem;">${item.pointsCost.toLocaleString()} <span style="font-size: 0.65rem; color: #d97706; font-weight: 800;">WP (TOPE)</span></div>`
+      ? (user && userPts > 0 && userPts < maxCapPts
+          ? `<div class="reward-cost" style="color: #b45309; font-size: 0.86rem;">${appliedPts} <span style="font-size: 0.64rem; color: #d97706; font-weight: 800;">WP (TOPE ${maxCapPts})</span></div>`
+          : `<div class="reward-cost" style="color: #b45309; font-size: 0.86rem;">${item.pointsCost.toLocaleString()} <span style="font-size: 0.64rem; color: #d97706; font-weight: 800;">WP (TOPE)</span></div>`
+        )
       : `<div class="reward-cost">${item.pointsCost.toLocaleString()} <span>WP</span></div>`;
 
     return `
@@ -301,17 +397,46 @@ function renderVouchers(vouchers) {
   container.innerHTML = `
     <div class="vouchers-grid">
       ${vouchers.map(v => {
-        const isDelivered = v.status === "DELIVERED" || (typeof v.isDelivered === "function" && v.isDelivered());
+        const isDelivered = v.status === "DELIVERED" || (typeof v.isDelivered === "function" && v.isDelivered()) || Boolean(v.deliveredAt);
+        const isCancelled = v.status === "CANCELLED" || (typeof v.isCancelled === "function" && v.isCancelled()) || Boolean(v.cancelledAt);
+        const isExpired = typeof v.isExpired === "function" ? v.isExpired() : (v.expiresAt && !isDelivered && !isCancelled && new Date() > new Date(v.expiresAt));
         const cost = v.pointsSpent || v.pointsCost || 0;
         const dateStr = v.createdAt ? new Date(v.createdAt).toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" }) : "-";
 
+        let badgeHtml = "";
+        if (isDelivered) {
+          badgeHtml = `<div class="voucher-badge delivered" style="background:#ecfdf5; color:#065f46; border:1px solid #a7f3d0; font-family:var(--font-mono); font-size:0.68rem; font-weight:800; padding:2px 7px; border-radius:3px;">✓ ENTREGADO</div>`;
+        } else if (isCancelled) {
+          badgeHtml = `<div class="voucher-badge cancelled" style="background:#fee2e2; color:#991b1b; border:1px solid #fca5a5; font-family:var(--font-mono); font-size:0.68rem; font-weight:800; padding:2px 7px; border-radius:3px;">❌ CANCELADO</div>`;
+        } else if (isExpired) {
+          badgeHtml = `<div class="voucher-badge expired" style="background:#fef2f2; color:#b91c1c; border:1px solid #fecaca; font-family:var(--font-mono); font-size:0.68rem; font-weight:800; padding:2px 7px; border-radius:3px;">⚠️ VENCIDO (3D)</div>`;
+        } else {
+          badgeHtml = `<div class="voucher-badge pending" style="background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; font-family:var(--font-mono); font-size:0.68rem; font-weight:800; padding:2px 7px; border-radius:3px;">● LISTO EN MOSTRADOR</div>`;
+        }
+
+        let expInfo = "";
+        if (!isDelivered && !isCancelled) {
+          if (v.expiresAt) {
+            const msLeft = new Date(v.expiresAt) - new Date();
+            if (msLeft <= 0) {
+              expInfo = `<div style="font-family:var(--font-mono); font-size:0.68rem; color:#dc2626; font-weight:800; margin-top:3px;">⚠️ Plazo de 3 días vencido</div>`;
+            } else {
+              const hoursLeft = Math.floor(msLeft / (1000 * 60 * 60));
+              const daysLeft = Math.floor(hoursLeft / 24);
+              const remHours = hoursLeft % 24;
+              const timeStr = daysLeft > 0 ? `${daysLeft}d ${remHours}h` : `${hoursLeft}h`;
+              expInfo = `<div style="font-family:var(--font-mono); font-size:0.68rem; color:#b45309; font-weight:700; margin-top:3px;">⏱️ Plazo de retiro: ${timeStr}</div>`;
+            }
+          } else {
+            expInfo = `<div style="font-family:var(--font-mono); font-size:0.68rem; color:#059669; font-weight:700; margin-top:3px;">⏱️ Sin caducidad (100% Puntos)</div>`;
+          }
+        }
+
         return `
-          <div class="voucher-card" onclick="showVoucherModal('${v.voucherCode}')" style="cursor: pointer; transition: transform 0.15s ease;" title="Clic para ver código QR">
-            <div class="voucher-header" style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:0.75rem;">
+          <div class="voucher-card" onclick="showVoucherModal('${v.voucherCode}')" style="cursor: pointer; transition: transform 0.15s ease; ${isCancelled ? 'opacity: 0.75; background: #fffaf0;' : ''}" title="Clic para ver código QR">
+            <div class="voucher-header" style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:0.5rem;">
               <div class="voucher-title" style="font-weight:900; font-size:1.05rem; color:var(--dark);">${v.rewardTitle || "Artículo"}</div>
-              <div class="voucher-badge ${isDelivered ? 'delivered' : 'pending'}" style="${isDelivered ? 'background:#ecfdf5; color:#065f46; border:1px solid #a7f3d0;' : 'background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe;'} font-family:var(--font-mono); font-size:0.68rem; font-weight:800; padding:2px 7px; border-radius:3px;">
-                ${isDelivered ? '✓ ENTREGADO' : '● LISTO EN MOSTRADOR'}
-              </div>
+              ${badgeHtml}
             </div>
             <div class="voucher-code" style="font-family:var(--font-mono); font-size:1.35rem; font-weight:900; letter-spacing:2px; color:var(--dark); margin:0.35rem 0;">${v.voucherCode}</div>
             ${(v.cashToPayUsd && v.cashToPayUsd > 0) ? `
@@ -322,10 +447,16 @@ function renderVouchers(vouchers) {
                 }
               </div>
             ` : ''}
+            ${expInfo}
             <div class="voucher-meta" style="display:flex; justify-content:space-between; align-items:center; font-family:var(--font-mono); font-size:0.75rem; color:var(--gray-600); border-top:1px dashed var(--gray-300); padding-top:0.6rem; margin-top:0.6rem;">
               <div>Puntos: <strong style="color:var(--dark);">${cost > 0 ? cost.toLocaleString() + ' WP' : '0 WP (Sin desc.)'}</strong></div>
               <div>${dateStr}</div>
-              <button class="btn-secondary" style="padding:2px 7px; font-size:0.7rem;" onclick="event.stopPropagation(); showVoucherModal('${v.voucherCode}')">👁️ Ver QR</button>
+              <div style="display: flex; gap: 4px; align-items: center;">
+                ${(!isDelivered && !isCancelled) ? `
+                  <button class="btn-secondary" style="padding:2px 7px; font-size:0.7rem; color:#b91c1c; border-color:#fca5a5; background:#fff1f2;" onclick="event.stopPropagation(); promptCancelVoucher('${v.voucherCode}')" title="Cancelar este vale y devolver puntos">❌ Cancelar</button>
+                ` : ''}
+                <button class="btn-secondary" style="padding:2px 7px; font-size:0.7rem;" onclick="event.stopPropagation(); showVoucherModal('${v.voucherCode}')">👁️ Ver QR</button>
+              </div>
             </div>
           </div>
         `;
@@ -640,9 +771,9 @@ function confirmRedeem(rewardId) {
   if (typeCallout) {
     if (isPartial) {
       typeCallout.style.display = "block";
-      if (typePct) typePct.textContent = `${reward.maxDiscountPct || 5}%`;
+      const maxPct = reward.maxDiscountPct || 5;
       if (typePrice) typePrice.textContent = `$${(reward.priceUsd || 0).toFixed(2)} USD`;
-      if (typeMaxDisc) typeMaxDisc.textContent = `-$${(reward.maxDiscountUsd || 0).toFixed(2)} USD (${maxCapPts.toLocaleString()} WP)`;
+      if (typeMaxDisc) typeMaxDisc.textContent = `-$${(reward.maxDiscountUsd || 0).toFixed(2)} USD (${maxCapPts.toLocaleString()} WP = ${maxPct}% OFF)`;
 
       if (controlsWrap) {
         controlsWrap.style.display = (userPts > 0) ? "block" : "none";
@@ -705,6 +836,7 @@ function updateConfirmCalculation() {
 
   if (isPartial) {
     const maxCapPts = reward.pointsCost || 0;
+    const maxPct = reward.maxDiscountPct || 5;
     const maxUsablePts = Math.min(userPts, maxCapPts);
     deductPts = Math.max(0, Math.min(selectedPointsToApply, maxUsablePts));
 
@@ -715,9 +847,19 @@ function updateConfirmCalculation() {
     discountUsd = Number(Math.min(reward.maxDiscountUsd || 0, deductPts * usdPerPoint).toFixed(2));
     cashToPayUsd = Math.max(0, Number(((reward.priceUsd || 0) - discountUsd).toFixed(2)));
 
+    const currentPct = maxCapPts > 0 ? Number(((deductPts / maxCapPts) * maxPct).toFixed(2)) : 0;
+    const formattedPct = currentPct % 1 === 0 ? currentPct.toFixed(0) : currentPct.toFixed(1);
+
+    const typePct = document.getElementById("confirm-type-pct");
+    const typePctCalc = document.getElementById("confirm-type-pct-calc");
+    const calcPctLabel = document.getElementById("confirm-calc-pct-label");
     const typeDisc = document.getElementById("confirm-type-discount");
     const typeCash = document.getElementById("confirm-type-cash");
     const ptsAppliedNotice = document.getElementById("confirm-pts-applied-notice");
+
+    if (typePct) typePct.textContent = `${formattedPct}% OFF / MÁX ${maxPct}%`;
+    if (typePctCalc) typePctCalc.textContent = `${formattedPct}% de descuento / Máximo ${maxPct}%`;
+    if (calcPctLabel) calcPctLabel.textContent = `${formattedPct}%`;
     if (typeDisc) typeDisc.textContent = `-$${discountUsd.toFixed(2)} USD`;
     if (typeCash) typeCash.textContent = `$${cashToPayUsd.toFixed(2)} USD`;
     if (ptsAppliedNotice) ptsAppliedNotice.textContent = `${deductPts.toLocaleString()} WP aplicados`;
@@ -725,7 +867,7 @@ function updateConfirmCalculation() {
     const doRedeemBtn = document.getElementById("btn-do-redeem");
     if (doRedeemBtn) {
       if (deductPts > 0) {
-        doRedeemBtn.textContent = `🏷️ CANJEAR VALE DE DESCUENTO (-$${discountUsd.toFixed(2)})`;
+        doRedeemBtn.textContent = `🏷️ CANJEAR VALE DE DESCUENTO (${formattedPct}% = -$${discountUsd.toFixed(2)})`;
       } else {
         doRedeemBtn.textContent = `🛒 GENERAR VALE DE COMPRA ($${cashToPayUsd.toFixed(2)})`;
       }
@@ -850,19 +992,30 @@ async function executeRedeem() {
   }
 }
 
+let currentOpenVoucherCode = null;
+
 function showVoucherModal(voucherCode) {
   const voucher = vm.vouchers.find(v => v.voucherCode === voucherCode);
   if (!voucher) return;
+
+  currentOpenVoucherCode = voucher.voucherCode;
 
   const isDelivered = voucher.status === "DELIVERED" || 
                       voucher.status === "REDEEMED" || 
                       (typeof voucher.isDelivered === "function" && voucher.isDelivered()) || 
                       Boolean(voucher.deliveredAt);
+  const isCancelled = voucher.status === "CANCELLED" || 
+                      (typeof voucher.isCancelled === "function" && voucher.isCancelled()) || 
+                      Boolean(voucher.cancelledAt);
+  const isExpired = typeof voucher.isExpired === "function" 
+                      ? voucher.isExpired() 
+                      : (voucher.expiresAt && !isDelivered && !isCancelled && new Date() > new Date(voucher.expiresAt));
 
   const modalTitle = document.getElementById("modal-voucher-title");
   const modalCode = document.getElementById("modal-voucher-code");
   const qrCanvas = document.getElementById("voucher-qr-canvas");
   const waBtn = document.getElementById("btn-whatsapp-voucher");
+  const cancelBtn = document.getElementById("btn-cancel-voucher");
   const instructionsBox = document.getElementById("modal-voucher-instructions");
   const deliveredBanner = document.getElementById("modal-voucher-delivered-banner");
   const deliveredDetail = document.getElementById("modal-voucher-delivered-detail");
@@ -870,14 +1023,29 @@ function showVoucherModal(voucherCode) {
   const statusBadge = document.getElementById("modal-voucher-status-badge");
   const subtitleEl = document.getElementById("modal-voucher-subtitle");
   const closeBtn = document.getElementById("btn-close-voucher");
+  const expPill = document.getElementById("modal-voucher-exp-pill");
+  const expText = document.getElementById("modal-voucher-exp-text");
 
   if (modalTitle) modalTitle.textContent = voucher.rewardTitle || "Recompensa";
   if (modalCode) modalCode.textContent = voucher.voucherCode;
 
   if (isDelivered) {
     if (waBtn) waBtn.style.display = "none";
+    if (cancelBtn) cancelBtn.style.display = "none";
+    if (expPill) expPill.style.display = "none";
     if (instructionsBox) instructionsBox.style.display = "none";
-    if (deliveredBanner) deliveredBanner.style.display = "block";
+    if (deliveredBanner) {
+      deliveredBanner.style.display = "block";
+      deliveredBanner.style.background = "#ecfdf5";
+      deliveredBanner.style.borderColor = "#059669";
+      deliveredBanner.style.color = "#065f46";
+      deliveredBanner.innerHTML = `
+        <div style="font-weight: 900; display: flex; align-items: center; gap: 6px; font-family: var(--font-mono);">
+          <span>✓</span> RECOMPENSA ENTREGADA EN MOSTRADOR
+        </div>
+        <div id="modal-voucher-delivered-detail" style="font-size: 0.75rem; color: #047857; margin-top: 3px;"></div>
+      `;
+    }
     if (deliveredStamp) deliveredStamp.style.display = "block";
     const cashPillD = document.getElementById("modal-voucher-cash-pill");
     if (cashPillD) cashPillD.style.display = "none";
@@ -888,11 +1056,43 @@ function showVoucherModal(voucherCode) {
       statusBadge.style.borderColor = "#a7f3d0";
     }
     if (subtitleEl) subtitleEl.textContent = "Comprobante digital de producto físico entregado al socio.";
-    if (deliveredDetail) {
+    const deliveredDetailEl = document.getElementById("modal-voucher-delivered-detail");
+    if (deliveredDetailEl) {
       const dateStr = voucher.deliveredAt ? new Date(voucher.deliveredAt).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : "Despachado en mostrador";
-      deliveredDetail.innerHTML = `Retirado exitosamente en mostrador MeltyDeays.<br><span style="font-family: var(--font-mono); font-size: 0.72rem; color: #059669;">Entrega confirmada: ${dateStr}</span>`;
+      deliveredDetailEl.innerHTML = `Retirado exitosamente en mostrador MeltyDeays.<br><span style="font-family: var(--font-mono); font-size: 0.72rem; color: #059669;">Entrega confirmada: ${dateStr}</span>`;
     }
     if (closeBtn) closeBtn.textContent = "✓ Cerrar Comprobante";
+  } else if (isCancelled) {
+    if (waBtn) waBtn.style.display = "none";
+    if (cancelBtn) cancelBtn.style.display = "none";
+    if (expPill) expPill.style.display = "none";
+    if (instructionsBox) instructionsBox.style.display = "none";
+    if (deliveredStamp) deliveredStamp.style.display = "none";
+    const cashPillC = document.getElementById("modal-voucher-cash-pill");
+    if (cashPillC) cashPillC.style.display = "none";
+    if (deliveredBanner) {
+      deliveredBanner.style.display = "block";
+      deliveredBanner.style.background = "#fee2e2";
+      deliveredBanner.style.borderColor = "#ef4444";
+      deliveredBanner.style.color = "#991b1b";
+      const cancelDate = voucher.cancelledAt ? new Date(voucher.cancelledAt).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : "Previamente";
+      deliveredBanner.innerHTML = `
+        <div style="font-weight: 900; display: flex; align-items: center; gap: 6px; font-family: var(--font-mono);">
+          <span>❌</span> VALE CANCELADO POR EL USUARIO
+        </div>
+        <div style="font-size: 0.75rem; color: #b91c1c; margin-top: 3px;">
+          Esta reserva fue cancelada el ${cancelDate} y los puntos gastados fueron devueltos a tu cuenta.
+        </div>
+      `;
+    }
+    if (statusBadge) {
+      statusBadge.textContent = "❌ CANCELADO";
+      statusBadge.style.background = "#fee2e2";
+      statusBadge.style.color = "#991b1b";
+      statusBadge.style.borderColor = "#fca5a5";
+    }
+    if (subtitleEl) subtitleEl.textContent = "Vale sin validez comercial (cancelado y reembolsado).";
+    if (closeBtn) closeBtn.textContent = "✓ Cerrar Vale";
   } else {
     const isPartial = voucher.rewardType === "PARTIAL_DISCOUNT" || (voucher.cashToPayUsd && voucher.cashToPayUsd > 0);
     const cashPill = document.getElementById("modal-voucher-cash-pill");
@@ -901,6 +1101,35 @@ function showVoucherModal(voucherCode) {
       cashPill.style.display = isPartial ? "block" : "none";
       if (isPartial && cashVal) cashVal.textContent = `$${(voucher.cashToPayUsd || 0).toFixed(2)} USD`;
     }
+
+    // Límite de retiros (3 días para compras/descuentos; sin límite para gratis)
+    if (expPill && expText) {
+      expPill.style.display = "block";
+      if (voucher.expiresAt) {
+        const msLeft = new Date(voucher.expiresAt) - new Date();
+        if (msLeft <= 0) {
+          expText.textContent = "⚠️ Plazo vencido (Superó los 3 días máximos para pagar en tienda)";
+          expPill.style.background = "#fef2f2";
+          expPill.style.borderColor = "#fecaca";
+          expPill.style.color = "#b91c1c";
+        } else {
+          const hoursLeft = Math.floor(msLeft / (1000 * 60 * 60));
+          const daysLeft = Math.floor(hoursLeft / 24);
+          const remHours = hoursLeft % 24;
+          const timeStr = daysLeft > 0 ? `${daysLeft}d ${remHours}h` : `${hoursLeft}h`;
+          expText.textContent = `⏱️ Plazo de retiro: ${timeStr} restantes (Máx 3 días para pagar en mostrador)`;
+          expPill.style.background = "#fff1f2";
+          expPill.style.borderColor = "#fecdd3";
+          expPill.style.color = "#9f1239";
+        }
+      } else {
+        expText.textContent = "⏱️ Sin límite de tiempo (Recompensa 100% en puntos)";
+        expPill.style.background = "#ecfdf5";
+        expPill.style.borderColor = "#a7f3d0";
+        expPill.style.color = "#065f46";
+      }
+    }
+
     if (instructionsBox) {
       instructionsBox.style.display = "block";
       if (isPartial) {
@@ -911,6 +1140,7 @@ function showVoucherModal(voucherCode) {
         instructionsBox.innerHTML = `📌 <strong>Instrucciones:</strong> Muestra este código QR en mostrador o envíalo por WhatsApp a MeltyDeays para apartar tu producto 100% gratis.<div style="margin-top:4px; font-size:0.68rem; color:#64748b; font-family:var(--font-mono);">🛡️ Premio gratuito por fidelidad: Se entrega probado en tienda. Exento de garantía técnica posterior de 30 días.</div>`;
       }
     }
+
     if (waBtn) {
       waBtn.style.display = "flex";
       const phone = "50588888888";
@@ -924,6 +1154,16 @@ function showVoucherModal(voucherCode) {
       }
       waBtn.href = `https://wa.me/${phone}?text=${textMsg}`;
     }
+
+    // Botón para cancelar compra / devolver puntos
+    if (cancelBtn) {
+      cancelBtn.style.display = "block";
+      const pts = voucher.pointsSpent || 0;
+      cancelBtn.textContent = pts > 0
+        ? `❌ Cancelar Vale / Reembolsar ${pts.toLocaleString()} WP`
+        : `❌ Cancelar Reserva de Compra`;
+    }
+
     if (deliveredBanner) deliveredBanner.style.display = "none";
     if (deliveredStamp) deliveredStamp.style.display = "none";
     if (statusBadge) {
@@ -946,7 +1186,7 @@ function showVoucherModal(voucherCode) {
       text: voucher.voucherCode,
       width: 148,
       height: 148,
-      colorDark: isDelivered ? "#64748b" : "#0f172a",
+      colorDark: (isDelivered || isCancelled) ? "#64748b" : "#0f172a",
       colorLight: "#ffffff",
       correctLevel: QRCode.CorrectLevel.H
     });
@@ -957,8 +1197,101 @@ function showVoucherModal(voucherCode) {
 }
 
 function closeVoucherModal() {
+  currentOpenVoucherCode = null;
   const modal = document.getElementById("modal-voucher");
   if (modal) modal.style.display = "none";
+}
+
+let pendingCancelVoucherCode = null;
+
+function promptCancelCurrentVoucher() {
+  if (currentOpenVoucherCode) {
+    promptCancelVoucher(currentOpenVoucherCode);
+  }
+}
+
+function promptCancelVoucher(voucherCode) {
+  const code = (voucherCode || "").trim().toUpperCase();
+  const voucher = vm.vouchers.find(v => (v.voucherCode || "").trim().toUpperCase() === code);
+  if (!voucher) {
+    showToast("Vale no encontrado.", "error");
+    return;
+  }
+  if (voucher.isDelivered()) {
+    showToast("Este vale ya fue despachado en tienda. No puede cancelarse.", "error");
+    return;
+  }
+  if (voucher.isCancelled()) {
+    showToast("Este vale ya está cancelado.", "info");
+    return;
+  }
+
+  pendingCancelVoucherCode = code;
+  const modal = document.getElementById("modal-confirm-cancel-voucher");
+  const summaryEl = document.getElementById("cancel-modal-summary");
+  const pts = voucher.pointsSpent || 0;
+
+  if (summaryEl) {
+    summaryEl.innerHTML = `
+      <div><strong>Vale:</strong> ${voucher.voucherCode}</div>
+      <div><strong>Artículo:</strong> ${voucher.rewardTitle}</div>
+      ${pts > 0 ? `
+        <div style="margin-top:6px; font-weight:800; color:#059669; font-size:0.82rem;">
+          ✓ Se te devolverán: <strong>+${pts.toLocaleString()} WP</strong> a tu saldo.
+        </div>
+      ` : `
+        <div style="margin-top:6px; color:#475569;">
+          • Compra a precio de tienda (0 WP gastados). Se liberará el producto reservado.
+        </div>
+      `}
+      <div style="margin-top:6px; color:#64748b; font-size:0.7rem; border-top:1px dashed #fecdd3; padding-top:4px;">
+        El stock en tienda se repondrá inmediatamente (+1 disponible).
+      </div>
+    `;
+  }
+
+  if (modal) modal.style.display = "flex";
+}
+
+function closeCancelVoucherModal() {
+  pendingCancelVoucherCode = null;
+  const modal = document.getElementById("modal-confirm-cancel-voucher");
+  if (modal) modal.style.display = "none";
+}
+
+async function executeCancelVoucher() {
+  if (!pendingCancelVoucherCode) return;
+  const code = pendingCancelVoucherCode;
+  const btn = document.getElementById("btn-execute-cancel-voucher");
+  const origText = btn ? btn.textContent : "";
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = "Cancelando...";
+  }
+
+  try {
+    const res = await vm.cancelVoucher(code);
+    closeCancelVoucherModal();
+    closeVoucherModal();
+
+    if (res.pointsRefunded > 0) {
+      showToast(`Vale ${code} cancelado. Se te han reembolsado ${res.pointsRefunded.toLocaleString()} WP.`, "success");
+    } else {
+      showToast(`Reserva ${code} cancelada exitosamente.`, "success");
+    }
+
+    renderUserCard(vm.currentUser);
+    renderCatalog(vm.catalog, vm.currentUser);
+    renderVouchers(vm.vouchers);
+    renderLedger(vm.ledger);
+  } catch (err) {
+    showToast(err.message || "Error al cancelar vale.", "error");
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = origText;
+    }
+  }
 }
 
 function copyMemberCode() {

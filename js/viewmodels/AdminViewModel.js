@@ -212,6 +212,12 @@ export class AdminViewModel {
       voucher = (this.vouchers || []).find(v => (v.voucherCode || "").trim().toUpperCase() === clean);
     }
     if (!voucher) throw new Error("El vale [" + voucherCode + "] no existe en la base de datos.");
+    if (voucher.isCancelled && voucher.isCancelled()) {
+      throw new Error("Este vale fue cancelado por el cliente y sus puntos devueltos. No puede entregarse.");
+    }
+    if (voucher.isExpired && voucher.isExpired()) {
+      throw new Error("Este vale ha vencido tras superar el plazo de 3 días para su retiro en mostrador.");
+    }
     if (voucher.isDelivered()) {
       const deliveredDateStr = voucher.deliveredAt ? new Date(voucher.deliveredAt).toLocaleString() : "";
       throw new Error("Este vale ya fue despachado previamente" + (deliveredDateStr ? " el " + deliveredDateStr : "") + ".");

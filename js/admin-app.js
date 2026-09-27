@@ -2323,10 +2323,20 @@ function renderVouchersTable(vouchers) {
 
   tbody.innerHTML = filtered.map(v => {
     const isDelivered = typeof v.isDelivered === "function" ? v.isDelivered() : v.status === "DELIVERED";
+    const isCancelled = typeof v.isCancelled === "function" ? v.isCancelled() : v.status === "CANCELLED";
+    const isExpired = typeof v.isExpired === "function" ? v.isExpired() : (v.expiresAt && !isDelivered && !isCancelled && new Date() > new Date(v.expiresAt));
     const dateStr = v.createdAt ? new Date(v.createdAt).toLocaleDateString("es-ES", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }) : "-";
-    const statusBadge = isDelivered
-      ? `<span class="badge-navi" style="background:#ecfdf5; color:#065f46; border:1px solid #a7f3d0;">✓ DESPACHADO</span>`
-      : `<span class="badge-navi" style="background:#fffbeb; color:#92400e; border:1px solid #fcd34d;">⏳ PENDIENTE</span>`;
+
+    let statusBadge = "";
+    if (isDelivered) {
+      statusBadge = `<span class="badge-navi" style="background:#ecfdf5; color:#065f46; border:1px solid #a7f3d0;">✓ DESPACHADO</span>`;
+    } else if (isCancelled) {
+      statusBadge = `<span class="badge-navi" style="background:#fee2e2; color:#991b1b; border:1px solid #fca5a5;">❌ CANCELADO</span>`;
+    } else if (isExpired) {
+      statusBadge = `<span class="badge-navi" style="background:#fef2f2; color:#b91c1c; border:1px solid #fecaca;">⚠️ VENCIDO (3D)</span>`;
+    } else {
+      statusBadge = `<span class="badge-navi" style="background:#fffbeb; color:#92400e; border:1px solid #fcd34d;">⏳ PENDIENTE</span>`;
+    }
 
     // Extracción tolerante y búsqueda inteligente del socio en el sistema
     const targetUid = v.userUid || v.user_uid || v.userId || v.user_id || "";
@@ -2347,13 +2357,17 @@ function renderVouchersTable(vouchers) {
         <td style="font-size:0.75rem; color:var(--gray-600);">${dateStr}</td>
         <td>${statusBadge}</td>
         <td style="text-align: right; white-space: nowrap;">
-          ${!isDelivered ? `
+          ${(!isDelivered && !isCancelled && !isExpired) ? `
             <button class="btn-primary" style="padding: 3px 8px; font-size: 0.72rem;" onclick="openDeliverVoucherModal('${v.voucherCode}')">
               ✓ Entregar
             </button>
-          ` : `
+          ` : (isDelivered ? `
             <span style="font-size:0.75rem; color:var(--gray-500); font-family:var(--font-mono);">Entregado</span>
-          `}
+          ` : (isCancelled ? `
+            <span style="font-size:0.75rem; color:#dc2626; font-family:var(--font-mono);">Cancelado</span>
+          ` : `
+            <span style="font-size:0.75rem; color:#b91c1c; font-family:var(--font-mono);">Expirado (3d)</span>
+          `))}
         </td>
       </tr>
     `;
