@@ -92,7 +92,7 @@ export function formatPrice(amountUsd) {
   const num = Number(amountUsd) || 0;
   if (curr === "NIO") {
     const nio = num * USD_TO_NIO_RATE;
-    return `C$ ${nio.toLocaleString('es-NI', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} NIO`;
+    return `C$ ${nio.toLocaleString('es-NI', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   }
   return `$${num.toFixed(2)} USD`;
 }
@@ -332,77 +332,77 @@ function renderCatalog(catalog, user) {
     if (isPartial) {
       if (user && userPts >= maxCapPts) {
         partialBreakdown = `
-          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px; padding: 6px 8px; margin: 0.4rem 0; font-family: var(--font-mono); font-size: 0.72rem;">
-            <div style="display: flex; justify-content: space-between; align-items: center; color: var(--gray-500);">
-              <span>Precio oficial:</span>
-              <span>${formatDualPrice(item.priceUsd)}</span>
+          <div class="reward-pricing-box">
+            <div class="pricing-row">
+              <span class="pricing-label">Precio oficial:</span>
+              <span class="pricing-val">${formatPrice(item.priceUsd)}</span>
             </div>
-            <div style="display: flex; justify-content: space-between; align-items: center; color: #059669; font-weight: 800; margin-top: 2px;">
-              <span>Tu descuento (Tope):</span>
-              <span>${maxPct}% OFF (-${formatPrice(item.maxDiscountUsd)})</span>
+            <div class="pricing-row discount-row">
+              <span class="pricing-label">Tu ahorro (Tope ${maxPct}%):</span>
+              <span class="pricing-val green">-${formatPrice(item.maxDiscountUsd)}</span>
             </div>
-            <div style="display: flex; justify-content: space-between; align-items: center; color: var(--dark); font-weight: 900; margin-top: 2px; border-top: 1px dashed #cbd5e1; padding-top: 3px;">
-              <span>Pagas en tienda:</span>
-              <span style="color: #dc2626; font-size: 0.85rem;">${formatDualPrice(item.cashToPayUsd)}</span>
+            <div class="pricing-row total-row">
+              <span class="pricing-label">Total a pagar:</span>
+              <span class="pricing-val total">${formatPrice(item.cashToPayUsd)}</span>
             </div>
           </div>
         `;
       } else if (user && userPts > 0) {
         partialBreakdown = `
-          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px; padding: 6px 8px; margin: 0.4rem 0; font-family: var(--font-mono); font-size: 0.72rem;">
-            <div style="display: flex; justify-content: space-between; align-items: center; color: var(--gray-500);">
-              <span>Precio oficial:</span>
-              <span>${formatDualPrice(item.priceUsd)}</span>
+          <div class="reward-pricing-box">
+            <div class="pricing-row">
+              <span class="pricing-label">Precio oficial:</span>
+              <span class="pricing-val">${formatPrice(item.priceUsd)}</span>
             </div>
-            <div style="display: flex; justify-content: space-between; align-items: center; color: #b45309; font-weight: 800; margin-top: 2px;">
-              <span>Tu descuento (${appliedPts} WP):</span>
-              <span style="color: #059669;">${formattedAppliedPct}% de desc. / Máximo ${maxPct}% (-${formatPrice(appliedDiscountUsd)})</span>
+            <div class="pricing-row discount-row">
+              <span class="pricing-label">Tu ahorro (${appliedPts} WP):</span>
+              <span class="pricing-val green">-${formatPrice(appliedDiscountUsd)} (${formattedAppliedPct}%)</span>
             </div>
-            <div style="display: flex; justify-content: space-between; align-items: center; color: var(--dark); font-weight: 900; margin-top: 2px; border-top: 1px dashed #cbd5e1; padding-top: 3px;">
-              <span>Pagas con tus puntos:</span>
-              <span style="color: #dc2626; font-size: 0.86rem;">${formatDualPrice(cashToPayWithPts)}</span>
+            <div class="pricing-row total-row">
+              <span class="pricing-label">Total a pagar:</span>
+              <span class="pricing-val total">${formatPrice(cashToPayWithPts)}</span>
             </div>
-            <div style="display: flex; justify-content: space-between; align-items: center; color: #64748b; font-size: 0.65rem; margin-top: 2px;">
-              <span>Tope de tienda (${maxCapPts} WP):</span>
+            <div class="pricing-row footnote-row">
+              <span>Tope máx. (${maxCapPts} WP):</span>
               <span>-${formatPrice(item.maxDiscountUsd)} (${maxPct}% OFF)</span>
             </div>
           </div>
         `;
       } else if (user) {
         partialBreakdown = `
-          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px; padding: 6px 8px; margin: 0.4rem 0; font-family: var(--font-mono); font-size: 0.72rem;">
-            <div style="display: flex; justify-content: space-between; align-items: center; color: var(--gray-500);">
-              <span>Precio oficial:</span>
-              <span>${formatDualPrice(item.priceUsd)}</span>
+          <div class="reward-pricing-box">
+            <div class="pricing-row">
+              <span class="pricing-label">Precio oficial:</span>
+              <span class="pricing-val">${formatPrice(item.priceUsd)}</span>
             </div>
-            <div style="display: flex; justify-content: space-between; align-items: center; color: #64748b; font-weight: 700; margin-top: 2px;">
-              <span>Tu descuento (0 WP):</span>
-              <span style="color: #64748b;">0% de desc. / Máximo ${maxPct}%</span>
+            <div class="pricing-row discount-row">
+              <span class="pricing-label">Tu ahorro (0 WP):</span>
+              <span class="pricing-val gray">0% (Sin puntos)</span>
             </div>
-            <div style="display: flex; justify-content: space-between; align-items: center; color: var(--dark); font-weight: 900; margin-top: 2px; border-top: 1px dashed #cbd5e1; padding-top: 3px;">
-              <span>Pagas en tienda:</span>
-              <span style="color: #dc2626; font-size: 0.85rem;">${formatDualPrice(item.priceUsd)}</span>
+            <div class="pricing-row total-row">
+              <span class="pricing-label">Total a pagar:</span>
+              <span class="pricing-val total">${formatPrice(item.priceUsd)}</span>
             </div>
-            <div style="display: flex; justify-content: space-between; align-items: center; color: #059669; font-size: 0.65rem; margin-top: 2px;">
-              <span>Tope con ${maxCapPts} WP:</span>
+            <div class="pricing-row footnote-row">
+              <span>Tope máx. (${maxCapPts} WP):</span>
               <span>Hasta -${formatPrice(item.maxDiscountUsd)} (${maxPct}% OFF)</span>
             </div>
           </div>
         `;
       } else {
         partialBreakdown = `
-          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px; padding: 6px 8px; margin: 0.4rem 0; font-family: var(--font-mono); font-size: 0.72rem;">
-            <div style="display: flex; justify-content: space-between; align-items: center; color: var(--gray-500);">
-              <span>Precio oficial:</span>
-              <span>${formatDualPrice(item.priceUsd)}</span>
+          <div class="reward-pricing-box">
+            <div class="pricing-row">
+              <span class="pricing-label">Precio oficial:</span>
+              <span class="pricing-val">${formatPrice(item.priceUsd)}</span>
             </div>
-            <div style="display: flex; justify-content: space-between; align-items: center; color: #059669; font-weight: 800; margin-top: 2px;">
-              <span>Descuento tope en WP:</span>
-              <span>Hasta ${maxPct}% OFF (-${formatPrice(item.maxDiscountUsd)})</span>
+            <div class="pricing-row discount-row">
+              <span class="pricing-label">Ahorro con puntos:</span>
+              <span class="pricing-val green">Hasta ${maxPct}% OFF</span>
             </div>
-            <div style="display: flex; justify-content: space-between; align-items: center; color: var(--dark); font-weight: 900; margin-top: 2px; border-top: 1px dashed #cbd5e1; padding-top: 3px;">
-              <span>Pagas en tienda:</span>
-              <span style="color: #dc2626; font-size: 0.85rem;">Desde ${formatDualPrice(item.cashToPayUsd)}</span>
+            <div class="pricing-row total-row">
+              <span class="pricing-label">Pagas en tienda:</span>
+              <span class="pricing-val total">Desde ${formatPrice(item.cashToPayUsd)}</span>
             </div>
           </div>
         `;

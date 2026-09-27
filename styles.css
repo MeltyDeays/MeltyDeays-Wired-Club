@@ -65,6 +65,39 @@ body {
   box-shadow: 0 2px 10px rgba(15, 23, 42, 0.06);
 }
 
+.nav-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.currency-toggle-wrapper {
+  display: inline-flex;
+  align-items: center;
+  background: #ffffff;
+  border: 1.5px solid var(--dark);
+  border-radius: 4px;
+  overflow: hidden;
+  height: 32px;
+  box-shadow: 2px 2px 0px var(--dark);
+  flex-shrink: 0;
+  width: auto;
+}
+
+.currency-toggle-btn {
+  border: none;
+  background: transparent;
+  color: var(--dark);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 0 10px;
+  height: 100%;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
 .brand-wrapper {
   display: flex;
   align-items: center;
@@ -173,7 +206,7 @@ body {
 /* CONTENEDOR PRINCIPAL */
 .main-container {
   flex: 1;
-  max-width: 1100px;
+  max-width: 1200px;
   width: 100%;
   margin: 0 auto;
   padding: 1.75rem 1.25rem;
@@ -1452,8 +1485,8 @@ body {
 /* REWARDS GRID & CARDS */
 .rewards-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 1.65rem;
 }
 
 .reward-card {
@@ -1471,6 +1504,62 @@ body {
 .reward-card:hover {
   transform: translate(-2px, -2px);
   box-shadow: 5px 5px 0px var(--dark);
+}
+
+/* BREAKDOWN DE PRECIOS Y DESCUENTOS EN TARJETA */
+.reward-pricing-box {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 8px 10px;
+  margin: 0.5rem 0;
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+}
+
+.pricing-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: var(--gray-500);
+  margin-bottom: 3px;
+  gap: 8px;
+}
+
+.pricing-row.discount-row {
+  color: #b45309;
+  font-weight: 800;
+  margin-top: 3px;
+}
+
+.pricing-row.discount-row .green {
+  color: #059669;
+  font-weight: 900;
+}
+
+.pricing-row.discount-row .gray {
+  color: #64748b;
+  font-weight: 700;
+}
+
+.pricing-row.total-row {
+  color: var(--dark);
+  font-weight: 900;
+  margin-top: 5px;
+  border-top: 1px dashed #cbd5e1;
+  padding-top: 5px;
+}
+
+.pricing-row.total-row .total {
+  color: #dc2626;
+  font-size: 0.98rem;
+  font-weight: 900;
+}
+
+.pricing-row.footnote-row {
+  color: #64748b;
+  font-size: 0.67rem;
+  margin-top: 3px;
 }
 
 .reward-img-wrap {
@@ -2774,8 +2863,8 @@ body {
    ======================================================== */
 .rewards-grid, .catalog-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 1.75rem;
 }
 
 .reward-card, .product-card {
@@ -2858,7 +2947,7 @@ body {
   font-size: 0.8rem;
   color: var(--gray-700);
   line-height: 1.45;
-  margin-bottom: 1.15rem;
+  margin-bottom: 0.6rem;
   flex: 1;
 }
 

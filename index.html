@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>The Wired Club · MeltyDeays (Portal de Fidelización)</title>
-  <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="./styles.css?v=2.5.2">
   
   <!-- Firebase SDK Oficial Compat -->
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
@@ -57,11 +57,11 @@
 
     <div class="nav-controls">
       <!-- SELECTOR DE MONEDA DE PREFERENCIA (1 USD = 37 C$) -->
-      <div class="currency-toggle-wrapper" style="display: flex; align-items: center; background: #ffffff; border: 1.5px solid var(--dark); border-radius: 4px; overflow: hidden; height: 32px; box-shadow: 2px 2px 0px var(--dark);">
-        <button type="button" id="btn-currency-usd" onclick="setAppCurrency('USD')" title="Precios en Dólares ($ USD)" style="border: none; background: #0f172a; color: #ffffff; font-family: var(--font-mono); font-size: 0.72rem; font-weight: 800; padding: 0 9px; height: 100%; cursor: pointer; transition: all 0.15s ease;">
+      <div class="currency-toggle-wrapper">
+        <button type="button" class="currency-toggle-btn" id="btn-currency-usd" onclick="setAppCurrency('USD')" title="Precios en Dólares ($ USD)">
           $ USD
         </button>
-        <button type="button" id="btn-currency-nio" onclick="setAppCurrency('NIO')" title="Precios en Córdobas (C$ NIO · Tasa 1 USD = 37 NIO)" style="border: none; background: #ffffff; color: var(--dark); font-family: var(--font-mono); font-size: 0.72rem; font-weight: 800; padding: 0 9px; height: 100%; cursor: pointer; transition: all 0.15s ease;">
+        <button type="button" class="currency-toggle-btn" id="btn-currency-nio" onclick="setAppCurrency('NIO')" title="Precios en Córdobas (C$ NIO · Tasa 1 USD = 37 NIO)">
           C$ NIO
         </button>
       </div>
@@ -521,6 +521,6 @@
   <div id="toast-container" class="toast-container"></div>
 
   <!-- CONTROLADOR MVVM -->
-  <script type="module" src="./js/app.js?v=2.5.1"></script>
+  <script type="module" src="./js/app.js?v=2.5.2"></script>
 </body>
 </html>
