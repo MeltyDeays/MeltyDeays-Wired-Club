@@ -874,6 +874,30 @@ body {
   background-size: 8px 8px;
 }
 
+/* DISTRIBUCIÓN HORIZONTAL PROPORCIONAL PARA MODAL DE VALES */
+.voucher-modal-container {
+  max-width: 660px !important;
+  padding: 1.25rem 1.4rem !important;
+}
+
+.voucher-modal-grid {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 1.25rem;
+  align-items: start;
+}
+
+@media (max-width: 580px) {
+  .voucher-modal-container {
+    max-width: 95vw !important;
+    padding: 1rem 0.85rem !important;
+  }
+  .voucher-modal-grid {
+    grid-template-columns: 1fr !important;
+    gap: 0.85rem !important;
+  }
+}
+
 .qr-canvas-holder {
   background: #ffffff;
   border: 2px solid var(--dark);

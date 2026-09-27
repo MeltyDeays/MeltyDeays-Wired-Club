@@ -1216,7 +1216,7 @@ function showVoucherModal(voucherCode) {
           if (cashLabel) cashLabel.innerHTML = "✅ <strong>PAGO CONFIRMADO:</strong>";
           if (cashVal) {
             cashVal.style.color = "#059669";
-            cashVal.textContent = formatDualPrice(voucher.cashToPayUsd);
+            cashVal.textContent = formatPrice(voucher.cashToPayUsd);
           }
         } else {
           cashPill.style.background = "#fffbeb";
@@ -1225,7 +1225,7 @@ function showVoucherModal(voucherCode) {
           if (cashLabel) cashLabel.innerHTML = "💵 <strong>A PAGAR AL VENDEDOR:</strong>";
           if (cashVal) {
             cashVal.style.color = "#dc2626";
-            cashVal.textContent = formatDualPrice(voucher.cashToPayUsd);
+            cashVal.textContent = formatPrice(voucher.cashToPayUsd);
           }
         }
       } else {
