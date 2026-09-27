@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Terminal · MeltyDeays NOC</title>
-  <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="./styles.css?v=2.5.4">
   
   <!-- Firebase SDK Oficial Compat -->
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
@@ -1598,6 +1598,78 @@
     </div>
   </div>
 
+  <!-- MODAL: REGISTRO DE PAGO EN EFECTIVO (VENTAS / DESCUENTOS TOPADOS) [ESTILO COPLAND OS 21.0] -->
+  <div id="modal-confirm-paid-voucher" class="modal-overlay" style="display: none;">
+    <div class="modal-content lain-card" style="max-width: 520px; text-align: left; padding: 1.6rem; position: relative; overflow: hidden;">
+      <div class="dispatch-crt-scanline"></div>
+      <div class="tech-corner top-left">+</div>
+      <div class="tech-corner top-right">+</div>
+      <div class="tech-corner bottom-left">+</div>
+      <div class="tech-corner bottom-right">+</div>
+      <button class="modal-close-btn" onclick="closeModal('modal-confirm-paid-voucher')" aria-label="Cerrar">&times;</button>
+
+      <div class="lain-modal-header">
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <span class="badge-navi" style="background:#0f172a; color:#34d399;">COPLAND OS 21.0 // CASH DESK</span>
+          <span class="badge-layer" style="color: #059669; border-color: #a7f3d0; background: #ecfdf5;">REGISTRO DE ABONO</span>
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: baseline; margin: 0.6rem 0 0.85rem 0;">
+        <h3 id="modal-paid-code" style="font-size: 1.5rem; font-weight: 900; color: var(--dark); margin: 0; font-family: var(--font-mono); letter-spacing: 1px;">
+          CANJE-0000
+        </h3>
+        <span id="modal-paid-badge" class="noc-pulse-chip" style="background: #fffbeb; color: #b45309; border-color: #fde68a;">
+          <span class="pulse-dot" style="background: #f59e0b;"></span> PENDIENTE COBRO
+        </span>
+      </div>
+
+      <p style="font-size: 0.82rem; color: var(--gray-700); margin-bottom: 1rem;">
+        Confirma la recepción del dinero en efectivo o transferencia para este vale. Al confirmar, el plazo de caducidad de 3 días se desactivará permanentemente y el artículo quedará habilitado para entrega física en mostrador.
+      </p>
+
+      <div class="dispatch-grid" style="margin-bottom: 1.25rem;">
+        <div class="dispatch-item highlight-box" style="grid-column: span 2;">
+          <div class="dispatch-label">📦 ARTÍCULO RESERVADO</div>
+          <div id="modal-paid-product" class="dispatch-val-highlight">-</div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.72rem; color: var(--gray-500); margin-top: 4px; font-family: var(--font-mono);">
+            <span>Precio lista: <strong id="modal-paid-official-price" style="color: var(--dark);">$0.00 USD</strong></span>
+            <span>Aporte puntos: <strong id="modal-paid-points" style="color: #4f46e5;">0 WP</strong></span>
+          </div>
+        </div>
+
+        <div class="dispatch-item" style="grid-column: span 2;">
+          <div class="dispatch-label">👤 SOCIO TITULAR</div>
+          <div id="modal-paid-client" class="dispatch-val">-</div>
+          <div id="modal-paid-contact" style="font-size: 0.72rem; color: var(--gray-500); font-family: var(--font-mono); margin-top: 2px;">-</div>
+        </div>
+
+        <!-- DESTACADO DEL MONTO A COBRAR CON CONVERSIÓN DUAL -->
+        <div class="dispatch-item highlight-box" style="grid-column: span 2; background: #ecfdf5; border-color: #10b981; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.12);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+            <div class="dispatch-label" style="color: #047857;">💵 IMPORTE TOTAL A COBRAR EN CAJA</div>
+            <span style="font-size: 0.65rem; font-family: var(--font-mono); font-weight: 700; color: #059669; background: #d1fae5; padding: 2px 6px; border-radius: 4px;">1 USD = 37.0 NIO</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 0.5rem; margin-top: 4px;">
+            <div id="modal-paid-amount-usd" style="font-family: var(--font-mono); font-size: 1.7rem; font-weight: 900; color: #047857; line-height: 1;">
+              $0.00 USD
+            </div>
+            <div id="modal-paid-amount-nio" style="font-family: var(--font-mono); font-size: 1.15rem; font-weight: 800; color: #0f766e; line-height: 1;">
+              C$ 0.00 NIO
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 0.75rem; justify-content: flex-end;" id="modal-paid-actions">
+        <button class="btn-secondary" onclick="closeModal('modal-confirm-paid-voucher')">CANCELAR</button>
+        <button id="btn-confirm-paid-action" class="btn-primary" style="background: #059669; border-color: #047857; color: #fff; font-weight: 800; padding: 0.6rem 1.2rem;" onclick="executeConfirmPaidModal()">
+          💵 CONFIRMAR ABONO RECIBIDO
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL: ESCÁNER DE CÁMARA (ADMIN POS) -->
   <div id="modal-camera-scanner" class="modal-overlay" style="display: none;">
     <div class="modal-content" style="max-width: 480px; width: 95%; text-align: center;">
@@ -1809,6 +1881,6 @@
 
   <!-- CONTROLADOR MVVM -->
   <div id="toast-container" class="toast-container"></div>
-  <script type="module" src="./js/admin-app.js?v=2.3.0"></script>
+  <script type="module" src="./js/admin-app.js?v=2.4.0"></script>
 </body>
 </html>

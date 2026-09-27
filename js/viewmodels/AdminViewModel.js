@@ -253,6 +253,14 @@ export class AdminViewModel {
       const deliveredDateStr = voucher.deliveredAt ? new Date(voucher.deliveredAt).toLocaleString() : "";
       throw new Error("Este vale ya fue despachado previamente" + (deliveredDateStr ? " el " + deliveredDateStr : "") + ".");
     }
+
+    // Bloqueo estricto: Si es compra comercial o con descuento, DEBE estar pagado antes de poder entregarse
+    const isCommercial = typeof voucher.isCommercial === "function" ? voucher.isCommercial() : (voucher.rewardType === "PARTIAL_DISCOUNT" || (voucher.cashToPayUsd && voucher.cashToPayUsd > 0));
+    const isPaid = typeof voucher.isPaidVoucher === "function" ? voucher.isPaidVoucher() : Boolean(voucher.isPaid || voucher.status === "PAID" || voucher.paidAt);
+    if (isCommercial && !isPaid) {
+      throw new Error(`El vale [${clean}] tiene un cobro pendiente de $${(voucher.cashToPayUsd || 0).toFixed(2)} USD. Debe registrarse como PAGADO antes de autorizar la entrega física.`);
+    }
+
     voucher.markDelivered(cashierUid);
     await FirestoreService.saveVoucher(voucher.toJSON());
 

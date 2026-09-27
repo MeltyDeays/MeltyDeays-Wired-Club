@@ -226,6 +226,8 @@ document.addEventListener("DOMContentLoaded", () => {
   window.filterVouchersTable = filterVouchersTable;
   window.deliverVoucherFromTable = deliverVoucherFromTable;
   window.markVoucherPaidAdmin = markVoucherPaidAdmin;
+  window.openMarkPaidModal = openMarkPaidModal;
+  window.executeConfirmPaidModal = executeConfirmPaidModal;
   window.openDeliverVoucherModal = openDeliverVoucherModal;
   window.executeModalDeliver = executeModalDeliver;
   window.playAdminDispatchSound = playAdminDispatchSound;
@@ -675,24 +677,52 @@ async function verifyVoucherAdmin() {
         `;
       }
     } else {
-      if (statusEl) {
-        statusEl.className = "noc-pulse-chip";
-        statusEl.style.borderColor = "#a7f3d0";
-        statusEl.style.background = "#ecfdf5";
-        statusEl.style.color = "#059669";
-        statusEl.innerHTML = '<span class="pulse-dot"></span> VÁLIDO PARA ENTREGA';
-      }
-      if (deliveredMeta) deliveredMeta.textContent = "";
-      if (stampEl) {
-        stampEl.className = "dispatch-stamp"; // Oculto hasta pulsar entregar
-      }
-      if (actionsEl) {
-        actionsEl.innerHTML = `
-          <button id="btn-confirm-delivery" class="btn-primary btn-dispatch-action" onclick="confirmDeliveryAdmin()">
-            ⚡ CONFIRMAR Y DESPACHAR ARTÍCULO (SALIDA FÍSICA)
-          </button>
-          <button class="btn-secondary" onclick="closePosResult()">CERRAR FICHA</button>
-        `;
+      const isCommercial = typeof voucher.isCommercial === "function" ? voucher.isCommercial() : (voucher.rewardType === "PARTIAL_DISCOUNT" || (voucher.cashToPayUsd && voucher.cashToPayUsd > 0));
+      const isPaid = typeof voucher.isPaidVoucher === "function" ? voucher.isPaidVoucher() : Boolean(voucher.isPaid || voucher.status === "PAID" || voucher.paidAt);
+
+      if (isCommercial && !isPaid) {
+        if (statusEl) {
+          statusEl.className = "noc-pulse-chip";
+          statusEl.style.borderColor = "#f59e0b";
+          statusEl.style.background = "#fffbeb";
+          statusEl.style.color = "#b45309";
+          statusEl.innerHTML = `⚠️ PENDIENTE DE COBRO ($${(voucher.cashToPayUsd || 0).toFixed(2)} USD)`;
+        }
+        if (deliveredMeta) deliveredMeta.textContent = "";
+        if (stampEl) {
+          stampEl.className = "dispatch-stamp";
+        }
+        if (actionsEl) {
+          actionsEl.innerHTML = `
+            <div style="background:#fffbeb; border:1px solid #f59e0b; color:#92400e; padding:0.6rem 0.9rem; border-radius:4px; font-size:0.8rem; font-weight:700; width:100%; margin-bottom:0.5rem; text-align:left;">
+              💵 Saldo pendiente: $${(voucher.cashToPayUsd || 0).toFixed(2)} USD (C$ ${(Number(voucher.cashToPayUsd || 0) * 37.0).toFixed(2)} NIO). Debes registrar el cobro antes de autorizar la entrega física.
+            </div>
+            <button class="btn-primary" style="background:#059669; border-color:#047857; color:#fff;" onclick="openMarkPaidModal('${voucher.voucherCode}');">
+              💵 REGISTRAR PAGO ($${(voucher.cashToPayUsd || 0).toFixed(2)} USD)
+            </button>
+            <button class="btn-secondary" onclick="closePosResult()">CERRAR FICHA</button>
+          `;
+        }
+      } else {
+        if (statusEl) {
+          statusEl.className = "noc-pulse-chip";
+          statusEl.style.borderColor = "#a7f3d0";
+          statusEl.style.background = "#ecfdf5";
+          statusEl.style.color = "#059669";
+          statusEl.innerHTML = '<span class="pulse-dot"></span> VÁLIDO PARA ENTREGA';
+        }
+        if (deliveredMeta) deliveredMeta.textContent = "";
+        if (stampEl) {
+          stampEl.className = "dispatch-stamp"; // Oculto hasta pulsar entregar
+        }
+        if (actionsEl) {
+          actionsEl.innerHTML = `
+            <button id="btn-confirm-delivery" class="btn-primary btn-dispatch-action" onclick="confirmDeliveryAdmin()">
+              ⚡ CONFIRMAR Y DESPACHAR ARTÍCULO (SALIDA FÍSICA)
+            </button>
+            <button class="btn-secondary" onclick="closePosResult()">CERRAR FICHA</button>
+          `;
+        }
       }
     }
   }
@@ -2372,15 +2402,19 @@ function renderVouchersTable(vouchers) {
         <td>${statusBadge}</td>
         <td style="text-align: right; white-space: nowrap;">
           ${(!isDelivered && !isCancelled && !isExpired) ? `
-            <div style="display:inline-flex; gap:4px; align-items:center;">
+            <div style="display:inline-flex; gap:6px; align-items:center; justify-content:flex-end;">
               ${(isCommercial && !isPaid) ? `
-                <button class="btn-secondary" style="padding: 3px 8px; font-size: 0.72rem; color:#047857; border-color:#6ee7b7; background:#ecfdf5;" onclick="markVoucherPaidAdmin('${v.voucherCode}', ${v.cashToPayUsd || 0})" title="Confirmar abono de $${(v.cashToPayUsd || 0).toFixed(2)} USD">
+                <button class="btn-secondary" style="padding: 4px 10px; font-size: 0.75rem; font-weight:800; color:#047857; border: 1.5px solid #10b981; background:#ecfdf5; display:inline-flex; align-items:center; gap:4px; box-shadow: 0 1px 3px rgba(16, 185, 129, 0.15);" onclick="openMarkPaidModal('${v.voucherCode}')" title="Registrar abono de $${(v.cashToPayUsd || 0).toFixed(2)} USD para habilitar entrega">
                   💵 Pagado
                 </button>
-              ` : ''}
-              <button class="btn-primary" style="padding: 3px 8px; font-size: 0.72rem;" onclick="openDeliverVoucherModal('${v.voucherCode}')">
-                ✓ Entregar
-              </button>
+                <button class="btn-secondary" style="padding: 4px 8px; font-size: 0.72rem; color:var(--gray-400); border: 1px dashed var(--gray-300); background:#f8fafc; cursor:not-allowed; opacity:0.65;" disabled title="Bloqueado: Primero registra el pago en efectivo">
+                  🔒 Entregar
+                </button>
+              ` : `
+                <button class="btn-primary" style="padding: 4px 10px; font-size: 0.75rem; font-weight:800;" onclick="openDeliverVoucherModal('${v.voucherCode}')">
+                  ✓ Entregar
+                </button>
+              `}
             </div>
           ` : (isDelivered ? `
             <span style="font-size:0.75rem; color:var(--gray-500); font-family:var(--font-mono);">Entregado</span>
@@ -2395,18 +2429,92 @@ function renderVouchersTable(vouchers) {
   }).join("");
 }
 
-async function markVoucherPaidAdmin(voucherCode, cashDue = 0) {
+let currentModalPaidCode = null;
+
+function openMarkPaidModal(voucherCode) {
   const code = (voucherCode || "").trim().toUpperCase();
-  if (!confirm(`¿Confirmas que el cliente abonó los $${Number(cashDue).toFixed(2)} USD correspondientes al vale [${code}]?`)) {
+  currentModalPaidCode = code;
+
+  const voucher = (vm.vouchers || []).find(v => (v.voucherCode || "").trim().toUpperCase() === code);
+  if (!voucher) {
+    showToast("❌ No se encontró el vale [" + code + "] en memoria.", "error");
     return;
   }
+
+  const targetUid = voucher.userUid || voucher.user_uid || voucher.userId || voucher.user_id || "";
+  const user = (vm.users || []).find(u => u.uid === targetUid || (u.memberCode && u.memberCode === targetUid));
+  const clientName = voucher.userName || (user ? user.displayName : "Socio Wired");
+  const clientContact = user ? (user.phone ? "📞 " + user.phone : user.memberCode || "") : (targetUid || "-");
+  
+  const cashDueUsd = Number(voucher.cashToPayUsd || 0);
+  const cashDueNio = cashDueUsd * 37.0; // Conversión oficial 1 USD = 37.0 NIO
+  const officialPriceUsd = Number(voucher.officialPriceUsd || voucher.official_price_usd || cashDueUsd);
+  const discountUsd = Number(voucher.discountUsd || voucher.discount_usd || (officialPriceUsd - cashDueUsd));
+  const pointsSpent = Number(voucher.pointsSpent || voucher.pointsCost || voucher.points_spent || 0);
+
+  const codeEl = document.getElementById("modal-paid-code");
+  if (codeEl) codeEl.textContent = voucher.voucherCode;
+
+  const prodEl = document.getElementById("modal-paid-product");
+  if (prodEl) prodEl.textContent = voucher.rewardTitle || "Artículo";
+
+  const clientEl = document.getElementById("modal-paid-client");
+  if (clientEl) clientEl.textContent = clientName;
+
+  const contactEl = document.getElementById("modal-paid-contact");
+  if (contactEl) contactEl.textContent = clientContact;
+
+  const pointsEl = document.getElementById("modal-paid-points");
+  if (pointsEl) {
+    pointsEl.textContent = pointsSpent > 0 ? `${pointsSpent.toLocaleString()} WP (-$${discountUsd.toFixed(2)})` : "0 WP (Compra Directa)";
+  }
+
+  const usdEl = document.getElementById("modal-paid-amount-usd");
+  if (usdEl) usdEl.textContent = `$${cashDueUsd.toFixed(2)} USD`;
+
+  const nioEl = document.getElementById("modal-paid-amount-nio");
+  if (nioEl) nioEl.textContent = `C$ ${cashDueNio.toLocaleString("es-NI", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} NIO`;
+
+  const offEl = document.getElementById("modal-paid-official-price");
+  if (offEl) offEl.textContent = `$${officialPriceUsd.toFixed(2)} USD`;
+
+  const btnAction = document.getElementById("btn-confirm-paid-action");
+  if (btnAction) {
+    btnAction.disabled = false;
+    btnAction.innerHTML = `💵 CONFIRMAR ABONO ($${cashDueUsd.toFixed(2)} USD)`;
+  }
+
+  const modal = document.getElementById("modal-confirm-paid-voucher");
+  if (modal) modal.style.display = "flex";
+}
+
+async function executeConfirmPaidModal() {
+  const code = currentModalPaidCode;
+  if (!code) return;
+
+  const btnAction = document.getElementById("btn-confirm-paid-action");
+  if (btnAction) {
+    btnAction.disabled = true;
+    btnAction.innerHTML = '<span class="cyber-spinner"></span> REGISTRANDO PAGO...';
+  }
+
   try {
     await vm.markVoucherPaid(code);
-    showToast(`✓ Pago de $${Number(cashDue).toFixed(2)} USD confirmado para [${code}]. Plazo desactivado.`, "success");
+    closeModal("modal-confirm-paid-voucher");
+    playAdminDispatchSound();
+    showToast(`✓ Pago registrado con éxito para [${code}]. Plazo desactivado y entrega habilitada.`, "success");
     renderVouchersTable(vm.vouchers);
   } catch (err) {
     showToast("❌ " + err.message, "error");
+    if (btnAction) {
+      btnAction.disabled = false;
+      btnAction.innerHTML = `💵 REINTENTAR COBRO`;
+    }
   }
+}
+
+function markVoucherPaidAdmin(voucherCode, cashDue = 0) {
+  openMarkPaidModal(voucherCode);
 }
 
 function filterVouchersTable(state) {
@@ -2423,6 +2531,15 @@ function openDeliverVoucherModal(voucherCode) {
   const voucher = (vm.vouchers || []).find(v => (v.voucherCode || "").trim().toUpperCase() === code);
   if (!voucher) {
     showToast("❌ No se encontró el vale [" + code + "] en memoria.", "error");
+    return;
+  }
+
+  // Bloqueo estricto: Si no está pagado, no puede entregarse
+  const isCommercial = typeof voucher.isCommercial === "function" ? voucher.isCommercial() : (voucher.rewardType === "PARTIAL_DISCOUNT" || (voucher.cashToPayUsd && voucher.cashToPayUsd > 0));
+  const isPaid = typeof voucher.isPaidVoucher === "function" ? voucher.isPaidVoucher() : Boolean(voucher.isPaid || voucher.status === "PAID" || voucher.paidAt);
+  if (isCommercial && !isPaid) {
+    showToast(`⚠️ El vale [${code}] requiere abono de $${(voucher.cashToPayUsd || 0).toFixed(2)} USD antes de poder entregarse.`, "warning");
+    openMarkPaidModal(code);
     return;
   }
 
@@ -2458,8 +2575,7 @@ function openDeliverVoucherModal(voucherCode) {
   }
 
   // Soporte de cobro obligatorio para venta con descuento tope
-  const isPartial = voucher.rewardType === "PARTIAL_DISCOUNT" || (voucher.cashToPayUsd && voucher.cashToPayUsd > 0);
-  const isPaid = typeof voucher.isPaidVoucher === "function" ? voucher.isPaidVoucher() : Boolean(voucher.isPaid || voucher.status === "PAID" || voucher.paidAt);
+  const isPartial = isCommercial;
   const calloutEl = document.getElementById("modal-deliver-cash-callout");
 
   if (calloutEl) {
