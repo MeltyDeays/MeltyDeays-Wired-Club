@@ -74,6 +74,23 @@ export class FirestoreService {
     return Object.values(snap.rewards);
   }
 
+  static async getReward(rewardId) {
+    if (!rewardId) return null;
+    const snap = engine.getSnapshot();
+    if (snap.rewards && snap.rewards[rewardId]) {
+      return snap.rewards[rewardId];
+    }
+    if (db) {
+      try {
+        const doc = await db.collection("rewards_catalog").doc(rewardId).get();
+        if (doc.exists) return doc.data();
+      } catch (e) {
+        console.warn("Firestore getReward fallback:", e.message);
+      }
+    }
+    return null;
+  }
+
   static async saveReward(reward) {
     const snap = engine.getSnapshot();
     if (!reward.id) {
@@ -372,7 +389,12 @@ export class FirestoreService {
 
   static getUserVouchers(userUid) {
     const snap = engine.getSnapshot();
-    return Object.values(snap.vouchers).filter(v => v.user_uid === userUid);
+    return Object.values(snap.vouchers).filter(v => (
+      v.user_uid === userUid ||
+      v.userUid === userUid ||
+      v.userId === userUid ||
+      v.user_id === userUid
+    ));
   }
 
   // Purga integral de facturas/tokens de prueba y reinicio limpio

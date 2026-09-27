@@ -97,6 +97,7 @@ export class CustomerViewModel {
     if (!this.currentUser) return;
     const u = await FirestoreService.getUser(this.currentUser.uid);
     if (u) this.currentUser = new UserModel(u);
+    await FirestoreService.fetchVouchers();
     this.vouchers = FirestoreService.getUserVouchers(this.currentUser.uid).map(v => new VoucherModel(v));
     await this.processExpiredVouchers();
     this.ledger = FirestoreService.getLedger(this.currentUser.uid);
@@ -111,14 +112,16 @@ export class CustomerViewModel {
     for (const voucher of this.vouchers) {
       if (voucher.isCommercial() && !voucher.isPaidVoucher() && !voucher.isDelivered() && !voucher.isCancelled()) {
         if (voucher.isExpired() && voucher.status !== "EXPIRED") {
-          // Ha vencido el plazo de 3 días para concretar el pago
-          const pointsSpent = voucher.pointsSpent || 0;
-          let penalty = 0;
+          // Ha vencido el plazo estricto de 3 días para concretar el pago
+          const pointsSpent = Number(voucher.pointsSpent || 0);
+          let penalty = 10;
           let refund = 0;
 
           if (pointsSpent > 0) {
-            // Penalización por caducidad: se retienen hasta 10 WP de los puntos aplicados al descuento
-            penalty = Math.min(pointsSpent, 10);
+            // Caso con descuento: El socio aplicó puntos para obtener rebaja.
+            // Por irresponsabilidad (falta de pago en 3 días), se le restan 10 WP de penalización.
+            // Si aplicó más de 10 WP al reservar, se le devuelve la diferencia.
+            penalty = 10;
             refund = Math.max(0, pointsSpent - penalty);
             if (refund > 0) {
               this.currentUser.addPoints(refund);
@@ -130,36 +133,37 @@ export class CustomerViewModel {
               delta: refund,
               balance_after: this.currentUser.wiredPoints,
               ref_id: voucher.voucherCode,
-              note: `Caducidad por falta de pago (3 días): ${refund > 0 ? `+${refund} WP devueltos · ` : ''}-${penalty} WP retenidos de penalización en [${voucher.voucherCode}] por ${voucher.rewardTitle}`,
+              note: `⚠️ Vale Expirado (3 días sin pago): -10 WP por irresponsabilidad${refund > 0 ? ` (+${refund} WP devueltos de ${pointsSpent} WP)` : ''} en [${voucher.voucherCode}] ${voucher.rewardTitle}`,
               created_at: new Date().toISOString()
             });
           } else {
-            // Compra directa sin puntos vencida sin pagar: penalizar con 10 WP si el usuario tiene saldo
-            if (this.currentUser.wiredPoints >= 10) {
-              this.currentUser.deductPoints(10);
-              penalty = 10;
-              userModified = true;
-              FirestoreService.addLedgerEntry(this.currentUser.uid, {
-                id: "TX-EXP-" + Date.now() + "-" + Math.floor(Math.random() * 1000),
-                type: "EXPIRED_PENALTY",
-                delta: -10,
-                balance_after: this.currentUser.wiredPoints,
-                ref_id: voucher.voucherCode,
-                note: `Penalización por abandono de reserva no pagada (3 días): -10 WP en [${voucher.voucherCode}] por ${voucher.rewardTitle}`,
-                created_at: new Date().toISOString()
-              });
-            }
+            // Caso compra a precio completo (0 puntos aplicados):
+            // El cliente apartó a precio de lista sin usar puntos.
+            // Si no paga en 3 días, la reserva caduca y el stock regresa al catálogo, sin penalización de puntos.
+            penalty = 0;
+            FirestoreService.addLedgerEntry(this.currentUser.uid, {
+              id: "TX-EXP-" + Date.now() + "-" + Math.floor(Math.random() * 1000),
+              type: "EXPIRED_RESERVATION",
+              delta: 0,
+              balance_after: this.currentUser.wiredPoints,
+              ref_id: voucher.voucherCode,
+              note: `⚠️ Reserva expirada (3 días sin pago): Stock retornado al catálogo en [${voucher.voucherCode}] ${voucher.rewardTitle}`,
+              created_at: new Date().toISOString()
+            });
           }
 
-          // Restaurar stock del artículo en catálogo (+1)
+          // Restaurar stock del producto en catálogo (+1)
           let reward = (this.catalog || []).find(r => r.id === voucher.rewardId);
           if (!reward && voucher.rewardId) {
             const rawReward = await FirestoreService.getReward(voucher.rewardId);
             if (rawReward) reward = new RewardModel(rawReward);
           }
           if (reward) {
-            if (typeof reward.incrementStock === "function") reward.incrementStock();
-            else reward.stock = (reward.stock || 0) + 1;
+            if (typeof reward.incrementStock === "function") {
+              reward.incrementStock();
+            } else {
+              reward.stock = (reward.stock || 0) + 1;
+            }
             await FirestoreService.saveReward(reward.toJSON());
             catalogModified = true;
           }

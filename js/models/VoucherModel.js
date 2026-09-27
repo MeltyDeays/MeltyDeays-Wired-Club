@@ -26,15 +26,21 @@ export class VoucherModel {
     // Lógica estricta de expiración:
     // 1. Recompensas 100% gratis (cashToPayUsd === 0 y no es descuento): NUNCA expiran (expiresAt = null siempre)
     // 2. Compras comerciales ya pagadas (isPaid === true): NUNCA expiran (expiresAt = null)
-    // 3. Compras comerciales pendientes de pago (cashToPayUsd > 0 y !isPaid): 3 días (72 horas) para pagar
+    // 3. Compras comerciales pendientes de pago (cashToPayUsd > 0 o PARTIAL_DISCOUNT, y !isPaid):
+    //    Plazo máximo e inamovible de 3 días (72 horas) desde la fecha de creación (createdAt).
     const isCommercial = this.rewardType === "PARTIAL_DISCOUNT" || this.cashToPayUsd > 0;
     if (!isCommercial || this.isPaid) {
       this.expiresAt = null;
     } else {
-      if (data.expiresAt !== undefined || data.expires_at !== undefined) {
-        this.expiresAt = data.expiresAt || data.expires_at || null;
+      const createdMs = this.createdAt ? new Date(this.createdAt).getTime() : Date.now();
+      const maxAllowedExpiryMs = createdMs + (3 * 24 * 60 * 60 * 1000); // 72 horas exactas
+      const rawExp = data.expiresAt || data.expires_at;
+      if (rawExp) {
+        const rawMs = new Date(rawExp).getTime();
+        // Si la fecha guardada previamente supera los 3 días desde la creación (ej. registros con 7 días), se recorta estrictamente a 3 días
+        this.expiresAt = new Date(Math.min(rawMs, maxAllowedExpiryMs)).toISOString();
       } else {
-        this.expiresAt = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString();
+        this.expiresAt = new Date(maxAllowedExpiryMs).toISOString();
       }
     }
 
@@ -65,6 +71,7 @@ export class VoucherModel {
   }
 
   isExpired() {
+    if (this.status === "EXPIRED") return true;
     if (this.isDelivered() || this.isCancelled()) return false;
     if (!this.isCommercial()) return false; // Los canjes 100% gratis NUNCA caducan
     if (this.isPaidVoucher()) return false; // Una vez pagado en efectivo, NUNCA caduca
@@ -74,6 +81,7 @@ export class VoucherModel {
 
   canBeCancelled() {
     if (this.isDelivered() || this.isCancelled() || this.isExpired()) return false;
+    if (this.status === "EXPIRED") return false;
     // Si es comercial y ya fue pagado, no puede cancelarse automáticamente
     if (this.isCommercial() && this.isPaidVoucher()) return false;
     return true;

@@ -474,7 +474,7 @@ function renderVouchers(vouchers) {
         const isCancelled = v.status === "CANCELLED" || (typeof v.isCancelled === "function" && v.isCancelled()) || Boolean(v.cancelledAt);
         const isCommercial = typeof v.isCommercial === "function" ? v.isCommercial() : (v.rewardType === "PARTIAL_DISCOUNT" || (v.cashToPayUsd && v.cashToPayUsd > 0));
         const isPaid = typeof v.isPaidVoucher === "function" ? v.isPaidVoucher() : Boolean(v.isPaid || v.status === "PAID" || v.paidAt);
-        const isExpired = typeof v.isExpired === "function" ? v.isExpired() : (isCommercial && !isPaid && !isDelivered && !isCancelled && v.expiresAt && new Date() > new Date(v.expiresAt));
+        const isExpired = v.status === "EXPIRED" || (typeof v.isExpired === "function" ? v.isExpired() : (isCommercial && !isPaid && !isDelivered && !isCancelled && v.expiresAt && new Date() > new Date(v.expiresAt)));
         const cost = v.pointsSpent || v.pointsCost || 0;
         const dateStr = v.createdAt ? new Date(v.createdAt).toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" }) : "-";
 
@@ -494,23 +494,29 @@ function renderVouchers(vouchers) {
         }
 
         let expInfo = "";
-        if (!isDelivered && !isCancelled) {
+        if (isExpired) {
+          expInfo = cost > 0
+            ? `<div style="font-family:var(--font-mono); font-size:0.68rem; color:#dc2626; font-weight:800; margin-top:3px;">⚠️ Plazo de 3 días vencido · -10 WP penalización por irresponsabilidad</div>`
+            : `<div style="font-family:var(--font-mono); font-size:0.68rem; color:#dc2626; font-weight:800; margin-top:3px;">⚠️ Plazo de 3 días para pagar vencido · Stock devuelto a tienda</div>`;
+        } else if (!isDelivered && !isCancelled) {
           if (!isCommercial) {
             // Recompensa 100% gratis: Cero límite de tiempo
             expInfo = `<div style="font-family:var(--font-mono); font-size:0.68rem; color:#059669; font-weight:700; margin-top:3px;">🎁 Canje 100% Puntos · Sin límite de tiempo para retiro</div>`;
           } else if (isPaid) {
             // Compra comercial ya pagada en efectivo: Cero límite de tiempo
-            expInfo = `<div style="font-family:var(--font-mono); font-size:0.68rem; color:#15803d; font-weight:700; margin-top:3px;">✅ Pago confirmado (${formatDualPrice(v.cashToPayUsd)}) · Sin límite para retirar</div>`;
+            expInfo = `<div style="font-family:var(--font-mono); font-size:0.68rem; color:#15803d; font-weight:700; margin-top:3px;">✅ Pago confirmado (${formatPrice(v.cashToPayUsd)}) · Sin límite para retirar</div>`;
           } else if (v.expiresAt) {
             const msLeft = new Date(v.expiresAt) - new Date();
-            if (msLeft <= 0 || isExpired) {
-              expInfo = `<div style="font-family:var(--font-mono); font-size:0.68rem; color:#dc2626; font-weight:800; margin-top:3px;">⚠️ Plazo de 3 días para pagar vencido</div>`;
+            if (msLeft <= 0) {
+              expInfo = cost > 0
+                ? `<div style="font-family:var(--font-mono); font-size:0.68rem; color:#dc2626; font-weight:800; margin-top:3px;">⚠️ Plazo de 3 días vencido · -10 WP penalización por irresponsabilidad</div>`
+                : `<div style="font-family:var(--font-mono); font-size:0.68rem; color:#dc2626; font-weight:800; margin-top:3px;">⚠️ Plazo de 3 días para pagar vencido · Stock devuelto a tienda</div>`;
             } else {
               const hoursLeft = Math.floor(msLeft / (1000 * 60 * 60));
               const daysLeft = Math.floor(hoursLeft / 24);
               const remHours = hoursLeft % 24;
               const timeStr = daysLeft > 0 ? `${daysLeft}d ${remHours}h` : `${hoursLeft}h`;
-              expInfo = `<div style="font-family:var(--font-mono); font-size:0.68rem; color:#b45309; font-weight:700; margin-top:3px;">⏱️ Plazo para pagar: ${timeStr} restantes</div>`;
+              expInfo = `<div style="font-family:var(--font-mono); font-size:0.68rem; color:#b45309; font-weight:700; margin-top:3px;">⏱️ Plazo para pagar: ${timeStr} restantes (Máx 3 días)</div>`;
             }
           } else {
             expInfo = `<div style="font-family:var(--font-mono); font-size:0.68rem; color:#059669; font-weight:700; margin-top:3px;">⏱️ Sin caducidad</div>`;
@@ -520,7 +526,7 @@ function renderVouchers(vouchers) {
         const canCancel = !isDelivered && !isCancelled && !isExpired && (!isCommercial || !isPaid);
 
         return `
-          <div class="voucher-card" onclick="showVoucherModal('${v.voucherCode}')" style="cursor: pointer; transition: transform 0.15s ease; ${isCancelled ? 'opacity: 0.75; background: #fffaf0;' : ''}" title="Clic para ver código QR">
+          <div class="voucher-card" onclick="showVoucherModal('${v.voucherCode}')" style="cursor: pointer; transition: transform 0.15s ease; ${isCancelled || isExpired ? 'opacity: 0.8; background: #fffaf0;' : ''}" title="Clic para ver código QR">
             <div class="voucher-header" style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:0.5rem;">
               <div class="voucher-title" style="font-weight:900; font-size:1.05rem; color:var(--dark);">${v.rewardTitle || "Artículo"}</div>
               ${badgeHtml}
@@ -529,10 +535,10 @@ function renderVouchers(vouchers) {
             ${(v.cashToPayUsd && v.cashToPayUsd > 0) ? `
               <div style="background:${isPaid ? '#ecfdf5' : '#fffbeb'}; border:1px solid ${isPaid ? '#a7f3d0' : '#fcd34d'}; border-radius:3px; padding:3px 6px; font-family:var(--font-mono); font-size:0.72rem; color:${isPaid ? '#065f46' : '#92400e'}; margin: 4px 0;">
                 ${isPaid
-                  ? `✅ <strong>Abonado: ${formatDualPrice(v.cashToPayUsd)}</strong> (Pago confirmado)`
+                  ? `✅ <strong>Abonado: ${formatPrice(v.cashToPayUsd)}</strong> (Pago confirmado)`
                   : ((v.discountUsd && v.discountUsd > 0)
-                      ? `🏷️ Descuento: -${formatPrice(v.discountUsd)} · <strong style="color:#dc2626;">Abonar: ${formatDualPrice(v.cashToPayUsd)}</strong>`
-                      : `🛒 Compra en tienda · <strong style="color:#dc2626;">Abonar: ${formatDualPrice(v.cashToPayUsd)}</strong>`)
+                      ? `🏷️ Descuento: -${formatPrice(v.discountUsd)} · <strong style="color:#dc2626;">Abonar: ${formatPrice(v.cashToPayUsd)}</strong>`
+                      : `🛒 Compra en tienda · <strong style="color:#dc2626;">Abonar: ${formatPrice(v.cashToPayUsd)}</strong>`)
                 }
               </div>
             ` : ''}
@@ -745,6 +751,9 @@ function switchTab(tabId) {
     if (btn) btn.classList.toggle("active", t === tabId);
     if (content) content.style.display = (t === tabId) ? "block" : "none";
   });
+  if (tabId === "vouchers" && vm && vm.currentUser) {
+    vm.refreshUserData();
+  }
 }
 
 function openClaimModal() {
@@ -1248,7 +1257,10 @@ function showVoucherModal(voucherCode) {
           expPill.style.background = "#fef2f2";
           expPill.style.borderColor = "#fecaca";
           expPill.style.color = "#b91c1c";
-          expText.innerHTML = "⚠️ <strong>Plazo de 3 días para pagar vencido</strong> (Reserva caducada)";
+          const hasPoints = Number(voucher.pointsSpent || 0) > 0;
+          expText.innerHTML = hasPoints
+            ? "⚠️ <strong>Plazo de 3 días para pagar vencido</strong> (Reserva caducada · -10 WP penalización por irresponsabilidad aplicada)"
+            : "⚠️ <strong>Plazo de 3 días para pagar vencido</strong> (Reserva caducada · Artículo devuelto al stock)";
         } else {
           const hoursLeft = Math.floor(msLeft / (1000 * 60 * 60));
           const daysLeft = Math.floor(hoursLeft / 24);
@@ -1270,11 +1282,11 @@ function showVoucherModal(voucherCode) {
       if (!isCommercial) {
         instructionsBox.innerHTML = `📌 <strong>Instrucciones:</strong> Muestra este código QR o envíalo por WhatsApp a MeltyDeays para coordinar la entrega personal de tu producto 100% gratis.<div style="margin-top:4px; font-size:0.68rem; color:#64748b; font-family:var(--font-mono);">🛡️ Premio de fidelidad: Se entrega probado personalmente. Exento de garantía comercial posterior de 30 días.</div>`;
       } else if (isPaid) {
-        instructionsBox.innerHTML = `📌 <strong>Pago Registrado con Éxito:</strong> Ya cancelaste <strong>${formatDualPrice(voucher.cashToPayUsd)}</strong>. Envía el comprobante por WhatsApp a MeltyDeays para pactar la entrega personal en el momento que te sea más conveniente.<div style="margin-top:4px; font-size:0.68rem; color:#047857; font-family:var(--font-mono);">🛡️ Garantía técnica oficial de 30 días amparada por tu compra comercial.</div>`;
+        instructionsBox.innerHTML = `📌 <strong>Pago Registrado con Éxito:</strong> Ya cancelaste <strong>${formatPrice(voucher.cashToPayUsd)}</strong>. Envía el comprobante por WhatsApp a MeltyDeays para pactar la entrega personal en el momento que te sea más conveniente.<div style="margin-top:4px; font-size:0.68rem; color:#047857; font-family:var(--font-mono);">🛡️ Garantía técnica oficial de 30 días amparada por tu compra comercial.</div>`;
       } else {
         instructionsBox.innerHTML = (voucher.discountUsd > 0)
-          ? `📌 <strong>Vale de Descuento Pendiente de Pago:</strong> Tienes 3 días para coordinar el abono de <strong>${formatDualPrice(voucher.cashToPayUsd)}</strong> (descuento aplicado: -${formatPrice(voucher.discountUsd)} con tus puntos).<div style="margin-top:4px; font-size:0.68rem; color:#78350f; font-family:var(--font-mono);">🛡️ Garantía técnica comercial de 30 días amparada tras concretar el pago. Si no se abona en 3 días, la reserva caduca con penalización de 10 WP.</div>`
-          : `📌 <strong>Reserva de Compra Pendiente de Pago:</strong> Tienes 3 días para coordinar el abono de <strong>${formatDualPrice(voucher.cashToPayUsd)}</strong> con MeltyDeays.<div style="margin-top:4px; font-size:0.68rem; color:#78350f; font-family:var(--font-mono);">🛡️ Garantía técnica comercial de 30 días amparada tras concretar el pago. Si no se abona en 3 días, la reserva caduca.</div>`;
+          ? `📌 <strong>Vale de Descuento Pendiente de Pago:</strong> Tienes 3 días para coordinar el abono de <strong>${formatPrice(voucher.cashToPayUsd)}</strong> (descuento aplicado: -${formatPrice(voucher.discountUsd)} con tus puntos).<div style="margin-top:4px; font-size:0.68rem; color:#78350f; font-family:var(--font-mono);">🛡️ Garantía técnica comercial de 30 días tras concretar el pago. Si no se abona en 3 días, la reserva caduca con penalización de 10 WP.</div>`
+          : `📌 <strong>Reserva de Compra Pendiente de Pago:</strong> Tienes 3 días para coordinar el abono de <strong>${formatPrice(voucher.cashToPayUsd)}</strong> con MeltyDeays.<div style="margin-top:4px; font-size:0.68rem; color:#78350f; font-family:var(--font-mono);">🛡️ Garantía técnica comercial de 30 días tras concretar el pago. Si no se abona en 3 días, la reserva caduca y el stock regresa a la tienda sin penalización de puntos.</div>`;
       }
     }
 
