@@ -396,6 +396,8 @@ function renderUserQr(text) {
 
 // CONTROL DE MODALES Y ACCIONES DE VISTA
 let selectedRewardId = null;
+let selectedPointsToApply = 0;
+let currentRedeemReward = null;
 
 function openAuthModal(tab = "login", feedback = null) {
   const modal = document.getElementById("modal-client-auth");
@@ -570,10 +572,6 @@ async function claimFromBanner() {
     showToast(err.message || "No se pudo acreditar el código", "error");
   }
 }
-
-let selectedRewardId = null;
-let selectedPointsToApply = 0;
-let currentRedeemReward = null;
 
 function confirmRedeem(rewardId) {
   if (!vm.currentUser) {
