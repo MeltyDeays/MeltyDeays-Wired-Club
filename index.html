@@ -56,6 +56,16 @@
     </div>
 
     <div class="nav-controls">
+      <!-- SELECTOR DE MONEDA DE PREFERENCIA (1 USD = 37 C$) -->
+      <div class="currency-toggle-wrapper" style="display: flex; align-items: center; background: #ffffff; border: 1.5px solid var(--dark); border-radius: 4px; overflow: hidden; height: 32px; box-shadow: 2px 2px 0px var(--dark);">
+        <button type="button" id="btn-currency-usd" onclick="setAppCurrency('USD')" title="Precios en Dólares ($ USD)" style="border: none; background: #0f172a; color: #ffffff; font-family: var(--font-mono); font-size: 0.72rem; font-weight: 800; padding: 0 9px; height: 100%; cursor: pointer; transition: all 0.15s ease;">
+          $ USD
+        </button>
+        <button type="button" id="btn-currency-nio" onclick="setAppCurrency('NIO')" title="Precios en Córdobas (C$ NIO · Tasa 1 USD = 37 NIO)" style="border: none; background: #ffffff; color: var(--dark); font-family: var(--font-mono); font-size: 0.72rem; font-weight: 800; padding: 0 9px; height: 100%; cursor: pointer; transition: all 0.15s ease;">
+          C$ NIO
+        </button>
+      </div>
+
       <!-- Botón Iniciar Sesión / Registro -->
       <button class="btn-secondary" id="nav-login-btn" onclick="openAuthModal('login')" style="font-size:0.78rem; padding:0.4rem 0.85rem;">
         👤 Iniciar Sesión / Registro
@@ -369,17 +379,17 @@
         Combo Gamer
       </h2>
       <div id="modal-voucher-subtitle" style="font-size: 0.78rem; color: var(--gray-600); margin-bottom: 0.6rem;">
-        Válido para reclamo de producto físico en tienda MeltyDeays
+        Válido para entrega personal de producto con MeltyDeays
       </div>
 
       <!-- AVISO DE PAGO EN EFECTIVO SI ES VALE DE DESCUENTO PARCIAL -->
       <div id="modal-voucher-cash-pill" style="display: none; margin: 0 auto 0.5rem auto; padding: 5px 12px; background: #fffbeb; border: 1.5px solid #d97706; border-radius: 4px; font-family: var(--font-mono); font-size: 0.78rem; color: #78350f; max-width: 320px;">
-        💵 <strong>A PAGAR EN TIENDA:</strong> <span id="modal-voucher-cash-val" style="color: #dc2626; font-weight: 900; font-size: 0.92rem;">$0.00 USD</span>
+        <span id="modal-voucher-cash-label">💵 <strong>A PAGAR AL VENDEDOR:</strong></span> <span id="modal-voucher-cash-val" style="color: #dc2626; font-weight: 900; font-size: 0.92rem;">$0.00 USD</span>
       </div>
 
-      <!-- VIGENCIA LÍMITE DE RETIRO (3 DÍAS PARA COMPRAS/DESCUENTOS) -->
+      <!-- VIGENCIA LÍMITE DE PAGO (3 DÍAS PARA COMPRAS/DESCUENTOS; SIN LÍMITE PARA GRATIS O YA PAGADOS) -->
       <div id="modal-voucher-exp-pill" style="display: none; margin: 0 auto 0.85rem auto; padding: 4px 10px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 4px; font-family: var(--font-mono); font-size: 0.72rem; color: #991b1b; max-width: 320px;">
-        ⏱️ <strong id="modal-voucher-exp-text">Vence en: 3 días</strong>
+        <span id="modal-voucher-exp-text">Vence en: 3 días</span>
       </div>
 
       <!-- CONTENEDOR QR CON HOLOGRAPHIC SCANLINE -->
@@ -511,6 +521,6 @@
   <div id="toast-container" class="toast-container"></div>
 
   <!-- CONTROLADOR MVVM -->
-  <script type="module" src="./js/app.js?v=2.4.0"></script>
+  <script type="module" src="./js/app.js?v=2.5.1"></script>
 </body>
 </html>

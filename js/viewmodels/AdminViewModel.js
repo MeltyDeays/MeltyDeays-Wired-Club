@@ -205,6 +205,37 @@ export class AdminViewModel {
     return new VoucherModel(raw);
   }
 
+  async markVoucherPaid(voucherCode, cashierUid = "admin_melty") {
+    const clean = (voucherCode || "").trim().toUpperCase();
+    let voucher = await this.verifyVoucher(clean);
+    if (!voucher) {
+      voucher = (this.vouchers || []).find(v => (v.voucherCode || "").trim().toUpperCase() === clean);
+    }
+    if (!voucher) throw new Error("El vale [" + voucherCode + "] no existe en la base de datos.");
+    if (voucher.isCancelled && voucher.isCancelled()) {
+      throw new Error("Este vale fue cancelado y no puede ser marcado como pagado.");
+    }
+    if (voucher.isExpired && voucher.isExpired()) {
+      throw new Error("Este vale caducó tras superar el plazo de 3 días para su pago.");
+    }
+    if (voucher.isPaidVoucher && voucher.isPaidVoucher()) {
+      throw new Error("Este vale ya fue registrado como pagado previamente.");
+    }
+
+    voucher.markPaid(cashierUid);
+    await FirestoreService.saveVoucher(voucher.toJSON());
+
+    const idx = (this.vouchers || []).findIndex(v => (v.voucherCode || "").trim().toUpperCase() === clean);
+    if (idx !== -1) {
+      this.vouchers[idx] = voucher;
+    } else {
+      this.vouchers.unshift(voucher);
+    }
+
+    await this.refreshData();
+    return voucher;
+  }
+
   async deliverVoucher(voucherCode, cashierUid = "admin_melty") {
     const clean = (voucherCode || "").trim().toUpperCase();
     let voucher = await this.verifyVoucher(clean);
@@ -216,7 +247,7 @@ export class AdminViewModel {
       throw new Error("Este vale fue cancelado por el cliente y sus puntos devueltos. No puede entregarse.");
     }
     if (voucher.isExpired && voucher.isExpired()) {
-      throw new Error("Este vale ha vencido tras superar el plazo de 3 días para su retiro en mostrador.");
+      throw new Error("Este vale ha caducado por falta de pago (plazo de 3 días superado).");
     }
     if (voucher.isDelivered()) {
       const deliveredDateStr = voucher.deliveredAt ? new Date(voucher.deliveredAt).toLocaleString() : "";

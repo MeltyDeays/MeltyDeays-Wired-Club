@@ -14,17 +14,28 @@ export class VoucherModel {
     this.priceUsd = Number(data.priceUsd || data.price_usd || 0);
     this.discountUsd = Number(data.discountUsd || data.discount_usd || 0);
     this.cashToPayUsd = Number(data.cashToPayUsd || data.cash_to_pay_usd || 0);
-    this.status = data.status || "PENDING_DELIVERY"; // PENDING_DELIVERY | DELIVERED | CANCELLED | EXPIRED
+    this.status = data.status || "PENDING_DELIVERY"; // PENDING_DELIVERY | PAID | DELIVERED | CANCELLED | EXPIRED
     this.createdAt = data.createdAt || data.created_at || new Date().toISOString();
 
-    // 3 días de límite (72 horas) para compras comerciales o con descuento; sin límite para recompensas 100% gratis
+    // Estado de pago en efectivo para compras comerciales
+    this.isPaid = Boolean(data.isPaid || data.is_paid || this.status === "PAID" || data.paidAt || data.paid_at);
+    this.paidAt = data.paidAt || data.paid_at || null;
+    this.paidBy = data.paidBy || data.paid_by || null;
+    this.penaltyPoints = Number(data.penaltyPoints || data.penalty_points || 0);
+
+    // Lógica estricta de expiración:
+    // 1. Recompensas 100% gratis (cashToPayUsd === 0 y no es descuento): NUNCA expiran (expiresAt = null siempre)
+    // 2. Compras comerciales ya pagadas (isPaid === true): NUNCA expiran (expiresAt = null)
+    // 3. Compras comerciales pendientes de pago (cashToPayUsd > 0 y !isPaid): 3 días (72 horas) para pagar
     const isCommercial = this.rewardType === "PARTIAL_DISCOUNT" || this.cashToPayUsd > 0;
-    if (data.expiresAt !== undefined || data.expires_at !== undefined) {
-      this.expiresAt = data.expiresAt || data.expires_at || null;
+    if (!isCommercial || this.isPaid) {
+      this.expiresAt = null;
     } else {
-      this.expiresAt = isCommercial
-        ? new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString()
-        : null;
+      if (data.expiresAt !== undefined || data.expires_at !== undefined) {
+        this.expiresAt = data.expiresAt || data.expires_at || null;
+      } else {
+        this.expiresAt = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString();
+      }
     }
 
     this.deliveredAt = data.deliveredAt || data.delivered_at || null;
@@ -41,30 +52,61 @@ export class VoucherModel {
     return this.status === "CANCELLED" || Boolean(this.cancelledAt);
   }
 
+  isPaidVoucher() {
+    return Boolean(this.isPaid || this.status === "PAID" || this.paidAt);
+  }
+
+  isCommercial() {
+    return this.rewardType === "PARTIAL_DISCOUNT" || this.cashToPayUsd > 0;
+  }
+
   isPartialDiscount() {
     return this.rewardType === "PARTIAL_DISCOUNT";
   }
 
   isExpired() {
     if (this.isDelivered() || this.isCancelled()) return false;
+    if (!this.isCommercial()) return false; // Los canjes 100% gratis NUNCA caducan
+    if (this.isPaidVoucher()) return false; // Una vez pagado en efectivo, NUNCA caduca
     if (!this.expiresAt) return false;
     return new Date() > new Date(this.expiresAt);
   }
 
   canBeCancelled() {
-    return !this.isDelivered() && !this.isCancelled();
+    if (this.isDelivered() || this.isCancelled() || this.isExpired()) return false;
+    // Si es comercial y ya fue pagado, no puede cancelarse automáticamente
+    if (this.isCommercial() && this.isPaidVoucher()) return false;
+    return true;
+  }
+
+  markPaid(adminUid = "admin_melty") {
+    this.status = "PAID";
+    this.isPaid = true;
+    this.paidAt = new Date().toISOString();
+    this.paidBy = adminUid;
+    this.expiresAt = null; // Eliminación definitiva de cuenta regresiva al pagar
   }
 
   markDelivered(cashierUid = "admin_melty") {
     this.status = "DELIVERED";
     this.deliveredAt = new Date().toISOString();
     this.deliveredBy = cashierUid;
+    if (this.isCommercial() && !this.isPaid) {
+      this.isPaid = true;
+      this.paidAt = this.deliveredAt;
+      this.paidBy = cashierUid;
+    }
   }
 
   markCancelled(byUid = "client") {
     this.status = "CANCELLED";
     this.cancelledAt = new Date().toISOString();
     this.cancelledBy = byUid;
+  }
+
+  markExpired(penalty = 0) {
+    this.status = "EXPIRED";
+    this.penaltyPoints = penalty;
   }
 
   toJSON() {
@@ -81,6 +123,10 @@ export class VoucherModel {
       discount_usd: this.discountUsd,
       cash_to_pay_usd: this.cashToPayUsd,
       status: this.status,
+      is_paid: this.isPaid,
+      paid_at: this.paidAt,
+      paid_by: this.paidBy,
+      penalty_points: this.penaltyPoints,
       created_at: this.createdAt,
       expires_at: this.expiresAt,
       delivered_at: this.deliveredAt,

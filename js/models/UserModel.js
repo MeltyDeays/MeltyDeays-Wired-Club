@@ -10,6 +10,7 @@ export class UserModel {
     this.lifetimePoints = Number(data.lifetimePoints !== undefined ? data.lifetimePoints : (data.lifetime_points || 0));
     this.tier = data.tier || this.calculateTier();
     this.status = data.status || "ACTIVE";
+    this.currency = (data.currency || data.preferredCurrency || data.preferred_currency || "USD").toUpperCase() === "NIO" ? "NIO" : "USD";
     this.createdAt = data.createdAt || data.created_at || new Date().toISOString();
   }
 
@@ -22,6 +23,10 @@ export class UserModel {
 
   isBanned() {
     return this.status === "BANNED";
+  }
+
+  setCurrency(curr) {
+    this.currency = (curr || "").toUpperCase() === "NIO" ? "NIO" : "USD";
   }
 
   addPoints(points) {
@@ -56,6 +61,8 @@ export class UserModel {
       lifetime_points: this.lifetimePoints,
       tier: this.tier,
       status: this.status,
+      currency: this.currency,
+      preferred_currency: this.currency,
       createdAt: this.createdAt,
       created_at: this.createdAt
     };

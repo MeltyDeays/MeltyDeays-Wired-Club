@@ -13,6 +13,8 @@ export class CustomerViewModel {
     this.ledger = [];
     this.activeTab = "catalog"; // catalog | vouchers | ledger
     this.pendingClaimToken = null;
+    this.preferredCurrency = localStorage.getItem("melty_preferred_currency") || "USD";
+    this.usdToNioRate = 37.0;
     this.listeners = [];
   }
 
@@ -22,6 +24,39 @@ export class CustomerViewModel {
 
   notify() {
     this.listeners.forEach(fn => fn(this));
+  }
+
+  async setCurrency(newCurrency) {
+    const clean = (newCurrency || "").toUpperCase() === "NIO" ? "NIO" : "USD";
+    this.preferredCurrency = clean;
+    localStorage.setItem("melty_preferred_currency", clean);
+    if (this.currentUser) {
+      this.currentUser.setCurrency(clean);
+      await FirestoreService.saveUser(this.currentUser.toJSON());
+    }
+    this.notify();
+    return this.preferredCurrency;
+  }
+
+  formatMoney(amountUsd) {
+    const num = Number(amountUsd) || 0;
+    if (this.preferredCurrency === "NIO") {
+      const nio = num * this.usdToNioRate;
+      return `C$ ${nio.toLocaleString('es-NI', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} NIO`;
+    }
+    return `$${num.toFixed(2)} USD`;
+  }
+
+  formatDualMoney(amountUsd) {
+    const num = Number(amountUsd) || 0;
+    const nioVal = num * this.usdToNioRate;
+    const nioStr = `C$ ${nioVal.toLocaleString('es-NI', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} NIO`;
+    const usdStr = `$${num.toFixed(2)} USD`;
+
+    if (this.preferredCurrency === "NIO") {
+      return `${nioStr} <span style="font-size:0.85em; opacity:0.8;">(${usdStr})</span>`;
+    }
+    return `${usdStr} <span style="font-size:0.85em; opacity:0.8;">(${nioStr})</span>`;
   }
 
   async init() {
@@ -34,6 +69,10 @@ export class CustomerViewModel {
       const u = await FirestoreService.getUser(savedUid);
       if (u) {
         this.currentUser = new UserModel(u);
+        if (this.currentUser.currency) {
+          this.preferredCurrency = this.currentUser.currency;
+          localStorage.setItem("melty_preferred_currency", this.preferredCurrency);
+        }
         await this.refreshUserData();
       }
     }
@@ -59,8 +98,85 @@ export class CustomerViewModel {
     const u = await FirestoreService.getUser(this.currentUser.uid);
     if (u) this.currentUser = new UserModel(u);
     this.vouchers = FirestoreService.getUserVouchers(this.currentUser.uid).map(v => new VoucherModel(v));
+    await this.processExpiredVouchers();
     this.ledger = FirestoreService.getLedger(this.currentUser.uid);
     this.notify();
+  }
+
+  async processExpiredVouchers() {
+    if (!this.currentUser || !this.vouchers || this.vouchers.length === 0) return;
+    let userModified = false;
+    let catalogModified = false;
+
+    for (const voucher of this.vouchers) {
+      if (voucher.isCommercial() && !voucher.isPaidVoucher() && !voucher.isDelivered() && !voucher.isCancelled()) {
+        if (voucher.isExpired() && voucher.status !== "EXPIRED") {
+          // Ha vencido el plazo de 3 días para concretar el pago
+          const pointsSpent = voucher.pointsSpent || 0;
+          let penalty = 0;
+          let refund = 0;
+
+          if (pointsSpent > 0) {
+            // Penalización por caducidad: se retienen hasta 10 WP de los puntos aplicados al descuento
+            penalty = Math.min(pointsSpent, 10);
+            refund = Math.max(0, pointsSpent - penalty);
+            if (refund > 0) {
+              this.currentUser.addPoints(refund);
+              userModified = true;
+            }
+            FirestoreService.addLedgerEntry(this.currentUser.uid, {
+              id: "TX-EXP-" + Date.now() + "-" + Math.floor(Math.random() * 1000),
+              type: "EXPIRED_PENALTY",
+              delta: refund,
+              balance_after: this.currentUser.wiredPoints,
+              ref_id: voucher.voucherCode,
+              note: `Caducidad por falta de pago (3 días): ${refund > 0 ? `+${refund} WP devueltos · ` : ''}-${penalty} WP retenidos de penalización en [${voucher.voucherCode}] por ${voucher.rewardTitle}`,
+              created_at: new Date().toISOString()
+            });
+          } else {
+            // Compra directa sin puntos vencida sin pagar: penalizar con 10 WP si el usuario tiene saldo
+            if (this.currentUser.wiredPoints >= 10) {
+              this.currentUser.deductPoints(10);
+              penalty = 10;
+              userModified = true;
+              FirestoreService.addLedgerEntry(this.currentUser.uid, {
+                id: "TX-EXP-" + Date.now() + "-" + Math.floor(Math.random() * 1000),
+                type: "EXPIRED_PENALTY",
+                delta: -10,
+                balance_after: this.currentUser.wiredPoints,
+                ref_id: voucher.voucherCode,
+                note: `Penalización por abandono de reserva no pagada (3 días): -10 WP en [${voucher.voucherCode}] por ${voucher.rewardTitle}`,
+                created_at: new Date().toISOString()
+              });
+            }
+          }
+
+          // Restaurar stock del artículo en catálogo (+1)
+          let reward = (this.catalog || []).find(r => r.id === voucher.rewardId);
+          if (!reward && voucher.rewardId) {
+            const rawReward = await FirestoreService.getReward(voucher.rewardId);
+            if (rawReward) reward = new RewardModel(rawReward);
+          }
+          if (reward) {
+            if (typeof reward.incrementStock === "function") reward.incrementStock();
+            else reward.stock = (reward.stock || 0) + 1;
+            await FirestoreService.saveReward(reward.toJSON());
+            catalogModified = true;
+          }
+
+          // Marcar vale como EXPIRED
+          voucher.markExpired(penalty);
+          await FirestoreService.saveVoucher(voucher.toJSON());
+        }
+      }
+    }
+
+    if (userModified) {
+      await FirestoreService.saveUser(this.currentUser.toJSON());
+    }
+    if (catalogModified) {
+      await this.refreshCatalog();
+    }
   }
 
   async login(phone, pin) {
@@ -88,6 +204,10 @@ export class CustomerViewModel {
     }
 
     this.currentUser = new UserModel(u);
+    if (this.currentUser.currency) {
+      this.preferredCurrency = this.currentUser.currency;
+      localStorage.setItem("melty_preferred_currency", this.preferredCurrency);
+    }
     localStorage.setItem("melty_client_uid", u.uid || uid);
     await this.refreshUserData();
     this.notify();
@@ -118,6 +238,7 @@ export class CustomerViewModel {
       pin: securityPin,
       wiredPoints: 0,
       lifetimePoints: 0,
+      currency: this.preferredCurrency || "USD",
       status: "ACTIVE"
     });
 
@@ -313,11 +434,19 @@ export class CustomerViewModel {
     }
 
     if (voucher.isDelivered()) {
-      throw new Error("Este vale ya fue despachado y entregado en mostrador. No puede ser cancelado.");
+      throw new Error("Este vale ya fue despachado y entregado. No puede ser cancelado.");
+    }
+
+    if (voucher.isPaidVoucher()) {
+      throw new Error("Este vale ya fue pagado en efectivo. Para coordinar reembolsos o cambios comunícate directamente con MeltyDeays.");
     }
 
     if (voucher.isCancelled()) {
       throw new Error("Este vale ya fue cancelado previamente.");
+    }
+
+    if (voucher.isExpired()) {
+      throw new Error("Este vale ya caducó al superar el plazo de 3 días para concretar el pago.");
     }
 
     const pointsToRefund = voucher.pointsSpent || 0;
