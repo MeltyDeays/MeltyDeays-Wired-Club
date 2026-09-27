@@ -65,6 +65,9 @@ document.addEventListener("DOMContentLoaded", () => {
   window.confirmRedeem = confirmRedeem;
   window.executeRedeem = executeRedeem;
   window.closeRedeemModal = closeRedeemModal;
+  window.onPointsSliderChange = onPointsSliderChange;
+  window.onPointsNumChange = onPointsNumChange;
+  window.setPointsPreset = setPointsPreset;
 
   window.showVoucherModal = showVoucherModal;
   window.closeVoucherModal = closeVoucherModal;
@@ -205,13 +208,18 @@ function renderCatalog(catalog, user) {
       btnHtml = `<button class="btn-redeem out" disabled>❌ AGOTADO</button>`;
     } else if (!user) {
       btnHtml = `<button class="btn-redeem login-req" onclick="openAuthModal('login', 'Inicia sesión para canjear')">🔒 Iniciar Sesión</button>`;
+    } else if (isPartial) {
+      const userPts = user.wiredPoints || 0;
+      if (userPts > 0) {
+        btnHtml = `<button class="btn-redeem active-canje" style="background: linear-gradient(135deg, #d97706, #b45309);" onclick="confirmRedeem('${item.id}')">🏷️ APLICAR DESCUENTO</button>`;
+      } else {
+        btnHtml = `<button class="btn-redeem active-canje" style="background: linear-gradient(135deg, #0284c7, #0369a1);" onclick="confirmRedeem('${item.id}')">🛒 COMPRAR EN TIENDA</button>`;
+      }
     } else if (!canAfford) {
       const missing = item.pointsCost - user.wiredPoints;
       btnHtml = `<button class="btn-redeem locked" onclick="showToast('Te faltan ${missing.toLocaleString()} WP para este producto', 'info')">🔒 Faltan ${missing.toLocaleString()} WP</button>`;
     } else {
-      btnHtml = isPartial
-        ? `<button class="btn-redeem active-canje" style="background: linear-gradient(135deg, #d97706, #b45309);" onclick="confirmRedeem('${item.id}')">🏷️ APLICAR DESCUENTO</button>`
-        : `<button class="btn-redeem active-canje" onclick="confirmRedeem('${item.id}')">⚡ CANJEAR AHORA</button>`;
+      btnHtml = `<button class="btn-redeem active-canje" onclick="confirmRedeem('${item.id}')">⚡ CANJEAR AHORA</button>`;
     }
 
     const modeBadge = isPartial
@@ -222,18 +230,22 @@ function renderCatalog(catalog, user) {
       <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px; padding: 5px 8px; margin: 0.4rem 0; font-family: var(--font-mono); font-size: 0.72rem;">
         <div style="display: flex; justify-content: space-between; align-items: center; color: var(--gray-500);">
           <span>Precio oficial:</span>
-          <span style="text-decoration: line-through;">$${(item.priceUsd || 0).toFixed(2)} USD</span>
+          <span>$${(item.priceUsd || 0).toFixed(2)} USD</span>
         </div>
         <div style="display: flex; justify-content: space-between; align-items: center; color: #059669; font-weight: 800;">
-          <span>Ahorro en puntos:</span>
-          <span>-$${(item.maxDiscountUsd || 0).toFixed(2)} USD</span>
+          <span>Descuento tope en WP:</span>
+          <span>Hasta -$${(item.maxDiscountUsd || 0).toFixed(2)} USD</span>
         </div>
         <div style="display: flex; justify-content: space-between; align-items: center; color: var(--dark); font-weight: 900; margin-top: 2px; border-top: 1px dashed #cbd5e1; padding-top: 3px;">
-          <span>Pagas en tienda:</span>
+          <span>Pagas en tienda (con tope):</span>
           <span style="color: #dc2626; font-size: 0.85rem;">$${(item.cashToPayUsd || 0).toFixed(2)} USD</span>
         </div>
       </div>
     ` : "";
+
+    const costDisplay = isPartial
+      ? `<div class="reward-cost" style="color: #b45309; font-size: 0.92rem;">${item.pointsCost.toLocaleString()} <span style="font-size: 0.65rem; color: #d97706; font-weight: 800;">WP (TOPE)</span></div>`
+      : `<div class="reward-cost">${item.pointsCost.toLocaleString()} <span>WP</span></div>`;
 
     return `
       <div class="reward-card">
@@ -250,7 +262,7 @@ function renderCatalog(catalog, user) {
           <div class="reward-desc">${item.description || (isPartial ? 'Producto comercial con descuento tope en Wired Points.' : 'Recompensa oficial MeltyDeays.')}</div>
           ${partialBreakdown}
           <div class="reward-footer">
-            <div class="reward-cost">${item.pointsCost.toLocaleString()} <span>WP</span></div>
+            ${costDisplay}
             ${btnHtml}
           </div>
         </div>
@@ -304,11 +316,14 @@ function renderVouchers(vouchers) {
             <div class="voucher-code" style="font-family:var(--font-mono); font-size:1.35rem; font-weight:900; letter-spacing:2px; color:var(--dark); margin:0.35rem 0;">${v.voucherCode}</div>
             ${(v.cashToPayUsd && v.cashToPayUsd > 0) ? `
               <div style="background:#fffbeb; border:1px solid #fcd34d; border-radius:3px; padding:3px 6px; font-family:var(--font-mono); font-size:0.72rem; color:#92400e; margin: 4px 0;">
-                🏷️ Descuento: -$${(v.discountUsd || 0).toFixed(2)} USD · <strong style="color:#dc2626;">Pagar: $${(v.cashToPayUsd || 0).toFixed(2)} USD</strong>
+                ${(v.discountUsd && v.discountUsd > 0)
+                  ? `🏷️ Descuento: -$${(v.discountUsd || 0).toFixed(2)} USD · <strong style="color:#dc2626;">Pagar: $${(v.cashToPayUsd || 0).toFixed(2)} USD</strong>`
+                  : `🛒 Compra en tienda · <strong style="color:#dc2626;">Pagar: $${(v.cashToPayUsd || 0).toFixed(2)} USD</strong>`
+                }
               </div>
             ` : ''}
             <div class="voucher-meta" style="display:flex; justify-content:space-between; align-items:center; font-family:var(--font-mono); font-size:0.75rem; color:var(--gray-600); border-top:1px dashed var(--gray-300); padding-top:0.6rem; margin-top:0.6rem;">
-              <div>Costo: <strong style="color:var(--dark);">${cost.toLocaleString()} WP</strong></div>
+              <div>Puntos: <strong style="color:var(--dark);">${cost > 0 ? cost.toLocaleString() + ' WP' : '0 WP (Sin desc.)'}</strong></div>
               <div>${dateStr}</div>
               <button class="btn-secondary" style="padding:2px 7px; font-size:0.7rem;" onclick="event.stopPropagation(); showVoucherModal('${v.voucherCode}')">👁️ Ver QR</button>
             </div>
@@ -556,6 +571,10 @@ async function claimFromBanner() {
   }
 }
 
+let selectedRewardId = null;
+let selectedPointsToApply = 0;
+let currentRedeemReward = null;
+
 function confirmRedeem(rewardId) {
   if (!vm.currentUser) {
     openAuthModal("login", "Inicia sesión para canjear recompensas con tus Wired Points.");
@@ -565,12 +584,16 @@ function confirmRedeem(rewardId) {
   const reward = vm.catalog.find(r => r.id === rewardId);
   if (!reward) return;
 
-  if (vm.currentUser.wiredPoints < reward.pointsCost) {
+  const isPartial = reward.rewardType === "PARTIAL_DISCOUNT" || (typeof reward.isPartialDiscount === "function" && reward.isPartialDiscount()) || (reward.cashToPayUsd && reward.cashToPayUsd > 0);
+
+  // Si es canje 100% gratuito en puntos, sí bloquea si no tiene saldo suficiente
+  if (!isPartial && vm.currentUser.wiredPoints < reward.pointsCost) {
     showToast(`Puntos insuficientes. Requieres ${reward.pointsCost.toLocaleString()} WP (tienes ${vm.currentUser.wiredPoints.toLocaleString()} WP).`, "error");
     return;
   }
 
   selectedRewardId = rewardId;
+  currentRedeemReward = reward;
 
   // Llenar datos de la recompensa
   const titleEl = document.getElementById("confirm-reward-title");
@@ -579,7 +602,12 @@ function confirmRedeem(rewardId) {
   const fallbackEl = document.getElementById("confirm-reward-fallback");
 
   if (titleEl) titleEl.textContent = reward.title;
-  if (ptsEl) ptsEl.textContent = reward.pointsCost.toLocaleString() + " WP";
+  if (ptsEl) {
+    ptsEl.textContent = isPartial ? `Tope: ${reward.pointsCost.toLocaleString()} WP` : `${reward.pointsCost.toLocaleString()} WP`;
+    ptsEl.style.background = isPartial ? "#fef3c7" : "#e0e7ff";
+    ptsEl.style.color = isPartial ? "#92400e" : "#4338ca";
+    ptsEl.style.borderColor = isPartial ? "#fcd34d" : "#c7d2fe";
+  }
 
   if (reward.imageUrl && imgEl) {
     imgEl.src = reward.imageUrl;
@@ -587,47 +615,71 @@ function confirmRedeem(rewardId) {
     if (fallbackEl) fallbackEl.style.display = "none";
   } else {
     if (imgEl) imgEl.style.display = "none";
-    if (fallbackEl) fallbackEl.style.display = "block";
+    if (fallbackEl) {
+      fallbackEl.textContent = isPartial ? "🏷️" : "🎁";
+      fallbackEl.style.display = "block";
+    }
   }
 
-  // Previsualización de balance
-  const currentPts = vm.currentUser.wiredPoints || 0;
-  const deductPts = reward.pointsCost || 0;
-  const afterPts = Math.max(0, currentPts - deductPts);
+  // Previsualización y configuración de puntos a aplicar
+  const userPts = vm.currentUser.wiredPoints || 0;
+  const maxCapPts = reward.pointsCost || 0;
+  const maxUsablePts = Math.min(userPts, maxCapPts);
 
-  const curEl = document.getElementById("confirm-balance-current");
-  const dedEl = document.getElementById("confirm-balance-deduct");
-  const aftEl = document.getElementById("confirm-balance-after");
+  // Por defecto se aplica el máximo posible hasta el tope
+  selectedPointsToApply = isPartial ? maxUsablePts : maxCapPts;
 
-  if (curEl) curEl.textContent = currentPts.toLocaleString() + " WP";
-  if (dedEl) dedEl.textContent = `-${deductPts.toLocaleString()} WP`;
-  if (aftEl) aftEl.textContent = afterPts.toLocaleString() + " WP";
-
-  // Mostrar u ocultar callout de venta topada en el modal de confirmación
-  const isPartial = reward.rewardType === "PARTIAL_DISCOUNT" || (reward.cashToPayUsd && reward.cashToPayUsd > 0);
   const typeCallout = document.getElementById("confirm-type-callout");
   const typePct = document.getElementById("confirm-type-pct");
-  const typeDisc = document.getElementById("confirm-type-discount");
-  const typeCash = document.getElementById("confirm-type-cash");
-  const doRedeemBtn = document.getElementById("btn-do-redeem");
+  const typePrice = document.getElementById("confirm-type-price");
+  const typeMaxDisc = document.getElementById("confirm-type-max-disc");
+  const slider = document.getElementById("confirm-points-slider");
+  const numInput = document.getElementById("confirm-points-num");
+  const maxBadge = document.getElementById("confirm-points-max-badge");
+  const zeroNote = document.getElementById("confirm-zero-pts-note");
+  const controlsWrap = document.getElementById("confirm-points-controls-wrap");
 
   if (typeCallout) {
     if (isPartial) {
       typeCallout.style.display = "block";
       if (typePct) typePct.textContent = `${reward.maxDiscountPct || 5}%`;
-      if (typeDisc) typeDisc.textContent = `-$${(reward.maxDiscountUsd || 0).toFixed(2)} USD`;
-      if (typeCash) typeCash.textContent = `$${(reward.cashToPayUsd || 0).toFixed(2)} USD`;
-      if (doRedeemBtn) doRedeemBtn.textContent = `🏷️ CANJEAR VALE DE DESCUENTO (-$${(reward.maxDiscountUsd || 0).toFixed(2)})`;
+      if (typePrice) typePrice.textContent = `$${(reward.priceUsd || 0).toFixed(2)} USD`;
+      if (typeMaxDisc) typeMaxDisc.textContent = `-$${(reward.maxDiscountUsd || 0).toFixed(2)} USD (${maxCapPts.toLocaleString()} WP)`;
+
+      if (controlsWrap) {
+        controlsWrap.style.display = (userPts > 0) ? "block" : "none";
+      }
+      if (zeroNote) {
+        zeroNote.style.display = (userPts <= 0) ? "block" : "none";
+      }
+
+      if (slider) {
+        slider.min = "0";
+        slider.max = String(maxUsablePts);
+        slider.value = String(selectedPointsToApply);
+        slider.disabled = (maxUsablePts === 0);
+      }
+      if (numInput) {
+        numInput.min = "0";
+        numInput.max = String(maxUsablePts);
+        numInput.value = String(selectedPointsToApply);
+        numInput.disabled = (maxUsablePts === 0);
+      }
+      if (maxBadge) {
+        maxBadge.textContent = `${maxUsablePts.toLocaleString()} WP`;
+      }
     } else {
       typeCallout.style.display = "none";
-      if (doRedeemBtn) doRedeemBtn.textContent = `⚡ AUTORIZAR CANJE WIRED`;
     }
   }
+
+  // Recalcular balance y textos según selectedPointsToApply
+  updateConfirmCalculation();
 
   const warrantyEl = document.getElementById("confirm-warranty-notice");
   if (warrantyEl) {
     if (isPartial) {
-      warrantyEl.innerHTML = `🛡️ <strong>GARANTÍA COMERCIAL (30 DÍAS):</strong> Este producto de venta cuenta con garantía técnica de fábrica respaldada por el abono de $${(reward.cashToPayUsd || 0).toFixed(2)} USD a pagar en tienda.`;
+      warrantyEl.innerHTML = `🛡️ <strong>GARANTÍA COMERCIAL (30 DÍAS):</strong> Este producto de venta cuenta con garantía técnica de fábrica respaldada por el abono de dinero a pagar en tienda.`;
       warrantyEl.style.borderColor = "#fcd34d";
       warrantyEl.style.background = "#fffbeb";
       warrantyEl.style.color = "#78350f";
@@ -643,8 +695,105 @@ function confirmRedeem(rewardId) {
   if (modal) modal.style.display = "flex";
 }
 
+function updateConfirmCalculation() {
+  if (!currentRedeemReward) return;
+  const reward = currentRedeemReward;
+  const isPartial = reward.rewardType === "PARTIAL_DISCOUNT" || (typeof reward.isPartialDiscount === "function" && reward.isPartialDiscount()) || (reward.cashToPayUsd && reward.cashToPayUsd > 0);
+  const userPts = vm.currentUser ? (vm.currentUser.wiredPoints || 0) : 0;
+
+  let deductPts = 0;
+  let discountUsd = 0;
+  let cashToPayUsd = reward.priceUsd || 0;
+
+  if (isPartial) {
+    const maxCapPts = reward.pointsCost || 0;
+    const maxUsablePts = Math.min(userPts, maxCapPts);
+    deductPts = Math.max(0, Math.min(selectedPointsToApply, maxUsablePts));
+
+    const usdPerPoint = (maxCapPts > 0 && reward.maxDiscountUsd > 0)
+      ? (reward.maxDiscountUsd / maxCapPts)
+      : 0;
+
+    discountUsd = Number(Math.min(reward.maxDiscountUsd || 0, deductPts * usdPerPoint).toFixed(2));
+    cashToPayUsd = Math.max(0, Number(((reward.priceUsd || 0) - discountUsd).toFixed(2)));
+
+    const typeDisc = document.getElementById("confirm-type-discount");
+    const typeCash = document.getElementById("confirm-type-cash");
+    const ptsAppliedNotice = document.getElementById("confirm-pts-applied-notice");
+    if (typeDisc) typeDisc.textContent = `-$${discountUsd.toFixed(2)} USD`;
+    if (typeCash) typeCash.textContent = `$${cashToPayUsd.toFixed(2)} USD`;
+    if (ptsAppliedNotice) ptsAppliedNotice.textContent = `${deductPts.toLocaleString()} WP aplicados`;
+
+    const doRedeemBtn = document.getElementById("btn-do-redeem");
+    if (doRedeemBtn) {
+      if (deductPts > 0) {
+        doRedeemBtn.textContent = `🏷️ CANJEAR VALE DE DESCUENTO (-$${discountUsd.toFixed(2)})`;
+      } else {
+        doRedeemBtn.textContent = `🛒 GENERAR VALE DE COMPRA ($${cashToPayUsd.toFixed(2)})`;
+      }
+    }
+  } else {
+    deductPts = reward.pointsCost || 0;
+    discountUsd = reward.priceUsd || 0;
+    cashToPayUsd = 0;
+    const doRedeemBtn = document.getElementById("btn-do-redeem");
+    if (doRedeemBtn) doRedeemBtn.textContent = `⚡ AUTORIZAR CANJE WIRED`;
+  }
+
+  const afterPts = Math.max(0, userPts - deductPts);
+
+  const curEl = document.getElementById("confirm-balance-current");
+  const dedEl = document.getElementById("confirm-balance-deduct");
+  const aftEl = document.getElementById("confirm-balance-after");
+
+  if (curEl) curEl.textContent = `${userPts.toLocaleString()} WP`;
+  if (dedEl) dedEl.textContent = `-${deductPts.toLocaleString()} WP`;
+  if (aftEl) aftEl.textContent = `${afterPts.toLocaleString()} WP`;
+}
+
+function onPointsSliderChange(val) {
+  const pts = parseInt(val, 10) || 0;
+  selectedPointsToApply = pts;
+  const numInput = document.getElementById("confirm-points-num");
+  if (numInput) numInput.value = pts;
+  updateConfirmCalculation();
+}
+
+function onPointsNumChange(val) {
+  let pts = parseInt(val, 10);
+  if (isNaN(pts)) pts = 0;
+  const maxCapPts = currentRedeemReward ? (currentRedeemReward.pointsCost || 0) : 0;
+  const userPts = vm.currentUser ? (vm.currentUser.wiredPoints || 0) : 0;
+  const maxUsablePts = Math.min(userPts, maxCapPts);
+  pts = Math.max(0, Math.min(pts, maxUsablePts));
+  selectedPointsToApply = pts;
+  const slider = document.getElementById("confirm-points-slider");
+  if (slider) slider.value = pts;
+  updateConfirmCalculation();
+}
+
+function setPointsPreset(mode) {
+  if (!currentRedeemReward) return;
+  const maxCapPts = currentRedeemReward.pointsCost || 0;
+  const userPts = vm.currentUser ? (vm.currentUser.wiredPoints || 0) : 0;
+  const maxUsablePts = Math.min(userPts, maxCapPts);
+
+  if (mode === 'max') {
+    selectedPointsToApply = maxUsablePts;
+  } else if (mode === 'zero') {
+    selectedPointsToApply = 0;
+  }
+  const slider = document.getElementById("confirm-points-slider");
+  const numInput = document.getElementById("confirm-points-num");
+  if (slider) slider.value = selectedPointsToApply;
+  if (numInput) numInput.value = selectedPointsToApply;
+  updateConfirmCalculation();
+}
+
 function closeRedeemModal() {
   selectedRewardId = null;
+  currentRedeemReward = null;
+  selectedPointsToApply = 0;
   const modal = document.getElementById("modal-confirm-redeem");
   if (modal) modal.style.display = "none";
 }
@@ -664,12 +813,14 @@ async function executeRedeem() {
     playCyberArpeggio();
 
     // 2. Ejecutar canje atómico
-    const res = await vm.redeemReward(selectedRewardId);
+    const res = await vm.redeemReward(selectedRewardId, selectedPointsToApply);
     const voucher = res.voucher || res;
-    const cost = res.cost || (voucher ? voucher.pointsSpent : 0);
+    const cost = res.cost !== undefined ? res.cost : (voucher ? voucher.pointsSpent : 0);
 
-    // 3. Animación de decremento numérico y badge flotante en CyberPass
-    animatePointsDeduction(cost);
+    // 3. Animación de decremento numérico y badge flotante en CyberPass si gastó puntos
+    if (cost > 0) {
+      animatePointsDeduction(cost);
+    }
 
     // 4. Animación de celebración en pantalla
     triggerCyberGlitchCelebration();
@@ -678,7 +829,13 @@ async function executeRedeem() {
     closeRedeemModal();
 
     // 6. Toast temático
-    showToast(`⚡ ¡Canje Autorizado! Vale emitido: ${voucher.voucherCode}`, "success");
+    if (voucher.discountUsd > 0) {
+      showToast(`🏷️ ¡Vale con descuento emitido! Ahorro: -$${voucher.discountUsd.toFixed(2)} USD`, "success");
+    } else if (voucher.cashToPayUsd > 0) {
+      showToast(`🛒 ¡Vale de compra emitido! Paga en tienda: $${voucher.cashToPayUsd.toFixed(2)} USD`, "success");
+    } else {
+      showToast(`⚡ ¡Canje Autorizado! Vale emitido: ${voucher.voucherCode}`, "success");
+    }
 
     // 7. Abrir modal del vale con animación
     setTimeout(() => {
@@ -748,16 +905,25 @@ function showVoucherModal(voucherCode) {
     }
     if (instructionsBox) {
       instructionsBox.style.display = "block";
-      instructionsBox.innerHTML = isPartial
-        ? `📌 <strong>Vale de Descuento:</strong> Muestra este QR en mostrador para aplicar tu descuento de -$${(voucher.discountUsd || 0).toFixed(2)} USD. Saldo restante a abonar en efectivo: <strong>$${(voucher.cashToPayUsd || 0).toFixed(2)} USD</strong>.<div style="margin-top:4px; font-size:0.68rem; color:#78350f; font-family:var(--font-mono);">🛡️ Garantía técnica de 30 días amparada por el abono en efectivo en tienda.</div>`
-        : `📌 <strong>Instrucciones:</strong> Muestra este código QR en mostrador o envíalo por WhatsApp a MeltyDeays para apartar tu producto 100% gratis.<div style="margin-top:4px; font-size:0.68rem; color:#64748b; font-family:var(--font-mono);">🛡️ Premio gratuito por fidelidad: Se entrega probado en tienda. Exento de garantía técnica posterior de 30 días.</div>`;
+      if (isPartial) {
+        instructionsBox.innerHTML = (voucher.discountUsd > 0)
+          ? `📌 <strong>Vale de Descuento:</strong> Muestra este QR en mostrador para aplicar tu descuento de -$${(voucher.discountUsd || 0).toFixed(2)} USD. Saldo restante a abonar en efectivo: <strong>$${(voucher.cashToPayUsd || 0).toFixed(2)} USD</strong>.<div style="margin-top:4px; font-size:0.68rem; color:#78350f; font-family:var(--font-mono);">🛡️ Garantía técnica de 30 días amparada por el abono en efectivo en tienda.</div>`
+          : `📌 <strong>Vale de Compra en Mostrador:</strong> Muestra este QR en mostrador para retirar tu producto al precio oficial de <strong>$${(voucher.cashToPayUsd || 0).toFixed(2)} USD</strong>.<div style="margin-top:4px; font-size:0.68rem; color:#78350f; font-family:var(--font-mono);">🛡️ Garantía técnica de 30 días amparada por la compra en tienda.</div>`;
+      } else {
+        instructionsBox.innerHTML = `📌 <strong>Instrucciones:</strong> Muestra este código QR en mostrador o envíalo por WhatsApp a MeltyDeays para apartar tu producto 100% gratis.<div style="margin-top:4px; font-size:0.68rem; color:#64748b; font-family:var(--font-mono);">🛡️ Premio gratuito por fidelidad: Se entrega probado en tienda. Exento de garantía técnica posterior de 30 días.</div>`;
+      }
     }
     if (waBtn) {
       waBtn.style.display = "flex";
       const phone = "50588888888";
-      const textMsg = isPartial
-        ? encodeURIComponent(`Hola MeltyDeays! He generado mi vale [${voucher.voucherCode}] con descuento de -$${(voucher.discountUsd || 0).toFixed(2)} USD en "${voucher.rewardTitle}". Saldo a pagar en tienda: $${(voucher.cashToPayUsd || 0).toFixed(2)} USD. Mi nombre es ${voucher.userName || "Cliente"}.`)
-        : encodeURIComponent(`Hola MeltyDeays! He canjeado mi vale [${voucher.voucherCode}] por "${voucher.rewardTitle}". Mi nombre es ${voucher.userName || "Cliente"}.`);
+      let textMsg = "";
+      if (isPartial) {
+        textMsg = (voucher.discountUsd > 0)
+          ? encodeURIComponent(`Hola MeltyDeays! He generado mi vale [${voucher.voucherCode}] con descuento de -$${(voucher.discountUsd || 0).toFixed(2)} USD en "${voucher.rewardTitle}". Saldo a pagar en tienda: $${(voucher.cashToPayUsd || 0).toFixed(2)} USD. Mi nombre es ${voucher.userName || "Cliente"}.`)
+          : encodeURIComponent(`Hola MeltyDeays! He generado mi vale de compra [${voucher.voucherCode}] para "${voucher.rewardTitle}". Saldo a pagar en tienda: $${(voucher.cashToPayUsd || 0).toFixed(2)} USD. Mi nombre es ${voucher.userName || "Cliente"}.`);
+      } else {
+        textMsg = encodeURIComponent(`Hola MeltyDeays! He canjeado mi vale [${voucher.voucherCode}] por "${voucher.rewardTitle}". Mi nombre es ${voucher.userName || "Cliente"}.`);
+      }
       waBtn.href = `https://wa.me/${phone}?text=${textMsg}`;
     }
     if (deliveredBanner) deliveredBanner.style.display = "none";
@@ -770,7 +936,7 @@ function showVoucherModal(voucherCode) {
     }
     if (subtitleEl) {
       subtitleEl.textContent = isPartial
-        ? "Vale de descuento comercial para canje físico en mostrador."
+        ? ((voucher.discountUsd > 0) ? "Vale de descuento comercial para canje físico en mostrador." : "Vale de compra y retiro de producto en tienda MeltyDeays.")
         : "Válido para reclamo de producto físico en tienda MeltyDeays.";
     }
     if (closeBtn) closeBtn.textContent = "✓ Entendido / Cerrar Vale";

@@ -184,7 +184,7 @@ export class CustomerViewModel {
     return { success: true, pointsAdded: token.pointsValue, newBalance: this.currentUser.wiredPoints };
   }
 
-  async redeemReward(rewardId) {
+  async redeemReward(rewardId, pointsToApply = null) {
     if (!this.currentUser) {
       throw new Error("Debes iniciar sesión para canjear recompensas.");
     }
@@ -193,25 +193,54 @@ export class CustomerViewModel {
     if (!reward) throw new Error("Recompensa no encontrada.");
     if (!reward.isAvailable()) throw new Error("Producto temporalmente agotado.");
 
-    if (!this.currentUser.hasEnoughPoints(reward.pointsCost)) {
-      throw new Error("Puntos insuficientes. Requieres " + reward.pointsCost + " WP.");
+    const isPartial = reward.rewardType === "PARTIAL_DISCOUNT" || (typeof reward.isPartialDiscount === "function" && reward.isPartialDiscount());
+
+    let pointsSpent = 0;
+    let discountUsd = 0;
+    let cashToPayUsd = reward.priceUsd || 0;
+
+    if (isPartial) {
+      const userPoints = Math.max(0, this.currentUser.wiredPoints || 0);
+      const maxCapPoints = reward.pointsCost || 0;
+      const maxUsable = Math.min(userPoints, maxCapPoints);
+
+      if (pointsToApply !== null && pointsToApply !== undefined) {
+        pointsSpent = Math.max(0, Math.min(Number(pointsToApply), maxUsable));
+      } else {
+        pointsSpent = maxUsable;
+      }
+
+      const usdPerPoint = (maxCapPoints > 0 && reward.maxDiscountUsd > 0)
+        ? (reward.maxDiscountUsd / maxCapPoints)
+        : 0;
+
+      discountUsd = Number(Math.min(reward.maxDiscountUsd || 0, pointsSpent * usdPerPoint).toFixed(2));
+      cashToPayUsd = Math.max(0, Number(((reward.priceUsd || 0) - discountUsd).toFixed(2)));
+    } else {
+      if (!this.currentUser.hasEnoughPoints(reward.pointsCost)) {
+        throw new Error("Puntos insuficientes. Requieres " + reward.pointsCost + " WP.");
+      }
+      pointsSpent = reward.pointsCost;
+      discountUsd = reward.priceUsd || 0;
+      cashToPayUsd = 0;
     }
 
-    // Descontar puntos y stock
-    this.currentUser.deductPoints(reward.pointsCost);
+    // Descontar puntos únicamente si se gastaron
+    if (pointsSpent > 0) {
+      this.currentUser.deductPoints(pointsSpent);
+    }
     reward.decrementStock();
 
-    const isPartial = reward.isPartialDiscount && reward.isPartialDiscount();
     const voucher = new VoucherModel({
       userUid: this.currentUser.uid,
       userName: this.currentUser.displayName,
       rewardId: reward.id,
       rewardTitle: reward.title,
-      rewardType: reward.rewardType || "FREE_REWARD",
-      pointsSpent: reward.pointsCost,
+      rewardType: reward.rewardType || (isPartial ? "PARTIAL_DISCOUNT" : "FREE_REWARD"),
+      pointsSpent: pointsSpent,
       priceUsd: reward.priceUsd || 0,
-      discountUsd: reward.maxDiscountUsd || 0,
-      cashToPayUsd: reward.cashToPayUsd || 0
+      discountUsd: discountUsd,
+      cashToPayUsd: cashToPayUsd
     });
 
     await FirestoreService.saveUser(this.currentUser.toJSON());
@@ -219,20 +248,33 @@ export class CustomerViewModel {
     await FirestoreService.saveVoucher(voucher.toJSON());
 
     // Ledger
-    const noteText = isPartial
-      ? `Vale Descuento (-$${reward.maxDiscountUsd.toFixed(2)} USD) en ${reward.title} [Paga $${reward.cashToPayUsd.toFixed(2)} USD en mostrador]`
-      : `Canje 100% Gratis de ${reward.title}`;
+    if (pointsSpent > 0) {
+      const noteText = isPartial
+        ? `Vale Descuento (-$${discountUsd.toFixed(2)} USD usando ${pointsSpent} WP) en ${reward.title} [Paga $${cashToPayUsd.toFixed(2)} USD en mostrador]`
+        : `Canje 100% Gratis de ${reward.title}`;
 
-    const entry = {
-      id: "TX-" + Date.now(),
-      type: "DEBIT_REWARD",
-      delta: -reward.pointsCost,
-      balance_after: this.currentUser.wiredPoints,
-      ref_id: voucher.voucherCode,
-      note: noteText,
-      created_at: new Date().toISOString()
-    };
-    FirestoreService.addLedgerEntry(this.currentUser.uid, entry);
+      const entry = {
+        id: "TX-" + Date.now(),
+        type: "DEBIT_REWARD",
+        delta: -pointsSpent,
+        balance_after: this.currentUser.wiredPoints,
+        ref_id: voucher.voucherCode,
+        note: noteText,
+        created_at: new Date().toISOString()
+      };
+      FirestoreService.addLedgerEntry(this.currentUser.uid, entry);
+    } else {
+      const entry = {
+        id: "TX-" + Date.now(),
+        type: "PURCHASE_VOUCHER",
+        delta: 0,
+        balance_after: this.currentUser.wiredPoints,
+        ref_id: voucher.voucherCode,
+        note: `Vale de Compra Mostrador (Sin descuento en puntos) en ${reward.title} [Paga $${cashToPayUsd.toFixed(2)} USD en mostrador]`,
+        created_at: new Date().toISOString()
+      };
+      FirestoreService.addLedgerEntry(this.currentUser.uid, entry);
+    }
 
     await this.refreshUserData();
     await this.refreshCatalog();
@@ -241,7 +283,7 @@ export class CustomerViewModel {
     voucher.voucher = voucher;
     voucher.success = true;
     voucher.newBalance = this.currentUser.wiredPoints;
-    voucher.cost = reward.pointsCost;
+    voucher.cost = pointsSpent;
 
     return voucher;
   }
