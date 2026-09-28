@@ -207,22 +207,37 @@
       <!-- ÁREA DE ENTRADA DEL ESCÁNER -->
       <div class="pos-scanner-box">
         <div class="pos-input-group" id="pos-input-group-wrapper">
-          <div class="pos-input-prefix">⌕ VALE:</div>
-          <input type="text" id="input-scan-voucher" class="pos-scanner-input" placeholder="CANJE-XXXX o WP-XXXX o Escanea QR" maxlength="120"
+          <div class="pos-input-prefix">
+            <span class="pos-prefix-icon">⌕</span>
+            <span class="pos-prefix-text">VALE / QR:</span>
+          </div>
+          <input type="text" id="input-scan-voucher" class="pos-scanner-input" placeholder="CANJE-XXXX o WP-XXXX o Escanea QR..." maxlength="120"
+                 autocomplete="off" spellcheck="false"
                  onkeydown="if(event.key==='Enter') verifyVoucherAdmin()"
                  oninput="clearPosFeedback()">
-          <button class="btn-primary pos-btn-scan" onclick="verifyVoucherAdmin()">
-            ⚡ Validar Vale / Factura
-          </button>
-          <button type="button" class="btn-secondary" style="border-radius:0; border:none; border-left:1px solid #cbd5e1; padding:0 0.85rem;" onclick="startCameraScanner()" title="Escanear con Cámara">
-            📷
-          </button>
-          <button class="btn-secondary" style="border-radius:0; border:none; border-left:1px solid #cbd5e1; padding:0 0.85rem;" onclick="clearPosScanner()" title="Limpiar campo">
+          <button type="button" class="pos-tool-btn pos-btn-clear" onclick="clearPosScanner()" title="Limpiar campo">
             ✕
           </button>
-          <button type="button" class="btn-primary" style="border-radius:0; border:none; border-left:1.5px solid #065f46; background:linear-gradient(135deg, #059669, #047857); color:#fff; font-weight:800; padding:0 1rem; font-size:0.8rem; display:inline-flex; align-items:center; gap:5px;" onclick="openSingleDigitalInvoiceModal()" title="Emitir Factura Digital para venta casual">
-            🧾 + Factura
+          <button type="button" class="pos-tool-btn pos-btn-camera" onclick="startCameraScanner()" title="Escanear con Cámara">
+            <span class="pos-cam-icon">📷</span>
+            <span class="pos-cam-label">CÁMARA</span>
           </button>
+          <button class="pos-btn-scan" onclick="verifyVoucherAdmin()">
+            <span class="pos-scan-icon">⚡</span>
+            <span>VALIDAR CÓDIGO</span>
+            <span class="pos-scan-kbd">↵ Enter</span>
+          </button>
+        </div>
+
+        <div class="pos-scanner-helper-bar">
+          <div class="pos-helper-item">
+            <span class="pos-helper-dot"></span>
+            <span>Pistola lectora USB / Bluetooth lista: Escanea directo sin hacer clic</span>
+          </div>
+          <div class="pos-helper-item">
+            <span class="pos-helper-tag">OCC ENGINE</span>
+            <span>Validación atómica en tiempo real</span>
+          </div>
         </div>
 
         <!-- Feedback Visual Inline (Cero Alertas del Navegador) -->
