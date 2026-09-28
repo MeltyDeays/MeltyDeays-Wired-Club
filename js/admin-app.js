@@ -2304,7 +2304,49 @@ async function submitSingleDigitalInvoice(action = 'print') {
   const warrantyText = document.getElementById("s-inv-warranty-text")?.value.trim() || "30 DÍAS CALENDARIO (DEFECTOS DE FÁBRICA)";
   const notesText = document.getElementById("s-inv-notes-text")?.value.trim() || "";
 
-  showToast("Generando factura electrónica...", "info");
+  // ========================================================
+  // PREVISUALIZACIÓN AISLADA: NO TOCA BD, NO GUARDA, NO CONSUME FOLIO
+  // ========================================================
+  if (action === "preview") {
+    showToast("Generando previsualización sin guardar...", "info");
+    const mockPayload = {
+      folio,
+      date: dateStr,
+      time: timeStr,
+      clientName,
+      clientPhone,
+      paymentMethod,
+      currency,
+      items,
+      subtotal,
+      discount,
+      total,
+      pointsValue: pointsVal,
+      securityPin: pin,
+      warrantyText,
+      notes: notesText,
+      tokenCode: pointsVal > 0 ? ("WP-2026-F" + folio + "-PREVIEW") : null
+    };
+
+    const printDims = getSelectedPaperDimensions("preview");
+    const docHtml = InvoiceTemplateService.generateSingleDigitalInvoiceDocument(mockPayload, printDims);
+
+    const printWin = window.open("", "_blank");
+    if (printWin) {
+      printWin.document.open();
+      printWin.document.write(docHtml);
+      printWin.document.close();
+      showToast("👁️ Previsualización abierta en nueva ventana (NO se guardó en BD ni se consumió folio).", "info");
+    } else {
+      showToast("⚠️ Habilita ventanas emergentes para ver la previsualización.", "error");
+    }
+    return;
+  }
+
+  // ========================================================
+  // PERSISTENCIA EN BD: SOLO AL IMPRIMIR, ENVIAR WA O DESCARGAR
+  // ========================================================
+  showToast("Guardando factura en base de datos...", "info");
 
   try {
     const result = await vm.generateSingleDigitalInvoice({
@@ -2338,7 +2380,7 @@ async function submitSingleDigitalInvoice(action = 'print') {
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-      showToast(`📥 Factura #MD-2026-${result.invoicePayload.folio} descargada en tu dispositivo.`, "success");
+      showToast(`📥 Factura #MD-2026-${result.invoicePayload.folio} descargada y guardada en BD.`, "success");
     }
 
     const printWin = window.open("", "_blank");
@@ -2369,7 +2411,7 @@ async function submitSingleDigitalInvoice(action = 'print') {
     const statTokens = document.getElementById("stat-tokens-count");
     if (statTokens) statTokens.textContent = vm.tokens.length;
 
-    showToast(`✓ Factura #MD-2026-${result.invoicePayload.folio} generada y registrada en BD.`, "success");
+    showToast(`✓ Factura #MD-2026-${result.invoicePayload.folio} guardada exitosamente en BD.`, "success");
   } catch (err) {
     showToast("❌ " + err.message, "error");
   }

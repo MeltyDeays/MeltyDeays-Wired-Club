@@ -1818,21 +1818,28 @@ body {
   align-items: center;
   gap: 1rem;
   flex-wrap: wrap;
-  background: #ffffff;
-  border: 1.5px solid var(--dark);
+  background: #070b14;
+  border: 1.5px solid #1e293b;
   border-radius: 6px;
-  padding: 0.9rem 1.25rem;
+  padding: 1rem 1.35rem;
   margin-bottom: 1.5rem;
-  box-shadow: var(--hard-shadow-sm);
+  box-shadow: 3px 3px 0px #020617, 0 0 20px rgba(14, 165, 233, 0.08);
 }
 
 .generator-summary-tag {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
   font-size: 0.78rem;
-  color: var(--gray-700);
+  color: #94a3b8;
   font-family: var(--font-mono);
+}
+
+.generator-summary-tag strong,
+.generator-summary-tag .gen-tag-title {
+  color: #38bdf8;
+  font-weight: 900;
+  letter-spacing: 0.6px;
 }
 
 .generator-btn-group {
@@ -1840,6 +1847,161 @@ body {
   gap: 0.65rem;
   align-items: center;
   flex-wrap: wrap;
+}
+
+/* ========================================================
+   BOTONES COPLAND OS 21.0 - BARRA DE ACCIÓN GENERADOR
+   ======================================================== */
+.copland-bar-btn {
+  font-family: var(--font-mono);
+  font-weight: 800;
+  font-size: 0.78rem;
+  padding: 0.62rem 1.1rem;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  outline: none;
+  transition: all 0.16s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.copland-bar-btn:active {
+  transform: translate(2px, 2px) !important;
+  box-shadow: 1px 1px 0px rgba(0, 0, 0, 0.8) !important;
+}
+
+.copland-bar-btn-cyan {
+  background: linear-gradient(135deg, #070b14, #082f49);
+  border: 1.5px solid #38bdf8;
+  color: #38bdf8;
+  box-shadow: 2px 2px 0px #0284c7, 0 0 10px rgba(56, 189, 248, 0.2);
+}
+
+.copland-bar-btn-cyan:hover {
+  background: #38bdf8;
+  color: #070b14;
+  border-color: #ffffff;
+  box-shadow: 2px 2px 0px #070b14, 0 0 16px rgba(56, 189, 248, 0.7);
+  transform: translate(-1px, -1px);
+}
+
+.copland-bar-btn-indigo {
+  background: linear-gradient(135deg, #070b14, #1e1b4b);
+  border: 1.5px solid #818cf8;
+  color: #c7d2fe;
+  box-shadow: 2px 2px 0px #4338ca;
+}
+
+.copland-bar-btn-indigo:hover {
+  background: #818cf8;
+  color: #070b14;
+  border-color: #ffffff;
+  box-shadow: 2px 2px 0px #070b14, 0 0 14px rgba(129, 140, 248, 0.65);
+  transform: translate(-1px, -1px);
+}
+
+.copland-bar-btn-slate {
+  background: linear-gradient(135deg, #070b14, #1e293b);
+  border: 1.5px solid #64748b;
+  color: #e2e8f0;
+  box-shadow: 2px 2px 0px #334155;
+}
+
+.copland-bar-btn-slate:hover {
+  background: #cbd5e1;
+  color: #070b14;
+  border-color: #ffffff;
+  box-shadow: 2px 2px 0px #070b14;
+  transform: translate(-1px, -1px);
+}
+
+.copland-bar-btn-primary {
+  background: linear-gradient(135deg, #0284c7, #0369a1);
+  border: 1.5px solid #7dd3fc;
+  color: #ffffff;
+  box-shadow: 2px 2px 0px #075985;
+}
+
+.copland-bar-btn-primary:hover {
+  background: #38bdf8;
+  color: #070b14;
+  border-color: #ffffff;
+  box-shadow: 2px 2px 0px #0284c7, 0 0 16px rgba(56, 189, 248, 0.75);
+  transform: translate(-1px, -1px);
+}
+
+.copland-bar-btn-emerald {
+  background: linear-gradient(135deg, #070b14, #064e3b);
+  border: 1.5px solid #34d399;
+  color: #a7f3d0;
+  box-shadow: 2px 2px 0px #065f46;
+}
+
+.copland-bar-btn-emerald:hover {
+  background: #34d399;
+  color: #070b14;
+  border-color: #ffffff;
+  box-shadow: 2px 2px 0px #070b14, 0 0 14px rgba(52, 211, 153, 0.65);
+  transform: translate(-1px, -1px);
+}
+
+.copland-bar-btn-amber {
+  background: linear-gradient(135deg, #070b14, #451a03);
+  border: 1.5px solid #fbbf24;
+  color: #fef3c7;
+  box-shadow: 2px 2px 0px #b45309;
+}
+
+.copland-bar-btn-amber:hover {
+  background: #fbbf24;
+  color: #070b14;
+  border-color: #ffffff;
+  box-shadow: 2px 2px 0px #070b14, 0 0 14px rgba(251, 191, 36, 0.65);
+  transform: translate(-1px, -1px);
+}
+
+.copland-bar-btn-crimson {
+  background: linear-gradient(135deg, #1f050c, #4c0519);
+  border: 1.5px solid #f43f5e;
+  color: #ffe4e6;
+  box-shadow: 2px 2px 0px #9f1239;
+}
+
+.copland-bar-btn-crimson:hover {
+  background: #f43f5e;
+  color: #ffffff;
+  border-color: #ffffff;
+  box-shadow: 2px 2px 0px #070b14, 0 0 18px rgba(244, 63, 94, 0.8);
+  transform: translate(-1px, -1px);
+}
+
+.lain-nav-calc-btn {
+  font-family: var(--font-mono);
+  font-size: 0.73rem;
+  padding: 0.42rem 0.85rem;
+  background: linear-gradient(135deg, #070b14, #1e1b4b);
+  border: 1.5px solid #818cf8;
+  color: #c7d2fe;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  box-shadow: 2px 2px 0px #4338ca;
+  border-radius: 3px;
+  cursor: pointer;
+  letter-spacing: 0.5px;
+  transition: all 0.15s ease;
+}
+
+.lain-nav-calc-btn:hover {
+  background: #818cf8;
+  color: #070b14;
+  box-shadow: 2px 2px 0px #070b14, 0 0 14px rgba(129, 140, 248, 0.6);
+  transform: translateY(-1px);
 }
 
 /* MODAL DE PLIEGO 4X1 */

@@ -60,7 +60,7 @@
       <button type="button" class="btn-primary lain-nav-invoice-btn" onclick="openSingleDigitalInvoiceModal()">
         <span class="pulse-dot-cyan"></span> ⚡ + Factura Digital
       </button>
-      <button type="button" class="btn-secondary" style="font-size:0.75rem; padding:0.4rem 0.75rem; background: linear-gradient(135deg, #ecfdf5, #d1fae5); border: 1.5px solid #059669; color: #065f46; font-weight: 800; display: inline-flex; align-items: center; gap: 4px;" onclick="openSalePointsCalculatorModal('navbar')">
+      <button type="button" class="lain-nav-calc-btn" onclick="openSalePointsCalculatorModal('navbar')">
         🧮 Calc WP
       </button>
       <a href="/" target="_blank" class="btn-secondary" style="font-size:0.75rem; padding:0.4rem 0.75rem; text-decoration:none;">
@@ -647,32 +647,32 @@
         </div>
       </div>
 
-      <!-- BARRA DE ACCIÓN DEDICADA DEL GENERADOR (CERO SUPERPOSICIONES) -->
+      <!-- BARRA DE ACCIÓN DEDICADA DEL GENERADOR (COPLAND OS 21.0) -->
       <div class="generator-action-bar">
         <div class="generator-summary-tag">
-          <span style="font-weight: 800; color: var(--dark);">⚡ PRODUCCIÓN DE FACTURAS 4X1:</span>
+          <span class="gen-tag-title">⚡ PRODUCCIÓN DE FACTURAS 4X1 // SYSTEM CONTROL:</span>
           <span>Imprime facturas físicas con QR en blanco para activar en caja al momento de la venta.</span>
         </div>
         <div class="generator-btn-group">
-          <button class="btn-primary" style="font-size: 0.85rem; padding: 0.65rem 1.25rem; background: linear-gradient(135deg, #059669, #047857); border-color: #065f46; font-weight: 800; display: inline-flex; align-items: center; gap: 6px; box-shadow: 2px 2px 0px #065f46;" onclick="openSingleDigitalInvoiceModal()">
-            <span>🧾</span> + FACTURA DIGITAL INDIVIDUAL
+          <button type="button" class="copland-bar-btn copland-bar-btn-cyan" onclick="openSingleDigitalInvoiceModal()">
+            <span>⚡</span> + FACTURA DIGITAL INDIVIDUAL
           </button>
-          <button class="btn-secondary" style="font-size: 0.82rem; padding: 0.65rem 1rem; font-weight: 800; background: #ecfdf5; border-color: #059669; color: #065f46;" onclick="openSalePointsCalculatorModal('invoices')">
-            🧮 Calculadora de Puntos por Venta
+          <button type="button" class="copland-bar-btn copland-bar-btn-indigo" onclick="openSalePointsCalculatorModal('invoices')">
+            <span>🧮</span> CALCULADORA DE PUNTOS
           </button>
-          <button class="btn-secondary" id="btn-quick-preview-sheet" onclick="openPrintSheetModal()">
-            👁️ Previsualizar Facturas 4x1
+          <button type="button" class="copland-bar-btn copland-bar-btn-slate" id="btn-quick-preview-sheet" onclick="openPrintSheetModal()">
+            <span>👁️</span> PREVISUALIZAR 4X1
           </button>
-          <button class="btn-primary" onclick="generateBatchAdmin()" style="font-size: 0.85rem; padding: 0.65rem 1.25rem;">
-            ⚡ Generar Lote de Facturas
+          <button type="button" class="copland-bar-btn copland-bar-btn-primary" onclick="generateBatchAdmin()">
+            <span>⚡</span> GENERAR LOTE FACTURAS
           </button>
-          <button class="btn-secondary" id="btn-print-active-sheet" onclick="generateBatchAdmin()" style="font-size: 0.85rem; padding: 0.65rem 1.25rem;">
-            🖨️ Imprimir Facturas 4x1 (Doble Cara)
+          <button type="button" class="copland-bar-btn copland-bar-btn-emerald" id="btn-print-active-sheet" onclick="generateBatchAdmin()">
+            <span>🖨️</span> IMPRIMIR 4X1 (DOBLE CARA)
           </button>
-          <button class="btn-secondary" style="border-color: #f87171; background: #fff1f2; color: #b91c1c; font-weight: 800; font-size: 0.82rem; padding: 0.65rem 1rem; display: inline-flex; align-items: center; gap: 6px; box-shadow: 2px 2px 0px #b91c1c; transition: all 0.15s ease;" onclick="openPurgeModal()" title="Vaciar facturas de prueba en Firestore/Local y reiniciar correlativo a #0001">
+          <button type="button" class="copland-bar-btn copland-bar-btn-amber" onclick="openPurgeModal()" title="Vaciar facturas de prueba en Firestore/Local y reiniciar correlativo a #0001">
             <span>🗑️</span> RESETEAR FACTURAS
           </button>
-          <button class="btn-secondary" style="border-color: #dc2626; background: #450a0a; color: #fecaca; font-weight: 900; font-size: 0.82rem; padding: 0.65rem 1rem; display: inline-flex; align-items: center; gap: 6px; box-shadow: 2px 2px 0px #991b1b; transition: all 0.15s ease;" onclick="openPurgeAllDbModal()" title="Limpiar todos los datos de la base de datos (Socios, Vales, Facturas, Ledger) preservando solo el PIN del Admin">
+          <button type="button" class="copland-bar-btn copland-bar-btn-crimson" onclick="openPurgeAllDbModal()" title="Limpiar todos los datos de la base de datos (Socios, Vales, Facturas, Ledger) preservando solo el PIN del Admin">
             <span>💥</span> PURGAR TODA LA BD
           </button>
         </div>
@@ -995,17 +995,17 @@
         </button>
 
         <div class="copland-footer-btn-group">
-          <button type="button" class="copland-footer-btn copland-btn-preview" onclick="submitSingleDigitalInvoice('preview')">
-            👁️ Previsualizar
+          <button type="button" class="copland-footer-btn copland-btn-preview" onclick="submitSingleDigitalInvoice('preview')" title="Ver cómo queda la factura sin tocar la BD ni descontar folios">
+            👁️ Solo Previsualizar (Sin Guardar)
           </button>
-          <button type="button" class="copland-footer-btn copland-btn-whatsapp" onclick="submitSingleDigitalInvoice('whatsapp')">
-            📲 WhatsApp & Guardar
+          <button type="button" class="copland-footer-btn copland-btn-whatsapp" onclick="submitSingleDigitalInvoice('whatsapp')" title="Guardar factura en la BD y abrir chat de WhatsApp con el cliente">
+            📲 Enviar WhatsApp & Guardar en BD
           </button>
-          <button type="button" class="copland-footer-btn copland-btn-print" onclick="submitSingleDigitalInvoice('print')">
-            🖨️ Imprimir & Guardar
+          <button type="button" class="copland-footer-btn copland-btn-print" onclick="submitSingleDigitalInvoice('print')" title="Guardar factura en la BD y mandar a imprimir en navegador">
+            🖨️ Imprimir & Guardar en BD
           </button>
-          <button type="button" class="copland-footer-btn-primary" onclick="submitSingleDigitalInvoice('download')">
-            <span style="font-size:1rem;">⚡</span> DESCARGAR FACTURA (PDF/HTML)
+          <button type="button" class="copland-footer-btn-primary" onclick="submitSingleDigitalInvoice('download')" title="Guardar factura en la BD y descargar archivo HTML/PDF">
+            <span style="font-size:1rem;">⚡</span> Guardar en BD & Descargar
           </button>
         </div>
       </div>
