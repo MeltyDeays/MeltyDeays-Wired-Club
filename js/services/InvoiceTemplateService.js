@@ -1474,8 +1474,8 @@ export class InvoiceTemplateService {
             <tr>
               <th class="col-cant">CANT</th>
               <th class="col-desc">DESCRIPCIÓN DEL ARTÍCULO / PRODUCTO</th>
-              <th class="col-price">P. UNIT (${currSym})</th>
-              <th class="col-total">TOTAL (${currSym})</th>
+              <th class="col-price">P. UNIT</th>
+              <th class="col-total">TOTAL</th>
             </tr>
           </thead>
           <tbody class="table-body">
@@ -1586,16 +1586,56 @@ export class InvoiceTemplateService {
   }
 
   /**
+   * Genera el HTML de la Contraportada Coleccionable Lain para la Factura Digital Única
+   * @param {object} inv - Datos de la factura
+   */
+  static getSingleDigitalLainBackCardHtml(inv) {
+    const data = inv || {};
+    const formattedFolio = String(data.folio || "0001").padStart(4, "0");
+    const tok = {
+      tokenCode: data.tokenCode || ("WP-2026-F" + formattedFolio + "-DIGITAL"),
+      securityPin: data.securityPin || "4891",
+      invoiceFolio: formattedFolio,
+      pointsValue: Number(data.pointsValue || 0)
+    };
+    const folioNum = parseInt(data.folio, 10);
+    const templateIdx = isNaN(folioNum) ? 0 : (folioNum % 24);
+    let cardHtml = InvoiceTemplateService.getLainBackCardHtml(1, tok, "digital-back", templateIdx);
+    cardHtml = cardHtml.replace('class="lain-card"', 'class="lain-card single-page-lain-card"');
+
+    // Pre-llenar puntos digitales en la caja de lápiz si existen puntos acreditados
+    if (tok.pointsValue > 0) {
+      cardHtml = cardHtml.replace(
+        '<span class="pencil-guide-line"></span>',
+        `<span style="font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:900;color:#0f172a;line-height:22px;">${tok.pointsValue}</span>`
+      );
+    }
+
+    // Inyectar código QR directo de alta resolución en la caja de escaneo
+    const claimUrl = "https://meltydeays-wired-club.vercel.app/?claim=" + encodeURIComponent(tok.tokenCode);
+    const qrImgSrc = "https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=" + encodeURIComponent(claimUrl) + "&color=0f172a&bgcolor=ffffff";
+    cardHtml = cardHtml.replace(
+      'id="print-qr-digital-back"></div>',
+      `id="print-qr-digital-back"><img src="${qrImgSrc}" alt="QR Wired Points" style="width:100%;height:100%;object-fit:contain;display:block;"></div>`
+    );
+
+    return cardHtml;
+  }
+
+  /**
    * Genera el documento HTML completo e interactivo listo para imprimir o enviar en PDF
+   * Diseño oficial idéntico al talonario físico 4x1 de mostrador (con opción de ver anverso/reverso)
    * @param {object} invoiceData - Datos de la factura
    * @param {object} [paperDims] - Dimensiones del papel
+   * @param {boolean} [autoPrint=false] - Si se debe disparar la ventana de impresión automáticamente
    */
-  static generateSingleDigitalInvoiceDocument(invoiceData, paperDims) {
+  static generateSingleDigitalInvoiceDocument(invoiceData, paperDims, autoPrint = false) {
     const dims = paperDims || { name: 'Carta (Letter)', widthMm: 215.9, heightMm: 279.4, cssSize: 'letter portrait' };
     const inv = invoiceData || {};
     const formattedFolio = String(inv.folio || "0001").padStart(4, "0");
     const claimUrl = "https://meltydeays-wired-club.vercel.app/?claim=" + (inv.tokenCode || "");
     const singleHtml = InvoiceTemplateService.getSingleDigitalInvoiceHtml(inv);
+    const singleBackHtml = InvoiceTemplateService.getSingleDigitalLainBackCardHtml(inv);
 
     const styles = `
     ${InvoiceTemplateService.getComponentStyles(dims)}
@@ -1654,11 +1694,20 @@ export class InvoiceTemplateService {
       flex-wrap: wrap;
     }
 
+    .view-mode-group {
+      display: inline-flex;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      border-radius: 6px;
+      padding: 2px;
+      gap: 2px;
+    }
+
     .toolbar .btn {
       font-family: 'JetBrains Mono', monospace;
       font-size: 0.74rem;
       font-weight: 700;
-      padding: 6px 14px;
+      padding: 6px 12px;
       border-radius: 5px;
       cursor: pointer;
       display: inline-flex;
@@ -1667,6 +1716,25 @@ export class InvoiceTemplateService {
       transition: all 0.16s ease;
       outline: none;
       white-space: nowrap;
+      border: none;
+    }
+
+    .toolbar .btn-mode {
+      background: transparent;
+      color: #94a3b8;
+      padding: 5px 10px;
+    }
+
+    .toolbar .btn-mode:hover {
+      color: #ffffff;
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .toolbar .btn-mode.active {
+      background: #0284c7;
+      color: #ffffff;
+      font-weight: 800;
+      box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
     }
 
     .toolbar .btn-sec {
@@ -1711,282 +1779,808 @@ export class InvoiceTemplateService {
       transform: translateY(-1px);
     }
 
-    @media print {
-      .toolbar { display: none !important; }
-      body { background: #ffffff !important; }
-    }
-
     /* ========================================================
        ESTILOS EXCLUSIVOS DE LA FACTURA DIGITAL INDIVIDUAL (1 PÁGINA)
-       CONSISTENCIA 100% IDÉNTICA A LA FACTURA FÍSICA DE MOSTRADOR
+       CONSISTENCIA 100% IDÉNTICA AL TALONARIO FÍSICO 4X1
        ======================================================== */
     .single-digital-invoice-page {
       width: ${dims.widthMm}mm;
       min-height: ${dims.heightMm}mm;
-      margin: 18px auto;
+      margin: 20px auto;
       background: #ffffff;
-      box-shadow: 0 12px 35px rgba(0, 0, 0, 0.3);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
       box-sizing: border-box;
       position: relative;
     }
 
     .single-page-invoice {
-      height: auto !important;
-      min-height: ${dims.heightMm}mm !important;
       box-sizing: border-box !important;
-      padding: 0.38in 0.45in 0.32in 0.45in !important;
-      overflow: visible !important;
+      min-height: ${dims.heightMm}mm !important;
+      height: 100% !important;
+      padding: 0.35in 0.45in 0.30in 0.45in !important;
+      overflow: hidden !important;
       display: flex !important;
       flex-direction: column !important;
       justify-content: space-between !important;
-      border: 1.5px solid var(--dark);
-      background-color: #ffffff;
-      background-image: radial-gradient(#cbd5e1 0.75px, transparent 0.75px);
-      background-size: 8px 8px;
-      position: relative;
+      border: 1.5px solid #0f172a !important;
+      border-radius: 4px !important;
+      background-color: #ffffff !important;
+      background-image: radial-gradient(#cbd5e1 0.85px, transparent 0.85px) !important;
+      background-size: 8px 8px !important;
+      position: relative !important;
     }
 
-    /* Escalado armónico para 1 página completa */
+    /* ENCABEZADO */
+    .single-page-invoice .inv-header {
+      display: flex !important;
+      justify-content: space-between !important;
+      align-items: flex-start !important;
+      border-bottom: 2px solid #0f172a !important;
+      padding-bottom: 6px !important;
+      margin-bottom: 6px !important;
+      background: rgba(255, 255, 255, 0.94) !important;
+    }
     .single-page-invoice .brand-top-lockup {
-      gap: 12px !important;
+      gap: 10px !important;
     }
     .single-page-invoice .brand-badge-icon {
-      width: 56px !important;
-      height: 56px !important;
+      width: 52px !important;
+      height: 52px !important;
     }
-    .single-page-invoice .brand-word-melty,
-    .single-page-invoice .brand-word-deays {
-      font-size: 26px !important;
+    .single-page-invoice .brand-word-melty {
+      font-size: 24px !important;
+      font-weight: 900 !important;
       letter-spacing: -0.6px !important;
+      color: #0f172a !important;
+    }
+    .single-page-invoice .brand-word-deays {
+      font-size: 24px !important;
+      font-weight: 900 !important;
+      letter-spacing: -0.4px !important;
+      color: #db2777 !important;
     }
     .single-page-invoice .brand-pill-tag {
-      font-size: 8px !important;
-      padding: 2px 7px !important;
+      font-family: 'JetBrains Mono', monospace !important;
+      font-size: 7.5px !important;
+      font-weight: 800 !important;
+      letter-spacing: 0.6px !important;
+      background: #eef2ff !important;
+      color: #4338ca !important;
+      border: 1px solid #c7d2fe !important;
+      border-radius: 3px !important;
+      padding: 2px 6px !important;
+      line-height: 1 !important;
+      text-transform: uppercase !important;
     }
     .single-page-invoice .brand-kicker {
-      font-size: 9.5px !important;
-      letter-spacing: 1px !important;
+      font-family: 'JetBrains Mono', monospace !important;
+      font-size: 9px !important;
+      font-weight: 800 !important;
+      letter-spacing: 0.8px !important;
       color: #475569 !important;
+      text-transform: uppercase !important;
+      line-height: 1.1 !important;
     }
     .single-page-invoice .brand-subitems {
-      font-size: 8.8px !important;
+      font-size: 8.5px !important;
+      font-weight: 700 !important;
+      color: #4f46e5 !important;
+      line-height: 1.1 !important;
+    }
+
+    /* FOLIO Y FECHA */
+    .single-page-invoice .meta-boxes {
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: flex-end !important;
+      gap: 5px !important;
     }
     .single-page-invoice .folio-box {
-      padding: 3px 10px !important;
+      border: 1.5px solid #0f172a !important;
+      border-radius: 4px !important;
+      padding: 2.5px 8px !important;
+      background: #ffffff !important;
+      display: flex !important;
+      align-items: center !important;
+      gap: 6px !important;
+      box-shadow: 1px 1px 0px rgba(0,0,0,0.12) !important;
     }
     .single-page-invoice .folio-label {
-      font-size: 10px !important;
+      font-size: 10.5px !important;
+      font-weight: 800 !important;
+      color: #0f172a !important;
+      letter-spacing: 0.5px !important;
     }
     .single-page-invoice .folio-write-zone {
-      font-size: 14px !important;
-      min-width: 120px !important;
+      font-family: 'JetBrains Mono', monospace !important;
+      font-size: 13.5px !important;
+      font-weight: 900 !important;
+      color: #e11d48 !important;
+      min-width: 100px !important;
       height: 22px !important;
       line-height: 22px !important;
+      text-align: center !important;
+      border: 1.2px solid #e11d48 !important;
+      border-radius: 3px !important;
+      background: #fff1f2 !important;
+      padding: 0 8px !important;
+    }
+    .single-page-invoice .date-row {
+      display: flex !important;
+      align-items: center !important;
+      gap: 4px !important;
+      white-space: nowrap !important;
     }
     .single-page-invoice .date-label {
       font-size: 9.5px !important;
+      font-weight: 800 !important;
+      color: #1e293b !important;
+    }
+    .single-page-invoice .date-input-area {
+      display: flex !important;
+      align-items: center !important;
+      gap: 3px !important;
     }
     .single-page-invoice .date-slot {
+      font-family: 'JetBrains Mono', monospace !important;
       font-size: 11px !important;
+      font-weight: 700 !important;
+      border: 1.2px solid #94a3b8 !important;
+      border-radius: 3px !important;
       width: 26px !important;
       height: 20px !important;
       line-height: 20px !important;
+      text-align: center !important;
+      background: #ffffff !important;
+      color: #0f172a !important;
     }
     .single-page-invoice .date-slot.year {
       width: 44px !important;
     }
     .single-page-invoice .date-slot.time-slot {
-      width: 58px !important;
+      width: 82px !important;
+      white-space: nowrap !important;
     }
+    .single-page-invoice .date-sep {
+      font-size: 11px !important;
+      font-weight: 800 !important;
+      color: #94a3b8 !important;
+    }
+
+    /* BARRA DE CLIENTE Y PAGO */
     .single-page-invoice .client-bar {
+      display: flex !important;
+      justify-content: space-between !important;
+      align-items: center !important;
+      background: rgba(248, 250, 252, 0.95) !important;
+      border: 1.2px solid #cbd5e1 !important;
+      border-radius: 4px !important;
       padding: 6px 12px !important;
-      margin: 8px 0 10px 0 !important;
+      margin: 6px 0 8px 0 !important;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.04) !important;
+    }
+    .single-page-invoice .client-name-group {
+      display: flex !important;
+      align-items: baseline !important;
+      gap: 8px !important;
+      flex-grow: 1 !important;
+      margin-right: 16px !important;
     }
     .single-page-invoice .c-label {
       font-size: 10px !important;
+      font-weight: 900 !important;
+      color: #0f172a !important;
+      text-transform: uppercase !important;
+      letter-spacing: 0.5px !important;
     }
     .single-page-invoice .client-name {
-      font-size: 12.5px !important;
+      border-bottom: 1.5px solid #475569 !important;
+      flex-grow: 1 !important;
       height: 22px !important;
+      font-size: 12.5px !important;
+      font-weight: 700 !important;
       line-height: 22px !important;
+      padding: 0 6px !important;
+      color: #0f172a !important;
     }
     .single-page-invoice .payment-options {
-      font-size: 10px !important;
+      display: flex !important;
+      align-items: center !important;
       gap: 12px !important;
+      font-size: 10.5px !important;
+      font-weight: 700 !important;
+      color: #1e293b !important;
+      white-space: nowrap !important;
+    }
+    .single-page-invoice .pay-check {
+      display: flex !important;
+      align-items: center !important;
+      gap: 4px !important;
     }
     .single-page-invoice .box-square {
       width: 13px !important;
       height: 13px !important;
+      border: 1.5px solid #0f172a !important;
+      border-radius: 2px !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      background: #ffffff !important;
       font-size: 9.5px !important;
       line-height: 13px !important;
-      text-align: center;
-      font-weight: 900;
+      font-weight: 900 !important;
+      color: #0f172a !important;
     }
     .single-page-invoice .box-square.active-square {
-      background: var(--dark) !important;
+      background: #0f172a !important;
       color: #ffffff !important;
     }
+
+    /* TABLA DE ARTICULOS */
     .single-page-invoice .table-box {
-      margin: 6px 0 10px 0 !important;
+      margin: 8px 0 10px 0 !important;
       flex-grow: 1 !important;
+      display: flex !important;
+      flex-direction: column !important;
+    }
+    .single-page-invoice .items-table {
+      width: 100% !important;
+      border-collapse: collapse !important;
+      border: 1.5px solid #0f172a !important;
+      height: 100% !important;
+      background: #ffffff !important;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08) !important;
+      table-layout: fixed !important;
     }
     .single-page-invoice .items-table th {
-      font-size: 10px !important;
-      padding: 6px 8px !important;
+      background: #0f172a !important;
+      color: #ffffff !important;
+      font-size: 10.5px !important;
+      font-weight: 800 !important;
+      text-transform: uppercase !important;
+      letter-spacing: 0.5px !important;
+      padding: 7px 8px !important;
+      border-right: 1px solid #475569 !important;
+      border-bottom: 1.5px solid #0f172a !important;
+      height: 28px !important;
+    }
+    .single-page-invoice .items-table th:last-child {
+      border-right: none !important;
     }
     .single-page-invoice .items-table td {
-      font-size: 11.5px !important;
-      height: 28px !important;
-      padding: 4px 8px !important;
-    }
-    .single-page-invoice .col-cant { width: 55px !important; }
-    .single-page-invoice .col-price { width: 105px !important; }
-    .single-page-invoice .col-total { width: 115px !important; }
-    
-    .single-page-invoice .totals-area {
+      border: 1.2px solid #334155 !important;
       padding: 6px 10px !important;
-      margin: 8px 0 10px 0 !important;
+      font-size: 12px !important;
+      color: #0f172a !important;
+      vertical-align: middle !important;
+      height: 38px !important;
+    }
+    .single-page-invoice .items-table tbody tr:nth-child(even) td {
+      background: rgba(248, 250, 252, 0.94) !important;
+    }
+    .single-page-invoice .items-table tbody tr:nth-child(odd) td {
+      background: #ffffff !important;
+    }
+    .single-page-invoice .col-cant {
+      width: 55px !important;
+      text-align: center !important;
+      font-family: 'JetBrains Mono', monospace !important;
+      font-weight: 700 !important;
+    }
+    .single-page-invoice .col-desc {
+      text-align: left !important;
+      font-weight: 600 !important;
+    }
+    .single-page-invoice .col-price {
+      width: 105px !important;
+      text-align: right !important;
+      font-family: 'JetBrains Mono', monospace !important;
+      font-weight: 700 !important;
+    }
+    .single-page-invoice .col-total {
+      width: 115px !important;
+      text-align: right !important;
+      font-family: 'JetBrains Mono', monospace !important;
+      font-weight: 800 !important;
+    }
+
+    /* SECCION TOTALES */
+    .single-page-invoice .totals-area {
+      display: flex !important;
+      justify-content: space-between !important;
+      align-items: flex-end !important;
+      padding: 6px 10px !important;
+      margin: 6px 0 8px 0 !important;
       gap: 16px !important;
+      background: rgba(255, 255, 255, 0.85) !important;
+      border-radius: 4px !important;
     }
     .single-page-invoice .thanks-title {
-      font-size: 11px !important;
-      font-weight: 800;
-      color: var(--primary);
+      font-family: 'Caveat', cursive, sans-serif !important;
+      font-size: 16px !important;
+      font-weight: 700 !important;
+      color: #4f46e5 !important;
+      font-style: italic !important;
+      line-height: 1.2 !important;
     }
     .single-page-invoice .thanks-conversion {
-      font-family: var(--font-mono);
-      font-size: 9.5px;
-      color: var(--gray-700);
-      margin-top: 3px;
+      font-family: 'JetBrains Mono', monospace !important;
+      font-size: 9.5px !important;
+      color: #475569 !important;
+      margin-top: 3px !important;
     }
     .single-page-invoice .thanks-wired-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      background: #eef2ff;
-      border: 1px solid #c7d2fe;
-      border-radius: 4px;
-      padding: 3px 8px;
-      margin-top: 5px;
-      font-family: var(--font-mono);
-      font-size: 9px;
-      color: #4338ca;
+      display: inline-flex !important;
+      align-items: center !important;
+      gap: 6px !important;
+      background: #eef2ff !important;
+      border: 1px solid #c7d2fe !important;
+      border-radius: 4px !important;
+      padding: 3px 8px !important;
+      margin-top: 5px !important;
+      font-family: 'JetBrains Mono', monospace !important;
+      font-size: 9px !important;
+      color: #4338ca !important;
     }
     .single-page-invoice .thanks-wired-badge code {
-      background: #ffffff;
-      padding: 1px 4px;
-      border-radius: 3px;
-      border: 1px solid #c7d2fe;
+      background: #ffffff !important;
+      padding: 1px 4px !important;
+      border-radius: 3px !important;
+      border: 1px solid #c7d2fe !important;
     }
     .single-page-invoice .totals-receipt {
       width: 220px !important;
       gap: 4px !important;
+      display: flex !important;
+      flex-direction: column !important;
+    }
+    .single-page-invoice .totals-row {
+      display: flex !important;
+      justify-content: space-between !important;
+      align-items: center !important;
+      line-height: 1.1 !important;
     }
     .single-page-invoice .t-label-text {
-      font-size: 10px !important;
+      font-size: 10.5px !important;
+      font-weight: 700 !important;
+      color: #1e293b !important;
     }
     .single-page-invoice .t-write-line {
-      width: 100px !important;
+      display: flex !important;
+      align-items: baseline !important;
+      border-bottom: 1.5px solid #94a3b8 !important;
+      width: 105px !important;
+      justify-content: flex-end !important;
+      padding-right: 2px !important;
+    }
+    .single-page-invoice .curr {
+      font-size: 9.5px !important;
+      font-weight: 800 !important;
+      color: #475569 !important;
+      margin-right: 3px !important;
     }
     .single-page-invoice .val-sub,
     .single-page-invoice .val-desc {
+      font-family: 'JetBrains Mono', monospace !important;
       font-size: 12px !important;
+      font-weight: 800 !important;
+      color: #0f172a !important;
     }
     .single-page-invoice .totals-row.final-total {
+      background: #ffffff !important;
+      color: #0f172a !important;
+      border: 2px solid #0f172a !important;
       padding: 5px 8px !important;
-      border-width: 2px !important;
+      border-radius: 4px !important;
+      margin-top: 2px !important;
       box-shadow: 2px 2px 0px rgba(0,0,0,0.15) !important;
     }
     .single-page-invoice .totals-row.final-total .t-label-text {
+      color: #0f172a !important;
       font-size: 11.5px !important;
+      font-weight: 900 !important;
+      letter-spacing: 0.5px !important;
     }
     .single-page-invoice .totals-row.final-total .t-write-line {
+      border-bottom: 2px solid #0f172a !important;
       width: 110px !important;
     }
-    .single-page-invoice .totals-row.final-total .val-tot {
-      font-size: 15px !important;
+    .single-page-invoice .totals-row.final-total .curr {
+      color: #0f172a !important;
+      font-size: 11px !important;
+      font-weight: 900 !important;
     }
+    .single-page-invoice .totals-row.final-total .val-tot {
+      color: #0f172a !important;
+      font-size: 15px !important;
+      font-weight: 900 !important;
+      font-family: 'JetBrains Mono', monospace !important;
+    }
+
+    /* GARANTIA */
     .single-page-invoice .warranty-card {
+      background: #fefce8 !important;
+      border: 1px solid #fef08a !important;
+      border-left: 3.5px solid #d97706 !important;
+      border-radius: 4px !important;
       padding: 7px 12px !important;
-      margin: 8px 0 10px 0 !important;
+      margin: 6px 0 8px 0 !important;
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 3px !important;
+      box-shadow: 0 1px 3px rgba(217, 119, 6, 0.08) !important;
+    }
+    .single-page-invoice .warranty-header-row {
+      display: flex !important;
+      justify-content: space-between !important;
+      align-items: center !important;
+      border-bottom: 1px dashed #f59e0b !important;
+      padding-bottom: 2px !important;
     }
     .single-page-invoice .w-title {
       font-size: 9px !important;
+      font-weight: 800 !important;
+      color: #b45309 !important;
+      text-transform: uppercase !important;
+      letter-spacing: 0.4px !important;
+    }
+    .single-page-invoice .w-period-box {
+      display: flex !important;
+      align-items: baseline !important;
+      gap: 4px !important;
+      background: #ffffff !important;
+      border: 1px solid #d97706 !important;
+      border-radius: 3px !important;
+      padding: 1px 6px !important;
     }
     .single-page-invoice .w-period-label {
       font-size: 8px !important;
+      font-weight: 800 !important;
+      color: #92400e !important;
+      text-transform: uppercase !important;
     }
     .single-page-invoice .w-period-write {
-      font-size: 10.5px !important;
+      font-family: 'JetBrains Mono', monospace !important;
+      font-size: 10px !important;
+      font-weight: 800 !important;
+      color: #b45309 !important;
       min-width: 80px !important;
-      line-height: 15px !important;
+      text-align: center !important;
+      border-bottom: 1px solid #d97706 !important;
+      line-height: 14px !important;
     }
     .single-page-invoice .warranty-text {
       font-size: 8.5px !important;
+      font-weight: 700 !important;
       line-height: 1.45 !important;
+      color: #92400e !important;
     }
+    .single-page-invoice .warranty-text strong {
+      font-weight: 900 !important;
+      color: #92400e !important;
+    }
+
+    /* PIE DE PAGINA */
     .single-page-invoice .inv-bottom {
+      display: flex !important;
+      justify-content: space-between !important;
+      align-items: center !important;
+      border-top: 1px dashed #cbd5e1 !important;
       padding-top: 8px !important;
+    }
+    .single-page-invoice .contact-qr-group {
+      display: flex !important;
+      align-items: center !important;
+      gap: 12px !important;
+    }
+    .single-page-invoice .qr-col {
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      gap: 2.5px !important;
     }
     .single-page-invoice .qr-frame {
       width: 52px !important;
       height: 52px !important;
+      border: 1.2px solid #0f172a !important;
+      border-radius: 3px !important;
+      padding: 2px !important;
+      background: #ffffff !important;
+      box-shadow: 1px 1px 0px rgba(0,0,0,0.08) !important;
     }
-    .single-page-invoice .qr-badge-wa,
+    .single-page-invoice .qr-img {
+      width: 100% !important;
+      height: 100% !important;
+      display: block !important;
+    }
+    .single-page-invoice .qr-badge-wa {
+      font-family: 'JetBrains Mono', monospace !important;
+      font-size: 7px !important;
+      font-weight: 800 !important;
+      letter-spacing: 0.4px !important;
+      background: #10b981 !important;
+      color: #ffffff !important;
+      padding: 1.5px 6px !important;
+      border-radius: 2px !important;
+      line-height: 1 !important;
+      text-transform: uppercase !important;
+    }
     .single-page-invoice .qr-badge-wired {
+      font-family: 'JetBrains Mono', monospace !important;
       font-size: 7px !important;
       padding: 1.5px 6px !important;
-    }
-    .single-page-invoice .qr-badge-wired {
-      background: linear-gradient(135deg, #4f46e5, #4338ca);
-      color: #ffffff;
-      border-radius: 2px;
-      font-weight: 800;
-      letter-spacing: 0.3px;
-      text-transform: uppercase;
-      line-height: 1;
-      display: inline-block;
-      margin-top: 2px;
+      background: linear-gradient(135deg, #4f46e5, #4338ca) !important;
+      color: #ffffff !important;
+      border-radius: 2px !important;
+      font-weight: 800 !important;
+      letter-spacing: 0.3px !important;
+      text-transform: uppercase !important;
+      line-height: 1 !important;
+      display: inline-block !important;
+      margin-top: 2px !important;
     }
     .single-page-invoice .contact-meta {
+      display: flex !important;
+      flex-direction: column !important;
       gap: 4px !important;
     }
     .single-page-invoice .contact-row {
+      display: flex !important;
+      align-items: center !important;
       gap: 6px !important;
     }
     .single-page-invoice .badge-tag {
+      font-family: 'JetBrains Mono', monospace !important;
       font-size: 7.5px !important;
+      font-weight: 800 !important;
       padding: 1.5px 5px !important;
+      border-radius: 2px !important;
+      color: #ffffff !important;
+      line-height: 1 !important;
+      text-transform: uppercase !important;
+      letter-spacing: 0.3px !important;
+      width: 58px !important;
+      text-align: center !important;
+      box-sizing: border-box !important;
     }
+    .single-page-invoice .tag-ig { background: #db2777 !important; }
+    .single-page-invoice .tag-tel { background: #0284c7 !important; }
+    .single-page-invoice .tag-mail { background: #e11d48 !important; }
     .single-page-invoice .contact-text {
+      font-family: 'JetBrains Mono', monospace !important;
       font-size: 9.5px !important;
+      font-weight: 700 !important;
+      color: #1e293b !important;
+    }
+    .single-page-invoice .signature-block {
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      gap: 1px !important;
+      width: 170px !important;
+    }
+    .single-page-invoice .sign-seal-wrapper {
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      position: relative !important;
+      height: 38px !important;
+      width: 100% !important;
     }
     .single-page-invoice .digital-signature {
-      font-size: 2.2rem !important;
+      font-family: 'Caveat', cursive, sans-serif !important;
+      font-size: 2.4rem !important;
+      font-weight: 700 !important;
+      color: #1e293b !important;
+      line-height: 1 !important;
+      transform: rotate(-3deg) !important;
+      display: inline-block !important;
+      z-index: 1 !important;
     }
     .single-page-invoice .seal-stamp {
       width: 40px !important;
       height: 40px !important;
+      border: 1.5px dashed #e11d48 !important;
+      border-radius: 50% !important;
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      justify-content: center !important;
+      color: #e11d48 !important;
+      position: absolute !important;
+      right: 4px !important;
+      top: -2px !important;
+      background: rgba(255, 255, 255, 0.75) !important;
+      box-shadow: 0 0 0 1.5px rgba(225, 29, 72, 0.25) !important;
+      transform: rotate(8deg) !important;
+      z-index: 2 !important;
+    }
+    .single-page-invoice .seal-star { font-size: 7px !important; line-height: 1 !important; }
+    .single-page-invoice .seal-text { font-size: 9px !important; font-weight: 900 !important; letter-spacing: 0.5px !important; line-height: 1 !important; }
+    .single-page-invoice .seal-sub { font-size: 5px !important; font-weight: 800 !important; letter-spacing: 0.5px !important; line-height: 1 !important; }
+    .single-page-invoice .sign-underline {
+      height: 1.5px !important;
+      background: #0f172a !important;
+      width: 100% !important;
+      margin: 2px 0 !important;
     }
     .single-page-invoice .sign-caption {
+      font-family: 'JetBrains Mono', monospace !important;
       font-size: 8px !important;
+      font-weight: 800 !important;
+      color: #475569 !important;
+      text-transform: uppercase !important;
+      letter-spacing: 0.4px !important;
     }
+
+    /* REVERSO COLECCIONABLE LAIN (1 PAGINA) */
+    .single-page-lain-card {
+      box-sizing: border-box !important;
+      min-height: ${dims.heightMm}mm !important;
+      height: 100% !important;
+      padding: 0.35in 0.45in 0.30in 0.45in !important;
+      display: flex !important;
+      flex-direction: column !important;
+      justify-content: space-between !important;
+      border: 1.5px solid #0f172a !important;
+      border-radius: 4px !important;
+      background-color: #f8fafc !important;
+      background-image: radial-gradient(#cbd5e1 0.85px, transparent 0.85px) !important;
+      background-size: 8px 8px !important;
+      position: relative !important;
+    }
+    .single-page-lain-card .lain-header {
+      border-bottom: 2px solid #0f172a !important;
+      padding-bottom: 6px !important;
+    }
+    .single-page-lain-card .badge-navi,
+    .single-page-lain-card .badge-layer {
+      font-size: 8px !important;
+      padding: 2.5px 7px !important;
+    }
+    .single-page-lain-card .lain-os-tag {
+      font-size: 9px !important;
+    }
+    .single-page-lain-card .lain-main-title {
+      font-size: 18px !important;
+    }
+    .single-page-lain-card .lain-sub-title {
+      font-size: 8.5px !important;
+    }
+    .single-page-lain-card .lain-main-body-row {
+      flex-grow: 1 !important;
+      min-height: 320px !important;
+      max-height: none !important;
+      gap: 16px !important;
+      margin: 12px 0 !important;
+    }
+    .single-page-lain-card .figure-hud-header {
+      font-size: 9px !important;
+      padding: 5px 8px !important;
+    }
+    .single-page-lain-card .figure-hud-footer {
+      font-size: 8px !important;
+      padding: 4px 8px !important;
+    }
+    .single-page-lain-card .lain-figure-col {
+      display: flex !important;
+      flex-direction: column !important;
+      flex-grow: 1 !important;
+    }
+    .single-page-lain-card .lain-svg-container {
+      flex-grow: 1 !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      padding: 10px !important;
+    }
+    .single-page-lain-card .lain-svg-container svg {
+      width: 100% !important;
+      max-height: 100% !important;
+      display: block !important;
+    }
+    .single-page-lain-card .reward-tag {
+      font-size: 9px !important;
+      padding: 4px 8px !important;
+    }
+    .single-page-lain-card .reward-plus {
+      font-size: 20px !important;
+    }
+    .single-page-lain-card .reward-pencil-box {
+      width: 60px !important;
+      height: 26px !important;
+      font-size: 15px !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+    }
+    .single-page-lain-card .reward-wp {
+      font-size: 16px !important;
+    }
+    .single-page-lain-card .reward-qr-frame {
+      padding: 5px !important;
+    }
+    .single-page-lain-card .qr-canvas-box {
+      width: 32mm !important;
+      height: 32mm !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+    }
+    .single-page-lain-card .reward-pin-tag {
+      font-size: 10px !important;
+      padding: 3px 10px !important;
+    }
+    .single-page-lain-card .reward-sub {
+      font-size: 7.5px !important;
+    }
+    .single-page-lain-card .lain-quote-box {
+      padding: 6px 10px !important;
+      margin: 6px 0 !important;
+    }
+    .single-page-lain-card .lain-kanji {
+      font-size: 9px !important;
+    }
+    .single-page-lain-card .lain-quote-text {
+      font-size: 9.5px !important;
+    }
+    .single-page-lain-card .spec-cell {
+      padding: 4px 8px !important;
+    }
+    .single-page-lain-card .spec-k {
+      font-size: 7px !important;
+    }
+    .single-page-lain-card .spec-v {
+      font-size: 9.5px !important;
+    }
+    .single-page-lain-card .vector-barcode {
+      height: 20px !important;
+    }
+    .single-page-lain-card .serial-code {
+      font-size: 8.5px !important;
+    }
+    .single-page-lain-card .lain-seal-stamp {
+      padding: 3px 8px !important;
+    }
+    .single-page-lain-card .stamp-org { font-size: 6.5px !important; }
+    .single-page-lain-card .stamp-auth { font-size: 6.5px !important; }
+    .single-page-lain-card .stamp-store { font-size: 7px !important; }
 
     /* REGLAS DE IMPRESIÓN EXCLUSIVAS PARA FACTURA INDIVIDUAL (1 PÁGINA) */
     @media print {
+      html, body {
+        background: transparent !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        width: 100% !important;
+        height: auto !important;
+      }
+      .toolbar { display: none !important; }
       .single-digital-invoice-page {
         box-shadow: none !important;
         margin: 0 !important;
+        padding: 0 !important;
         width: 100% !important;
+        height: 100% !important;
         min-height: 100% !important;
-        page-break-after: avoid !important;
-        break-after: avoid !important;
         page-break-inside: avoid !important;
         break-inside: avoid !important;
       }
-      .single-page-invoice {
+      .single-digital-invoice-page.sheet-front {
+        page-break-after: avoid !important;
+        break-after: avoid !important;
+      }
+      body.print-both .single-digital-invoice-page.sheet-front {
+        page-break-after: page !important;
+        break-after: page !important;
+      }
+      .single-page-invoice,
+      .single-page-lain-card {
         min-height: 100% !important;
-        border: 1px solid var(--dark) !important;
+        height: 100% !important;
+        border: 1.5px solid #0f172a !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
       }
       @page { size: ${dims.cssSize}; margin: 0; }
     }
@@ -2012,6 +2606,11 @@ export class InvoiceTemplateService {
       <p>Factura individual digital · Cliente: ${inv.clientName || 'General'} · Total: ${inv.currency === 'NIO' ? 'C$' : '$'} ${(inv.total || 0).toFixed(2)}</p>
     </div>
     <div class="toolbar-actions">
+      <div class="view-mode-group">
+        <button class="btn btn-mode active" id="btn-mode-front" onclick="setViewMode('front')">🧾 Factura (Anverso)</button>
+        <button class="btn btn-mode" id="btn-mode-back" onclick="setViewMode('back')">🎴 Tarjeta Lain (Reverso)</button>
+        <button class="btn btn-mode" id="btn-mode-both" onclick="setViewMode('both')">📑 Ambas Caras (2 Págs)</button>
+      </div>
       <button class="btn btn-bw" id="btn-bw" onclick="toggleBW()">🖤 Blanco y Negro</button>
       <button class="btn btn-sec" onclick="shareViaWhatsApp()">📲 Enviar WhatsApp</button>
       <button class="btn btn-sec" onclick="downloadHtmlFile()">📥 Descargar HTML</button>
@@ -2020,8 +2619,12 @@ export class InvoiceTemplateService {
     </div>
   </header>
 
-  <main class="single-digital-invoice-page">
+  <main class="single-digital-invoice-page sheet-front" id="digital-page-front">
     ${singleHtml}
+  </main>
+
+  <main class="single-digital-invoice-page sheet-back" id="digital-page-back" style="display: none;">
+    ${singleBackHtml}
   </main>
 
   <script>
@@ -2030,6 +2633,29 @@ export class InvoiceTemplateService {
     const clientPhone = "${inv.clientPhone || ''}";
     const clientName = "${inv.clientName || 'Estimado cliente'}";
     const totalFormatted = "${inv.currency === 'NIO' ? 'C$' : '$'} ${(inv.total || 0).toFixed(2)}";
+
+    function setViewMode(mode) {
+      const pageFront = document.getElementById('digital-page-front');
+      const pageBack = document.getElementById('digital-page-back');
+      document.querySelectorAll('.btn-mode').forEach(b => b.classList.remove('active'));
+
+      if (mode === 'front') {
+        pageFront.style.display = 'block';
+        pageBack.style.display = 'none';
+        document.body.classList.remove('print-both');
+        document.getElementById('btn-mode-front').classList.add('active');
+      } else if (mode === 'back') {
+        pageFront.style.display = 'none';
+        pageBack.style.display = 'block';
+        document.body.classList.remove('print-both');
+        document.getElementById('btn-mode-back').classList.add('active');
+      } else {
+        pageFront.style.display = 'block';
+        pageBack.style.display = 'block';
+        document.body.classList.add('print-both');
+        document.getElementById('btn-mode-both').classList.add('active');
+      }
+    }
 
     function toggleBW() {
       document.body.classList.toggle('bw-mode');
@@ -2040,12 +2666,13 @@ export class InvoiceTemplateService {
     function shareViaWhatsApp() {
       let rawPhone = clientPhone.replace(/[^0-9]/g, '');
       if (rawPhone.length === 8) rawPhone = '505' + rawPhone;
+      const nl = String.fromCharCode(10);
       const textMsg = encodeURIComponent(
-        "¡Hola " + clientName + "! 👋 Gracias por tu compra en MeltyDeays STORE.\n\n" +
-        "🧾 Factura Oficial: #MD-2026-" + folio + "\n" +
-        "💰 Total: " + totalFormatted + "\n" +
-        (claimUrl.includes("WP-") ? "⚡ Puntos Wired Club para reclamar: " + claimUrl + "\n" : "") +
-        "🛡️ Garantía oficial MeltyDeays por defectos de fábrica.\n\n" +
+        "¡Hola " + clientName + "! 👋 Gracias por tu compra en MeltyDeays STORE." + nl + nl +
+        "🧾 Factura Oficial: #MD-2026-" + folio + nl +
+        "💰 Total: " + totalFormatted + nl +
+        (claimUrl.includes("WP-") ? ("⚡ Puntos Wired Club para reclamar: " + claimUrl + nl) : "") +
+        "🛡️ Garantía oficial MeltyDeays por defectos de fábrica." + nl + nl +
         "¡Agradecemos tu confianza!"
       );
       window.open("https://wa.me/" + (rawPhone || "50558438412") + "?text=" + textMsg, "_blank");
@@ -2060,13 +2687,14 @@ export class InvoiceTemplateService {
     }
 
     window.onload = function() {
+      // Renderizar QR en anverso
       const qrEl = document.getElementById("digital-inv-qr");
       if (qrEl && typeof QRCode !== "undefined" && claimUrl) {
         try {
           const tempDiv = document.createElement("div");
           new QRCode(tempDiv, {
             text: claimUrl,
-            width: 76, height: 76,
+            width: 80, height: 80,
             colorDark: "#0f172a",
             colorLight: "#ffffff",
             correctLevel: QRCode.CorrectLevel.M
@@ -2079,16 +2707,40 @@ export class InvoiceTemplateService {
               qrEl.appendChild(canvas || img);
             }
           }, 60);
-        } catch(e) {
-          // Fallback a imagen qrserver permanece activo
-        }
+        } catch(e) {}
       }
-      if (document.fonts && document.fonts.ready) {
-        document.fonts.ready.then(() => {
-          setTimeout(() => { window.print(); }, 500);
-        });
-      } else {
-        setTimeout(() => { window.print(); }, 800);
+
+      // Renderizar QR en reverso Lain
+      const qrBackEl = document.getElementById("print-qr-digital-back");
+      if (qrBackEl && typeof QRCode !== "undefined" && claimUrl) {
+        try {
+          const tempDivBack = document.createElement("div");
+          new QRCode(tempDivBack, {
+            text: claimUrl,
+            width: 120, height: 120,
+            colorDark: "#0f172a",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.M
+          });
+          setTimeout(() => {
+            const canvas = tempDivBack.querySelector("canvas");
+            const img = tempDivBack.querySelector("img");
+            if (canvas || (img && img.src)) {
+              qrBackEl.innerHTML = "";
+              qrBackEl.appendChild(canvas || img);
+            }
+          }, 60);
+        } catch(e) {}
+      }
+
+      if (${Boolean(autoPrint)}) {
+        if (document.fonts && document.fonts.ready) {
+          document.fonts.ready.then(() => {
+            setTimeout(() => { window.print(); }, 500);
+          });
+        } else {
+          setTimeout(() => { window.print(); }, 800);
+        }
       }
     };
   <\/script>
@@ -2098,6 +2750,33 @@ export class InvoiceTemplateService {
 
   static getComponentStyles(dims) {
     return `
+    :root {
+      --primary: #4f46e5;
+      --primary-dark: #312e81;
+      --accent: #db2777;
+      --dark: #0f172a;
+      --gray-800: #1e293b;
+      --gray-700: #334155;
+      --gray-600: #475569;
+      --gray-400: #94a3b8;
+      --gray-300: #cbd5e1;
+      --gray-200: #e2e8f0;
+      --gray-100: #f1f5f9;
+      --gray-50: #f8fafc;
+      --table-border: #334155;
+      --table-line: #94a3b8;
+      --dot-color: #cbd5e1;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+
     /* ========================================================
        ESTILOS DEL ANVERSO: FACTURAS 4x1 (CON EFECTO DOT GRID)
        ======================================================== */
