@@ -998,7 +998,7 @@ export class InvoiceTemplateService {
    * @param {object} paperDims - Dimensiones de papel ({ name, widthMm, heightMm, cssSize })
    * @param {string} mode - "both" | "front" | "back"
    */
-  static generatePrintDocument(tokens, paperDims, mode = "both") {
+  static generatePrintDocument(tokens, paperDims, mode = "both", autoPrint = true) {
     const dims = paperDims || { name: 'Carta (Letter)', widthMm: 215.9, heightMm: 279.4, cssSize: 'letter portrait' };
     const allTokens = (tokens && tokens.length > 0) ? tokens : [
       { tokenCode: "WP-2026-F0104-A98B", invoiceFolio: "0104", pointsValue: 0, securityPin: "4891" },
@@ -1161,8 +1161,8 @@ export class InvoiceTemplateService {
     }
 
     .sheet-letter {
-      width: 8.5in;
-      height: 11in;
+      width: ${dims.widthMm}mm;
+      height: ${dims.heightMm}mm;
       display: grid;
       grid-template-columns: 1fr 1fr;
       grid-template-rows: 1fr 1fr;
@@ -1170,6 +1170,7 @@ export class InvoiceTemplateService {
       box-shadow: 0 12px 30px rgba(0,0,0,0.5);
       overflow: hidden;
       transition: filter 0.2s ease;
+      margin: 12px auto;
     }
 
     .sheet-front {
@@ -1284,12 +1285,14 @@ export class InvoiceTemplateService {
           });
         }
       });
-      if (document.fonts && document.fonts.ready) {
-        document.fonts.ready.then(() => {
-          setTimeout(() => { window.print(); }, 400);
-        });
-      } else {
-        setTimeout(() => { window.print(); }, 800);
+      if (${Boolean(autoPrint)}) {
+        if (document.fonts && document.fonts.ready) {
+          document.fonts.ready.then(() => {
+            setTimeout(() => { window.print(); }, 400);
+          });
+        } else {
+          setTimeout(() => { window.print(); }, 800);
+        }
       }
     };
   <\/script>

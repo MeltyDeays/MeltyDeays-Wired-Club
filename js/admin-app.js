@@ -236,6 +236,8 @@ document.addEventListener("DOMContentLoaded", () => {
   window.toggleCustomPaperInputs = toggleCustomPaperInputs;
   window.openPrintSheetModal = openPrintSheetModal;
   window.updatePreviewSheetDimensions = updatePreviewSheetDimensions;
+  window.switchPreviewMode = switchPreviewMode;
+  window.downloadPrintSheetHtml = downloadPrintSheetHtml;
   window.triggerNativeSheetPrint = triggerNativeSheetPrint;
   window.printFromModal = printFromModal;
   window.viewSingleTokenQr = viewSingleTokenQr;
@@ -1486,6 +1488,12 @@ async function executePurgeAllDb() {
     const helper = document.getElementById("lot-folio-helper");
     if (helper) helper.innerHTML = "Siguiente folio libre detectado: <strong>#0001</strong> (Base de datos limpia)";
 
+    renderDashboard(vm);
+    renderCatalogTable(vm.catalog);
+    renderTokensTable(vm.tokens);
+    renderUsersTable(vm.users);
+    renderVouchersTable(vm.vouchers);
+
     showToast("✓ Base de datos completamente purgada. El PIN de Admin sigue intacto.", "success");
   } catch (err) {
     showToast("❌ Error al purgar la base de datos: " + err.message, "error");
@@ -1704,6 +1712,31 @@ function getSelectedPaperDimensions(source = "preview") {
   }
 }
 
+let currentPreviewMode = "both";
+
+function switchPreviewMode(mode) {
+  currentPreviewMode = mode;
+  const inputEl = document.getElementById("print-duplex-mode");
+  if (inputEl) inputEl.value = mode;
+
+  ["front", "back", "both"].forEach(m => {
+    const btn = document.getElementById("btn-preview-mode-" + m);
+    if (btn) {
+      if (m === mode) {
+        btn.classList.add("active");
+        btn.style.background = "#0f172a";
+        btn.style.color = "#ffffff";
+      } else {
+        btn.classList.remove("active");
+        btn.style.background = "#f8fafc";
+        btn.style.color = "#475569";
+      }
+    }
+  });
+
+  updatePreviewSheetDimensions();
+}
+
 function updatePreviewSheetDimensions() {
   const dims = getSelectedPaperDimensions("preview");
   const select = document.getElementById("preview-paper-size");
@@ -1713,13 +1746,41 @@ function updatePreviewSheetDimensions() {
   if (customBox) customBox.style.display = select.value === "custom" ? "flex" : "none";
   if (label) label.textContent = dims.name + ": " + dims.widthMm + " mm × " + dims.heightMm + " mm";
 
-  const sheetEl = document.getElementById("reverso-sheet-container");
-  if (sheetEl) {
-    const baseW = 580;
-    const calcH = Math.round((baseW * dims.heightMm) / dims.widthMm);
-    sheetEl.style.width = baseW + "px";
-    sheetEl.style.height = calcH + "px";
+  const mode = currentPreviewMode || document.getElementById("print-duplex-mode")?.value || "both";
+  const tokensToRender = (currentSheetTokens && currentSheetTokens.length >= 4)
+    ? currentSheetTokens.slice(0, 4)
+    : (vm && vm.tokens && vm.tokens.length >= 4
+        ? vm.tokens.slice(0, 4)
+        : [
+            { tokenCode: "WP-2026-F0104-A98B", invoiceFolio: "0104", pointsValue: 0, securityPin: "4891" },
+            { tokenCode: "WP-2026-F0105-C34D", invoiceFolio: "0105", pointsValue: 0, securityPin: "7124" },
+            { tokenCode: "WP-2026-F0106-E56F", invoiceFolio: "0106", pointsValue: 0, securityPin: "8390" },
+            { tokenCode: "WP-2026-F0107-G78H", invoiceFolio: "0107", pointsValue: 0, securityPin: "1923" }
+          ]);
+
+  const iframe = document.getElementById("sheet-preview-iframe");
+  if (iframe) {
+    const docHtml = InvoiceTemplateService.generatePrintDocument(tokensToRender, dims, mode, false);
+    iframe.srcdoc = docHtml;
   }
+}
+
+function downloadPrintSheetHtml() {
+  const dims = getSelectedPaperDimensions("preview");
+  const mode = currentPreviewMode || document.getElementById("print-duplex-mode")?.value || "both";
+  const tokensToRender = (currentSheetTokens && currentSheetTokens.length >= 4)
+    ? currentSheetTokens.slice(0, 4)
+    : (vm && vm.tokens && vm.tokens.length >= 4 ? vm.tokens.slice(0, 4) : []);
+
+  const docHtml = InvoiceTemplateService.generatePrintDocument(tokensToRender, dims, mode, false);
+  const blob = new Blob([docHtml], { type: "text/html;charset=utf-8" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `pliego_facturas_meltydeays_4x1_${mode}.html`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  showToast("✓ Archivo de pliego 4x1 descargado con éxito.", "success");
 }
 
 function openPrintSheetModal() {
@@ -1727,46 +1788,11 @@ function openPrintSheetModal() {
     currentSheetTokens = vm.tokens.slice(0, 4);
   }
 
-  const tokensToRender = currentSheetTokens.length >= 4 
-    ? currentSheetTokens.slice(0, 4) 
-    : [
-        { tokenCode: "WP-2026-F0104-A98B", invoiceFolio: "0104", pointsValue: 0, securityPin: "4891" },
-        { tokenCode: "WP-2026-F0105-C34D", invoiceFolio: "0105", pointsValue: 0, securityPin: "7124" },
-        { tokenCode: "WP-2026-F0106-E56F", invoiceFolio: "0106", pointsValue: 0, securityPin: "8390" },
-        { tokenCode: "WP-2026-F0107-G78H", invoiceFolio: "0107", pointsValue: 0, securityPin: "1923" }
-      ];
-
   const mainPaperSize = document.getElementById("lot-paper-size")?.value || "letter";
   const modalSelect = document.getElementById("preview-paper-size");
   if (modalSelect) modalSelect.value = mainPaperSize;
 
-  updatePreviewSheetDimensions();
-
-  tokensToRender.forEach((tok, idx) => {
-    const slot = document.getElementById("card-slot-" + idx);
-    if (!slot) return;
-
-    const claimUrl = "https://meltydeays-wired-club.vercel.app/?claim=" + tok.tokenCode;
-    const pinStr = tok.securityPin || "••••";
-    const folioStr = tok.invoiceFolio || "0104";
-
-    slot.innerHTML = InvoiceTemplateService.getLainBackCardHtml(idx + 1, tok, "slot-" + idx, idx);
-
-    setTimeout(() => {
-      const qrEl = document.getElementById("print-qr-slot-" + idx);
-      if (qrEl && typeof QRCode !== "undefined") {
-        qrEl.innerHTML = "";
-        new QRCode(qrEl, {
-          text: claimUrl,
-          width: 74,
-          height: 74,
-          colorDark: "#0f172a",
-          colorLight: "#ffffff",
-          correctLevel: QRCode.CorrectLevel.M
-        });
-      }
-    }, 50);
-  });
+  switchPreviewMode("both");
 
   const modal = document.getElementById("modal-print-sheet");
   if (modal) modal.style.display = "flex";
@@ -2231,12 +2257,23 @@ async function submitSingleDigitalInvoice(action = 'print') {
     const printDims = getSelectedPaperDimensions("preview");
     const docHtml = InvoiceTemplateService.generateSingleDigitalInvoiceDocument(result.invoicePayload, printDims);
 
+    if (action === "download") {
+      const blob = new Blob([docHtml], { type: "text/html;charset=utf-8" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `factura_meltydeays_${result.invoicePayload.folio}.html`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      showToast(`📥 Factura #MD-2026-${result.invoicePayload.folio} descargada en tu dispositivo.`, "success");
+    }
+
     const printWin = window.open("", "_blank");
     if (printWin) {
       printWin.document.open();
       printWin.document.write(docHtml);
       printWin.document.close();
-    } else {
+    } else if (action !== "download") {
       showToast("⚠️ Habilita ventanas emergentes en tu navegador para ver la factura.", "error");
     }
 
@@ -2255,7 +2292,11 @@ async function submitSingleDigitalInvoice(action = 'print') {
       window.open("https://wa.me/" + (rawPhone || "50558438412") + "?text=" + textMsg, "_blank");
     }
 
-    showToast(`✓ Factura #MD-2026-${result.invoicePayload.folio} generada con éxito.`, "success");
+    renderTokensTable(vm.tokens);
+    const statTokens = document.getElementById("stat-tokens-count");
+    if (statTokens) statTokens.textContent = vm.tokens.length;
+
+    showToast(`✓ Factura #MD-2026-${result.invoicePayload.folio} generada y registrada en BD.`, "success");
   } catch (err) {
     showToast("❌ " + err.message, "error");
   }

@@ -430,20 +430,59 @@ export class FirestoreService {
 
   // Purga integral de toda la base de datos (Socios, Vales, Facturas, Ledger, Catálogo)
   static async purgeEntireDatabase() {
-    const snap = engine.getBlank();
-    engine.saveSnapshot(snap);
+    const adminUser = {
+      uid: "CLIENT-58438412",
+      memberCode: "MC-2026-ADMIN",
+      name: "Evertz Lopez (Admin)",
+      phone: "58438412",
+      pin: "110805",
+      tier: "DEUS",
+      pointsBalance: 0,
+      lifetimePoints: 0,
+      status: "ACTIVE",
+      createdAt: new Date().toISOString()
+    };
+
+    const blankDb = {
+      users: { "CLIENT-58438412": adminUser },
+      rewards: {},
+      vouchers: {},
+      tokens: {},
+      batches: [],
+      ledger: {}
+    };
+    engine.saveSnapshot(blankDb);
 
     if (db) {
       try {
-        const collections = ["users", "vouchers", "rewards_catalog", "qr_tokens", "point_batches", "point_ledger"];
+        const collections = ["redemptions", "vouchers", "rewards_catalog", "qr_tokens", "point_batches", "point_ledger"];
         for (const col of collections) {
-          const docs = await db.collection(col).get().catch(() => ({ empty: true }));
-          if (docs && !docs.empty) {
+          const snap = await db.collection(col).get().catch(() => ({ empty: true }));
+          if (snap && !snap.empty) {
+            const docs = snap.docs || [];
+            for (let i = 0; i < docs.length; i += 400) {
+              const batch = db.batch();
+              docs.slice(i, i + 400).forEach(d => batch.delete(d.ref));
+              await batch.commit();
+            }
+          }
+        }
+
+        // Purgar socios dejando únicamente el perfil del administrador (PIN 110805)
+        const userSnap = await db.collection("users").get().catch(() => ({ empty: true }));
+        if (userSnap && !userSnap.empty) {
+          const uDocs = userSnap.docs || [];
+          for (let i = 0; i < uDocs.length; i += 400) {
             const batch = db.batch();
-            docs.forEach(d => batch.delete(d.ref));
+            uDocs.slice(i, i + 400).forEach(d => {
+              if (d.id !== adminUser.uid && d.data()?.phone !== "58438412") {
+                batch.delete(d.ref);
+              }
+            });
             await batch.commit();
           }
         }
+        await db.collection("users").doc(adminUser.uid).set(adminUser);
       } catch (e) {
         console.warn("Firestore purgeEntireDatabase error:", e.message);
       }

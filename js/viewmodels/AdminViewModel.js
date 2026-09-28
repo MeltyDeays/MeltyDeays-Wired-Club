@@ -409,11 +409,7 @@ export class AdminViewModel {
 
   async purgeEntireDatabase() {
     const res = await FirestoreService.purgeEntireDatabase();
-    this.catalog = [];
-    this.tokens = [];
-    this.vouchers = [];
-    this.users = [];
-    this.batches = [];
+    await this.refreshData();
     this.notify();
     return res;
   }
