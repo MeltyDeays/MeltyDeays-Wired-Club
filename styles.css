@@ -1818,12 +1818,14 @@ body {
   align-items: center;
   gap: 1rem;
   flex-wrap: wrap;
-  background: #070b14;
-  border: 1.5px solid #1e293b;
+  background: #ffffff;
+  background-image: radial-gradient(var(--dot-color) 0.85px, transparent 0.85px);
+  background-size: 8px 8px;
+  border: 1.5px solid var(--dark);
   border-radius: 6px;
-  padding: 1rem 1.35rem;
+  padding: 1rem 1.25rem;
   margin-bottom: 1.5rem;
-  box-shadow: 3px 3px 0px #020617, 0 0 20px rgba(14, 165, 233, 0.08);
+  box-shadow: 3px 3px 0px var(--dark);
 }
 
 .generator-summary-tag {
@@ -1831,15 +1833,15 @@ body {
   flex-direction: column;
   gap: 3px;
   font-size: 0.78rem;
-  color: #94a3b8;
+  color: #475569;
   font-family: var(--font-mono);
 }
 
 .generator-summary-tag strong,
 .generator-summary-tag .gen-tag-title {
-  color: #38bdf8;
+  color: var(--dark);
   font-weight: 900;
-  letter-spacing: 0.6px;
+  letter-spacing: 0.5px;
 }
 
 .generator-btn-group {
@@ -1850,158 +1852,143 @@ body {
 }
 
 /* ========================================================
-   BOTONES COPLAND OS 21.0 - BARRA DE ACCIÓN GENERADOR
+   BOTONES BARRA DE ACCIÓN GENERADOR - ESTÉTICA 3D MELTYDEAYS
    ======================================================== */
 .copland-bar-btn {
   font-family: var(--font-mono);
   font-weight: 800;
-  font-size: 0.78rem;
-  padding: 0.62rem 1.1rem;
+  font-size: 0.76rem;
+  padding: 0.55rem 0.95rem;
   border-radius: 4px;
+  border: 1.5px solid var(--dark);
+  box-shadow: 2px 2px 0px var(--dark);
   display: inline-flex;
   align-items: center;
   gap: 6px;
   cursor: pointer;
-  letter-spacing: 0.4px;
+  letter-spacing: 0.3px;
   text-transform: uppercase;
   white-space: nowrap;
   outline: none;
-  transition: all 0.16s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.12s ease;
+}
+
+.copland-bar-btn:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0px var(--dark);
 }
 
 .copland-bar-btn:active {
-  transform: translate(2px, 2px) !important;
-  box-shadow: 1px 1px 0px rgba(0, 0, 0, 0.8) !important;
+  transform: translate(1.5px, 1.5px) !important;
+  box-shadow: 0.5px 0.5px 0px var(--dark) !important;
 }
 
+/* 1. Factura Digital Individual (Cyan limpio) */
 .copland-bar-btn-cyan {
-  background: linear-gradient(135deg, #070b14, #082f49);
-  border: 1.5px solid #38bdf8;
-  color: #38bdf8;
-  box-shadow: 2px 2px 0px #0284c7, 0 0 10px rgba(56, 189, 248, 0.2);
+  background: #f0f9ff;
+  color: #0284c7;
 }
 
 .copland-bar-btn-cyan:hover {
-  background: #38bdf8;
-  color: #070b14;
-  border-color: #ffffff;
-  box-shadow: 2px 2px 0px #070b14, 0 0 16px rgba(56, 189, 248, 0.7);
-  transform: translate(-1px, -1px);
+  background: #e0f2fe;
+  color: #0369a1;
 }
 
+/* 2. Calculadora de Puntos (Índigo limpio) */
 .copland-bar-btn-indigo {
-  background: linear-gradient(135deg, #070b14, #1e1b4b);
-  border: 1.5px solid #818cf8;
-  color: #c7d2fe;
-  box-shadow: 2px 2px 0px #4338ca;
+  background: #eef2ff;
+  color: #4338ca;
 }
 
 .copland-bar-btn-indigo:hover {
-  background: #818cf8;
-  color: #070b14;
-  border-color: #ffffff;
-  box-shadow: 2px 2px 0px #070b14, 0 0 14px rgba(129, 140, 248, 0.65);
-  transform: translate(-1px, -1px);
+  background: #e0e7ff;
+  color: #3730a3;
 }
 
+/* 3. Previsualizar 4x1 (Gris pizarra limpio) */
 .copland-bar-btn-slate {
-  background: linear-gradient(135deg, #070b14, #1e293b);
-  border: 1.5px solid #64748b;
-  color: #e2e8f0;
-  box-shadow: 2px 2px 0px #334155;
+  background: #ffffff;
+  color: #334155;
 }
 
 .copland-bar-btn-slate:hover {
-  background: #cbd5e1;
-  color: #070b14;
-  border-color: #ffffff;
-  box-shadow: 2px 2px 0px #070b14;
-  transform: translate(-1px, -1px);
+  background: #f1f5f9;
+  color: #0f172a;
 }
 
+/* 4. Generar Lote Facturas (Azul sólido principal) */
 .copland-bar-btn-primary {
-  background: linear-gradient(135deg, #0284c7, #0369a1);
-  border: 1.5px solid #7dd3fc;
+  background: #0284c7;
   color: #ffffff;
-  box-shadow: 2px 2px 0px #075985;
 }
 
 .copland-bar-btn-primary:hover {
-  background: #38bdf8;
-  color: #070b14;
-  border-color: #ffffff;
-  box-shadow: 2px 2px 0px #0284c7, 0 0 16px rgba(56, 189, 248, 0.75);
-  transform: translate(-1px, -1px);
+  background: #0369a1;
+  color: #ffffff;
 }
 
+/* 5. Imprimir 4x1 Doble Cara (Verde esmeralda limpio) */
 .copland-bar-btn-emerald {
-  background: linear-gradient(135deg, #070b14, #064e3b);
-  border: 1.5px solid #34d399;
-  color: #a7f3d0;
-  box-shadow: 2px 2px 0px #065f46;
+  background: #ecfdf5;
+  color: #047857;
 }
 
 .copland-bar-btn-emerald:hover {
-  background: #34d399;
-  color: #070b14;
-  border-color: #ffffff;
-  box-shadow: 2px 2px 0px #070b14, 0 0 14px rgba(52, 211, 153, 0.65);
-  transform: translate(-1px, -1px);
+  background: #d1fae5;
+  color: #065f46;
 }
 
+/* 6. Resetear Facturas (Ámbar limpio) */
 .copland-bar-btn-amber {
-  background: linear-gradient(135deg, #070b14, #451a03);
-  border: 1.5px solid #fbbf24;
-  color: #fef3c7;
-  box-shadow: 2px 2px 0px #b45309;
+  background: #fffbeb;
+  color: #b45309;
 }
 
 .copland-bar-btn-amber:hover {
-  background: #fbbf24;
-  color: #070b14;
-  border-color: #ffffff;
-  box-shadow: 2px 2px 0px #070b14, 0 0 14px rgba(251, 191, 36, 0.65);
-  transform: translate(-1px, -1px);
+  background: #fef3c7;
+  color: #92400e;
 }
 
+/* 7. Purgar Toda la BD (Rojo carmesí limpio) */
 .copland-bar-btn-crimson {
-  background: linear-gradient(135deg, #1f050c, #4c0519);
-  border: 1.5px solid #f43f5e;
-  color: #ffe4e6;
-  box-shadow: 2px 2px 0px #9f1239;
+  background: #fff1f2;
+  color: #e11d48;
 }
 
 .copland-bar-btn-crimson:hover {
-  background: #f43f5e;
-  color: #ffffff;
-  border-color: #ffffff;
-  box-shadow: 2px 2px 0px #070b14, 0 0 18px rgba(244, 63, 94, 0.8);
-  transform: translate(-1px, -1px);
+  background: #ffe4e6;
+  color: #be123c;
 }
 
 .lain-nav-calc-btn {
   font-family: var(--font-mono);
-  font-size: 0.73rem;
-  padding: 0.42rem 0.85rem;
-  background: linear-gradient(135deg, #070b14, #1e1b4b);
-  border: 1.5px solid #818cf8;
-  color: #c7d2fe;
+  font-size: 0.75rem;
+  padding: 0.4rem 0.75rem;
+  background: #ffffff;
+  border: 1.5px solid var(--dark);
+  color: #4338ca;
   font-weight: 800;
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  box-shadow: 2px 2px 0px #4338ca;
-  border-radius: 3px;
+  box-shadow: 2px 2px 0px var(--dark);
+  border-radius: 4px;
   cursor: pointer;
-  letter-spacing: 0.5px;
-  transition: all 0.15s ease;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  transition: all 0.12s ease;
 }
 
 .lain-nav-calc-btn:hover {
-  background: #818cf8;
-  color: #070b14;
-  box-shadow: 2px 2px 0px #070b14, 0 0 14px rgba(129, 140, 248, 0.6);
-  transform: translateY(-1px);
+  background: #eef2ff;
+  color: #3730a3;
+  box-shadow: 3px 3px 0px var(--dark);
+  transform: translate(-1px, -1px);
+}
+
+.lain-nav-calc-btn:active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0px var(--dark);
 }
 
 /* MODAL DE PLIEGO 4X1 */
@@ -3744,39 +3731,31 @@ body {
 }
 
 /* ======================================================== */
-/* SERIAL EXPERIMENTS LAIN / COPLAND OS 21.0 - HERO BANNER */
+/* SERIAL EXPERIMENTS LAIN / COPLAND OS 21.0 - HERO BANNER  */
 /* ======================================================== */
 
 .lain-invoice-hero-card {
   position: relative;
-  background: linear-gradient(135deg, #070b14 0%, #0c1424 50%, #0f172a 100%);
-  border: 1.5px solid #1e293b;
-  border-left: 4px solid #38bdf8;
+  background: #ffffff;
+  background-image: radial-gradient(var(--dot-color) 0.85px, transparent 0.85px);
+  background-size: 8px 8px;
+  border: 1.5px solid var(--dark);
+  border-left: 5px solid #0284c7;
   border-radius: 6px;
-  padding: 1.2rem 1.45rem;
-  margin-bottom: 1.25rem;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), 0 0 20px rgba(56, 189, 248, 0.12), inset 0 1px 0 rgba(56, 189, 248, 0.18);
+  padding: 1.25rem 1.45rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 3px 3px 0px var(--dark);
   display: flex;
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
-  gap: 1.1rem;
-  overflow: hidden;
+  gap: 1.25rem;
 }
 
-.lain-invoice-hero-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-image: 
-    radial-gradient(rgba(56, 189, 248, 0.07) 1px, transparent 1px),
-    repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.18) 0px, rgba(0, 0, 0, 0.18) 1px, transparent 1px, transparent 2px);
-  background-size: 14px 14px, 100% 2px;
-  pointer-events: none;
-  z-index: 1;
+.lain-invoice-hero-card .tech-corner {
+  color: var(--dark);
+  opacity: 0.45;
+  font-weight: 900;
 }
 
 .lain-hero-left,
@@ -3793,18 +3772,19 @@ body {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  margin-bottom: 0.35rem;
+  margin-bottom: 0.4rem;
   flex-wrap: wrap;
 }
 
 .badge-navi-cyan {
-  background: #082f49;
-  color: #38bdf8;
-  border: 1px solid #0284c7;
+  background: #e0f2fe;
+  color: #0369a1;
+  border: 1.2px solid var(--dark);
+  box-shadow: 1.5px 1.5px 0px var(--dark);
   font-family: var(--font-mono);
   font-size: 0.68rem;
   font-weight: 800;
-  letter-spacing: 0.8px;
+  letter-spacing: 0.6px;
   padding: 2.5px 8px;
   border-radius: 3px;
   display: inline-flex;
@@ -3814,13 +3794,14 @@ body {
 }
 
 .badge-layer-lain {
-  background: #1e1b4b;
-  color: #a5b4fc;
-  border: 1px solid #4338ca;
+  background: #f1f5f9;
+  color: #334155;
+  border: 1.2px solid var(--dark);
+  box-shadow: 1.5px 1.5px 0px var(--dark);
   font-family: var(--font-mono);
   font-size: 0.68rem;
   font-weight: 800;
-  letter-spacing: 0.8px;
+  letter-spacing: 0.6px;
   padding: 2.5px 8px;
   border-radius: 3px;
   display: inline-flex;
@@ -3830,13 +3811,14 @@ body {
 }
 
 .badge-pulse-live {
-  background: rgba(14, 165, 233, 0.12);
-  color: #38bdf8;
-  border: 1px solid rgba(56, 189, 248, 0.3);
+  background: #ecfdf5;
+  color: #047857;
+  border: 1.2px solid var(--dark);
+  box-shadow: 1.5px 1.5px 0px var(--dark);
   font-family: var(--font-mono);
   font-size: 0.65rem;
   font-weight: 800;
-  letter-spacing: 0.6px;
+  letter-spacing: 0.5px;
   padding: 2px 7px;
   border-radius: 3px;
   display: inline-flex;
@@ -3848,24 +3830,23 @@ body {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #38bdf8;
-  box-shadow: 0 0 6px #38bdf8;
+  background: #0284c7;
   display: inline-block;
   animation: pulseCyanGlow 1.8s infinite;
 }
 
 @keyframes pulseCyanGlow {
   0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.35; transform: scale(0.8); }
+  50% { opacity: 0.4; transform: scale(0.8); }
 }
 
 .lain-hero-title {
-  font-size: 1.18rem;
+  font-size: 1.15rem;
   font-weight: 900;
-  color: #ffffff;
+  color: var(--dark);
   margin: 0;
   font-family: var(--font-mono);
-  letter-spacing: 0.5px;
+  letter-spacing: 0.4px;
   display: flex;
   align-items: center;
   gap: 7px;
@@ -3873,130 +3854,135 @@ body {
 }
 
 .lain-hero-icon {
-  color: #38bdf8;
+  color: #0284c7;
   font-size: 0.95rem;
-  text-shadow: 0 0 8px rgba(56, 189, 248, 0.6);
 }
 
 .lain-hero-title .cyan-glow {
-  color: #38bdf8;
-  text-shadow: 0 0 12px rgba(56, 189, 248, 0.65);
+  color: #0284c7;
+  text-shadow: none;
+  font-weight: 900;
 }
 
 .lain-hero-desc {
   font-family: var(--font-mono);
   font-size: 0.77rem;
-  color: #94a3b8;
-  margin: 0.3rem 0 0 0;
+  color: #475569;
+  margin: 0.35rem 0 0 0;
   line-height: 1.5;
   letter-spacing: 0.2px;
 }
 
 .lain-btn-digital-invoice {
   font-family: var(--font-mono);
-  font-size: 0.88rem;
-  padding: 0.75rem 1.45rem;
-  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
-  border: 1.5px solid #38bdf8;
+  font-size: 0.82rem;
+  padding: 0.65rem 1.25rem;
+  background: #0284c7;
+  border: 1.5px solid var(--dark);
   color: #ffffff;
   font-weight: 900;
-  letter-spacing: 0.8px;
+  letter-spacing: 0.6px;
   display: inline-flex;
   align-items: center;
   gap: 8px;
   border-radius: 4px;
-  box-shadow: 3px 3px 0px #041d33, 0 0 16px rgba(56, 189, 248, 0.35);
+  box-shadow: 2.5px 2.5px 0px var(--dark);
   cursor: pointer;
-  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.12s ease;
   white-space: nowrap;
   text-transform: uppercase;
 }
 
 .lain-btn-digital-invoice:hover {
-  background: #38bdf8;
-  color: #070b14;
-  border-color: #ffffff;
-  box-shadow: 3px 3px 0px #0284c7, 0 0 22px rgba(56, 189, 248, 0.85);
+  background: #0369a1;
+  color: #ffffff;
+  box-shadow: 3.5px 3.5px 0px var(--dark);
   transform: translate(-1px, -1px);
 }
 
 .lain-btn-digital-invoice:hover .lain-btn-kbd {
-  background: #070b14;
-  color: #38bdf8;
-  border-color: #070b14;
+  background: #ffffff;
+  color: #0369a1;
 }
 
 .lain-btn-digital-invoice:active {
-  transform: translate(2px, 2px);
-  box-shadow: 1px 1px 0px #041d33;
+  transform: translate(1.5px, 1.5px);
+  box-shadow: 1px 1px 0px var(--dark);
 }
 
 .lain-btn-kbd {
   font-family: var(--font-mono);
   font-size: 0.65rem;
-  font-weight: 800;
-  background: rgba(4, 29, 51, 0.7);
-  color: #bae6fd;
-  border: 1px solid rgba(56, 189, 248, 0.4);
+  font-weight: 900;
+  background: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.5);
   padding: 1px 6px;
   border-radius: 3px;
-  letter-spacing: 0.5px;
-  transition: all 0.18s ease;
-}
-
-.lain-btn-calc-shortcut {
-  font-family: var(--font-mono);
-  font-size: 0.82rem;
-  font-weight: 800;
-  color: #38bdf8;
-  background: linear-gradient(135deg, rgba(7, 11, 20, 0.95), rgba(15, 23, 42, 0.95));
-  border: 1.5px solid rgba(56, 189, 248, 0.5);
-  border-radius: 4px;
-  padding: 0.72rem 1.15rem;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  box-shadow: 2px 2px 0px #041d33, 0 0 10px rgba(56, 189, 248, 0.15);
-  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
-  white-space: nowrap;
-}
-
-.lain-btn-calc-shortcut:hover {
-  background: rgba(14, 165, 233, 0.18);
-  border-color: #38bdf8;
-  color: #ffffff;
-  box-shadow: 2px 2px 0px #0284c7, 0 0 16px rgba(56, 189, 248, 0.5);
-  transform: translate(-1px, -1px);
-}
-
-.lain-btn-calc-shortcut:active {
-  transform: translate(2px, 2px);
-  box-shadow: 1px 1px 0px #041d33;
-}
-
-.lain-nav-invoice-btn {
-  font-family: var(--font-mono);
-  font-size: 0.73rem;
-  padding: 0.42rem 0.85rem;
-  background: linear-gradient(135deg, #070b14, #0f172a);
-  border: 1.5px solid #38bdf8;
-  color: #38bdf8;
-  font-weight: 800;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  box-shadow: 2px 2px 0px #0284c7;
-  border-radius: 3px;
-  cursor: pointer;
   letter-spacing: 0.5px;
   transition: all 0.15s ease;
 }
 
+.lain-btn-calc-shortcut {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: var(--dark);
+  background: #ffffff;
+  border: 1.5px solid var(--dark);
+  border-radius: 4px;
+  padding: 0.65rem 1.15rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 2px 2px 0px var(--dark);
+  transition: all 0.12s ease;
+  white-space: nowrap;
+}
+
+.lain-btn-calc-shortcut:hover {
+  background: #f8fafc;
+  color: #0284c7;
+  border-color: var(--dark);
+  box-shadow: 3px 3px 0px var(--dark);
+  transform: translate(-1px, -1px);
+}
+
+.lain-btn-calc-shortcut:active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0px var(--dark);
+}
+
+.lain-nav-invoice-btn {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  padding: 0.4rem 0.75rem;
+  background: #ffffff;
+  border: 1.5px solid var(--dark);
+  color: #0284c7;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 2px 2px 0px var(--dark);
+  border-radius: 4px;
+  cursor: pointer;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  transition: all 0.12s ease;
+}
+
 .lain-nav-invoice-btn:hover {
-  background: #38bdf8;
-  color: #070b14;
-  box-shadow: 2px 2px 0px #070b14, 0 0 14px rgba(56, 189, 248, 0.6);
+  background: #f0f9ff;
+  color: #0369a1;
+  box-shadow: 3px 3px 0px var(--dark);
+  transform: translate(-1px, -1px);
+}
+
+.lain-nav-invoice-btn:active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0px var(--dark);
 }
 
 /* ======================================================== */
@@ -4091,8 +4077,8 @@ body {
 }
 
 .copland-card-module-header {
-  background: linear-gradient(90deg, #090e1a 0%, #0f172a 100%);
-  color: #38bdf8;
+  background: #f8fafc;
+  color: var(--dark);
   font-family: var(--font-mono);
   font-size: 0.72rem;
   font-weight: 900;
@@ -4123,7 +4109,7 @@ body {
 }
 
 .copland-mod-status {
-  color: #94a3b8;
+  color: #64748b;
   font-size: 0.62rem;
   letter-spacing: 0.6px;
   text-transform: uppercase;
