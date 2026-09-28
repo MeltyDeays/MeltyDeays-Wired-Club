@@ -184,19 +184,20 @@ export class CustomerViewModel {
   }
 
   async login(phone, pin) {
-    const cleanPhone = phone.replace(/\D/g, "");
-    if (!cleanPhone || cleanPhone.length < 8) {
-      throw new Error("Ingresa un número telefónico o WhatsApp válido (mínimo 8 dígitos).");
+    const cleanPhone = FirestoreService.normalizePhone(phone);
+    if (!cleanPhone || cleanPhone.length !== 8) {
+      throw new Error("Ingresa tu número de teléfono de 8 dígitos (ej: 5843-8412). El prefijo +505 ya está incluido.");
     }
     const uid = "CLIENT-" + cleanPhone;
     let u = await FirestoreService.getUser(uid);
     if (!u) {
-      // Búsqueda alternativa por teléfono
+      // Búsqueda inteligente multi-variante (soporta legacy y con prefijo)
       u = await FirestoreService.findUserByCodeOrPhone(cleanPhone);
     }
 
     if (!u) {
-      throw new Error("No existe una cuenta registrada con el número " + cleanPhone + ". Selecciona la pestaña 'Nuevo Socio' para registrarte.");
+      const fmt = FirestoreService.formatPhoneDisplay(cleanPhone);
+      throw new Error("No existe una cuenta registrada con el número +505 " + fmt + ". Selecciona la pestaña 'Nuevo Socio' para registrarte.");
     }
 
     if (u.status === "BANNED") {
@@ -221,24 +222,34 @@ export class CustomerViewModel {
   async register(displayName, phone, pin) {
     const name = displayName.trim();
     if (!name) throw new Error("Por favor ingresa tu nombre completo.");
-    const cleanPhone = phone.replace(/\D/g, "");
-    if (!cleanPhone || cleanPhone.length < 8) {
-      throw new Error("Ingresa un número de WhatsApp válido (mínimo 8 dígitos).");
+    
+    // Normalización canónica anti-burlas: elimina prefijos (+505, 505, 00505) y espacios
+    const cleanPhone = FirestoreService.normalizePhone(phone);
+    if (!cleanPhone || cleanPhone.length !== 8) {
+      throw new Error("Ingresa un número telefónico válido de 8 dígitos (ej: 5843-8412). El prefijo +505 ya viene por defecto.");
     }
     const securityPin = pin ? pin.trim() : "1234";
+    if (securityPin.length < 4 || securityPin.length > 8) {
+      throw new Error("El PIN de seguridad debe contener entre 4 y 8 dígitos.");
+    }
     const uid = "CLIENT-" + cleanPhone;
 
-    // Validación estricta de unicidad: ningún otro usuario puede tener el mismo número
+    // Validación estricta anti-duplicados:
+    // Bloquea cualquier intento de duplicar la cuenta (con o sin +505, guiones o variantes)
     const existingUid = await FirestoreService.getUser(uid);
+    const existingLegacy = await FirestoreService.getUser("CLIENT-505" + cleanPhone);
     const existingPhone = await FirestoreService.findUserByCodeOrPhone(cleanPhone);
-    if (existingUid || existingPhone) {
-      throw new Error("El número [" + cleanPhone + "] ya está registrado. Ingresa desde la pestaña 'Ya Soy Socio'.");
+    
+    if (existingUid || existingLegacy || existingPhone) {
+      const fmt = FirestoreService.formatPhoneDisplay(cleanPhone);
+      const existingName = (existingPhone && existingPhone.displayName) || (existingUid && existingUid.displayName) || "";
+      throw new Error(`⚠️ El número [+505 ${fmt}] ya se encuentra registrado${existingName ? ' a nombre de ' + existingName : ''}. Ingresa desde la pestaña 'Ya Soy Socio' con tu PIN.`);
     }
 
     const newUser = new UserModel({
       uid,
       displayName: name,
-      phone: cleanPhone,
+      phone: cleanPhone, // Guardamos estrictamente los 8 dígitos canónicos
       pin: securityPin,
       wiredPoints: 0,
       lifetimePoints: 0,

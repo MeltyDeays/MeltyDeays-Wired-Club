@@ -1,8 +1,36 @@
 /* Controller: Panel de Administración (The Wired Club) */
 import { AdminViewModel } from "./viewmodels/AdminViewModel.js";
 import { InvoiceTemplateService } from "./services/InvoiceTemplateService.js";
+import { FirestoreService } from "./services/FirestoreService.js";
 
 const vm = new AdminViewModel();
+
+// MÁSCARA AUTOMÁTICA DE TELÉFONO (+505 POR DEFECTO, 8 DÍGITOS, GUION AUTOMÁTICO 5843-8412)
+export function attachPhoneMask(inputEl) {
+  if (!inputEl) return;
+  inputEl.addEventListener("input", function(e) {
+    let raw = e.target.value.replace(/\D/g, "");
+    if (raw.startsWith("00505") && raw.length > 5) {
+      raw = raw.slice(5);
+    } else if (raw.startsWith("505") && raw.length > 8) {
+      raw = raw.slice(3);
+    }
+    raw = raw.slice(0, 8);
+    if (raw.length > 4) {
+      e.target.value = raw.slice(0, 4) + "-" + raw.slice(4);
+    } else {
+      e.target.value = raw;
+    }
+  });
+
+  inputEl.addEventListener("keydown", function(e) {
+    if (e.key === "Backspace" && e.target.selectionStart === 5 && e.target.selectionEnd === 5) {
+      e.preventDefault();
+      const val = e.target.value.replace(/\D/g, "");
+      e.target.value = val.slice(0, 3);
+    }
+  });
+}
 
 let currentSingleTokenUrl = "";
 let currentSheetTokens = [];
@@ -271,6 +299,10 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   vm.init();
+
+  // Inicializar máscara telefónica en campos de entrada (+505 automático)
+  attachPhoneMask(document.getElementById("new-user-phone"));
+  attachPhoneMask(document.getElementById("s-inv-client-phone"));
 
   // Detección automática si el admin escanea un QR físico o abre con ?scan= o ?claim=
   const params = new URLSearchParams(window.location.search);
@@ -2278,7 +2310,7 @@ async function submitSingleDigitalInvoice(action = 'print') {
     }
 
     if (action === "whatsapp") {
-      let rawPhone = clientPhone.replace(/[^0-9]/g, '');
+      let rawPhone = FirestoreService.normalizePhone(clientPhone);
       if (rawPhone.length === 8) rawPhone = '505' + rawPhone;
       const claimUrl = "https://meltydeays-wired-club.vercel.app/?claim=" + result.token.tokenCode;
       const textMsg = encodeURIComponent(
@@ -2322,12 +2354,20 @@ function renderUsersTable(users) {
   }
   if (usersFilterQuery) {
     const q = usersFilterQuery.toLowerCase();
-    filtered = filtered.filter(u =>
-      (u.displayName || "").toLowerCase().includes(q) ||
-      (u.phone || "").toLowerCase().includes(q) ||
-      (u.uid || "").toLowerCase().includes(q) ||
-      (u.memberCode || "").toLowerCase().includes(q)
-    );
+    const qClean = q.replace(/\D/g, "");
+    filtered = filtered.filter(u => {
+      const uPhone = (u.phone || "").toLowerCase();
+      const uPhoneClean = (u.phone || "").replace(/\D/g, "");
+      const uPhoneFormatted = FirestoreService.formatPhoneDisplay(u.phone).toLowerCase();
+      return (
+        (u.displayName || "").toLowerCase().includes(q) ||
+        uPhone.includes(q) ||
+        (qClean && uPhoneClean.includes(qClean)) ||
+        uPhoneFormatted.includes(q) ||
+        (u.uid || "").toLowerCase().includes(q) ||
+        (u.memberCode || "").toLowerCase().includes(q)
+      );
+    });
   }
 
   if (filtered.length === 0) {
@@ -2358,6 +2398,8 @@ function renderUsersTable(users) {
 
     const joinDate = u.createdAt ? new Date(u.createdAt).toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" }) : "Reciente";
 
+    const phoneDisplay = u.phone ? ("+505 " + FirestoreService.formatPhoneDisplay(u.phone)) : "-";
+
     return `
       <tr style="${isBanned ? 'background:#fff1f2;' : ''}">
         <td>
@@ -2365,7 +2407,7 @@ function renderUsersTable(users) {
           <div style="font-size:0.72rem; color:var(--primary); font-family:var(--font-mono); font-weight:700;">${u.memberCode || u.uid}</div>
         </td>
         <td>
-          <div style="font-family:var(--font-mono); font-size:0.8rem; color:var(--dark); font-weight:700;">📞 ${u.phone || "-"}</div>
+          <div style="font-family:var(--font-mono); font-size:0.8rem; color:var(--dark); font-weight:700;">📞 ${phoneDisplay}</div>
           <div style="display:flex; align-items:center; gap:4px; font-size:0.75rem; margin-top:3px;">
             <span style="font-family:var(--font-mono); font-weight:700; color:var(--gray-500); font-size:0.7rem;">PIN:</span>
             <strong style="font-family:var(--font-mono); font-size:0.82rem; font-weight:800; background:#e0e7ff; color:#312e81; padding:1px 6px; border-radius:3px; border:1px solid #c7d2fe; letter-spacing:1px;" title="PIN de acceso">${u.pin || "1234"}</strong>
@@ -2559,10 +2601,11 @@ function updateNewUserPreview() {
   const pUid = document.getElementById("preview-new-user-uid");
   const pPts = document.getElementById("preview-new-user-points");
 
+  const clean = FirestoreService.normalizePhone(phoneVal);
   if (pName) pName.textContent = nameVal || "Socio Sin Nombre";
-  if (pPhone) pPhone.textContent = "📞 Tel: " + (phoneVal || "--------");
+  if (pPhone) pPhone.textContent = "📞 Tel: " + (clean ? ("+505 " + FirestoreService.formatPhoneDisplay(clean)) : "+505 --------");
   if (pPin) pPin.textContent = "🔑 PIN: " + (pinVal || "----");
-  if (pUid) pUid.textContent = "UID: CLIENT-" + (phoneVal ? phoneVal.replace(/\D/g, "") : "--------");
+  if (pUid) pUid.textContent = "UID: CLIENT-" + (clean || "--------");
   if (pPts) pPts.textContent = "Saldo: " + ptsVal.toLocaleString() + " WP";
 }
 
@@ -2615,8 +2658,9 @@ async function saveNewUserAdmin() {
     showToast("⚠️ El nombre del socio es obligatorio.", "error");
     return;
   }
-  if (!phone || phone.replace(/\D/g, "").length < 8) {
-    showToast("⚠️ Ingresa un número telefónico válido (mínimo 8 dígitos).", "error");
+  const cleanPhone = FirestoreService.normalizePhone(phone);
+  if (!cleanPhone || cleanPhone.length !== 8) {
+    showToast("⚠️ Ingresa un número telefónico válido de 8 dígitos (ej: 5843-8412). El prefijo +505 es automático.", "error");
     return;
   }
   if (pin.length < 4 || pin.length > 8) {
@@ -2625,7 +2669,7 @@ async function saveNewUserAdmin() {
   }
 
   try {
-    const user = await vm.registerUserFromAdmin({ displayName: name, phone, pin, initialPoints: points });
+    const user = await vm.registerUserFromAdmin({ displayName: name, phone: cleanPhone, pin, initialPoints: points });
     closeModal("modal-new-user");
     showToast(`✓ Socio ${user.displayName} registrado con éxito. PIN: ${user.pin}`, "success");
     renderUsersTable(vm.users);
@@ -2639,7 +2683,7 @@ function openEditPinModal(uid, name, currentPin, phone) {
   if (!modal) return;
   document.getElementById("edit-pin-target-uid").value = uid;
   document.getElementById("edit-pin-user-name").textContent = name || "Socio";
-  document.getElementById("edit-pin-user-phone").textContent = phone || "-";
+  document.getElementById("edit-pin-user-phone").textContent = phone ? ("+505 " + FirestoreService.formatPhoneDisplay(phone)) : "-";
   document.getElementById("edit-pin-user-current").textContent = currentPin || "----";
   const input = document.getElementById("edit-pin-new-input");
   if (input) {
@@ -2694,7 +2738,7 @@ function openDeleteUserModal(uid, name, phone) {
   if (!modal) return;
   document.getElementById("delete-user-target-uid").value = uid;
   document.getElementById("delete-user-info-name").textContent = name;
-  document.getElementById("delete-user-info-phone").textContent = "Teléfono: " + (phone || "-");
+  document.getElementById("delete-user-info-phone").textContent = "Teléfono: " + (phone ? ("+505 " + FirestoreService.formatPhoneDisplay(phone)) : "-");
   document.getElementById("delete-user-info-uid").textContent = "UID: " + uid;
   modal.style.display = "flex";
 }

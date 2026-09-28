@@ -1,7 +1,35 @@
 /* Controller: Portal de Clientes (The Wired Club) */
 import { CustomerViewModel } from "./viewmodels/CustomerViewModel.js";
+import { FirestoreService } from "./services/FirestoreService.js";
 
 const vm = new CustomerViewModel();
+
+// MÁSCARA AUTOMÁTICA DE TELÉFONO (+505 POR DEFECTO, 8 DÍGITOS, GUION AUTOMÁTICO 5843-8412)
+export function attachPhoneMask(inputEl) {
+  if (!inputEl) return;
+  inputEl.addEventListener("input", function(e) {
+    let raw = e.target.value.replace(/\D/g, "");
+    if (raw.startsWith("00505") && raw.length > 5) {
+      raw = raw.slice(5);
+    } else if (raw.startsWith("505") && raw.length > 8) {
+      raw = raw.slice(3);
+    }
+    raw = raw.slice(0, 8);
+    if (raw.length > 4) {
+      e.target.value = raw.slice(0, 4) + "-" + raw.slice(4);
+    } else {
+      e.target.value = raw;
+    }
+  });
+
+  inputEl.addEventListener("keydown", function(e) {
+    if (e.key === "Backspace" && e.target.selectionStart === 5 && e.target.selectionEnd === 5) {
+      e.preventDefault();
+      const val = e.target.value.replace(/\D/g, "");
+      e.target.value = val.slice(0, 3);
+    }
+  });
+}
 
 // SISTEMA TOAST MODERNO (CERO ALERTAS MOLESTAS DE NAVEGADOR)
 export function showToast(message, type = "info") {
@@ -79,6 +107,10 @@ document.addEventListener("DOMContentLoaded", () => {
   window.copyVoucherCode = copyVoucherCode;
   window.setAppCurrency = setAppCurrency;
   window.showToast = showToast;
+
+  // Inicializar máscara telefónica en campos de acceso
+  attachPhoneMask(document.getElementById("login-phone"));
+  attachPhoneMask(document.getElementById("reg-phone"));
 
   // Iniciar ViewModel
   vm.init();
@@ -172,7 +204,7 @@ function render(model) {
 
   if (user) {
     if (passName) passName.textContent = user.displayName;
-    if (passPhone) passPhone.textContent = user.phone || "Sin Teléfono";
+    if (passPhone) passPhone.textContent = user.phone ? ("+505 " + FirestoreService.formatPhoneDisplay(user.phone)) : "Sin Teléfono";
     if (passBalance) passBalance.textContent = user.wiredPoints.toLocaleString();
     if (passTier) passTier.textContent = user.tier || "NAVI_USER";
     if (passMemberId) passMemberId.textContent = "● " + user.memberCode;
@@ -411,19 +443,19 @@ function renderCatalog(catalog, user) {
 
     const costDisplay = isPartial
       ? (user && userPts > 0 && userPts < maxCapPts
-          ? `<div class="reward-cost" style="color: #b45309; font-size: 0.86rem;">${appliedPts} <span style="font-size: 0.64rem; color: #d97706; font-weight: 800;">WP (TOPE ${maxCapPts})</span></div>`
-          : `<div class="reward-cost" style="color: #b45309; font-size: 0.86rem;">${item.pointsCost.toLocaleString()} <span style="font-size: 0.64rem; color: #d97706; font-weight: 800;">WP (TOPE)</span></div>`
-        )
+        ? `<div class="reward-cost" style="color: #b45309; font-size: 0.86rem;">${appliedPts} <span style="font-size: 0.64rem; color: #d97706; font-weight: 800;">WP (TOPE ${maxCapPts})</span></div>`
+        : `<div class="reward-cost" style="color: #b45309; font-size: 0.86rem;">${item.pointsCost.toLocaleString()} <span style="font-size: 0.64rem; color: #d97706; font-weight: 800;">WP (TOPE)</span></div>`
+      )
       : `<div class="reward-cost">${item.pointsCost.toLocaleString()} <span>WP</span></div>`;
 
     return `
       <div class="reward-card">
         <div class="reward-img-wrap" style="${!item.imageUrl ? 'background: linear-gradient(135deg, #0d131f 0%, #17243b 100%); display:flex; align-items:center; justify-content:center;' : ''}">
           ${modeBadge}
-          ${item.imageUrl 
-            ? `<img src="${item.imageUrl}" alt="${item.title}" class="reward-img" onerror="this.onerror=null; this.src=''; this.parentElement.style.background='#0d131f';">`
-            : `<div style="text-align:center; padding:1rem;"><span style="font-size:2.2rem;">${isPartial ? '🏷️' : '🎁'}</span><div style="font-family:var(--font-mono); font-size:0.68rem; color:#38bdf8; margin-top:4px;">${isPartial ? 'SALE_DISCOUNT' : 'TECH_REWARD'}</div></div>`
-          }
+          ${item.imageUrl
+        ? `<img src="${item.imageUrl}" alt="${item.title}" class="reward-img" onerror="this.onerror=null; this.src=''; this.parentElement.style.background='#0d131f';">`
+        : `<div style="text-align:center; padding:1rem;"><span style="font-size:2.2rem;">${isPartial ? '🏷️' : '🎁'}</span><div style="font-family:var(--font-mono); font-size:0.68rem; color:#38bdf8; margin-top:4px;">${isPartial ? 'SALE_DISCOUNT' : 'TECH_REWARD'}</div></div>`
+      }
           <div class="stock-tag ${isOut ? 'out' : ''}">${isOut ? 'AGOTADO' : item.stock + ' DISP.'}</div>
         </div>
         <div class="reward-body">
@@ -470,62 +502,62 @@ function renderVouchers(vouchers) {
   container.innerHTML = `
     <div class="vouchers-grid">
       ${vouchers.map(v => {
-        const isDelivered = v.status === "DELIVERED" || (typeof v.isDelivered === "function" && v.isDelivered()) || Boolean(v.deliveredAt);
-        const isCancelled = v.status === "CANCELLED" || (typeof v.isCancelled === "function" && v.isCancelled()) || Boolean(v.cancelledAt);
-        const isCommercial = typeof v.isCommercial === "function" ? v.isCommercial() : (v.rewardType === "PARTIAL_DISCOUNT" || (v.cashToPayUsd && v.cashToPayUsd > 0));
-        const isPaid = typeof v.isPaidVoucher === "function" ? v.isPaidVoucher() : Boolean(v.isPaid || v.status === "PAID" || v.paidAt);
-        const isExpired = v.status === "EXPIRED" || (typeof v.isExpired === "function" ? v.isExpired() : (isCommercial && !isPaid && !isDelivered && !isCancelled && v.expiresAt && new Date() > new Date(v.expiresAt)));
-        const cost = v.pointsSpent || v.pointsCost || 0;
-        const dateStr = v.createdAt ? new Date(v.createdAt).toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" }) : "-";
+    const isDelivered = v.status === "DELIVERED" || (typeof v.isDelivered === "function" && v.isDelivered()) || Boolean(v.deliveredAt);
+    const isCancelled = v.status === "CANCELLED" || (typeof v.isCancelled === "function" && v.isCancelled()) || Boolean(v.cancelledAt);
+    const isCommercial = typeof v.isCommercial === "function" ? v.isCommercial() : (v.rewardType === "PARTIAL_DISCOUNT" || (v.cashToPayUsd && v.cashToPayUsd > 0));
+    const isPaid = typeof v.isPaidVoucher === "function" ? v.isPaidVoucher() : Boolean(v.isPaid || v.status === "PAID" || v.paidAt);
+    const isExpired = v.status === "EXPIRED" || (typeof v.isExpired === "function" ? v.isExpired() : (isCommercial && !isPaid && !isDelivered && !isCancelled && v.expiresAt && new Date() > new Date(v.expiresAt)));
+    const cost = v.pointsSpent || v.pointsCost || 0;
+    const dateStr = v.createdAt ? new Date(v.createdAt).toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" }) : "-";
 
-        let badgeHtml = "";
-        if (isDelivered) {
-          badgeHtml = `<div class="voucher-badge delivered" style="background:#ecfdf5; color:#065f46; border:1px solid #a7f3d0; font-family:var(--font-mono); font-size:0.68rem; font-weight:800; padding:2px 7px; border-radius:3px;">✓ ENTREGADO</div>`;
-        } else if (isCancelled) {
-          badgeHtml = `<div class="voucher-badge cancelled" style="background:#fee2e2; color:#991b1b; border:1px solid #fca5a5; font-family:var(--font-mono); font-size:0.68rem; font-weight:800; padding:2px 7px; border-radius:3px;">❌ CANCELADO</div>`;
-        } else if (isExpired) {
-          badgeHtml = `<div class="voucher-badge expired" style="background:#fef2f2; color:#b91c1c; border:1px solid #fecaca; font-family:var(--font-mono); font-size:0.68rem; font-weight:800; padding:2px 7px; border-radius:3px;">⚠️ CADUCADO (3D)</div>`;
-        } else if (isPaid) {
-          badgeHtml = `<div class="voucher-badge paid" style="background:#f0fdf4; color:#15803d; border:1px solid #86efac; font-family:var(--font-mono); font-size:0.68rem; font-weight:800; padding:2px 7px; border-radius:3px;">💵 PAGO CONFIRMADO</div>`;
-        } else if (isCommercial) {
-          badgeHtml = `<div class="voucher-badge pending-pay" style="background:#fffbeb; color:#92400e; border:1px solid #fcd34d; font-family:var(--font-mono); font-size:0.68rem; font-weight:800; padding:2px 7px; border-radius:3px;">⏱️ PENDIENTE DE PAGO</div>`;
-        } else {
-          badgeHtml = `<div class="voucher-badge pending" style="background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; font-family:var(--font-mono); font-size:0.68rem; font-weight:800; padding:2px 7px; border-radius:3px;">🎁 LISTO PARA RETIRAR</div>`;
-        }
+    let badgeHtml = "";
+    if (isDelivered) {
+      badgeHtml = `<div class="voucher-badge delivered" style="background:#ecfdf5; color:#065f46; border:1px solid #a7f3d0; font-family:var(--font-mono); font-size:0.68rem; font-weight:800; padding:2px 7px; border-radius:3px;">✓ ENTREGADO</div>`;
+    } else if (isCancelled) {
+      badgeHtml = `<div class="voucher-badge cancelled" style="background:#fee2e2; color:#991b1b; border:1px solid #fca5a5; font-family:var(--font-mono); font-size:0.68rem; font-weight:800; padding:2px 7px; border-radius:3px;">❌ CANCELADO</div>`;
+    } else if (isExpired) {
+      badgeHtml = `<div class="voucher-badge expired" style="background:#fef2f2; color:#b91c1c; border:1px solid #fecaca; font-family:var(--font-mono); font-size:0.68rem; font-weight:800; padding:2px 7px; border-radius:3px;">⚠️ CADUCADO (3D)</div>`;
+    } else if (isPaid) {
+      badgeHtml = `<div class="voucher-badge paid" style="background:#f0fdf4; color:#15803d; border:1px solid #86efac; font-family:var(--font-mono); font-size:0.68rem; font-weight:800; padding:2px 7px; border-radius:3px;">💵 PAGO CONFIRMADO</div>`;
+    } else if (isCommercial) {
+      badgeHtml = `<div class="voucher-badge pending-pay" style="background:#fffbeb; color:#92400e; border:1px solid #fcd34d; font-family:var(--font-mono); font-size:0.68rem; font-weight:800; padding:2px 7px; border-radius:3px;">⏱️ PENDIENTE DE PAGO</div>`;
+    } else {
+      badgeHtml = `<div class="voucher-badge pending" style="background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; font-family:var(--font-mono); font-size:0.68rem; font-weight:800; padding:2px 7px; border-radius:3px;">🎁 LISTO PARA RETIRAR</div>`;
+    }
 
-        let expInfo = "";
-        if (isExpired) {
+    let expInfo = "";
+    if (isExpired) {
+      expInfo = cost > 0
+        ? `<div style="font-family:var(--font-mono); font-size:0.68rem; color:#dc2626; font-weight:800; margin-top:3px;">⚠️ Plazo de 3 días vencido · -10 WP penalización por irresponsabilidad</div>`
+        : `<div style="font-family:var(--font-mono); font-size:0.68rem; color:#dc2626; font-weight:800; margin-top:3px;">⚠️ Plazo de 3 días para pagar vencido · Stock devuelto a tienda</div>`;
+    } else if (!isDelivered && !isCancelled) {
+      if (!isCommercial) {
+        // Recompensa 100% gratis: Cero límite de tiempo
+        expInfo = `<div style="font-family:var(--font-mono); font-size:0.68rem; color:#059669; font-weight:700; margin-top:3px;">🎁 Canje 100% Puntos · Sin límite de tiempo para retiro</div>`;
+      } else if (isPaid) {
+        // Compra comercial ya pagada en efectivo: Cero límite de tiempo
+        expInfo = `<div style="font-family:var(--font-mono); font-size:0.68rem; color:#15803d; font-weight:700; margin-top:3px;">✅ Pago confirmado (${formatPrice(v.cashToPayUsd)}) · Sin límite para retirar</div>`;
+      } else if (v.expiresAt) {
+        const msLeft = new Date(v.expiresAt) - new Date();
+        if (msLeft <= 0) {
           expInfo = cost > 0
             ? `<div style="font-family:var(--font-mono); font-size:0.68rem; color:#dc2626; font-weight:800; margin-top:3px;">⚠️ Plazo de 3 días vencido · -10 WP penalización por irresponsabilidad</div>`
             : `<div style="font-family:var(--font-mono); font-size:0.68rem; color:#dc2626; font-weight:800; margin-top:3px;">⚠️ Plazo de 3 días para pagar vencido · Stock devuelto a tienda</div>`;
-        } else if (!isDelivered && !isCancelled) {
-          if (!isCommercial) {
-            // Recompensa 100% gratis: Cero límite de tiempo
-            expInfo = `<div style="font-family:var(--font-mono); font-size:0.68rem; color:#059669; font-weight:700; margin-top:3px;">🎁 Canje 100% Puntos · Sin límite de tiempo para retiro</div>`;
-          } else if (isPaid) {
-            // Compra comercial ya pagada en efectivo: Cero límite de tiempo
-            expInfo = `<div style="font-family:var(--font-mono); font-size:0.68rem; color:#15803d; font-weight:700; margin-top:3px;">✅ Pago confirmado (${formatPrice(v.cashToPayUsd)}) · Sin límite para retirar</div>`;
-          } else if (v.expiresAt) {
-            const msLeft = new Date(v.expiresAt) - new Date();
-            if (msLeft <= 0) {
-              expInfo = cost > 0
-                ? `<div style="font-family:var(--font-mono); font-size:0.68rem; color:#dc2626; font-weight:800; margin-top:3px;">⚠️ Plazo de 3 días vencido · -10 WP penalización por irresponsabilidad</div>`
-                : `<div style="font-family:var(--font-mono); font-size:0.68rem; color:#dc2626; font-weight:800; margin-top:3px;">⚠️ Plazo de 3 días para pagar vencido · Stock devuelto a tienda</div>`;
-            } else {
-              const hoursLeft = Math.floor(msLeft / (1000 * 60 * 60));
-              const daysLeft = Math.floor(hoursLeft / 24);
-              const remHours = hoursLeft % 24;
-              const timeStr = daysLeft > 0 ? `${daysLeft}d ${remHours}h` : `${hoursLeft}h`;
-              expInfo = `<div style="font-family:var(--font-mono); font-size:0.68rem; color:#b45309; font-weight:700; margin-top:3px;">⏱️ Plazo para pagar: ${timeStr} restantes (Máx 3 días)</div>`;
-            }
-          } else {
-            expInfo = `<div style="font-family:var(--font-mono); font-size:0.68rem; color:#059669; font-weight:700; margin-top:3px;">⏱️ Sin caducidad</div>`;
-          }
+        } else {
+          const hoursLeft = Math.floor(msLeft / (1000 * 60 * 60));
+          const daysLeft = Math.floor(hoursLeft / 24);
+          const remHours = hoursLeft % 24;
+          const timeStr = daysLeft > 0 ? `${daysLeft}d ${remHours}h` : `${hoursLeft}h`;
+          expInfo = `<div style="font-family:var(--font-mono); font-size:0.68rem; color:#b45309; font-weight:700; margin-top:3px;">⏱️ Plazo para pagar: ${timeStr} restantes (Máx 3 días)</div>`;
         }
+      } else {
+        expInfo = `<div style="font-family:var(--font-mono); font-size:0.68rem; color:#059669; font-weight:700; margin-top:3px;">⏱️ Sin caducidad</div>`;
+      }
+    }
 
-        const canCancel = !isDelivered && !isCancelled && !isExpired && (!isCommercial || !isPaid);
+    const canCancel = !isDelivered && !isCancelled && !isExpired && (!isCommercial || !isPaid);
 
-        return `
+    return `
           <div class="voucher-card" onclick="showVoucherModal('${v.voucherCode}')" style="cursor: pointer; transition: transform 0.15s ease; ${isCancelled || isExpired ? 'opacity: 0.8; background: #fffaf0;' : ''}" title="Clic para ver código QR">
             <div class="voucher-header" style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:0.5rem;">
               <div class="voucher-title" style="font-weight:900; font-size:1.05rem; color:var(--dark);">${v.rewardTitle || "Artículo"}</div>
@@ -535,11 +567,11 @@ function renderVouchers(vouchers) {
             ${(v.cashToPayUsd && v.cashToPayUsd > 0) ? `
               <div style="background:${isPaid ? '#ecfdf5' : '#fffbeb'}; border:1px solid ${isPaid ? '#a7f3d0' : '#fcd34d'}; border-radius:3px; padding:3px 6px; font-family:var(--font-mono); font-size:0.72rem; color:${isPaid ? '#065f46' : '#92400e'}; margin: 4px 0;">
                 ${isPaid
-                  ? `✅ <strong>Abonado: ${formatPrice(v.cashToPayUsd)}</strong> (Pago confirmado)`
-                  : ((v.discountUsd && v.discountUsd > 0)
-                      ? `🏷️ Descuento: -${formatPrice(v.discountUsd)} · <strong style="color:#dc2626;">Abonar: ${formatPrice(v.cashToPayUsd)}</strong>`
-                      : `🛒 Compra en tienda · <strong style="color:#dc2626;">Abonar: ${formatPrice(v.cashToPayUsd)}</strong>`)
-                }
+          ? `✅ <strong>Abonado: ${formatPrice(v.cashToPayUsd)}</strong> (Pago confirmado)`
+          : ((v.discountUsd && v.discountUsd > 0)
+            ? `🏷️ Descuento: -${formatPrice(v.discountUsd)} · <strong style="color:#dc2626;">Abonar: ${formatPrice(v.cashToPayUsd)}</strong>`
+            : `🛒 Compra en tienda · <strong style="color:#dc2626;">Abonar: ${formatPrice(v.cashToPayUsd)}</strong>`)
+        }
               </div>
             ` : ''}
             ${expInfo}
@@ -555,7 +587,7 @@ function renderVouchers(vouchers) {
             </div>
           </div>
         `;
-      }).join("")}
+  }).join("")}
     </div>
   `;
 }
@@ -587,8 +619,8 @@ function renderLedger(ledger) {
   container.innerHTML = `
     <div class="ledger-list">
       ${ledger.map(entry => {
-        const isCredit = entry.delta > 0;
-        return `
+    const isCredit = entry.delta > 0;
+    return `
           <div class="ledger-item">
             <div class="ledger-info">
               <h4>${entry.note || 'Movimiento de Wired Points'}</h4>
@@ -599,7 +631,7 @@ function renderLedger(ledger) {
             </div>
           </div>
         `;
-      }).join("")}
+  }).join("")}
     </div>
   `;
 }
@@ -617,7 +649,7 @@ function renderUserQr(text) {
       colorLight: "#ffffff",
       correctLevel: QRCode.CorrectLevel.M
     });
-  } catch (e) {}
+  } catch (e) { }
 }
 
 // CONTROL DE MODALES Y ACCIONES DE VISTA
@@ -671,11 +703,13 @@ function toggleClientPinVisibility(inputId) {
 }
 
 async function submitClientLogin() {
-  const phone = document.getElementById("login-phone").value.trim();
+  const phoneInput = document.getElementById("login-phone");
+  const phone = phoneInput ? phoneInput.value.trim() : "";
   const pin = document.getElementById("login-pin").value.trim();
 
-  if (!phone) {
-    setAuthFeedback("Ingresa tu número de teléfono o WhatsApp", "error");
+  const cleanPhone = FirestoreService.normalizePhone(phone);
+  if (!cleanPhone || cleanPhone.length !== 8) {
+    setAuthFeedback("Ingresa tu número de 8 dígitos (ej: 5843-8412)", "error");
     return;
   }
   if (!pin || pin.length < 4 || pin.length > 8) {
@@ -684,7 +718,7 @@ async function submitClientLogin() {
   }
 
   try {
-    const user = await vm.login(phone, pin);
+    const user = await vm.login(cleanPhone, pin);
     closeAuthModal();
     if (vm.pendingClaimToken) {
       try {
@@ -704,15 +738,17 @@ async function submitClientLogin() {
 
 async function submitClientRegister() {
   const name = document.getElementById("reg-name").value.trim();
-  const phone = document.getElementById("reg-phone").value.trim();
+  const phoneInput = document.getElementById("reg-phone");
+  const phone = phoneInput ? phoneInput.value.trim() : "";
   const pin = document.getElementById("reg-pin").value.trim();
 
   if (!name) {
     setAuthFeedback("Ingresa tu nombre y apellido", "error");
     return;
   }
-  if (!phone) {
-    setAuthFeedback("Ingresa tu número de teléfono o WhatsApp", "error");
+  const cleanPhone = FirestoreService.normalizePhone(phone);
+  if (!cleanPhone || cleanPhone.length !== 8) {
+    setAuthFeedback("Ingresa un número telefónico de 8 dígitos (ej: 5843-8412)", "error");
     return;
   }
   if (!pin || pin.length < 4 || pin.length > 8) {
@@ -721,7 +757,7 @@ async function submitClientRegister() {
   }
 
   try {
-    const user = await vm.register(name, phone, pin);
+    const user = await vm.register(name, cleanPhone, pin);
     closeAuthModal();
     if (vm.pendingClaimToken) {
       try {
@@ -1098,16 +1134,16 @@ function showVoucherModal(voucherCode) {
 
   currentOpenVoucherCode = voucher.voucherCode;
 
-  const isDelivered = voucher.status === "DELIVERED" || 
-                      voucher.status === "REDEEMED" || 
-                      (typeof voucher.isDelivered === "function" && voucher.isDelivered()) || 
-                      Boolean(voucher.deliveredAt);
-  const isCancelled = voucher.status === "CANCELLED" || 
-                      (typeof voucher.isCancelled === "function" && voucher.isCancelled()) || 
-                      Boolean(voucher.cancelledAt);
-  const isExpired = typeof voucher.isExpired === "function" 
-                      ? voucher.isExpired() 
-                      : (voucher.expiresAt && !isDelivered && !isCancelled && new Date() > new Date(voucher.expiresAt));
+  const isDelivered = voucher.status === "DELIVERED" ||
+    voucher.status === "REDEEMED" ||
+    (typeof voucher.isDelivered === "function" && voucher.isDelivered()) ||
+    Boolean(voucher.deliveredAt);
+  const isCancelled = voucher.status === "CANCELLED" ||
+    (typeof voucher.isCancelled === "function" && voucher.isCancelled()) ||
+    Boolean(voucher.cancelledAt);
+  const isExpired = typeof voucher.isExpired === "function"
+    ? voucher.isExpired()
+    : (voucher.expiresAt && !isDelivered && !isCancelled && new Date() > new Date(voucher.expiresAt));
 
   const modalTitle = document.getElementById("modal-voucher-title");
   const modalCode = document.getElementById("modal-voucher-code");
@@ -1511,7 +1547,7 @@ function playCyberArpeggio() {
       osc.start(ctx.currentTime + idx * 0.07);
       osc.stop(ctx.currentTime + idx * 0.07 + 0.2);
     });
-  } catch (e) {}
+  } catch (e) { }
 }
 
 function animatePointsDeduction(cost) {
@@ -1671,10 +1707,10 @@ async function submitAdminAssignFromScan() {
     tok.status = "ACTIVE";
     tok.activatedAt = new Date().toISOString();
     await FirestoreService.saveToken(tok);
-    
+
     closeAdminAssignModal();
     showToast("¡Listo! Asignados +" + points + " WP a la factura. Escribe '" + points + "' a lápiz en el reverso físico.", "success");
-    
+
     render(vm);
   } catch (err) {
     showToast("Error al guardar puntos: " + err.message, "error");

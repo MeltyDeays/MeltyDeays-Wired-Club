@@ -96,8 +96,12 @@ export class AdminViewModel {
   async registerUserFromAdmin(userData) {
     const name = (userData.displayName || "").trim();
     if (!name) throw new Error("El nombre del socio es obligatorio.");
-    const cleanPhone = (userData.phone || "").replace(/\D/g, "");
-    if (cleanPhone.length < 8) throw new Error("Ingresa un número telefónico válido (mínimo 8 dígitos).");
+    
+    // Normalización canónica anti-burlas: elimina prefijos (+505, 505, 00505)
+    const cleanPhone = FirestoreService.normalizePhone(userData.phone || "");
+    if (!cleanPhone || cleanPhone.length !== 8) {
+      throw new Error("Ingresa un número telefónico de 8 dígitos (ej: 5843-8412). El prefijo +505 es automático.");
+    }
     const pin = (userData.pin || "1234").trim();
     if (pin.length < 4 || pin.length > 8) {
       throw new Error("El PIN debe tener entre 4 y 8 dígitos.");
@@ -106,9 +110,13 @@ export class AdminViewModel {
 
     const uid = "CLIENT-" + cleanPhone;
     const existingUid = await FirestoreService.getUser(uid);
+    const existingLegacy = await FirestoreService.getUser("CLIENT-505" + cleanPhone);
     const existingPhone = await FirestoreService.findUserByCodeOrPhone(cleanPhone);
-    if (existingUid || existingPhone) {
-      throw new Error(`Ya existe un socio registrado con el número [${cleanPhone}]. No se permiten cuentas duplicadas.`);
+    
+    if (existingUid || existingLegacy || existingPhone) {
+      const fmt = FirestoreService.formatPhoneDisplay(cleanPhone);
+      const existingName = (existingPhone && existingPhone.displayName) || (existingUid && existingUid.displayName) || "Socio Existente";
+      throw new Error(`⚠️ Ya existe un socio registrado con el número [+505 ${fmt}] (${existingName}). No se permiten cuentas duplicadas ni variantes con prefijo.`);
     }
 
     const newUser = new UserModel({

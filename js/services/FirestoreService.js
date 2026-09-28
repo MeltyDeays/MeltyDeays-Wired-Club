@@ -198,6 +198,9 @@ export class FirestoreService {
   }
 
   static async saveUser(user) {
+    if (user && user.phone) {
+      user.phone = this.normalizePhone(user.phone) || user.phone;
+    }
     const snap = engine.getSnapshot();
     snap.users[user.uid] = user;
     engine.saveSnapshot(snap);
@@ -490,32 +493,90 @@ export class FirestoreService {
     return { success: true };
   }
 
-  // Búsqueda inteligente de socio por Member Code (MC-2026-XXXX), Teléfono o UID
+  // Normalización canónica anti-burlas para números de Nicaragua:
+  // Remueve +505, 505, 00505, espacios, guiones, símbolos.
+  // Siempre devuelve estrictamente los 8 dígitos locales (ej: "58438412")
+  static normalizePhone(raw) {
+    if (!raw) return "";
+    let digits = String(raw).replace(/\D/g, "");
+    if (digits.startsWith("00505") && digits.length >= 13) {
+      digits = digits.slice(5);
+    } else if (digits.startsWith("505") && digits.length >= 11) {
+      digits = digits.slice(3);
+    } else if (digits.length > 8 && digits.startsWith("505")) {
+      digits = digits.slice(3);
+    }
+    if (digits.length > 8) {
+      digits = digits.slice(-8);
+    }
+    return digits;
+  }
+
+  // Formato visual estandarizado: 5843-8412
+  static formatPhoneDisplay(raw) {
+    const norm = this.normalizePhone(raw);
+    if (!norm) return "";
+    if (norm.length <= 4) return norm;
+    return norm.slice(0, 4) + "-" + norm.slice(4);
+  }
+
+  // Búsqueda inteligente y exhaustiva de socio por Member Code, Teléfono o UID (con protección anti-burlas +505)
   static async findUserByCodeOrPhone(query) {
     if (!query) return null;
-    const q = query.trim().toUpperCase();
-    const cleanPhone = query.replace(/\D/g, "");
+    const q = String(query).trim().toUpperCase();
+    const normPhone = this.normalizePhone(query);
+    const cleanDigits = String(query).replace(/\D/g, "");
 
     const localUsers = this.getAllUsers();
     let found = localUsers.find(u => {
       const mCode = (u.memberCode || u.member_code || "").toUpperCase();
-      const phone = (u.phone || "").replace(/\D/g, "");
       const uid = (u.uid || "").toUpperCase();
-      return mCode === q || (cleanPhone && phone === cleanPhone) || uid === q;
+      const uPhoneNorm = this.normalizePhone(u.phone);
+      const uPhoneClean = (u.phone || "").replace(/\D/g, "");
+      
+      if (mCode === q || uid === q) return true;
+      if (normPhone && normPhone.length === 8 && uPhoneNorm === normPhone) return true;
+      if (normPhone && (uid === "CLIENT-" + normPhone || uid === "CLIENT-505" + normPhone)) return true;
+      if (cleanDigits && (uPhoneClean === cleanDigits || uid === "CLIENT-" + cleanDigits)) return true;
+      return false;
     });
 
     if (found) return found;
 
     if (db) {
       try {
+        // 1. Búsqueda por Member Code
         let snap = await db.collection("users").where("member_code", "==", q).limit(1).get();
         if (!snap.empty) return snap.docs[0].data();
 
         snap = await db.collection("users").where("memberCode", "==", q).limit(1).get();
         if (!snap.empty) return snap.docs[0].data();
 
-        if (cleanPhone) {
-          snap = await db.collection("users").where("phone", "==", cleanPhone).limit(1).get();
+        // 2. Búsqueda directa por Doc ID (UID Canónico y Legacy)
+        if (normPhone && normPhone.length === 8) {
+          const docRef1 = await db.collection("users").doc("CLIENT-" + normPhone).get();
+          if (docRef1.exists) return docRef1.data();
+
+          const docRef2 = await db.collection("users").doc("CLIENT-505" + normPhone).get();
+          if (docRef2.exists) return docRef2.data();
+        }
+
+        // 3. Búsqueda multi-variante por campo 'phone'
+        const phoneVariants = new Set();
+        if (normPhone) {
+          phoneVariants.add(normPhone);
+          phoneVariants.add("505" + normPhone);
+          phoneVariants.add("+505" + normPhone);
+          phoneVariants.add("+505 " + normPhone);
+          phoneVariants.add(this.formatPhoneDisplay(normPhone));
+          phoneVariants.add("+505 " + this.formatPhoneDisplay(normPhone));
+        }
+        if (cleanDigits) {
+          phoneVariants.add(cleanDigits);
+        }
+
+        for (const variant of phoneVariants) {
+          snap = await db.collection("users").where("phone", "==", variant).limit(1).get();
           if (!snap.empty) return snap.docs[0].data();
         }
       } catch (e) {
