@@ -1385,11 +1385,10 @@ function recalculateSalePoints() {
 
   // Conversión a Wired Points (WP): 1 USD de premio físico en catálogo = 50 WP (ej. premio de $20 Landed cuesta 1,000 WP)
   const WP_PER_REWARD_USD = 50; 
-  let suggestedPoints = Math.round(rewardValUsd * WP_PER_REWARD_USD);
-  if (suggestedPoints % 10 !== 0) {
-    suggestedPoints = Math.round(suggestedPoints / 10) * 10;
+  let suggestedPoints = 0;
+  if (rewardValUsd > 0) {
+    suggestedPoints = Math.max(1, Math.round(rewardValUsd * WP_PER_REWARD_USD));
   }
-  if (grossProfit > 0 && suggestedPoints < 50) suggestedPoints = 50;
 
   const costOfPointsInRewards = suggestedPoints / WP_PER_REWARD_USD;
   const retainedProfit = Math.max(0, grossProfit - costOfPointsInRewards);
