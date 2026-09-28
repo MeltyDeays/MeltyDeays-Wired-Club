@@ -1297,6 +1297,942 @@ export class InvoiceTemplateService {
 </html>`;
   }
 
+  /**
+   * Genera el HTML estructurado de una Factura Digital Individual completa (1 página entera)
+   * @param {object} inv - Datos de la factura ({ folio, date, time, clientName, clientPhone, paymentMethod, currency, items, subtotal, discount, total, pointsValue, tokenCode, securityPin, warrantyText, notes })
+   */
+  static getSingleDigitalInvoiceHtml(inv) {
+    const data = inv || {};
+    const formattedFolio = String(data.folio || "0001").padStart(4, "0");
+    const today = new Date();
+    const dateStr = data.date || today.toLocaleDateString("es-NI", { day: "2-digit", month: "2-digit", year: "numeric" });
+    const timeStr = data.time || today.toLocaleTimeString("es-NI", { hour: "2-digit", minute: "2-digit" });
+    const clientName = data.clientName || "Consumidor Final / Cliente General";
+    const clientPhone = data.clientPhone || "Mostrador / Sin Registrar";
+    const paymentMethod = data.paymentMethod || "Efectivo";
+    const currency = data.currency || "USD";
+    const currSym = currency === "NIO" ? "C$" : "$";
+    const rateNio = 37.0;
+
+    const items = (data.items && data.items.length > 0) ? data.items : [
+      { cant: 1, desc: "Artículo de Tecnología / Periférico Casual", price: Number(data.total || 0), total: Number(data.total || 0) }
+    ];
+
+    const subtotalNum = Number(data.subtotal != null ? data.subtotal : items.reduce((acc, it) => acc + (Number(it.total) || 0), 0));
+    const discountNum = Number(data.discount || 0);
+    const totalNum = Number(data.total != null ? data.total : (subtotalNum - discountNum));
+    const totalNio = currency === "USD" ? (totalNum * rateNio).toFixed(2) : totalNum.toFixed(2);
+    const totalUsd = currency === "NIO" ? (totalNum / rateNio).toFixed(2) : totalNum.toFixed(2);
+
+    const hasPoints = Boolean(data.tokenCode && (data.pointsValue > 0 || data.pointsValue === 0));
+    const pointsVal = Number(data.pointsValue || 0);
+    const tokenCode = data.tokenCode || ("WP-2026-F" + formattedFolio + "-DIGITAL");
+    const securityPin = data.securityPin || "----";
+    const warrantyText = data.warrantyText || "30 DÍAS CALENDARIO (DEFECTOS DE FÁBRICA)";
+    const claimUrl = "https://meltydeays-wired-club.vercel.app/?claim=" + tokenCode;
+
+    // Generar mínimo 6 filas para presentación estética balanceada
+    let rowsHtml = "";
+    items.forEach((it) => {
+      const p = Number(it.price || 0).toFixed(2);
+      const t = Number(it.total || 0).toFixed(2);
+      rowsHtml += `
+        <tr class="s-row">
+          <td class="s-col-cant">${it.cant || 1}</td>
+          <td class="s-col-desc">
+            <div class="s-desc-main">${it.desc || "Producto"}</div>
+            ${it.subdesc ? `<div class="s-desc-sub">${it.subdesc}</div>` : ""}
+          </td>
+          <td class="s-col-price">${currSym} ${p}</td>
+          <td class="s-col-total">${currSym} ${t}</td>
+        </tr>`;
+    });
+
+    const fillerCount = Math.max(0, 6 - items.length);
+    for (let f = 0; f < fillerCount; f++) {
+      rowsHtml += `
+        <tr class="s-row s-row-empty">
+          <td class="s-col-cant">&nbsp;</td>
+          <td class="s-col-desc">&nbsp;</td>
+          <td class="s-col-price">&nbsp;</td>
+          <td class="s-col-total">&nbsp;</td>
+        </tr>`;
+    }
+
+    return `
+    <article class="single-digital-invoice">
+      <!-- ESQUINAS TÉCNICAS ESTILO THE WIRED -->
+      <div class="tech-corner top-left">+</div>
+      <div class="tech-corner top-right">+</div>
+      <div class="tech-corner bottom-left">+</div>
+      <div class="tech-corner bottom-right">+</div>
+
+      <!-- CABECERA PRINCIPAL -->
+      <header class="s-header">
+        <div class="s-brand-col">
+          <div class="s-brand-badge-icon">
+            <svg viewBox="0 0 38 38" width="50" height="50" fill="none" xmlns="http://www.w3.org/2000/svg" class="wired-pole-svg">
+              <rect x="0.5" y="0.5" width="37" height="37" rx="6" fill="#ffffff" stroke="#0f172a" stroke-width="1.3"/>
+              <line x1="2" y1="19" x2="36" y2="19" stroke="#f1f5f9" stroke-width="0.8"/>
+              <line x1="19" y1="2" x2="19" y2="36" stroke="#f1f5f9" stroke-width="0.8"/>
+              <path d="M1,8 Q12,18 19,10 Q26,18 37,8" fill="none" stroke="#0f172a" stroke-width="1.2"/>
+              <path d="M1,14 Q10,22 19,15 Q28,22 37,13" fill="none" stroke="#0f172a" stroke-width="1.2"/>
+              <path d="M1,20 Q11,27 19,21 Q27,27 37,19" fill="none" stroke="#e11d48" stroke-width="1.3"/>
+              <path d="M1,26 Q12,32 19,26 Q27,33 37,25" fill="none" stroke="#4f46e5" stroke-width="1.1"/>
+              <rect x="17.2" y="4" width="3.6" height="33" rx="0.8" fill="#0f172a"/>
+              <rect x="7" y="9" width="24" height="2" rx="0.8" fill="#0f172a"/>
+              <circle cx="9" cy="8.2" r="1.3" fill="#e11d48" stroke="#0f172a" stroke-width="0.7"/>
+              <circle cx="14" cy="8.2" r="1.3" fill="#0f172a"/>
+              <circle cx="24" cy="8.2" r="1.3" fill="#0f172a"/>
+              <circle cx="29" cy="8.2" r="1.3" fill="#e11d48" stroke="#0f172a" stroke-width="0.7"/>
+              <rect x="9" y="14" width="20" height="2" rx="0.8" fill="#0f172a"/>
+              <circle cx="11" cy="13.2" r="1.3" fill="#0f172a"/>
+              <circle cx="27" cy="13.2" r="1.3" fill="#0f172a"/>
+              <rect x="21" y="16.5" width="6.5" height="10" rx="1.5" fill="#0f172a"/>
+              <line x1="23" y1="18.5" x2="23" y2="24.5" stroke="#ffffff" stroke-width="0.8"/>
+              <line x1="25.5" y1="18.5" x2="25.5" y2="24.5" stroke="#ffffff" stroke-width="0.8"/>
+              <rect x="8" y="25" width="12" height="1.8" rx="0.8" fill="#0f172a"/>
+              <circle cx="19" cy="3.5" r="1.4" fill="#e11d48"/>
+              <path d="M19,16 L15,36" stroke="#0f172a" stroke-width="0.9" stroke-dasharray="2 1"/>
+            </svg>
+          </div>
+          <div class="s-brand-text">
+            <div class="s-brand-line">
+              <span class="brand-word-melty">Melty</span><span class="brand-word-deays">Deays</span>
+              <span class="brand-pill-tag">STORE</span>
+              <span class="s-badge-digital">COMPROBANTE ELECTRÓNICO OFICIAL</span>
+            </div>
+            <div class="s-brand-kicker">TECH, GADGETS & GAMING HARDWARE · NICARAGUA</div>
+            <div class="s-brand-sub">Laptops · Turbo Fans · Mandos · Audio · Periféricos · Componentes</div>
+          </div>
+        </div>
+
+        <div class="s-meta-col">
+          <div class="s-folio-card">
+            <div class="s-folio-header">
+              <span class="s-pulse-dot"></span>
+              <span>FACTURA ELECTRÓNICA</span>
+            </div>
+            <div class="s-folio-number">#MD-2026-<strong>${formattedFolio}</strong></div>
+            <div class="s-folio-date-row">
+              <span>FECHA: <strong>${dateStr}</strong></span>
+              <span>HORA: <strong>${timeStr}</strong></span>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- BARRA DE DATOS DEL CLIENTE Y OPERACIÓN -->
+      <section class="s-client-card">
+        <div class="s-client-grid">
+          <div class="s-client-item">
+            <span class="s-lbl">CLIENTE / TITULAR:</span>
+            <div class="s-val" contenteditable="true">${clientName}</div>
+          </div>
+          <div class="s-client-item">
+            <span class="s-lbl">TELÉFONO / WHATSAPP:</span>
+            <div class="s-val" contenteditable="true">${clientPhone}</div>
+          </div>
+          <div class="s-client-item">
+            <span class="s-lbl">MÉTODO DE PAGO:</span>
+            <div class="s-val" contenteditable="true">${paymentMethod}</div>
+          </div>
+          <div class="s-client-item">
+            <span class="s-lbl">MONEDA:</span>
+            <div class="s-val">${currency === "NIO" ? "Córdobas (C$ NIO)" : "Dólares ($ USD)"} · Oficial</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TABLA DETALLADA DE ARTÍCULOS -->
+      <section class="s-table-container">
+        <table class="s-items-table">
+          <thead>
+            <tr>
+              <th class="s-th-cant">CANT</th>
+              <th class="s-th-desc">DESCRIPCIÓN DEL ARTÍCULO / HARDWARE & ESPECIFICACIONES</th>
+              <th class="s-th-price">P. UNITARIO</th>
+              <th class="s-th-total">TOTAL</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rowsHtml}
+          </tbody>
+        </table>
+      </section>
+
+      <!-- SECCIÓN TOTALES Y LIQUIDACIÓN -->
+      <section class="s-totals-split">
+        <div class="s-notes-box">
+          <div class="s-notes-title">⚡ DETALLE DE LA OPERACIÓN</div>
+          <div class="s-notes-body" contenteditable="true">
+            ${data.notes || "Venta casual en mostrador / pedido digital. Artículo(s) inspeccionados y probados a plena satisfacción del cliente antes de su despacho."}
+          </div>
+          <div class="s-conversion-line">
+            Equivalencia cambiaria oficial: <strong>1 USD = 37.0 NIO</strong>
+            ${currency === "USD" 
+              ? `(Total en Córdobas: <strong style="color:#0f172a;">C$ ${totalNio}</strong>)` 
+              : `(Total en Dólares: <strong style="color:#0f172a;">$ ${totalUsd}</strong>)`}
+          </div>
+        </div>
+
+        <div class="s-receipt-box">
+          <div class="s-receipt-row">
+            <span class="s-rc-label">SUBTOTAL:</span>
+            <span class="s-rc-val">${currSym} ${subtotalNum.toFixed(2)}</span>
+          </div>
+          <div class="s-receipt-row">
+            <span class="s-rc-label">DESCUENTO:</span>
+            <span class="s-rc-val text-discount">-${currSym} ${discountNum.toFixed(2)}</span>
+          </div>
+          <div class="s-receipt-row s-receipt-final">
+            <span class="s-rc-label-total">TOTAL A PAGAR:</span>
+            <div class="s-rc-val-total">
+              <span class="s-curr-symbol">${currSym}</span>
+              <span class="s-total-amount">${totalNum.toFixed(2)}</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- BLOQUE DE FIDELIZACIÓN / RECOMPENSA (THE WIRED CLUB) -->
+      ${hasPoints ? `
+      <section class="s-reward-block">
+        <div class="s-rw-left">
+          <div class="s-rw-badge">
+            <span>⚡ THE WIRED CLUB // FIDELIZACIÓN GAMIFICADA</span>
+          </div>
+          <div class="s-rw-title">
+            ¡Esta compra te otorgó <strong>+${pointsVal} Wired Points (WP)</strong>!
+          </div>
+          <div class="s-rw-sub">
+            Escanea este código QR con la cámara de tu teléfono para ingresar a tu <strong>CyberPass</strong> y acreditar tus puntos automáticamente para canjear periféricos y gadgets en la plataforma.
+          </div>
+          <div class="s-rw-meta">
+            <span>CÓDIGO TOKEN: <code>${tokenCode}</code></span>
+            <span>PIN DE SEGURIDAD: <strong>${securityPin}</strong></span>
+          </div>
+        </div>
+        <div class="s-rw-qr-box">
+          <div class="s-rw-qr-frame" id="digital-inv-qr">
+            <!-- QR Generado dinámicamente con QRCode.js -->
+          </div>
+          <span class="s-rw-qr-scan">ESCANEAR PARA RECLAMAR</span>
+        </div>
+      </section>
+      ` : ""}
+
+      <!-- GARANTÍA, CAMBIO Y POLÍTICAS OFICIALES DE MELTYDEAYS -->
+      <footer class="s-warranty-box">
+        <div class="s-w-head">
+          <div class="s-w-title-wrap">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#b45309" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+            <strong>TÉRMINOS DE GARANTÍA, CAMBIO Y POLÍTICAS COMERCIALES</strong>
+          </div>
+          <div class="s-w-period">
+            <span>PLAZO DE GARANTÍA:</span>
+            <strong contenteditable="true">${warrantyText}</strong>
+          </div>
+        </div>
+        <div class="s-w-content">
+          • <strong>DEFECTOS DE FÁBRICA:</strong> Válido exclusivamente por averías técnicas no atribuibles al usuario, previa revisión con empaque original íntegro, accesorios y este comprobante.<br>
+          • <strong>CAMBIO O REEMBOLSO:</strong> Ante fallo de fábrica no reparable comprobado, se ofrece sustitución por equipo idéntico, cambio por otro artículo de catálogo o reembolso.<br>
+          • <strong>EXCLUSIONES EXPRESAS:</strong> No cubre daños ocasionados por caídas, humedad, sobrevoltaje, desastres naturales, sellos violentados o manipulación indebida.
+        </div>
+      </footer>
+
+      <!-- PIE DE COMPROBANTE CON REDES, CONTACTO Y FIRMA OFICIAL -->
+      <div class="s-bottom-bar">
+        <div class="s-contact-group">
+          <div class="s-wa-qr">
+            <img src="${QR_CATALOG_BASE64}" alt="QR WhatsApp" class="s-wa-qr-img">
+            <span class="s-wa-tag">CATÁLOGO WA</span>
+          </div>
+          <div class="s-contact-list">
+            <div class="s-ct-row">
+              <span class="badge-tag tag-tel">WhatsApp</span>
+              <span class="s-ct-val">+505 5843 8412</span>
+            </div>
+            <div class="s-ct-row">
+              <span class="badge-tag tag-ig">Instagram</span>
+              <span class="s-ct-val">@meltydeays</span>
+            </div>
+            <div class="s-ct-row">
+              <span class="badge-tag tag-mail">Correo</span>
+              <span class="s-ct-val">evertz2lopeztorrez@gmail.com</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="s-signature-wrapper">
+          <div class="s-sign-flex">
+            <span class="s-digital-sign">MeltyDeays</span>
+            <div class="seal-stamp">
+              <span class="seal-star">★</span>
+              <span class="seal-text">MD</span>
+              <span class="seal-sub">OFICIAL</span>
+            </div>
+          </div>
+          <div class="sign-underline"></div>
+          <div class="sign-caption">Firma Autorizada · MeltyDeays Official Certified</div>
+        </div>
+      </div>
+    </article>`;
+  }
+
+  /**
+   * Genera el documento HTML completo e interactivo listo para imprimir o enviar en PDF
+   * @param {object} invoiceData - Datos de la factura
+   * @param {object} [paperDims] - Dimensiones del papel
+   */
+  static generateSingleDigitalInvoiceDocument(invoiceData, paperDims) {
+    const dims = paperDims || { name: 'Carta (Letter)', widthMm: 215.9, heightMm: 279.4, cssSize: 'letter portrait' };
+    const inv = invoiceData || {};
+    const formattedFolio = String(inv.folio || "0001").padStart(4, "0");
+    const claimUrl = "https://meltydeays-wired-club.vercel.app/?claim=" + (inv.tokenCode || "");
+    const singleHtml = InvoiceTemplateService.getSingleDigitalInvoiceHtml(inv);
+
+    const styles = `
+    ${InvoiceTemplateService.getComponentStyles(dims)}
+
+    /* ========================================================
+       ESTILOS EXCLUSIVOS DE LA FACTURA DIGITAL INDIVIDUAL (1 PÁGINA)
+       ======================================================== */
+    .single-digital-invoice-page {
+      width: ${dims.widthMm}mm;
+      min-height: ${dims.heightMm}mm;
+      margin: 18px auto;
+      background: #ffffff;
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.15);
+      box-sizing: border-box;
+      position: relative;
+    }
+
+    .single-digital-invoice {
+      box-sizing: border-box;
+      padding: 24px 28px 20px 28px;
+      min-height: ${dims.heightMm}mm;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      background-color: #ffffff;
+      background-image: radial-gradient(#cbd5e1 0.75px, transparent 0.75px);
+      background-size: 8px 8px;
+    }
+
+    .s-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid #0f172a;
+      padding-bottom: 12px;
+      margin-bottom: 12px;
+    }
+
+    .s-brand-col {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .s-brand-badge-icon {
+      border: 1.5px solid #0f172a;
+      border-radius: 8px;
+      padding: 3px;
+      background: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 2px 2px 0px #0f172a;
+    }
+
+    .s-brand-text {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+
+    .s-brand-line {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .s-brand-line .brand-word-melty { font-size: 1.7rem; font-weight: 900; color: #0f172a; letter-spacing: -0.5px; }
+    .s-brand-line .brand-word-deays { font-size: 1.7rem; font-weight: 900; color: #e11d48; letter-spacing: -0.5px; }
+    .s-badge-digital {
+      background: #0f172a;
+      color: #38bdf8;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.65rem;
+      font-weight: 900;
+      padding: 2px 8px;
+      border-radius: 4px;
+      letter-spacing: 0.5px;
+    }
+
+    .s-brand-kicker {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      font-weight: 800;
+      color: #4338ca;
+      letter-spacing: 0.4px;
+    }
+
+    .s-brand-sub {
+      font-size: 0.7rem;
+      color: #64748b;
+      font-weight: 600;
+    }
+
+    .s-folio-card {
+      background: #0f172a;
+      border: 1.5px solid #334155;
+      border-radius: 6px;
+      padding: 8px 14px;
+      color: #ffffff;
+      text-align: right;
+      box-shadow: 3px 3px 0px rgba(15, 23, 42, 0.4);
+    }
+
+    .s-folio-header {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.62rem;
+      font-weight: 800;
+      color: #38bdf8;
+      letter-spacing: 1px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 5px;
+      margin-bottom: 2px;
+    }
+
+    .s-pulse-dot {
+      width: 6px;
+      height: 6px;
+      background: #38bdf8;
+      border-radius: 50%;
+      display: inline-block;
+      box-shadow: 0 0 6px #38bdf8;
+    }
+
+    .s-folio-number {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.35rem;
+      font-weight: 900;
+      color: #ffffff;
+      letter-spacing: 0.5px;
+    }
+
+    .s-folio-number strong { color: #f43f5e; }
+
+    .s-folio-date-row {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.65rem;
+      color: #94a3b8;
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      margin-top: 3px;
+    }
+
+    .s-client-card {
+      background: #f8fafc;
+      border: 1.5px solid #0f172a;
+      border-radius: 6px;
+      padding: 10px 14px;
+      margin-bottom: 12px;
+      box-shadow: 2px 2px 0px #0f172a;
+    }
+
+    .s-client-grid {
+      display: grid;
+      grid-template-columns: 2fr 1.3fr 1.3fr 1.4fr;
+      gap: 12px;
+    }
+
+    .s-client-item .s-lbl {
+      display: block;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.62rem;
+      font-weight: 800;
+      color: #64748b;
+      margin-bottom: 2px;
+    }
+
+    .s-client-item .s-val {
+      font-size: 0.85rem;
+      font-weight: 800;
+      color: #0f172a;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .s-table-container {
+      border: 1.5px solid #0f172a;
+      border-radius: 6px;
+      overflow: hidden;
+      margin-bottom: 12px;
+      background: #ffffff;
+      box-shadow: 2px 2px 0px #0f172a;
+    }
+
+    .s-items-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .s-items-table thead tr {
+      background: #0f172a;
+      color: #ffffff;
+    }
+
+    .s-items-table th {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.68rem;
+      font-weight: 900;
+      letter-spacing: 0.5px;
+      padding: 8px 10px;
+      border-right: 1px solid #334155;
+    }
+
+    .s-items-table th:last-child { border-right: none; }
+    .s-th-cant { width: 55px; text-align: center; }
+    .s-th-desc { text-align: left; }
+    .s-th-price { width: 110px; text-align: right; }
+    .s-th-total { width: 110px; text-align: right; }
+
+    .s-items-table tbody tr {
+      border-bottom: 1px dashed #cbd5e1;
+    }
+
+    .s-items-table tbody tr:last-child { border-bottom: none; }
+
+    .s-items-table td {
+      padding: 8px 10px;
+      font-size: 0.82rem;
+      color: #0f172a;
+      border-right: 1px solid #e2e8f0;
+      vertical-align: middle;
+    }
+
+    .s-items-table td:last-child { border-right: none; }
+    .s-col-cant { text-align: center; font-family: 'JetBrains Mono', monospace; font-weight: 800; }
+    .s-col-desc { font-weight: 700; }
+    .s-desc-main { font-weight: 800; color: #0f172a; }
+    .s-desc-sub { font-size: 0.68rem; color: #64748b; margin-top: 1px; }
+    .s-col-price { text-align: right; font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #334155; }
+    .s-col-total { text-align: right; font-family: 'JetBrains Mono', monospace; font-weight: 900; color: #0f172a; }
+    .s-row-empty td { height: 26px; }
+
+    .s-totals-split {
+      display: grid;
+      grid-template-columns: 1fr 280px;
+      gap: 14px;
+      margin-bottom: 12px;
+    }
+
+    .s-notes-box {
+      background: #f8fafc;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 6px;
+      padding: 10px 14px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .s-notes-title {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.65rem;
+      font-weight: 900;
+      color: #475569;
+      margin-bottom: 4px;
+    }
+
+    .s-notes-body {
+      font-size: 0.75rem;
+      color: #334155;
+      line-height: 1.35;
+    }
+
+    .s-conversion-line {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.68rem;
+      color: #059669;
+      margin-top: 6px;
+      padding-top: 4px;
+      border-top: 1px dashed #cbd5e1;
+    }
+
+    .s-receipt-box {
+      background: #ffffff;
+      border: 1.5px solid #0f172a;
+      border-radius: 6px;
+      padding: 10px 14px;
+      box-shadow: 2px 2px 0px #0f172a;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .s-receipt-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.8rem;
+      color: #475569;
+      font-weight: 700;
+    }
+
+    .s-receipt-row .s-rc-val {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 800;
+      color: #0f172a;
+    }
+
+    .s-receipt-row .text-discount { color: #e11d48; }
+
+    .s-receipt-final {
+      border-top: 2px solid #0f172a;
+      padding-top: 6px;
+      margin-top: 2px;
+    }
+
+    .s-rc-label-total {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.82rem;
+      font-weight: 900;
+      color: #0f172a;
+    }
+
+    .s-rc-val-total {
+      display: flex;
+      align-items: baseline;
+      gap: 4px;
+      color: #059669;
+    }
+
+    .s-curr-symbol { font-size: 0.95rem; font-weight: 800; }
+    .s-total-amount { font-family: 'JetBrains Mono', monospace; font-size: 1.45rem; font-weight: 900; }
+
+    .s-reward-block {
+      background: #eef2ff;
+      border: 1.5px solid #4338ca;
+      border-radius: 6px;
+      padding: 10px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 12px;
+      box-shadow: 2px 2px 0px #4338ca;
+    }
+
+    .s-rw-left {
+      flex: 1;
+    }
+
+    .s-rw-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.62rem;
+      font-weight: 900;
+      color: #4338ca;
+      letter-spacing: 0.5px;
+      margin-bottom: 2px;
+    }
+
+    .s-rw-title {
+      font-size: 0.92rem;
+      font-weight: 800;
+      color: #0f172a;
+    }
+
+    .s-rw-title strong { color: #059669; }
+
+    .s-rw-sub {
+      font-size: 0.72rem;
+      color: #475569;
+      line-height: 1.25;
+      margin-top: 2px;
+    }
+
+    .s-rw-meta {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.65rem;
+      color: #334155;
+      display: flex;
+      gap: 14px;
+      margin-top: 4px;
+    }
+
+    .s-rw-meta code { background: #ffffff; padding: 1px 4px; border: 1px solid #c7d2fe; border-radius: 3px; }
+    .s-rw-meta strong { color: #4338ca; }
+
+    .s-rw-qr-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+    }
+
+    .s-rw-qr-frame {
+      width: 72px;
+      height: 72px;
+      background: #ffffff;
+      padding: 3px;
+      border: 1.5px solid #0f172a;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .s-rw-qr-scan {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.52rem;
+      font-weight: 900;
+      color: #4338ca;
+      letter-spacing: 0.4px;
+    }
+
+    .s-warranty-box {
+      background: #fffbeb;
+      border: 1.5px solid #d97706;
+      border-radius: 6px;
+      padding: 8px 12px;
+      margin-bottom: 12px;
+    }
+
+    .s-w-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 3px;
+    }
+
+    .s-w-title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.65rem;
+      font-weight: 900;
+      color: #92400e;
+    }
+
+    .s-w-period {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.65rem;
+      color: #92400e;
+    }
+
+    .s-w-period strong {
+      background: #fef3c7;
+      padding: 1px 6px;
+      border-radius: 3px;
+      border: 1px solid #fde68a;
+    }
+
+    .s-w-content {
+      font-size: 0.68rem;
+      color: #78350f;
+      line-height: 1.3;
+    }
+
+    .s-bottom-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      border-top: 1.5px solid #0f172a;
+      padding-top: 10px;
+    }
+
+    .s-contact-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .s-wa-qr {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1px;
+    }
+
+    .s-wa-qr-img {
+      width: 48px;
+      height: 48px;
+      border: 1px solid #0f172a;
+      border-radius: 4px;
+      background: #fff;
+    }
+
+    .s-wa-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.52rem;
+      font-weight: 900;
+      color: #059669;
+    }
+
+    .s-contact-list {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .s-ct-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .s-ct-val {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      font-weight: 800;
+      color: #0f172a;
+    }
+
+    .s-signature-wrapper {
+      text-align: right;
+      width: 220px;
+    }
+
+    .s-sign-flex {
+      display: flex;
+      justify-content: flex-end;
+      align-items: flex-end;
+      gap: 10px;
+      margin-bottom: 2px;
+    }
+
+    .s-digital-sign {
+      font-family: 'Caveat', cursive;
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: #0f172a;
+      line-height: 1;
+    }
+
+    /* REGLAS DE IMPRESIÓN EXCLUSIVAS PARA FACTURA INDIVIDUAL (1 PÁGINA) */
+    @media print {
+      .single-digital-invoice-page {
+        box-shadow: none !important;
+        margin: 0 !important;
+        width: 100% !important;
+        min-height: 100% !important;
+        page-break-after: avoid !important;
+        break-after: avoid !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+      }
+      .single-digital-invoice {
+        min-height: 100% !important;
+      }
+      @page { size: ${dims.cssSize}; margin: 0; }
+    }
+    `;
+
+    return `<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Factura Electrónica #MD-2026-${formattedFolio} \u2014 MeltyDeays STORE</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700;800;900&family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script>
+  <style>
+    ${styles}
+  </style>
+</head>
+<body>
+  <header class="toolbar">
+    <div class="toolbar-info">
+      <h1>🧾 Factura Electrónica #MD-2026-${formattedFolio} \u2014 MeltyDeays STORE</h1>
+      <p>Factura individual digital · Cliente: ${inv.clientName || 'General'} · Total: ${inv.currency === 'NIO' ? 'C$' : '$'} ${(inv.total || 0).toFixed(2)}</p>
+    </div>
+    <div class="toolbar-actions">
+      <button class="btn btn-bw" id="btn-bw" onclick="toggleBW()">🖤 Blanco y Negro</button>
+      <button class="btn btn-sec" onclick="shareViaWhatsApp()">📲 Enviar WhatsApp</button>
+      <button class="btn btn-sec" onclick="downloadHtmlFile()">📥 Descargar HTML</button>
+      <button class="btn btn-sec" onclick="window.close()">✕ Cerrar</button>
+      <button class="btn btn-print" onclick="window.print()">🖨️ Imprimir / Guardar en PDF (Ctrl + P)</button>
+    </div>
+  </header>
+
+  <main class="single-digital-invoice-page">
+    ${singleHtml}
+  </main>
+
+  <script>
+    const folio = "${formattedFolio}";
+    const claimUrl = "${claimUrl}";
+    const clientPhone = "${inv.clientPhone || ''}";
+    const clientName = "${inv.clientName || 'Estimado cliente'}";
+    const totalFormatted = "${inv.currency === 'NIO' ? 'C$' : '$'} ${(inv.total || 0).toFixed(2)}";
+
+    function toggleBW() {
+      document.body.classList.toggle('bw-mode');
+      const btn = document.getElementById('btn-bw');
+      if (btn) btn.classList.toggle('active');
+    }
+
+    function shareViaWhatsApp() {
+      let rawPhone = clientPhone.replace(/[^0-9]/g, '');
+      if (rawPhone.length === 8) rawPhone = '505' + rawPhone;
+      const textMsg = encodeURIComponent(
+        "¡Hola " + clientName + "! 👋 Gracias por tu compra en MeltyDeays STORE.\n\n" +
+        "🧾 Factura Oficial: #MD-2026-" + folio + "\n" +
+        "💰 Total: " + totalFormatted + "\n" +
+        (claimUrl.includes("WP-") ? "⚡ Puntos Wired Club para reclamar: " + claimUrl + "\n" : "") +
+        "🛡️ Garantía oficial MeltyDeays por defectos de fábrica.\n\n" +
+        "¡Agradecemos tu confianza!"
+      );
+      window.open("https://wa.me/" + (rawPhone || "50558438412") + "?text=" + textMsg, "_blank");
+    }
+
+    function downloadHtmlFile() {
+      const blob = new Blob([document.documentElement.outerHTML], { type: 'text/html;charset=utf-8' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'factura_meltydeays_MD-2026-' + folio + '.html';
+      a.click();
+    }
+
+    window.onload = function() {
+      const qrEl = document.getElementById("digital-inv-qr");
+      if (qrEl && typeof QRCode !== "undefined" && claimUrl) {
+        qrEl.innerHTML = "";
+        new QRCode(qrEl, {
+          text: claimUrl,
+          width: 66, height: 66,
+          colorDark: "#0f172a",
+          colorLight: "#ffffff",
+          correctLevel: QRCode.CorrectLevel.M
+        });
+      }
+      if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(() => {
+          setTimeout(() => { window.print(); }, 400);
+        });
+      } else {
+        setTimeout(() => { window.print(); }, 800);
+      }
+    };
+  <\/script>
+</body>
+</html>`;
+  }
+
   static getComponentStyles(dims) {
     return `
     /* ========================================================

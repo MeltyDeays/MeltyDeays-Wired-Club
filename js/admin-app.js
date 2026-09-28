@@ -246,6 +246,20 @@ document.addEventListener("DOMContentLoaded", () => {
   window.executeTokenOptQr = executeTokenOptQr;
   window.executeTokenOptCopyLink = executeTokenOptCopyLink;
   window.executeTokenOptTestUrl = executeTokenOptTestUrl;
+  window.executeTokenOptDigitalInvoice = executeTokenOptDigitalInvoice;
+
+  // Factura Digital Individual (Venta Casual)
+  window.openSingleDigitalInvoiceModal = openSingleDigitalInvoiceModal;
+  window.refreshSingleInvoiceFolio = refreshSingleInvoiceFolio;
+  window.updateSingleInvoiceCurrency = updateSingleInvoiceCurrency;
+  window.addSingleInvoiceItemRow = addSingleInvoiceItemRow;
+  window.removeSingleInvoiceItemRow = removeSingleInvoiceItemRow;
+  window.addCatalogProductToSingleInvoice = addCatalogProductToSingleInvoice;
+  window.calcSingleInvoiceTotals = calcSingleInvoiceTotals;
+  window.toggleSingleInvoicePointsFields = toggleSingleInvoicePointsFields;
+  window.autoCalculateSingleInvoicePoints = autoCalculateSingleInvoicePoints;
+  window.regenerateSingleInvoicePin = regenerateSingleInvoicePin;
+  window.submitSingleDigitalInvoice = submitSingleDigitalInvoice;
 
   // Sincronización entre pestañas del navegador en tiempo real
   window.addEventListener("storage", (e) => {
@@ -433,6 +447,9 @@ function renderTokensTable(tokens) {
             ` : ""}
             <button class="btn-secondary btn-compact" onclick="viewSingleTokenQr('${t.tokenCode}', '${t.invoiceFolio}', ${t.pointsValue}, '${t.securityPin}')" title="Ver código QR oficial">
               🔍 QR
+            </button>
+            <button class="btn-secondary btn-compact" style="color:#059669; border-color:#059669; font-weight:800;" onclick="openSingleDigitalInvoiceModal('${t.tokenCode}')" title="Ver o Imprimir Factura Digital Completa">
+              🧾 Factura
             </button>
             <button class="btn-secondary btn-dots" onclick="openTokenActionsModal('${t.tokenCode}')" title="Más opciones">
               ···
@@ -1897,6 +1914,350 @@ function executeTokenOptTestUrl() {
   if (selectedTokenForActions) {
     const url = "https://meltydeays-wired-club.vercel.app/?claim=" + selectedTokenForActions.tokenCode;
     window.open(url, "_blank");
+  }
+}
+
+function executeTokenOptDigitalInvoice() {
+  closeModal("modal-token-actions");
+  if (selectedTokenForActions) {
+    openSingleDigitalInvoiceModal(selectedTokenForActions.tokenCode);
+  }
+}
+
+// ========================================================
+// CONTROLADOR DE FACTURA DIGITAL INDIVIDUAL (VENTA CASUAL)
+// ========================================================
+let currentSingleInvoiceTokenCode = null;
+
+function openSingleDigitalInvoiceModal(targetTokenCode = null) {
+  const modal = document.getElementById("modal-single-digital-invoice");
+  if (!modal) return;
+
+  currentSingleInvoiceTokenCode = targetTokenCode;
+
+  // Llenar selector de catálogo con recompensas y productos disponibles
+  const catalogSelect = document.getElementById("s-inv-catalog-preset-select");
+  if (catalogSelect && vm && vm.catalog) {
+    catalogSelect.innerHTML = '<option value="">⚡ + Cargar desde Catálogo...</option>';
+    vm.catalog.forEach(p => {
+      const priceText = p.rewardType === "PARTIAL_DISCOUNT" 
+        ? `$${(p.priceUsd || 0).toFixed(2)} USD` 
+        : `${p.pointsCost || 0} WP`;
+      catalogSelect.innerHTML += `<option value="${p.id}">${p.title} (${priceText})</option>`;
+    });
+  }
+
+  const today = new Date();
+  const dateInput = document.getElementById("s-inv-date");
+  if (dateInput) {
+    dateInput.value = today.toISOString().split("T")[0];
+  }
+  const timeInput = document.getElementById("s-inv-time");
+  if (timeInput) {
+    timeInput.value = today.toLocaleTimeString("es-NI", { hour: "2-digit", minute: "2-digit" });
+  }
+
+  if (targetTokenCode) {
+    const token = (vm.tokens || []).find(t => t.tokenCode === targetTokenCode);
+    if (token) {
+      const folioEl = document.getElementById("s-inv-folio");
+      if (folioEl) folioEl.value = token.invoiceFolio;
+      const ptsEl = document.getElementById("s-inv-points-val");
+      if (ptsEl) ptsEl.value = token.pointsValue || 0;
+      const pinEl = document.getElementById("s-inv-pin-val");
+      if (pinEl) pinEl.value = token.securityPin || Math.floor(1000 + Math.random() * 9000).toString();
+      const chk = document.getElementById("s-inv-enable-points");
+      if (chk) chk.checked = token.pointsValue > 0;
+      toggleSingleInvoicePointsFields(token.pointsValue > 0);
+    }
+  } else {
+    refreshSingleInvoiceFolio();
+    regenerateSingleInvoicePin();
+    const nameEl = document.getElementById("s-inv-client-name");
+    if (nameEl) nameEl.value = "";
+    const phoneEl = document.getElementById("s-inv-client-phone");
+    if (phoneEl) phoneEl.value = "";
+    const discEl = document.getElementById("s-inv-discount-input");
+    if (discEl) discEl.value = "0.00";
+    const ptsEl = document.getElementById("s-inv-points-val");
+    if (ptsEl) ptsEl.value = "0";
+    const chk = document.getElementById("s-inv-enable-points");
+    if (chk) chk.checked = true;
+    toggleSingleInvoicePointsFields(true);
+  }
+
+  // Inicializar filas de items con 1 fila limpia
+  const tbody = document.getElementById("s-inv-items-table-body");
+  if (tbody) {
+    tbody.innerHTML = "";
+    addSingleInvoiceItemRow(1, "", 0);
+  }
+
+  calcSingleInvoiceTotals();
+  modal.style.display = "flex";
+}
+
+function refreshSingleInvoiceFolio() {
+  const folioEl = document.getElementById("s-inv-folio");
+  if (folioEl && vm) {
+    const nextFolio = vm.getNextAvailableFolio();
+    folioEl.value = String(nextFolio).padStart(4, "0");
+  }
+}
+
+function updateSingleInvoiceCurrency() {
+  const curr = document.getElementById("s-inv-currency")?.value || "USD";
+  const sym = curr === "NIO" ? "C$" : "$";
+  document.querySelectorAll(".s-inv-curr-label").forEach(el => {
+    el.textContent = sym;
+  });
+  calcSingleInvoiceTotals();
+}
+
+function addSingleInvoiceItemRow(cant = 1, desc = "", price = 0) {
+  const tbody = document.getElementById("s-inv-items-table-body");
+  if (!tbody) return;
+
+  const row = document.createElement("tr");
+  row.style.borderBottom = "1px solid #e2e8f0";
+  row.innerHTML = `
+    <td style="padding: 6px 8px; text-align: center;">
+      <input type="number" class="form-input s-row-cant" value="${cant}" min="1" step="1"
+             style="height: 30px; width: 55px; text-align: center; font-family: var(--font-mono); font-weight: 800; font-size: 0.85rem; padding: 2px 4px;"
+             oninput="calcSingleInvoiceTotals()">
+    </td>
+    <td style="padding: 6px 8px;">
+      <input type="text" class="form-input s-row-desc" value="${desc.replace(/"/g, '&quot;')}" placeholder="Ej: Laptop Gaming ASUS / Mando Inalámbrico / Combo Gamer"
+             style="height: 30px; font-weight: 700; font-size: 0.82rem; padding: 2px 8px;">
+    </td>
+    <td style="padding: 6px 8px; text-align: right;">
+      <input type="number" class="form-input s-row-price" value="${Number(price).toFixed(2)}" min="0" step="0.5"
+             style="height: 30px; width: 110px; text-align: right; font-family: var(--font-mono); font-weight: 800; font-size: 0.85rem; padding: 2px 6px;"
+             oninput="calcSingleInvoiceTotals()">
+    </td>
+    <td style="padding: 6px 8px; text-align: right;">
+      <strong class="s-row-total" style="font-family: var(--font-mono); font-size: 0.85rem; color: #0f172a;">$ 0.00</strong>
+    </td>
+    <td style="padding: 6px 8px; text-align: center;">
+      <button type="button" class="btn-secondary" style="padding: 2px 6px; font-size: 0.72rem; color: #dc2626;" onclick="removeSingleInvoiceItemRow(this)" title="Quitar fila">✕</button>
+    </td>
+  `;
+  tbody.appendChild(row);
+  calcSingleInvoiceTotals();
+}
+
+function removeSingleInvoiceItemRow(btn) {
+  const row = btn.closest("tr");
+  if (row) row.remove();
+  const tbody = document.getElementById("s-inv-items-table-body");
+  if (tbody && tbody.children.length === 0) {
+    addSingleInvoiceItemRow(1, "", 0);
+  } else {
+    calcSingleInvoiceTotals();
+  }
+}
+
+function addCatalogProductToSingleInvoice(rewardId) {
+  if (!rewardId || !vm || !vm.catalog) return;
+  const prod = vm.catalog.find(p => p.id === rewardId);
+  if (!prod) return;
+
+  const curr = document.getElementById("s-inv-currency")?.value || "USD";
+  let unitPrice = 0;
+  if (prod.rewardType === "PARTIAL_DISCOUNT" && prod.priceUsd) {
+    unitPrice = curr === "NIO" ? Number(prod.priceUsd * 37.0) : Number(prod.priceUsd);
+  } else if (prod.pointsCost) {
+    unitPrice = curr === "NIO" ? Number((prod.pointsCost / 10) * 37.0) : Number(prod.pointsCost / 10);
+  }
+
+  // Si la primera fila está vacía, reemplazarla
+  const tbody = document.getElementById("s-inv-items-table-body");
+  if (tbody && tbody.children.length === 1) {
+    const firstDesc = tbody.children[0].querySelector(".s-row-desc")?.value.trim();
+    const firstPrice = parseFloat(tbody.children[0].querySelector(".s-row-price")?.value) || 0;
+    if (!firstDesc && firstPrice === 0) {
+      tbody.innerHTML = "";
+    }
+  }
+
+  addSingleInvoiceItemRow(1, prod.title + (prod.description ? " · " + prod.description : ""), unitPrice);
+  showToast(`✓ Agregado: ${prod.title}`, "info");
+}
+
+function calcSingleInvoiceTotals() {
+  const curr = document.getElementById("s-inv-currency")?.value || "USD";
+  const sym = curr === "NIO" ? "C$" : "$";
+  const rateNio = 37.0;
+
+  let subtotal = 0;
+  const rows = document.querySelectorAll("#s-inv-items-table-body tr");
+  rows.forEach(tr => {
+    const cant = parseFloat(tr.querySelector(".s-row-cant")?.value) || 1;
+    const price = parseFloat(tr.querySelector(".s-row-price")?.value) || 0;
+    const rowTot = cant * price;
+    subtotal += rowTot;
+    const totEl = tr.querySelector(".s-row-total");
+    if (totEl) totEl.textContent = `${sym} ${rowTot.toFixed(2)}`;
+  });
+
+  const discInput = document.getElementById("s-inv-discount-input");
+  const discount = parseFloat(discInput?.value) || 0;
+  const total = Math.max(0, subtotal - discount);
+
+  const subValEl = document.getElementById("s-inv-subtotal-val");
+  const totValEl = document.getElementById("s-inv-total-val");
+  const equivEl = document.getElementById("s-inv-total-equiv");
+
+  if (subValEl) subValEl.textContent = `${sym} ${subtotal.toFixed(2)}`;
+  if (totValEl) totValEl.textContent = `${sym} ${total.toFixed(2)}`;
+
+  if (equivEl) {
+    if (curr === "USD") {
+      equivEl.textContent = `≈ C$ ${(total * rateNio).toFixed(2)} NIO (Tasa 37.0)`;
+    } else {
+      equivEl.textContent = `≈ $ ${(total / rateNio).toFixed(2)} USD (Tasa 37.0)`;
+    }
+  }
+
+  // Recalcular puntos sugeridos si está habilitado y el campo está vacío o en 0
+  const chkPoints = document.getElementById("s-inv-enable-points");
+  const pointsInput = document.getElementById("s-inv-points-val");
+  if (chkPoints && chkPoints.checked && pointsInput && (!pointsInput.value || pointsInput.value === "0")) {
+    const totalUsd = curr === "USD" ? total : (total / rateNio);
+    pointsInput.value = Math.floor(totalUsd * 10);
+  }
+}
+
+function toggleSingleInvoicePointsFields(enabled) {
+  const fields = document.getElementById("s-inv-points-fields");
+  if (fields) {
+    fields.style.opacity = enabled ? "1" : "0.35";
+    fields.style.pointerEvents = enabled ? "auto" : "none";
+  }
+}
+
+function autoCalculateSingleInvoicePoints() {
+  const curr = document.getElementById("s-inv-currency")?.value || "USD";
+  const rateNio = 37.0;
+  let subtotal = 0;
+  document.querySelectorAll("#s-inv-items-table-body tr").forEach(tr => {
+    const cant = parseFloat(tr.querySelector(".s-row-cant")?.value) || 1;
+    const price = parseFloat(tr.querySelector(".s-row-price")?.value) || 0;
+    subtotal += (cant * price);
+  });
+  const discount = parseFloat(document.getElementById("s-inv-discount-input")?.value) || 0;
+  const total = Math.max(0, subtotal - discount);
+  const totalUsd = curr === "USD" ? total : (total / rateNio);
+  const pts = Math.floor(totalUsd * 10);
+  const pInput = document.getElementById("s-inv-points-val");
+  if (pInput) pInput.value = pts;
+  showToast(`⚡ Calculados ${pts} WP (Regla 1 USD = 10 WP)`, "info");
+}
+
+function regenerateSingleInvoicePin() {
+  const pinInput = document.getElementById("s-inv-pin-val");
+  if (pinInput) {
+    pinInput.value = Math.floor(1000 + Math.random() * 9000).toString();
+  }
+}
+
+async function submitSingleDigitalInvoice(action = 'print') {
+  const folioEl = document.getElementById("s-inv-folio");
+  let folio = folioEl ? folioEl.value.trim() : "";
+  if (!folio) {
+    folio = String(vm.getNextAvailableFolio()).padStart(4, "0");
+  }
+
+  const clientName = document.getElementById("s-inv-client-name")?.value.trim() || "Consumidor Final";
+  const clientPhone = document.getElementById("s-inv-client-phone")?.value.trim() || "";
+  const paymentMethod = document.getElementById("s-inv-payment-method")?.value || "Efectivo";
+  const currency = document.getElementById("s-inv-currency")?.value || "USD";
+  const dateStr = document.getElementById("s-inv-date")?.value || new Date().toISOString().split("T")[0];
+  const timeStr = document.getElementById("s-inv-time")?.value || new Date().toLocaleTimeString("es-NI", { hour: "2-digit", minute: "2-digit" });
+
+  const items = [];
+  document.querySelectorAll("#s-inv-items-table-body tr").forEach(tr => {
+    const cant = parseFloat(tr.querySelector(".s-row-cant")?.value) || 1;
+    const desc = tr.querySelector(".s-row-desc")?.value.trim();
+    const price = parseFloat(tr.querySelector(".s-row-price")?.value) || 0;
+    if (desc || price > 0) {
+      items.push({
+        cant,
+        desc: desc || "Artículo General",
+        price,
+        total: cant * price
+      });
+    }
+  });
+
+  if (items.length === 0) {
+    showToast("⚠️ Ingresa al menos 1 artículo con descripción o precio.", "error");
+    return;
+  }
+
+  const subtotal = items.reduce((acc, it) => acc + it.total, 0);
+  const discount = parseFloat(document.getElementById("s-inv-discount-input")?.value) || 0;
+  const total = Math.max(0, subtotal - discount);
+
+  const pointsEnabled = document.getElementById("s-inv-enable-points")?.checked;
+  const pointsVal = pointsEnabled ? (parseInt(document.getElementById("s-inv-points-val")?.value, 10) || 0) : 0;
+  const pin = document.getElementById("s-inv-pin-val")?.value.trim() || Math.floor(1000 + Math.random() * 9000).toString();
+  const warrantyText = document.getElementById("s-inv-warranty-text")?.value.trim() || "30 DÍAS CALENDARIO (DEFECTOS DE FÁBRICA)";
+  const notesText = document.getElementById("s-inv-notes-text")?.value.trim() || "";
+
+  showToast("Generando factura electrónica...", "info");
+
+  try {
+    const result = await vm.generateSingleDigitalInvoice({
+      folio,
+      date: dateStr,
+      time: timeStr,
+      clientName,
+      clientPhone,
+      paymentMethod,
+      currency,
+      items,
+      subtotal,
+      discount,
+      total,
+      pointsValue: pointsVal,
+      securityPin: pin,
+      warrantyText,
+      notes: notesText
+    });
+
+    closeModal("modal-single-digital-invoice");
+
+    const printDims = getSelectedPaperDimensions("preview");
+    const docHtml = InvoiceTemplateService.generateSingleDigitalInvoiceDocument(result.invoicePayload, printDims);
+
+    const printWin = window.open("", "_blank");
+    if (printWin) {
+      printWin.document.open();
+      printWin.document.write(docHtml);
+      printWin.document.close();
+    } else {
+      showToast("⚠️ Habilita ventanas emergentes en tu navegador para ver la factura.", "error");
+    }
+
+    if (action === "whatsapp") {
+      let rawPhone = clientPhone.replace(/[^0-9]/g, '');
+      if (rawPhone.length === 8) rawPhone = '505' + rawPhone;
+      const claimUrl = "https://meltydeays-wired-club.vercel.app/?claim=" + result.token.tokenCode;
+      const textMsg = encodeURIComponent(
+        `¡Hola ${clientName}! 👋 Gracias por tu compra en MeltyDeays STORE.\n\n` +
+        `🧾 Factura Electrónica: #MD-2026-${result.invoicePayload.folio}\n` +
+        `💰 Total Facturado: ${currency === "NIO" ? "C$" : "$"} ${total.toFixed(2)}\n` +
+        (pointsVal > 0 ? `⚡ Puntos Wired Points acreditados: +${pointsVal} WP\n📲 Reclama tus puntos aquí: ${claimUrl}\n` : "") +
+        `🛡️ Garantía oficial MeltyDeays: ${warrantyText}\n\n` +
+        `¡Agradecemos tu preferencia!`
+      );
+      window.open("https://wa.me/" + (rawPhone || "50558438412") + "?text=" + textMsg, "_blank");
+    }
+
+    showToast(`✓ Factura #MD-2026-${result.invoicePayload.folio} generada con éxito.`, "success");
+  } catch (err) {
+    showToast("❌ " + err.message, "error");
   }
 }
 

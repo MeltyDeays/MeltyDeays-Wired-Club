@@ -361,6 +361,43 @@ export class AdminViewModel {
     return { batchId, tokens: created, startFolio: sFolio };
   }
 
+  async generateSingleDigitalInvoice(data = {}) {
+    let sFolio = Number(data.folio);
+    if (!sFolio || isNaN(sFolio) || sFolio <= 0) {
+      sFolio = this.getNextAvailableFolio();
+    }
+    const folioStr = String(sFolio).padStart(4, "0");
+    const points = Number(data.pointsValue) || 0;
+    
+    const hash = Math.random().toString(36).substring(2, 6).toUpperCase() + 
+                 Math.random().toString(36).substring(2, 6).toUpperCase() +
+                 Date.now().toString(36).substring(4, 7).toUpperCase();
+    const code = "WP-2026-F" + folioStr + "-" + hash;
+    const pin = data.securityPin || Math.floor(1000 + Math.random() * 9000).toString();
+
+    const token = new TokenModel({
+      tokenCode: code,
+      batchId: "SINGLE-INV-" + Date.now(),
+      invoiceFolio: folioStr,
+      pointsValue: points,
+      securityPin: pin,
+      status: points > 0 ? "ACTIVE" : "PENDING_ASSIGNMENT"
+    });
+
+    await FirestoreService.saveToken(token.toJSON());
+    await this.refreshData();
+
+    const invoicePayload = {
+      ...data,
+      folio: folioStr,
+      pointsValue: points,
+      tokenCode: code,
+      securityPin: pin
+    };
+
+    return { token, invoicePayload };
+  }
+
   async purgeAllInvoiceTokens() {
     const res = await FirestoreService.purgeAllTokens();
     this.tokens = [];
