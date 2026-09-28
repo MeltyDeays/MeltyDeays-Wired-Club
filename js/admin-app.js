@@ -2079,25 +2079,25 @@ function addSingleInvoiceItemRow(cant = 1, desc = "", price = 0) {
   const row = document.createElement("tr");
   row.style.borderBottom = "1px solid #e2e8f0";
   row.innerHTML = `
-    <td style="padding: 6px 8px; text-align: center;">
+    <td style="padding: 7px 8px; text-align: center;">
       <input type="number" class="form-input s-row-cant" value="${cant}" min="1" step="1"
-             style="height: 30px; width: 55px; text-align: center; font-family: var(--font-mono); font-weight: 800; font-size: 0.85rem; padding: 2px 4px;"
+             style="height: 34px; width: 60px; text-align: center; font-family: var(--font-mono); font-weight: 800; font-size: 0.88rem; padding: 2px 4px; border: 1.5px solid var(--dark); border-radius: 4px;"
              oninput="calcSingleInvoiceTotals()">
     </td>
-    <td style="padding: 6px 8px;">
+    <td style="padding: 7px 8px;">
       <input type="text" class="form-input s-row-desc" value="${desc.replace(/"/g, '&quot;')}" placeholder="Ej: Laptop Gaming ASUS / Mando Inalámbrico / Combo Gamer"
-             style="height: 30px; font-weight: 700; font-size: 0.82rem; padding: 2px 8px;">
+             style="height: 34px; font-weight: 700; font-size: 0.84rem; padding: 2px 10px; border: 1.5px solid var(--dark); border-radius: 4px;">
     </td>
-    <td style="padding: 6px 8px; text-align: right;">
+    <td style="padding: 7px 8px; text-align: right;">
       <input type="number" class="form-input s-row-price" value="${Number(price).toFixed(2)}" min="0" step="0.5"
-             style="height: 30px; width: 110px; text-align: right; font-family: var(--font-mono); font-weight: 800; font-size: 0.85rem; padding: 2px 6px;"
+             style="height: 34px; width: 120px; text-align: right; font-family: var(--font-mono); font-weight: 800; font-size: 0.88rem; padding: 2px 8px; border: 1.5px solid var(--dark); border-radius: 4px;"
              oninput="calcSingleInvoiceTotals()">
     </td>
-    <td style="padding: 6px 8px; text-align: right;">
-      <strong class="s-row-total" style="font-family: var(--font-mono); font-size: 0.85rem; color: #0f172a;">$ 0.00</strong>
+    <td style="padding: 7px 8px; text-align: right;">
+      <strong class="s-row-total" style="font-family: var(--font-mono); font-size: 0.92rem; font-weight: 900; color: #0f172a;">$ 0.00</strong>
     </td>
-    <td style="padding: 6px 8px; text-align: center;">
-      <button type="button" class="btn-secondary" style="padding: 2px 6px; font-size: 0.72rem; color: #dc2626;" onclick="removeSingleInvoiceItemRow(this)" title="Quitar fila">✕</button>
+    <td style="padding: 7px 8px; text-align: center;">
+      <button type="button" class="copland-btn-del-row" onclick="removeSingleInvoiceItemRow(this)" title="Quitar fila">✕</button>
     </td>
   `;
   tbody.appendChild(row);

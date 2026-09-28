@@ -3806,3 +3806,685 @@ body {
   box-shadow: 2px 2px 0px #070b14, 0 0 14px rgba(56, 189, 248, 0.6);
 }
 
+/* ======================================================== */
+/* COPLAND OS 21.0 - MODAL FACTURACIÓN DIGITAL INDIVIDUAL   */
+/* ======================================================== */
+
+.copland-modal-wrapper::-webkit-scrollbar {
+  width: 6px;
+}
+.copland-modal-wrapper::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+.copland-modal-wrapper::-webkit-scrollbar-thumb {
+  background: #94a3b8;
+  border-radius: 3px;
+}
+.copland-modal-wrapper::-webkit-scrollbar-thumb:hover {
+  background: #0284c7;
+}
+
+.copland-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1.5px solid var(--dark);
+  padding-bottom: 0.65rem;
+  margin-bottom: 0.85rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.copland-modal-header-badges {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.copland-modal-header-tag {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: var(--gray-500);
+  letter-spacing: 1px;
+}
+
+.copland-modal-title-block {
+  margin-bottom: 1.15rem;
+}
+
+.copland-modal-title {
+  font-family: var(--font-mono);
+  font-size: 1.25rem;
+  font-weight: 900;
+  color: var(--dark);
+  letter-spacing: 0.3px;
+  margin: 0 0 4px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.copland-title-glyph {
+  color: #0284c7;
+  font-size: 1rem;
+}
+
+.copland-modal-title .cyan-tag {
+  font-size: 0.85rem;
+  color: #0284c7;
+  font-weight: 800;
+}
+
+.copland-modal-subtitle {
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
+  color: #64748b;
+  margin: 0;
+  line-height: 1.45;
+  letter-spacing: 0.2px;
+}
+
+/* CARDS MODULARES COPLAND OS */
+.copland-card-module {
+  background: #ffffff;
+  border: 1.5px solid var(--dark);
+  border-radius: 6px;
+  box-shadow: 2px 2px 0px var(--dark);
+  margin-bottom: 0.95rem;
+  overflow: hidden;
+}
+
+.copland-card-module-header {
+  background: linear-gradient(90deg, #090e1a 0%, #0f172a 100%);
+  color: #38bdf8;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.8px;
+  padding: 6px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1.5px solid var(--dark);
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.copland-module-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.copland-mod-num {
+  background: #0284c7;
+  color: #ffffff;
+  font-size: 0.64rem;
+  font-weight: 900;
+  padding: 1px 5px;
+  border-radius: 2px;
+  letter-spacing: 0.5px;
+}
+
+.copland-mod-status {
+  color: #94a3b8;
+  font-size: 0.62rem;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+}
+
+.copland-module-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.copland-card-module-body {
+  padding: 0.85rem 1.1rem;
+  background: #ffffff;
+}
+
+/* GRIDS RESPONSIVOS */
+.copland-grid-4 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 0.75rem;
+}
+
+.copland-grid-client {
+  display: grid;
+  grid-template-columns: 2fr 1.3fr 1.2fr;
+  gap: 0.75rem;
+}
+
+.copland-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+@media (max-width: 768px) {
+  .copland-grid-client,
+  .copland-grid-2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+.copland-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-bottom: 0;
+}
+
+.copland-field-label {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: #475569;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+
+/* GRUPO DE ENTRADA DE FOLIO */
+.copland-folio-group {
+  display: flex;
+  align-items: stretch;
+  border: 1.5px solid var(--dark);
+  border-radius: 4px;
+  overflow: hidden;
+  height: 38px;
+}
+
+.copland-folio-prefix {
+  background: #090e1a;
+  color: #38bdf8;
+  font-family: var(--font-mono);
+  font-weight: 900;
+  font-size: 0.88rem;
+  padding: 0 8px;
+  display: flex;
+  align-items: center;
+  border-right: 1px solid #1e293b;
+  user-select: none;
+}
+
+.copland-input-folio {
+  border: none;
+  outline: none;
+  font-family: var(--font-mono);
+  font-weight: 900;
+  font-size: 1.05rem;
+  text-align: center;
+  color: #4338ca;
+  flex: 1;
+  min-width: 0;
+  background: #ffffff;
+  padding: 0 4px;
+}
+
+.copland-btn-auto {
+  border: none;
+  border-left: 1.5px solid var(--dark);
+  background: #f1f5f9;
+  color: var(--dark);
+  font-family: var(--font-mono);
+  font-weight: 800;
+  font-size: 0.72rem;
+  padding: 0 10px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.copland-btn-auto:hover {
+  background: #e0f2fe;
+  color: #0284c7;
+}
+
+/* INPUTS Y SELECTS COPLAND */
+.copland-input,
+.copland-select {
+  height: 38px;
+  border: 1.5px solid var(--dark);
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  padding: 0 8px;
+  box-sizing: border-box;
+  background: #ffffff;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.copland-input:focus,
+.copland-select:focus {
+  border-color: #0284c7;
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.25);
+}
+
+.copland-select-sm {
+  height: 28px;
+  font-size: 0.7rem;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  border: 1px solid #334155;
+  background: #090e1a;
+  color: #38bdf8;
+  border-radius: 3px;
+  padding: 0 6px;
+  outline: none;
+  cursor: pointer;
+  max-width: 250px;
+}
+
+.copland-btn-add-row {
+  height: 28px;
+  padding: 0 10px;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 900;
+  background: #38bdf8;
+  color: #090e1a;
+  border: 1px solid #ffffff;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.copland-btn-add-row:hover {
+  background: #ffffff;
+  color: #0284c7;
+}
+
+/* TABLA DE ÍTEMS */
+.copland-table-container {
+  border-bottom: 1.5px solid #e2e8f0;
+  overflow-x: auto;
+}
+
+.copland-items-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+.copland-items-table thead tr {
+  background: #090e1a;
+  color: #38bdf8;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+
+.copland-items-table th {
+  padding: 8px 10px;
+}
+
+.copland-items-table tbody tr {
+  border-bottom: 1px solid #e2e8f0;
+  transition: background 0.12s;
+}
+
+.copland-items-table tbody tr:hover {
+  background: #f8fafc;
+}
+
+.copland-btn-del-row {
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  color: #dc2626;
+  width: 26px;
+  height: 26px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 900;
+  font-size: 0.72rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+
+.copland-btn-del-row:hover {
+  background: #dc2626;
+  color: #ffffff;
+  border-color: #dc2626;
+}
+
+/* LIQUIDACIÓN DE TOTALES */
+.copland-totals-wrapper {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0.75rem 1rem;
+  background: #f8fafc;
+}
+
+.copland-totals-card {
+  width: 340px;
+  background: #090e1a;
+  border: 1.5px solid #1e293b;
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-family: var(--font-mono);
+  box-shadow: 2px 2px 0px #041d33;
+}
+
+.copland-tot-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 5px;
+  font-size: 0.78rem;
+}
+
+.copland-tot-lbl {
+  color: #94a3b8;
+  font-weight: 700;
+}
+
+.copland-tot-num {
+  color: #f8fafc;
+  font-weight: 800;
+}
+
+.copland-disc-row {
+  margin-bottom: 6px;
+}
+
+.copland-disc-input-box {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.copland-input-disc {
+  width: 80px;
+  height: 26px;
+  text-align: right;
+  font-family: var(--font-mono);
+  font-weight: 800;
+  font-size: 0.82rem;
+  padding: 2px 6px;
+  border: 1px solid #334155;
+  border-radius: 3px;
+  background: #0f172a;
+  color: #f8fafc;
+  outline: none;
+}
+
+.copland-input-disc:focus {
+  border-color: #38bdf8;
+}
+
+.copland-tot-divider {
+  height: 1px;
+  background: #1e293b;
+  margin: 8px 0;
+}
+
+.copland-tot-main-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.copland-tot-main-label .tot-title {
+  font-weight: 900;
+  color: #ffffff;
+  font-size: 0.85rem;
+  letter-spacing: 0.4px;
+}
+
+.copland-tot-main-label .tot-equiv {
+  font-size: 0.68rem;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+.copland-tot-grand-total {
+  font-size: 1.35rem;
+  font-weight: 900;
+  color: #38bdf8;
+  text-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
+  line-height: 1;
+}
+
+/* MÓDULO THE WIRED CLUB */
+.copland-wired-module {
+  border-color: #4338ca;
+  box-shadow: 2px 2px 0px #4338ca;
+}
+
+.copland-wired-header {
+  background: linear-gradient(90deg, #1e1b4b 0%, #0f172a 100%);
+  border-bottom-color: #4338ca;
+}
+
+.copland-checkbox {
+  width: 16px;
+  height: 16px;
+  accent-color: #4338ca;
+  cursor: pointer;
+}
+
+.copland-wired-grid {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.copland-wp-box {
+  display: flex;
+  align-items: center;
+  border: 1.5px solid #4338ca;
+  border-radius: 4px;
+  overflow: hidden;
+  height: 38px;
+  width: 140px;
+}
+
+.copland-wp-input {
+  border: none;
+  outline: none;
+  width: 100%;
+  height: 100%;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-weight: 900;
+  font-size: 1rem;
+  color: #4338ca;
+  background: #ffffff;
+}
+
+.copland-wp-badge {
+  background: #4338ca;
+  color: #ffffff;
+  font-family: var(--font-mono);
+  font-weight: 800;
+  font-size: 0.75rem;
+  padding: 0 10px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  user-select: none;
+}
+
+.copland-btn-calc-wp {
+  height: 38px;
+  padding: 0 12px;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 800;
+  background: #ffffff;
+  border: 1.5px solid var(--dark);
+  border-radius: 4px;
+  box-shadow: 2px 2px 0px var(--dark);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.copland-btn-calc-wp:hover {
+  background: #e0e7ff;
+  color: #4338ca;
+}
+
+.copland-pin-box {
+  display: flex;
+  align-items: center;
+  border: 1.5px solid var(--dark);
+  border-radius: 4px;
+  overflow: hidden;
+  height: 38px;
+}
+
+.copland-pin-input {
+  border: none;
+  outline: none;
+  width: 80px;
+  height: 100%;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-weight: 900;
+  font-size: 1rem;
+  letter-spacing: 2px;
+  color: var(--dark);
+  background: #ffffff;
+}
+
+.copland-btn-dice {
+  border: none;
+  border-left: 1.5px solid var(--dark);
+  background: #f1f5f9;
+  height: 100%;
+  padding: 0 10px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background 0.15s ease;
+}
+
+.copland-btn-dice:hover {
+  background: #e2e8f0;
+}
+
+/* BARRA DE ACCIONES MODAL */
+.copland-modal-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1.5px solid var(--dark);
+  padding-top: 1rem;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.copland-footer-btn-cancel {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 800;
+  padding: 0.65rem 1.1rem;
+  border: 1.5px solid var(--dark);
+  background: #ffffff;
+  color: var(--dark);
+  border-radius: 4px;
+  box-shadow: 2px 2px 0px var(--dark);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.copland-footer-btn-cancel:hover {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.copland-footer-btn-group {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.copland-footer-btn {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 800;
+  padding: 0.65rem 1rem;
+  border: 1.5px solid var(--dark);
+  border-radius: 4px;
+  box-shadow: 2px 2px 0px var(--dark);
+  cursor: pointer;
+  transition: all 0.15s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.copland-btn-preview {
+  background: #ffffff;
+  color: var(--dark);
+}
+.copland-btn-preview:hover {
+  background: #f1f5f9;
+}
+
+.copland-btn-whatsapp {
+  background: #ecfdf5;
+  border-color: #059669;
+  color: #065f46;
+  box-shadow: 2px 2px 0px #065f46;
+}
+.copland-btn-whatsapp:hover {
+  background: #059669;
+  color: #ffffff;
+}
+
+.copland-btn-print {
+  background: #f8fafc;
+  color: var(--dark);
+}
+.copland-btn-print:hover {
+  background: #e2e8f0;
+}
+
+.copland-footer-btn-primary {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  font-weight: 900;
+  letter-spacing: 0.6px;
+  padding: 0.68rem 1.35rem;
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+  border: 1.5px solid #38bdf8;
+  color: #ffffff;
+  border-radius: 4px;
+  box-shadow: 3px 3px 0px #041d33, 0 0 14px rgba(56, 189, 248, 0.35);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.16s ease;
+  white-space: nowrap;
+}
+
+.copland-footer-btn-primary:hover {
+  background: #38bdf8;
+  color: #070b14;
+  border-color: #ffffff;
+  box-shadow: 3px 3px 0px #0284c7, 0 0 20px rgba(56, 189, 248, 0.7);
+  transform: translate(-1px, -1px);
+}
+
+.copland-footer-btn-primary:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0px #041d33;
+}
+
+
