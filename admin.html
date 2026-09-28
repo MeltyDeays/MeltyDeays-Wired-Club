@@ -57,8 +57,8 @@
     </div>
 
     <div class="nav-controls">
-      <button type="button" class="btn-primary" style="font-size:0.75rem; padding:0.4rem 0.85rem; background: linear-gradient(135deg, #059669, #047857); border: 1.5px solid #065f46; color: #ffffff; font-weight: 800; display: inline-flex; align-items: center; gap: 5px; box-shadow: 2px 2px 0px #065f46;" onclick="openSingleDigitalInvoiceModal()">
-        🧾 + Factura Digital
+      <button type="button" class="btn-primary lain-nav-invoice-btn" onclick="openSingleDigitalInvoiceModal()">
+        <span class="pulse-dot-cyan"></span> ⚡ + Factura Digital
       </button>
       <button type="button" class="btn-secondary" style="font-size:0.75rem; padding:0.4rem 0.75rem; background: linear-gradient(135deg, #ecfdf5, #d1fae5); border: 1.5px solid #059669; color: #065f46; font-weight: 800; display: inline-flex; align-items: center; gap: 4px;" onclick="openSalePointsCalculatorModal('navbar')">
         🧮 Calc WP
@@ -533,23 +533,32 @@
         <span class="badge-layer">FORMATO: 4 FACTURAS DOBLE CARA POR PLIEGO</span>
       </div>
 
-      <!-- BANNER HERO DESTACADO: FACTURA DIGITAL INDIVIDUAL (VENTAS CASUALES) -->
-      <div style="background: linear-gradient(135deg, #0f172a, #1e293b); border: 2px solid #059669; border-radius: 8px; padding: 1.15rem 1.4rem; margin-bottom: 1.25rem; box-shadow: 0 4px 15px rgba(5,150,105,0.25); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
-        <div>
-          <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
-            <span class="badge-navi" style="background:#059669; color:#ffffff;">NUEVA FUNCIÓN</span>
-            <span class="badge-layer">VENTA CASUAL · PÁGINA COMPLETA</span>
+      <!-- BANNER HERO DESTACADO: FACTURA DIGITAL INDIVIDUAL (VENTAS CASUALES) - ESTÉTICA SERIAL EXPERIMENTS LAIN / COPLAND OS -->
+      <div class="lain-invoice-hero-card">
+        <div class="tech-corner top-left" style="color: #38bdf8; opacity: 0.7;">+</div>
+        <div class="tech-corner top-right" style="color: #38bdf8; opacity: 0.7;">+</div>
+        <div class="tech-corner bottom-left" style="color: #38bdf8; opacity: 0.7;">+</div>
+        <div class="tech-corner bottom-right" style="color: #38bdf8; opacity: 0.7;">+</div>
+
+        <div class="lain-hero-left">
+          <div class="lain-hero-badges">
+            <span class="badge-navi-cyan"><span class="pulse-dot-cyan"></span> COPLAND OS 21.0 // SYS_PRINT</span>
+            <span class="badge-layer-lain">PROTOCOL: 1-PAGE CASUAL_INVOICE</span>
+            <span class="badge-pulse-live">● STANDALONE_READY</span>
           </div>
-          <h3 style="font-size: 1.2rem; font-weight: 900; color: #ffffff; margin: 0; font-family: var(--font-mono);">
-            🧾 Factura Digital Individual (Página Entera)
+          <h3 class="lain-hero-title">
+            <span class="lain-hero-icon">▰</span> FACTURA DIGITAL INDIVIDUAL <span class="cyan-glow">[PÁGINA ENTERA]</span>
           </h3>
-          <p style="font-size: 0.8rem; color: #cbd5e1; margin: 0.25rem 0 0 0;">
-            Emite una factura electrónica única sin generar 4 de un solo. Desglose de productos, multi-moneda (USD/NIO), cálculo de puntos opcional y descarga directa en PDF/HTML.
+          <p class="lain-hero-desc">
+            Emite una factura electrónica única sin generar 4 de un solo pliego. Desglose detallado de ítems, multi-moneda (USD / C$ NIO), cálculo optativo de Wired Points y descarga directa vectorizada en PDF/HTML.
           </p>
         </div>
-        <button type="button" class="btn-primary" style="font-size: 0.92rem; padding: 0.75rem 1.5rem; background: linear-gradient(135deg, #059669, #047857); border: 2px solid #34d399; font-weight: 900; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(5,150,105,0.4);" onclick="openSingleDigitalInvoiceModal()">
-          <span>🧾</span> + EMITIR FACTURA DIGITAL
-        </button>
+
+        <div class="lain-hero-right">
+          <button type="button" class="lain-btn-digital-invoice" onclick="openSingleDigitalInvoiceModal()">
+            <span style="font-size:1rem;">⚡</span> + EMITIR FACTURA DIGITAL <span class="lain-btn-kbd">1-PAGE</span>
+          </button>
+        </div>
       </div>
 
       <!-- GUÍA CLARA: FUNCIÓN Y FLUJO DE LAS FACTURAS Y QR -->
@@ -948,7 +957,7 @@
           <button type="button" class="btn-secondary" style="font-size: 0.82rem; padding: 0.6rem 1rem; font-weight: 800;" onclick="submitSingleDigitalInvoice('print')">
             🖨️ Imprimir y Guardar
           </button>
-          <button type="button" class="btn-primary" style="font-size: 0.85rem; padding: 0.65rem 1.4rem; font-weight: 900; background: linear-gradient(135deg, #059669, #047857); border-color: #065f46; box-shadow: 2px 2px 0px #065f46;" onclick="submitSingleDigitalInvoice('download')">
+          <button type="button" class="btn-primary" style="font-size: 0.85rem; padding: 0.65rem 1.4rem; font-weight: 900; background: linear-gradient(135deg, #0284c7, #0369a1); border: 1.5px solid #38bdf8; box-shadow: 2px 2px 0px #041d33, 0 0 12px rgba(56, 189, 248, 0.3); font-family: var(--font-mono); letter-spacing: 0.5px;" onclick="submitSingleDigitalInvoice('download')">
             📥 Descargar Factura (HTML / PDF) y Guardar
           </button>
         </div>
