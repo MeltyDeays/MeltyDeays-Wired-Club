@@ -1351,7 +1351,7 @@ export class InvoiceTemplateService {
         </tr>`;
     });
 
-    const fillerCount = Math.max(0, 6 - items.length);
+    const fillerCount = Math.max(0, 5 - items.length);
     for (let f = 0; f < fillerCount; f++) {
       rowsHtml += `
         <tr class="s-row s-row-empty">
@@ -1518,7 +1518,10 @@ export class InvoiceTemplateService {
         </div>
         <div class="s-rw-qr-box">
           <div class="s-rw-qr-frame" id="digital-inv-qr">
-            <!-- QR Generado dinámicamente con QRCode.js -->
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(claimUrl)}&color=0f172a&bgcolor=ffffff" 
+                 alt="QR Wired Club" 
+                 class="s-rw-qr-img-render" 
+                 loading="eager" />
           </div>
           <span class="s-rw-qr-scan">ESCANEAR PARA RECLAMAR</span>
         </div>
@@ -1529,20 +1532,21 @@ export class InvoiceTemplateService {
       <footer class="s-warranty-box">
         <div class="s-w-head">
           <div class="s-w-title-wrap">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#b45309" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#0284c7" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
               <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              <path d="m9 12 2 2 4-4"/>
             </svg>
-            <strong>TÉRMINOS DE GARANTÍA, CAMBIO Y POLÍTICAS COMERCIALES</strong>
+            <strong>POLÍTICAS OFICIALES & GARANTÍA TÉCNICA DE MELTYDEAYS</strong>
           </div>
           <div class="s-w-period">
-            <span>PLAZO DE GARANTÍA:</span>
+            <span>COBERTURA VÁLIDA:</span>
             <strong contenteditable="true">${warrantyText}</strong>
           </div>
         </div>
         <div class="s-w-content">
-          • <strong>DEFECTOS DE FÁBRICA:</strong> Válido exclusivamente por averías técnicas no atribuibles al usuario, previa revisión con empaque original íntegro, accesorios y este comprobante.<br>
-          • <strong>CAMBIO O REEMBOLSO:</strong> Ante fallo de fábrica no reparable comprobado, se ofrece sustitución por equipo idéntico, cambio por otro artículo de catálogo o reembolso.<br>
-          • <strong>EXCLUSIONES EXPRESAS:</strong> No cubre daños ocasionados por caídas, humedad, sobrevoltaje, desastres naturales, sellos violentados o manipulación indebida.
+          • <strong>DEFECTOS DE FÁBRICA:</strong> Válido exclusivamente por fallas electrónicas o vicios ocultos de manufactura no atribuibles al usuario, previa revisión técnica con empaque original íntegro, accesorios y este comprobante oficial.<br>
+          • <strong>CAMBIO O REEMBOLSO:</strong> Ante fallo de fábrica no reparable debidamente comprobado, se ofrece reemplazo inmediato por equipo idéntico, cambio por otro artículo de catálogo o reintegro.<br>
+          • <strong>EXCLUSIONES EXPRESAS:</strong> No cubre averías provocadas por caídas, derrame de líquidos, humedad, picos o sobrevoltaje eléctrico, sellos violentados o alteraciones indebidas.
         </div>
       </footer>
 
@@ -1601,6 +1605,122 @@ export class InvoiceTemplateService {
     ${InvoiceTemplateService.getComponentStyles(dims)}
 
     /* ========================================================
+       BARRA DE HERRAMIENTAS SUPERIOR (TERMINAL VOID BLACK / CYBER CYAN)
+       ======================================================== */
+    body {
+      margin: 0;
+      padding: 0;
+      background: #090e17;
+      font-family: 'Inter', -apple-system, sans-serif;
+      color: #0f172a;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background: rgba(9, 14, 23, 0.95);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1.5px solid rgba(56, 189, 248, 0.35);
+      padding: 10px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    }
+
+    .toolbar-info h1 {
+      margin: 0;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.92rem;
+      font-weight: 800;
+      color: #f8fafc;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .toolbar-info p {
+      margin: 2px 0 0 0;
+      font-size: 0.73rem;
+      color: #94a3b8;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .toolbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .toolbar .btn {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.74rem;
+      font-weight: 700;
+      padding: 6px 14px;
+      border-radius: 5px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.16s ease;
+      outline: none;
+      white-space: nowrap;
+    }
+
+    .toolbar .btn-sec {
+      background: rgba(255, 255, 255, 0.08);
+      color: #e2e8f0;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+    }
+
+    .toolbar .btn-sec:hover {
+      background: rgba(255, 255, 255, 0.16);
+      border-color: #38bdf8;
+      color: #ffffff;
+      transform: translateY(-1px);
+    }
+
+    .toolbar .btn-bw {
+      background: rgba(148, 163, 184, 0.12);
+      color: #cbd5e1;
+      border: 1px solid rgba(148, 163, 184, 0.25);
+    }
+
+    .toolbar .btn-bw.active {
+      background: #ffffff;
+      color: #000000;
+      border-color: #ffffff;
+      font-weight: 900;
+    }
+
+    .toolbar .btn-print {
+      background: linear-gradient(135deg, #0284c7, #0369a1);
+      color: #ffffff;
+      font-weight: 800;
+      border: 1px solid #38bdf8;
+      box-shadow: 0 0 14px rgba(56, 189, 248, 0.35);
+    }
+
+    .toolbar .btn-print:hover {
+      background: linear-gradient(135deg, #38bdf8, #0284c7);
+      color: #070b14;
+      border-color: #ffffff;
+      box-shadow: 0 0 20px rgba(56, 189, 248, 0.7);
+      transform: translateY(-1px);
+    }
+
+    @media print {
+      .toolbar { display: none !important; }
+      body { background: #ffffff !important; }
+    }
+
+    /* ========================================================
        ESTILOS EXCLUSIVOS DE LA FACTURA DIGITAL INDIVIDUAL (1 PÁGINA)
        ======================================================== */
     .single-digital-invoice-page {
@@ -1608,14 +1728,14 @@ export class InvoiceTemplateService {
       min-height: ${dims.heightMm}mm;
       margin: 18px auto;
       background: #ffffff;
-      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.15);
+      box-shadow: 0 12px 35px rgba(0, 0, 0, 0.3);
       box-sizing: border-box;
       position: relative;
     }
 
     .single-digital-invoice {
       box-sizing: border-box;
-      padding: 24px 28px 20px 28px;
+      padding: 22px 28px 18px 28px;
       min-height: ${dims.heightMm}mm;
       display: flex;
       flex-direction: column;
@@ -1986,15 +2106,25 @@ export class InvoiceTemplateService {
     }
 
     .s-rw-qr-frame {
-      width: 72px;
-      height: 72px;
+      width: 76px;
+      height: 76px;
       background: #ffffff;
       padding: 3px;
       border: 1.5px solid #0f172a;
-      border-radius: 4px;
+      border-radius: 6px;
       display: flex;
       align-items: center;
       justify-content: center;
+      box-shadow: 2px 2px 0px #4338ca;
+      overflow: hidden;
+    }
+
+    .s-rw-qr-frame img,
+    .s-rw-qr-frame canvas {
+      width: 100% !important;
+      height: 100% !important;
+      object-fit: contain;
+      display: block;
     }
 
     .s-rw-qr-scan {
@@ -2006,47 +2136,56 @@ export class InvoiceTemplateService {
     }
 
     .s-warranty-box {
-      background: #fffbeb;
-      border: 1.5px solid #d97706;
+      background: #f8fafc;
+      border: 1.5px solid #0f172a;
       border-radius: 6px;
-      padding: 8px 12px;
-      margin-bottom: 12px;
+      padding: 7px 12px;
+      margin-bottom: 10px;
+      box-shadow: 2px 2px 0px #0f172a;
     }
 
     .s-w-head {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 3px;
+      margin-bottom: 4px;
+      padding-bottom: 4px;
+      border-bottom: 1px solid #e2e8f0;
     }
 
     .s-w-title-wrap {
       display: flex;
       align-items: center;
-      gap: 4px;
+      gap: 6px;
       font-family: 'JetBrains Mono', monospace;
       font-size: 0.65rem;
       font-weight: 900;
-      color: #92400e;
+      color: #0f172a;
+      letter-spacing: 0.3px;
     }
 
     .s-w-period {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.65rem;
-      color: #92400e;
+      font-size: 0.62rem;
+      color: #64748b;
+      display: flex;
+      align-items: center;
+      gap: 5px;
     }
 
     .s-w-period strong {
-      background: #fef3c7;
-      padding: 1px 6px;
-      border-radius: 3px;
-      border: 1px solid #fde68a;
+      background: #0f172a;
+      color: #38bdf8;
+      padding: 1.5px 8px;
+      border-radius: 4px;
+      font-weight: 800;
+      letter-spacing: 0.3px;
     }
 
     .s-w-content {
-      font-size: 0.68rem;
-      color: #78350f;
-      line-height: 1.3;
+      font-size: 0.67rem;
+      color: #334155;
+      line-height: 1.35;
     }
 
     .s-bottom-bar {
@@ -2214,18 +2353,30 @@ export class InvoiceTemplateService {
     window.onload = function() {
       const qrEl = document.getElementById("digital-inv-qr");
       if (qrEl && typeof QRCode !== "undefined" && claimUrl) {
-        qrEl.innerHTML = "";
-        new QRCode(qrEl, {
-          text: claimUrl,
-          width: 66, height: 66,
-          colorDark: "#0f172a",
-          colorLight: "#ffffff",
-          correctLevel: QRCode.CorrectLevel.M
-        });
+        try {
+          const tempDiv = document.createElement("div");
+          new QRCode(tempDiv, {
+            text: claimUrl,
+            width: 76, height: 76,
+            colorDark: "#0f172a",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.M
+          });
+          setTimeout(() => {
+            const canvas = tempDiv.querySelector("canvas");
+            const img = tempDiv.querySelector("img");
+            if (canvas || (img && img.src)) {
+              qrEl.innerHTML = "";
+              qrEl.appendChild(canvas || img);
+            }
+          }, 60);
+        } catch(e) {
+          // Fallback a imagen qrserver permanece activo
+        }
       }
       if (document.fonts && document.fonts.ready) {
         document.fonts.ready.then(() => {
-          setTimeout(() => { window.print(); }, 400);
+          setTimeout(() => { window.print(); }, 500);
         });
       } else {
         setTimeout(() => { window.print(); }, 800);

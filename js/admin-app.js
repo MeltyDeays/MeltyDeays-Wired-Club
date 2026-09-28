@@ -1294,7 +1294,26 @@ let activeSaleTargetSource = "pos"; // "pos" | "invoices" | "navbar"
 function openSalePointsCalculatorModal(target = "pos") {
   activeSaleTargetSource = target;
   const modal = document.getElementById("modal-sale-calculator");
-  if (modal) modal.style.display = "flex";
+  if (!modal) return;
+
+  if (target === "digital_invoice") {
+    const curr = document.getElementById("s-inv-currency")?.value || "USD";
+    const totEl = document.getElementById("s-inv-total-val");
+    if (totEl) {
+      const rawText = totEl.textContent || "";
+      const numMatch = rawText.replace(/[^0-9.]/g, "");
+      let totalNum = parseFloat(numMatch) || 0;
+      if (curr === "NIO" && totalNum > 0) {
+        totalNum = totalNum / 37.0;
+      }
+      const priceInput = document.getElementById("sale-calc-price-usd");
+      if (priceInput && totalNum > 0) {
+        priceInput.value = totalNum.toFixed(2);
+      }
+    }
+  }
+
+  modal.style.display = "flex";
   recalculateSalePoints();
 }
 
@@ -1407,6 +1426,28 @@ function recalculateSalePoints() {
 
 function applySalePointsToActiveTarget() {
   const { suggestedPoints } = recalculateSalePoints();
+
+  if (activeSaleTargetSource === "digital_invoice") {
+    const ptsInput = document.getElementById("s-inv-points-val");
+    const chk = document.getElementById("s-inv-enable-points");
+    if (chk) {
+      chk.checked = true;
+      toggleSingleInvoicePointsFields(true);
+    }
+    if (ptsInput) {
+      ptsInput.value = suggestedPoints;
+      ptsInput.style.borderColor = "#00e5ff";
+      ptsInput.style.boxShadow = "0 0 14px rgba(0, 229, 255, 0.5)";
+      setTimeout(() => {
+        ptsInput.style.borderColor = "";
+        ptsInput.style.boxShadow = "";
+      }, 1500);
+    }
+    closeModal("modal-sale-calculator");
+    showToast(`⚡ Asignados ${suggestedPoints.toLocaleString()} WP a la Factura Digital.`, "success");
+    return;
+  }
+
   const assignInput = document.getElementById("input-assign-points");
   if (assignInput) {
     assignInput.value = suggestedPoints;

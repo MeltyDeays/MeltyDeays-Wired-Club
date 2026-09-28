@@ -554,7 +554,10 @@
           </p>
         </div>
 
-        <div class="lain-hero-right">
+        <div class="lain-hero-right" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+          <button type="button" class="lain-btn-calc-shortcut" onclick="openSalePointsCalculatorModal('digital_invoice')">
+            <span style="font-size:1rem;">🧮</span> CALCULADORA WP & MÁRGENES
+          </button>
           <button type="button" class="lain-btn-digital-invoice" onclick="openSingleDigitalInvoiceModal()">
             <span style="font-size:1rem;">⚡</span> + EMITIR FACTURA DIGITAL <span class="lain-btn-kbd">1-PAGE</span>
           </button>
@@ -939,10 +942,13 @@
               </div>
             </div>
 
-            <!-- BOTÓN AUTO-CALCULAR -->
-            <div class="copland-field-group" style="justify-content: flex-end;">
-              <button type="button" class="copland-btn-calc-wp" onclick="autoCalculateSingleInvoicePoints()">
-                🧮 CÁLCULO AUTO (1 USD = 10 WP)
+            <!-- BOTÓN AUTO-CALCULAR Y CALCULADORA WP -->
+            <div class="copland-field-group" style="display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap;">
+              <button type="button" class="copland-btn-calc-wp" onclick="autoCalculateSingleInvoicePoints()" title="Cálculo directo (1 USD = 10 WP)">
+                ⚡ AUTO (1 USD = 10 WP)
+              </button>
+              <button type="button" class="copland-btn-calc-modal" onclick="openSalePointsCalculatorModal('digital_invoice')" title="Abrir Calculadora Avanzada de WP y Márgenes de Ganancia">
+                🧮 CALCULADORA DE WP
               </button>
             </div>
 

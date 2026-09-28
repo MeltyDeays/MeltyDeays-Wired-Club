@@ -3782,6 +3782,37 @@ body {
   transition: all 0.18s ease;
 }
 
+.lain-btn-calc-shortcut {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: #38bdf8;
+  background: linear-gradient(135deg, rgba(7, 11, 20, 0.95), rgba(15, 23, 42, 0.95));
+  border: 1.5px solid rgba(56, 189, 248, 0.5);
+  border-radius: 4px;
+  padding: 0.72rem 1.15rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 2px 2px 0px #041d33, 0 0 10px rgba(56, 189, 248, 0.15);
+  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+  white-space: nowrap;
+}
+
+.lain-btn-calc-shortcut:hover {
+  background: rgba(14, 165, 233, 0.18);
+  border-color: #38bdf8;
+  color: #ffffff;
+  box-shadow: 2px 2px 0px #0284c7, 0 0 16px rgba(56, 189, 248, 0.5);
+  transform: translate(-1px, -1px);
+}
+
+.lain-btn-calc-shortcut:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0px #041d33;
+}
+
 .lain-nav-invoice-btn {
   font-family: var(--font-mono);
   font-size: 0.73rem;
@@ -4335,6 +4366,31 @@ body {
 .copland-btn-calc-wp:hover {
   background: #e0e7ff;
   color: #4338ca;
+}
+
+.copland-btn-calc-modal {
+  height: 38px;
+  padding: 0 14px;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #059669, #047857);
+  color: #ffffff;
+  border: 1.5px solid #065f46;
+  border-radius: 4px;
+  box-shadow: 2px 2px 0px #065f46;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.copland-btn-calc-modal:hover {
+  background: linear-gradient(135deg, #10b981, #059669);
+  box-shadow: 2px 2px 0px #065f46, 0 0 10px rgba(16, 185, 129, 0.45);
+  transform: translateY(-1px);
 }
 
 .copland-pin-box {
