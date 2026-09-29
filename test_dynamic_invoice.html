@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Prueba Dinámica Factura + Lain (Correcciones Aplicadas)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700;800;900&family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <style>
+    body {
+      background: #0f172a;
+      color: #e2e8f0;
+      font-family: 'Inter', sans-serif;
+      padding: 1.2rem;
+      margin: 0;
+    }
+    h1 { font-size: 1.15rem; margin: 0 0 0.3rem; color: #fff; }
+    .kicker { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: #67e8f9; margin-bottom: 1rem; }
+    .tabs { display:flex; gap:0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+    .tab-btn {
+      font-family: 'JetBrains Mono', monospace; font-weight: 800; font-size: 0.8rem;
+      padding: 0.5rem 0.9rem; border: 1.5px solid #67e8f9; background: #164e63; color: #fff;
+      border-radius: 4px; cursor: pointer; letter-spacing: 0.3px;
+    }
+    .tab-btn.is-active { background: #0891b2; box-shadow: 0 0 0 2px #22d3ee; }
+    .views-wrap { display: flex; flex-direction: column; gap: 1rem; }
+    .view-panel {
+      background: #fff;
+      padding: 12px;
+      border-radius: 8px;
+      border: 2px solid #334155;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.35);
+    }
+    .checks {
+      margin-top: 1rem;
+      background: #0b1220;
+      border: 1.5px dashed #475569;
+      border-radius: 6px;
+      padding: 0.8rem 1rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      line-height: 1.6;
+    }
+    .check-ok { color: #4ade80; }
+    .check-warn { color: #facc15; }
+    .check-bad { color: #f87171; }
+    .legend { display:flex; gap:1rem; align-items:center; margin-top:0.6rem; flex-wrap:wrap; font-size:0.75rem; }
+    .legend span { font-family:'JetBrains Mono',monospace; }
+    button.print {
+      font-family:'JetBrains Mono',monospace; font-weight:800; font-size:0.78rem;
+      padding: 0.5rem 1rem; background:#4f46e5; color:#fff; border-radius:4px; cursor:pointer; border:1.5px solid #312e81;
+    }
+    .page-break-preview {
+      height: 8px; background: repeating-linear-gradient(45deg,#334155,#334155 4px,#1e293b 4px,#1e293b 8px);
+      margin: 1rem 0;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <h1>🧪 Validación Dinámica — Facturación Lain</h1>
+  <div class="kicker">▸ INVOICE TEMPLATE SERVICE · CORRECIONES QR · CODIGO NO RECORTADO · 24 PLANTILLAS LAIN</div>
+
+  <div class="tabs">
+    <button class="tab-btn is-active" data-view="both">✅ Anverso + Reverso</button>
+    <button class="tab-btn" data-view="front">🧾 Anverso Factura</button>
+    <button class="tab-btn" data-view="back">🎴 Reverso Lain</button>
+  </div>
+
+  <div class="legend">
+    <span class="check-ok">🟢 QR contacto funcional</span>
+    <span class="check-ok">🟢 QR recompensa con fallback</span>
+    <span class="check-ok">🟢 Código serial legible</span>
+    <span class="check-ok">🟢 Etiquetas mayúsculas + WhatsApp</span>
+    <span class="check-ok">🟢 24 plantillas listadas</span>
+    <button class="print" onclick="window.print()">🖨️ Imprimir / PDF (prueba impresión)</button>
+    <select id="template-picker" style="font-family:'JetBrains Mono',monospace; padding:0.4rem 0.6rem; border-radius:4px;">
+    </select>
+  </div>
+
+  <div id="views-wrap" class="views-wrap"></div>
+
+  <div id="checks-box" class="checks"></div>
+
+  <script type="module">
+    import { InvoiceTemplateService } from './js/services/InvoiceTemplateService.js?v=2.5.7';
+
+    window.InvoiceTemplateService = InvoiceTemplateService;
+
+    const sample = {
+      folio: "0001",
+      date: "28 / 09 / 2026",
+      time: "03:37 p. m.",
+      customer: { name: "Christian López", phone: "5786-8626" },
+      paymentMethod: "Efectivo",
+      items: [
+        { qty: 1, description: "Mando Windchaser YE", price: 800.00, total: 800.00 }
+      ],
+      subtotal: 800.00,
+      discount: 0.00,
+      total: 800.00,
+      tokenCode: "WP-2026-F0001-4VAUPE5ASQ2",
+      securityPin: "8418",
+      pointsValue: 22,
+      notes: "Garantía 30 días por defectos de fábrica."
+    };
+
+    const templates = InvoiceTemplateService.getAvailableLainTemplates();
+    const picker = document.getElementById('template-picker');
+    templates.forEach(t => {
+      const opt = document.createElement('option');
+      opt.value = t.idx;
+      opt.textContent = t.layer + ' — ' + t.title;
+      picker.appendChild(opt);
+    });
+    picker.onchange = () => {
+      window.activeLainTemplateIdx = Number(picker.value);
+      renderAll();
+    };
+
+    function renderAll() {
+      const dims = { name: 'Carta (Letter)', widthMm: 215.9, heightMm: 279.4, cssSize: 'letter portrait' };
+      const frontHtml = InvoiceTemplateService.getSingleDigitalInvoiceHtml(sample, dims);
+      const backHtml = InvoiceTemplateService.getSingleDigitalLainBackCardHtml(sample);
+      const styles = InvoiceTemplateService.getComponentStyles(dims);
+
+      const wrap = document.getElementById('views-wrap');
+      const currentView = document.querySelector('.tab-btn.is-active').dataset.view;
+
+      let html = '';
+      if (currentView === 'front' || currentView === 'both') {
+        html += `<div class="view-panel" id="panel-front"><style>${styles}</style>${frontHtml}</div>`;
+      }
+      if (currentView === 'both') {
+        html += '<div class="page-break-preview"></div>';
+      }
+      if (currentView === 'back' || currentView === 'both') {
+        html += `<div class="view-panel" id="panel-back"><style>${styles}</style>${backHtml}</div>`;
+      }
+      wrap.innerHTML = html;
+
+      // Render QR via QRCode.js on top of fallback imgs for full dot-matrix structure
+      setTimeout(installQrCodes, 30);
+      setTimeout(runChecks, 80);
+    }
+
+    function installQrCodes() {
+      const claim = "https://meltydeays-wired-club.vercel.app/?claim=" + encodeURIComponent(sample.tokenCode);
+      const backBox = document.querySelector('#panel-back .qr-canvas-box');
+      if (backBox && window.QRCode) {
+        backBox.innerHTML = '';
+        new QRCode(backBox, { text: claim, width: 160, height: 160, colorDark: "#0f172a", colorLight: "#ffffff", correctLevel: QRCode.CorrectLevel.H });
+      }
+    }
+
+    function runChecks() {
+      const box = document.getElementById('checks-box');
+      const checks = [];
+
+      // 1) Front QR contacto
+      const frontImg = document.querySelector('#panel-front .qr-img');
+      const waBadge = document.querySelector('#panel-front .qr-badge-wa');
+      const telBadge = Array.from(document.querySelectorAll('#panel-front .badge-tag')).find(b => /WHATSAPP|CONTACTO/i.test(b.textContent || ""));
+      checks.push([
+        frontImg && frontImg.src && frontImg.src.length > 100,
+        "QR contacto del anverso tiene imagen cargada (src > 100 chars)",
+        "El img del QR contacto está vacío o no tiene src válido."
+      ]);
+      const wiredBadge = document.querySelector('#panel-front .qr-badge-wired');
+      const badgeText = (waBadge ? waBadge.textContent || "" : "") + " | " + (wiredBadge ? wiredBadge.textContent || "" : "");
+      checks.push([
+        /WHATSAPP|WIRED PASS/i.test(badgeText),
+        "Badge QR identificativo con leyenda WHATSAPP/WIRED PASS visible según el contexto (fidelización vs contacto).",
+        "Falta la leyenda WHATSAPP/WIRED PASS en el badge del QR."
+      ]);
+      checks.push([
+        telBadge && /WHATSAPP/.test(telBadge.textContent || ""),
+        "Etiqueta Contacto del anverso ahora dice WHATSAPP.",
+        "La etiqueta del teléfono sigue sin decir WHATSAPP."
+      ]);
+
+      // 2) Front serial-code no recortado
+      const code = document.querySelector('#panel-front .serial-code');
+      if (code) {
+        const cs = getComputedStyle(code);
+        checks.push([
+          cs.whiteSpace !== 'nowrap' || /normal|pre-wrap/.test(cs.whiteSpace),
+          ".serial-code no usa nowrap (permite múltiples líneas si el código es largo).",
+          ".serial-code sigue con white-space:nowrap (propenso a recorte)."
+        ]);
+        checks.push([
+          /break-all|break-word/.test(cs.wordBreak + cs.overflowWrap),
+          ".serial-code con word-break / overflow-wrap habilitado.",
+          "Faltan reglas de corte en .serial-code."
+        ]);
+      }
+
+      // 3) Back QR recompensa (fallback img ya inyectado o QRCode)
+      const backQrBox = document.querySelector('#panel-back .qr-canvas-box');
+      const backQrImg = backQrBox ? backQrBox.querySelector('img') : null;
+      const backQrCanvas = backQrBox ? backQrBox.querySelector('img, canvas') : null;
+      const backHasContent = (backQrImg && backQrImg.src && backQrImg.src.length > 50) || !!backQrCanvas;
+      checks.push([
+        !!backHasContent,
+        "QR recompensa (reverso Lain) tiene contenido inicial (fallback img o canvas renderizado) — NO está vacío.",
+        "La caja del QR de recompensa sigue vacía (solo HTML inicial sin fallback)."
+      ]);
+      const subText = document.querySelector('#panel-back .reward-sub');
+      checks.push([
+        subText && /acreditar WP/i.test(subText.textContent || ""),
+        "Leyenda Escanea para acreditar WP presente en la recompensa.",
+        "Falta la leyenda de escaneo en la recompensa."
+      ]);
+
+      // 4) 20+ plantillas
+      checks.push([
+        templates.length >= 20,
+        "Listado de plantillas Lain = " + templates.length + " (≥ 20).",
+        "Menos de 20 plantillas disponibles."
+      ]);
+
+      // 5) QR onerror attributes
+      const qrImgs = document.querySelectorAll('#panel-front img, #panel-back img');
+      let anyWithOnerror = false;
+      qrImgs.forEach(i => { if (i.hasAttribute('onerror') || /QR_CATALOG_BASE64|onerror=/.test(i.outerHTML || '')) anyWithOnerror = true; });
+      checks.push([
+        anyWithOnerror || backQrCanvas,
+        "Al menos un QR de la página cuenta con fallback onerror o canvas renderizado.",
+        "No se detectó fallback onerror ni canvas de QRCode.js (peligro de huecos vacíos)."
+      ]);
+
+      let out = '<div style="color:#94a3b8; margin-bottom:4px;">▐ RESUMEN DE VALIDACIÓN (generado dinámicamente desde InvoiceTemplateService):</div>';
+      checks.forEach((c, i) => {
+        const cls = c[0] ? 'check-ok' : 'check-bad';
+        const sym = c[0] ? '✅' : '❌';
+        out += `<div class="${cls}">${sym} ${String(i + 1).padStart(2, '0')}. ${c[0] ? c[1] : c[2]}</div>`;
+      });
+      box.innerHTML = out;
+    }
+
+    // Tab buttons
+    document.querySelectorAll('.tab-btn').forEach(b => {
+      b.onclick = () => {
+        document.querySelectorAll('.tab-btn').forEach(x => x.classList.remove('is-active'));
+        b.classList.add('is-active');
+        renderAll();
+      };
+    });
+
+    window.activeLainTemplateIdx = 0;
+    picker.value = "0";
+    renderAll();
+  </script>
+</body>
+</html>

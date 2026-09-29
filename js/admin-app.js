@@ -201,6 +201,10 @@ document.addEventListener("DOMContentLoaded", () => {
   window.recalculateProductDiscount = recalculateProductDiscount;
   window.applyCalculatedDiscountToProduct = applyCalculatedDiscountToProduct;
 
+  // Exponer servicios al ámbito global para scripts inline (selector plantillas Lain)
+  window.InvoiceTemplateService = InvoiceTemplateService;
+  window.FirestoreService = FirestoreService;
+
   // Calculadora de Puntos por Venta (Factura 4x1)
   window.openSalePointsCalculatorModal = openSalePointsCalculatorModal;
   window.setSaleFreightPreset = setSaleFreightPreset;

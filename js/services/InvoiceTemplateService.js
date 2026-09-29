@@ -149,21 +149,21 @@ export class InvoiceTemplateService {
       '        <div class="contact-qr-group">',
       '          <div class="qr-col">',
       '            <div class="qr-frame">',
-      '              <img src="' + QR_CATALOG_BASE64 + '" alt="QR Catálogo" class="qr-img">',
+      '              <img src="' + QR_CATALOG_BASE64 + '" alt="QR WhatsApp" class="qr-img" onerror="this.onerror=null;this.src=\'' + QR_CATALOG_BASE64 + '\';">',
       '            </div>',
-      '            <span class="qr-badge-wa">WHATSAPP</span>',
+      '            <span class="qr-badge-wa">📱 WHATSAPP</span>',
       '          </div>',
       '          <div class="contact-meta">',
       '            <div class="contact-row">',
-      '              <span class="badge-tag tag-ig">Instagram</span>',
+      '              <span class="badge-tag tag-ig">INSTAGRAM</span>',
       '              <span class="contact-text handle-text">@meltydeays</span>',
       '            </div>',
       '            <div class="contact-row">',
-      '              <span class="badge-tag tag-tel">Contacto</span>',
+      '              <span class="badge-tag tag-tel">WHATSAPP</span>',
       '              <span class="contact-text phone-text">+505 5843 8412</span>',
       '            </div>',
       '            <div class="contact-row">',
-      '              <span class="badge-tag tag-mail">Correo</span>',
+      '              <span class="badge-tag tag-mail">CORREO</span>',
       '              <span class="contact-text email-text">evertz2lopeztorrez@gmail.com</span>',
       '            </div>',
       '          </div>',
@@ -930,7 +930,7 @@ export class InvoiceTemplateService {
       '            <span class="qr-reticle-tr">⌝</span>',
       '            <span class="qr-reticle-bl">⌞</span>',
       '            <span class="qr-reticle-br">⌟</span>',
-      '            <div class="qr-canvas-box" id="print-qr-' + slotId + '"></div>',
+      '            <div class="qr-canvas-box" id="print-qr-' + slotId + '"><img src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=' + encodeURIComponent('https://meltydeays-wired-club.vercel.app/?claim=' + encodeURIComponent(tok.tokenCode || '')) + '&color=0f172a&bgcolor=ffffff" alt="QR Recompensa" style="width:100%;height:100%;object-fit:contain;display:block;" onerror="this.onerror=null;this.src=\'' + QR_CATALOG_BASE64 + '\';"></div>',
       '          </div>',
       '          <div class="reward-pin-tag">PIN: <strong>' + pin + '</strong></div>',
       '          <div class="reward-sub">Escanea para acreditar WP</div>',
@@ -1035,11 +1035,18 @@ export class InvoiceTemplateService {
       }
 
       if (mode !== "front") {
+        const fixedTemplate = (typeof window !== "undefined" && window.activeLainTemplateIdx !== null && window.activeLainTemplateIdx !== undefined)
+          ? Math.max(0, Math.min(23, Number(window.activeLainTemplateIdx) | 0))
+          : null;
+        const t0 = fixedTemplate !== null ? fixedTemplate : ((qrIndex + 0) % 24);
+        const t1 = fixedTemplate !== null ? fixedTemplate : ((qrIndex + 1) % 24);
+        const t2 = fixedTemplate !== null ? fixedTemplate : ((qrIndex + 2) % 24);
+        const t3 = fixedTemplate !== null ? fixedTemplate : ((qrIndex + 3) % 24);
         const backHtml = [
-          InvoiceTemplateService.getLainBackCardHtml(2, batch[1], qrIndex + 1, (qrIndex + 1) % 24),
-          InvoiceTemplateService.getLainBackCardHtml(1, batch[0], qrIndex + 0, (qrIndex + 0) % 24),
-          InvoiceTemplateService.getLainBackCardHtml(4, batch[3], qrIndex + 3, (qrIndex + 3) % 24),
-          InvoiceTemplateService.getLainBackCardHtml(3, batch[2], qrIndex + 2, (qrIndex + 2) % 24)
+          InvoiceTemplateService.getLainBackCardHtml(2, batch[1], qrIndex + 1, t1),
+          InvoiceTemplateService.getLainBackCardHtml(1, batch[0], qrIndex + 0, t0),
+          InvoiceTemplateService.getLainBackCardHtml(4, batch[3], qrIndex + 3, t3),
+          InvoiceTemplateService.getLainBackCardHtml(3, batch[2], qrIndex + 2, t2)
         ].join('\n\n');
 
         pagesHtml += `
@@ -1548,23 +1555,24 @@ export class InvoiceTemplateService {
                 ? `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(claimUrl)}&color=0f172a&bgcolor=ffffff` 
                 : QR_CATALOG_BASE64}" 
                 alt="${hasPoints ? 'QR Wired Points' : 'QR WhatsApp'}" 
-                class="qr-img">
+                class="qr-img"
+                onerror="this.onerror=null;this.src='${QR_CATALOG_BASE64}';">
             </div>
             <span class="${hasPoints ? 'qr-badge-wired' : 'qr-badge-wa'}">
-              ${hasPoints ? 'WIRED PASS' : 'WHATSAPP'}
+              ${hasPoints ? '⚡ WIRED PASS' : '📱 WHATSAPP'}
             </span>
           </div>
           <div class="contact-meta">
             <div class="contact-row">
-              <span class="badge-tag tag-ig">Instagram</span>
+              <span class="badge-tag tag-ig">INSTAGRAM</span>
               <span class="contact-text handle-text">@meltydeays</span>
             </div>
             <div class="contact-row">
-              <span class="badge-tag tag-tel">Contacto</span>
+              <span class="badge-tag tag-tel">WHATSAPP</span>
               <span class="contact-text phone-text">+505 5843 8412</span>
             </div>
             <div class="contact-row">
-              <span class="badge-tag tag-mail">Correo</span>
+              <span class="badge-tag tag-mail">CORREO</span>
               <span class="contact-text email-text">evertz2lopeztorrez@gmail.com</span>
             </div>
           </div>
@@ -1599,7 +1607,10 @@ export class InvoiceTemplateService {
       pointsValue: Number(data.pointsValue || 0)
     };
     const folioNum = parseInt(data.folio, 10);
-    const templateIdx = isNaN(folioNum) ? 0 : (folioNum % 24);
+    const fixedTemplate = (typeof window !== "undefined" && window.activeLainTemplateIdx !== null && window.activeLainTemplateIdx !== undefined)
+      ? Math.max(0, Math.min(23, Number(window.activeLainTemplateIdx) | 0))
+      : null;
+    const templateIdx = fixedTemplate !== null ? fixedTemplate : (isNaN(folioNum) ? 0 : (folioNum % 24));
     let cardHtml = InvoiceTemplateService.getLainBackCardHtml(1, tok, "digital-back", templateIdx);
     cardHtml = cardHtml.replace('class="lain-card"', 'class="lain-card single-page-lain-card"');
 
@@ -1616,7 +1627,7 @@ export class InvoiceTemplateService {
     const qrImgSrc = "https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=" + encodeURIComponent(claimUrl) + "&color=0f172a&bgcolor=ffffff";
     cardHtml = cardHtml.replace(
       'id="print-qr-digital-back"></div>',
-      `id="print-qr-digital-back"><img src="${qrImgSrc}" alt="QR Wired Points" style="width:100%;height:100%;object-fit:contain;display:block;"></div>`
+      `id="print-qr-digital-back"><img src="${qrImgSrc}" alt="QR Wired Points" style="width:100%;height:100%;object-fit:contain;display:block;" onerror="this.onerror=null;this.src='${QR_CATALOG_BASE64}';"></div>`
     );
 
     return cardHtml;
@@ -2538,6 +2549,19 @@ export class InvoiceTemplateService {
     }
     .single-page-lain-card .serial-code {
       font-size: 8.5px !important;
+      overflow-wrap: anywhere !important;
+      word-break: break-all !important;
+      white-space: normal !important;
+      line-height: 1.15 !important;
+    }
+    .single-page-lain-card .lain-footer {
+      align-items: flex-start !important;
+      gap: 8px !important;
+    }
+    .single-page-lain-card .barcode-wrapper {
+      flex: 1 1 auto !important;
+      min-width: 0 !important;
+      max-width: 70% !important;
     }
     .single-page-lain-card .lain-seal-stamp {
       padding: 3px 8px !important;
@@ -3287,10 +3311,11 @@ export class InvoiceTemplateService {
     .spec-k { font-family: 'JetBrains Mono', monospace; font-size: 4.8px; font-weight: 800; color: #64748b; letter-spacing: 0.3px; }
     .spec-v { font-family: 'JetBrains Mono', monospace; font-size: 6.2px; font-weight: 800; color: #0f172a; }
     .lain-footer {
-      display: flex; justify-content: space-between; align-items: center;
+      display: flex; justify-content: space-between; align-items: flex-start;
       border-top: 1px dashed #cbd5e1; padding-top: 2.5px;
+      gap: 4px;
     }
-    .barcode-wrapper { display: flex; flex-direction: column; gap: 1px; }
+    .barcode-wrapper { display: flex; flex-direction: column; gap: 1px; flex: 1 1 auto; min-width: 0; max-width: 72%; }
     .vector-barcode {
       display: flex; align-items: stretch; height: 13px; background: #fff;
       padding: 1px 2px; border: 1px solid #cbd5e1; border-radius: 2px;
@@ -3298,7 +3323,7 @@ export class InvoiceTemplateService {
     .b-line { background: #0f172a; display: inline-block; }
     .b-w1 { width: 1px; } .b-w2 { width: 2px; } .b-w3 { width: 3px; } .b-w4 { width: 4.5px; }
     .b-gap { width: 1.5px; display: inline-block; } .b-g2 { width: 3px; }
-    .serial-code { font-family: 'JetBrains Mono', monospace; font-size: 5.5px; font-weight: 800; color: #475569; letter-spacing: 0.5px; }
+    .serial-code { font-family: 'JetBrains Mono', monospace; font-size: 5.5px; font-weight: 800; color: #475569; letter-spacing: 0.4px; overflow-wrap: anywhere; word-break: break-all; white-space: normal; max-width: 100%; line-height: 1.15; hyphens: auto; }
     .lain-seal-stamp {
       border: 1px dashed #4f46e5; border-radius: 3px; padding: 1px 4.5px;
       display: flex; flex-direction: column; align-items: center;
@@ -3341,9 +3366,66 @@ export class InvoiceTemplateService {
         page-break-after: avoid !important;
         break-after: avoid !important;
       }
-      @page { size: ${dims.cssSize}; margin: 0; }
+      .barcode-wrapper,
+      .contact-qr-group,
+      .qr-canvas-box,
+      .reward-qr-frame,
+      .lain-footer,
+      .serial-code,
+      .qr-col,
+      .signature-block,
+      .lain-card,
+      .invoice {
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+        overflow: visible !important;
+      }
+      .serial-code {
+        overflow: visible !important;
+        white-space: normal !important;
+        word-break: break-all !important;
+        overflow-wrap: anywhere !important;
+      }
+      .lain-footer {
+        overflow: visible !important;
+      }
+      @page { size: ${dims.cssSize}; margin: 5mm; }
     }
     `;
+  }
+
+  /**
+   * Devuelve la lista pública de plantillas Lain disponibles para selector UI
+   * @returns {Array<{idx:number, layer:string, title:string, sub:string, kanji:string}>}
+   */
+  static getAvailableLainTemplates() {
+    const items = [
+      { layer: 'LAYER: 01', title: 'WEIRDO // THE WIRED', sub: 'TACHIBANA GENERAL LABORATORIES · COPLAND OS 21.0', kanji: '全ては繋がっている' },
+      { layer: 'LAYER: 02', title: 'GIRLS // PSYCHE CHIP', sub: 'KNIGHTS OF THE EASTERN CALCULUS · LICENSED HARDWARE', kanji: 'どこに行っても、みんな繋がっている' },
+      { layer: 'LAYER: 03', title: 'NAVI // ACCEL', sub: 'COPAND KERNEL v3.2 · SCHUMANN RESONANCE UNIT', kanji: '現実と虚構の境界線' },
+      { layer: 'LAYER: 04', title: 'CHISA // HEARTBIT', sub: 'TACHIBANA LABS · NEURO LINK TRANSMITTER', kanji: '記憶はデータではない' },
+      { layer: 'LAYER: 05', title: 'REIKA // QUANTUM', sub: 'EASTERN CALCULUS · QUANTUM GATE MODULE', kanji: '一瞬が永遠になる' },
+      { layer: 'LAYER: 06', title: 'YUKI // SNOW WHITE', sub: 'SNOW WHITE PROTOCOL · WHITE CRYSTAL KEY', kanji: '透明なままでいたい' },
+      { layer: 'LAYER: 07', title: 'KAORI // NEURAL', sub: 'NEURAL-SYNC DIVISION · DEEP WAVE PROTOCOL', kanji: 'この声が聞こえますか' },
+      { layer: 'LAYER: 08', title: 'MEGUMI // VECTOR', sub: 'VECTOR CONTROL UNIT · COPLAND OS KERNEL', kanji: '方向を決めるのは自分' },
+      { layer: 'LAYER: 09', title: 'AYUMU // DREAMWAVE', sub: 'DREAM LOGIC INTERFACE · REM-UNIT 09', kanji: '夢の続きが見たい' },
+      { layer: 'LAYER: 10', title: 'HANA // FLOWER CORE', sub: 'BIO CHIP DIVISION · FLORAL NEURAL MATRIX', kanji: '花はいつか散るもの' },
+      { layer: 'LAYER: 11', title: 'SORA // SKY MATRIX', sub: 'ATMOSPHERE LINK · CLOUD KERNEL SYNC', kanji: '空はいつもそこにある' },
+      { layer: 'LAYER: 12', title: 'MIZUKI // WATER CODE', sub: 'FLUID LOGIC CORE · AQUA PROCESSOR', kanji: '水は形を変える' },
+      { layer: 'LAYER: 13', title: 'HIKARI // LIGHT BEAM', sub: 'PHOTON ARRAY UNIT · LASER CHANNEL', kanji: '光は最速のメッセンジャー' },
+      { layer: 'LAYER: 14', title: 'TSUKI // MOON PHASE', sub: 'LUNAR SYNC SATELLITE · PHASE LOCK LOOP', kanji: '月はいつも見ている' },
+      { layer: 'LAYER: 15', title: 'KAI // OCEAN DEEP', sub: 'ABYSSAL ZONE MODULE · PRESSURE CORE', kanji: '海の底は静かだ' },
+      { layer: 'LAYER: 16', title: 'REI // ZERO PROTOCOL', sub: 'ORIGIN SPEC :: REVISION 0 · NULL CHASSIS', kanji: 'ゼロから始めよう' },
+      { layer: 'LAYER: 17', title: 'SHUN // INSTANT', sub: 'REAL-TIME KERNEL · NANO-SECOND BUS', kanji: '今この瞬間が全て' },
+      { layer: 'LAYER: 18', title: 'RIN // RING CHORD', sub: 'HARMONIC RESONANCE UNIT · RING OSCILLATOR', kanji: '音は記憶を呼び覚ます' },
+      { layer: 'LAYER: 19', title: 'SHI // STEEL HEART', sub: 'TITANIUM ALLOY CHASSIS · STEEL CORE v4', kanji: '強さは優しさの中に' },
+      { layer: 'LAYER: 20', title: 'AKI // AUTUMN BYTE', sub: 'FALL CHIP-SET · ORIGIN LOGIC GATE', kanji: '秋は実りの季節' },
+      { layer: 'LAYER: 21', title: 'FUYU // WINTER LOGIC', sub: 'CRYO UNIT · FROST CHIP v2.1', kanji: '冬は静けさをくれる' },
+      { layer: 'LAYER: 22', title: 'HARU // SPRING BOOT', sub: 'SEED KERNEL · NEW LIFE MODULE', kanji: '春は新しい始まり' },
+      { layer: 'LAYER: 23', title: 'NATSU // SUMMER HEAT', sub: 'THERMAL-CORE UNIT · SUN CHANNEL', kanji: '夏は熱く燃える' },
+      { layer: 'LAYER: 24', title: 'LAIN // FINAL LAYER', sub: 'THE WIRED :: GODDESS MODE · ETERNAL LINK', kanji: '私はここにいるよ' }
+    ];
+    return items.map((it, idx) => ({ idx: idx, ...it }));
   }
 }
 

@@ -647,6 +647,35 @@
         </div>
       </div>
 
+      <!-- SELECCIÓN EXCLUSIVA DE DISEÑOS PERSONALIZADOS LAIN (24 PLANTILLAS) -->
+      <div id="lain-template-selector-card" class="paper-setup-card" style="margin-top: 0.6rem;">
+        <div class="paper-setup-header">
+          <div>
+            <span class="paper-auto-badge" style="background:#ecfeff; color:#0891b2; border-color:#67e8f9;">⚡ DISEÑOS SERIAL EXPERIMENTS LAIN</span>
+            <h3 style="margin: 6px 0 0; font-size: 1rem; color: var(--dark); font-weight: 900; letter-spacing: 0.2px;">
+              Apartado Exclusivo: 24 Diseños Personalizados de Contraportada Coleccionable
+            </h3>
+            <span style="font-size: 0.75rem; color: var(--gray-600); display:block; margin-top: 2px;">
+              Todos los diseños conservan el código QR dot-matrix original con su estructura intacta y optimizan el 100% del espacio disponible.
+            </span>
+          </div>
+          <div style="display:flex; gap:0.5rem; align-items:center;">
+            <button type="button" class="copland-bar-btn copland-bar-btn-slate" onclick="cycleLainTemplate(-1)" title="Diseño anterior">◀ ANTERIOR</button>
+            <button type="button" class="copland-bar-btn copland-bar-btn-primary" onclick="cycleLainTemplate(1)" title="Diseño siguiente">SIGUIENTE ▶</button>
+            <button type="button" class="copland-bar-btn copland-bar-btn-indigo" onclick="randomizeLainTemplate()" title="Plantilla aleatoria">🎲 ALEATORIO</button>
+          </div>
+        </div>
+        <div id="lain-template-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap:0.5rem; max-height: 360px; overflow-y:auto; padding: 4px 2px;"></div>
+        <div style="margin-top: 0.7rem; display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center; justify-content:space-between;">
+          <span id="lain-template-active-label" style="font-family:'JetBrains Mono',monospace; font-size: 0.75rem; font-weight: 800; color:#4f46e5; background:#eef2ff; border:1px solid #c7d2fe; padding: 4px 8px; border-radius:4px;">
+            ▣ DISEÑO ACTIVO: LAYER: 01 — WEIRDO // THE WIRED
+          </span>
+          <span style="font-size: 0.72rem; color: var(--gray-600);">
+            💡 Consejo: Puedes asignar un diseño fijo o dejar "por folio" (predeterminado, usa el módulo del número de factura).
+          </span>
+        </div>
+      </div>
+
       <!-- BARRA DE ACCIÓN DEDICADA DEL GENERADOR (COPLAND OS 21.0) -->
       <div class="generator-action-bar">
         <div class="generator-summary-tag">
@@ -2216,6 +2245,120 @@
 
   <!-- CONTROLADOR MVVM -->
   <div id="toast-container" class="toast-container"></div>
-  <script type="module" src="./js/admin-app.js?v=2.4.0"></script>
+
+  <!-- HELPERS SELECTOR DE PLANTILLAS LAIN (window global) -->
+  <script>
+    (function () {
+      window.activeLainTemplateIdx = window.activeLainTemplateIdx || null; // null = automático por folio
+      window._lainTemplatesCache = null;
+      const COLOR_WHEEL = ["#0891b2", "#4f46e5", "#db2777", "#059669", "#d97706", "#dc2626", "#475569", "#7c3aed"];
+
+      function getTemplates() {
+        if (window._lainTemplatesCache && window._lainTemplatesCache.length) return window._lainTemplatesCache;
+        // Fallback por si InvoiceTemplateService aún no carga
+        window._lainTemplatesCache = (window.InvoiceTemplateService &&
+          typeof window.InvoiceTemplateService.getAvailableLainTemplates === "function")
+          ? window.InvoiceTemplateService.getAvailableLainTemplates()
+          : Array.from({ length: 24 }, (_, i) => ({
+              idx: i,
+              layer: "LAYER: " + String(i + 1).padStart(2, "0"),
+              title: "PLANTILLA " + (i + 1),
+              sub: "Diseño coleccionable Lain",
+              kanji: "デザイン"
+            }));
+        return window._lainTemplatesCache;
+      }
+
+      window.renderLainTemplateGrid = function renderLainTemplateGrid() {
+        const grid = document.getElementById("lain-template-grid");
+        if (!grid) return;
+        const templates = getTemplates();
+        const tiles = [];
+        templates.forEach((t) => {
+          const isFixed = window.activeLainTemplateIdx === t.idx;
+          const tile = document.createElement("div");
+          tile.className = "lain-template-tile" + (isFixed ? " is-active" : "");
+          tile.title = t.layer + " — " + t.title + " (click para fijar / doble click para desactivar)";
+          tile.innerHTML =
+            '<div class="lain-template-layer">' + t.layer + '</div>' +
+            '<div class="lain-template-title">' + t.title + '</div>' +
+            '<div class="lain-template-sub">' + t.sub + '</div>' +
+            '<div class="lain-template-kanji">' + t.kanji + '</div>';
+          tile.onclick = () => window.setActiveLainTemplate(t.idx);
+          tile.ondblclick = () => window.setActiveLainTemplate(null);
+          tiles.push(tile);
+        });
+        // Añadir tile modo AUTOMÁTICO (null)
+        const autoTile = document.createElement("div");
+        autoTile.className = "lain-template-tile" + (window.activeLainTemplateIdx === null ? " is-active" : "");
+        autoTile.title = "Haz click: modo AUTOMÁTICO. Cada factura usará (folio % 24) como índice de plantilla.";
+        autoTile.innerHTML =
+          '<div class="lain-template-layer" style="color:#059669;">AUTO · POR FOLIO</div>' +
+          '<div class="lain-template-title">MODO DINÁMICO</div>' +
+          '<div class="lain-template-sub">Asigna la plantilla según el número de factura.</div>' +
+          '<div class="lain-template-kanji" style="color:#059669;">自動割り当て</div>';
+        autoTile.onclick = () => window.setActiveLainTemplate(null);
+        tiles.unshift(autoTile);
+        grid.innerHTML = "";
+        tiles.forEach(t => grid.appendChild(t));
+        updateActiveLabel();
+      };
+
+      function updateActiveLabel() {
+        const label = document.getElementById("lain-template-active-label");
+        if (!label) return;
+        const t = getTemplates();
+        if (window.activeLainTemplateIdx === null || window.activeLainTemplateIdx === undefined) {
+          label.innerHTML = "▣ MODO AUTOMÁTICO: Plantilla según el folio de factura (recomendado)";
+          label.style.background = "#ecfdf5";
+          label.style.color = "#047857";
+          label.style.borderColor = "#6ee7b7";
+        } else {
+          const sel = t[window.activeLainTemplateIdx] || t[0];
+          label.innerHTML = "▣ DISEÑO FIJO ACTIVO: " + sel.layer + " — " + sel.title;
+          label.style.background = "#eef2ff";
+          label.style.color = "#4338ca";
+          label.style.borderColor = "#c7d2fe";
+        }
+      }
+
+      window.setActiveLainTemplate = function setActiveLainTemplate(idx) {
+        window.activeLainTemplateIdx = (idx === null || idx === undefined) ? null : Math.max(0, Math.min(23, Number(idx) | 0));
+        if (typeof window.renderLainTemplateGrid === "function") {
+          window.renderLainTemplateGrid();
+        }
+      };
+
+      window.cycleLainTemplate = function cycleLainTemplate(dir) {
+        const t = getTemplates();
+        const cur = (window.activeLainTemplateIdx === null || window.activeLainTemplateIdx === undefined) ? -1 : window.activeLainTemplateIdx;
+        let next = (cur + (dir > 0 ? 1 : -1) + t.length) % t.length;
+        if (cur === -1 && dir < 0) next = t.length - 1;
+        window.setActiveLainTemplate(next);
+      };
+
+      window.randomizeLainTemplate = function randomizeLainTemplate() {
+        const t = getTemplates();
+        const rnd = Math.floor(Math.random() * t.length);
+        window.setActiveLainTemplate(rnd);
+      };
+
+      // Inicializar al cargar DOM (InvoiceTemplateService está en admin-app.js module, así que reintentamos)
+      function bootWhenReady() {
+        if (window.InvoiceTemplateService && document.getElementById("lain-template-grid")) {
+          window.renderLainTemplateGrid();
+        } else {
+          setTimeout(bootWhenReady, 60);
+        }
+      }
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", bootWhenReady);
+      } else {
+        bootWhenReady();
+      }
+    })();
+  </script>
+
+  <script type="module" src="./js/admin-app.js?v=2.4.1"></script>
 </body>
 </html>
