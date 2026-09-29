@@ -186,6 +186,32 @@ export class InvoiceTemplateService {
   }
 
   /**
+   * Genera el SVG vectorial de código de barras a ancho completo (100% width) para que nunca se corte a medias
+   * @param {string} code - Código serial del token
+   */
+  static getFullWidthBarcodeSvg(code) {
+    return '<svg viewBox="0 0 360 22" width="100%" height="100%" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" style="display:block;">' +
+      '<rect width="360" height="22" fill="#ffffff"/>' +
+      '<g fill="#0f172a">' +
+      '<rect x="0" y="0" width="3" height="22"/><rect x="5" y="0" width="1.5" height="22"/><rect x="8" y="0" width="4" height="22"/><rect x="14" y="0" width="2" height="22"/><rect x="18" y="0" width="5" height="22"/>' +
+      '<rect x="25" y="0" width="1.5" height="22"/><rect x="28" y="0" width="3" height="22"/><rect x="33" y="0" width="5.5" height="22"/><rect x="41" y="0" width="2" height="22"/><rect x="45" y="0" width="4" height="22"/>' +
+      '<rect x="51" y="0" width="1.5" height="22"/><rect x="55" y="0" width="5" height="22"/><rect x="62" y="0" width="2" height="22"/><rect x="66" y="0" width="3" height="22"/><rect x="71" y="0" width="6" height="22"/>' +
+      '<rect x="79" y="0" width="2" height="22"/><rect x="83" y="0" width="4" height="22"/><rect x="89" y="0" width="1.5" height="22"/><rect x="92" y="0" width="3" height="22"/><rect x="97" y="0" width="5" height="22"/>' +
+      '<rect x="104" y="0" width="2" height="22"/><rect x="108" y="0" width="6" height="22"/><rect x="116" y="0" width="3" height="22"/><rect x="121" y="0" width="1.5" height="22"/><rect x="124" y="0" width="4" height="22"/>' +
+      '<rect x="130" y="0" width="2" height="22"/><rect x="134" y="0" width="5" height="22"/><rect x="141" y="0" width="3" height="22"/><rect x="146" y="0" width="1.5" height="22"/><rect x="150" y="0" width="6" height="22"/>' +
+      '<rect x="158" y="0" width="2" height="22"/><rect x="162" y="0" width="4" height="22"/><rect x="168" y="0" width="1.5" height="22"/><rect x="171" y="0" width="5" height="22"/><rect x="178" y="0" width="3" height="22"/>' +
+      '<rect x="183" y="0" width="2" height="22"/><rect x="187" y="0" width="6" height="22"/><rect x="195" y="0" width="1.5" height="22"/><rect x="198" y="0" width="4" height="22"/><rect x="204" y="0" width="2" height="22"/>' +
+      '<rect x="208" y="0" width="5" height="22"/><rect x="215" y="0" width="3" height="22"/><rect x="220" y="0" width="1.5" height="22"/><rect x="223" y="0" width="6" height="22"/><rect x="231" y="0" width="2" height="22"/>' +
+      '<rect x="235" y="0" width="4" height="22"/><rect x="241" y="0" width="1.5" height="22"/><rect x="244" y="0" width="5" height="22"/><rect x="251" y="0" width="2" height="22"/><rect x="255" y="0" width="3" height="22"/>' +
+      '<rect x="260" y="0" width="6" height="22"/><rect x="268" y="0" width="2" height="22"/><rect x="272" y="0" width="4" height="22"/><rect x="278" y="0" width="1.5" height="22"/><rect x="281" y="0" width="3" height="22"/>' +
+      '<rect x="286" y="0" width="5" height="22"/><rect x="293" y="0" width="2" height="22"/><rect x="297" y="0" width="6" height="22"/><rect x="305" y="0" width="3" height="22"/><rect x="310" y="0" width="1.5" height="22"/>' +
+      '<rect x="313" y="0" width="4" height="22"/><rect x="319" y="0" width="2" height="22"/><rect x="323" y="0" width="5" height="22"/><rect x="330" y="0" width="3" height="22"/><rect x="335" y="0" width="1.5" height="22"/>' +
+      '<rect x="338" y="0" width="6" height="22"/><rect x="346" y="0" width="2" height="22"/><rect x="350" y="0" width="4" height="22"/><rect x="356" y="0" width="4" height="22"/>' +
+      '</g>' +
+    '</svg>';
+  }
+
+  /**
    * Genera el HTML de la Contraportada Coleccionable Lain con QR Dinámico y PIN aleatorio
    * @param {number} cardNum - Número de tarjeta temática (1, 2, 3, 4)
    * @param {object} tok - Datos del token ({ tokenCode, securityPin, invoiceFolio })
@@ -193,680 +219,10 @@ export class InvoiceTemplateService {
    * @param {number} [templateIdx] - Índice opcional de plantilla (0 a configs.length - 1)
    */
   static getLainBackCardHtml(cardNum, tok, slotId, templateIdx) {
-    const configs = [
-      {
-        layer: 'LAYER: 01',
-        title: 'WEIRDO // THE WIRED',
-        sub: 'TACHIBANA GENERAL LABORATORIES · COPLAND OS 21.0',
-        kanji: '全ては繋がっている',
-        quote: '"Close the world, Open the nExt."',
-        protocol: 'IPv7.06.4',
-        chip: 'NAVI-CORE IX',
-        spec1: 'BUS: 1024-BIT QUANTUM',
-        spec2: 'MEM: RESIDUAL BUFFER',
-        sn: 'MD-LAIN-9807-001',
-        svg: `<svg viewBox="0 0 280 115" class="lain-card-svg" xmlns="http://www.w3.org/2000/svg">
-          <path d="M-10,12 Q65,42 140,20 Q205,4 290,16" fill="none" stroke="#4338ca" stroke-width="1.3" opacity="0.85"/>
-          <path d="M-10,22 Q75,54 140,28 Q215,10 290,24" fill="none" stroke="#6366f1" stroke-width="0.9" opacity="0.7"/>
-          <path d="M-10,32 Q85,65 140,36 Q225,18 290,32" fill="none" stroke="#1e1b4b" stroke-width="1.4" opacity="0.95"/>
-          <path d="M-10,50 Q80,78 140,52 Q210,38 290,48" fill="none" stroke="#0f172a" stroke-width="1.6"/>
-          <path d="M-10,60 Q80,90 145,58 Q215,46 290,58" fill="none" stroke="#4338ca" stroke-width="1.1"/>
-          <rect x="135" y="10" width="10" height="105" rx="1" fill="#1e293b"/>
-          <rect x="115" y="18" width="50" height="4" rx="1" fill="#334155"/>
-          <rect x="122" y="32" width="36" height="3.5" rx="1" fill="#334155"/>
-          <rect x="110" y="46" width="60" height="4" rx="1" fill="#334155"/>
-          <circle cx="118" cy="16" r="2.2" fill="#64748b"/>
-          <circle cx="162" cy="16" r="2.2" fill="#64748b"/>
-          <circle cx="125" cy="30" r="2" fill="#64748b"/>
-          <circle cx="155" cy="30" r="2" fill="#64748b"/>
-          <circle cx="113" cy="44" r="2.2" fill="#64748b"/>
-          <circle cx="167" cy="44" r="2.2" fill="#64748b"/>
-          <rect x="146" y="36" width="16" height="25" rx="2" fill="#475569" stroke="#1e293b" stroke-width="1"/>
-          <line x1="146" y1="40" x2="162" y2="40" stroke="#94a3b8" stroke-width="0.8"/>
-          <line x1="146" y1="58" x2="162" y2="58" stroke="#94a3b8" stroke-width="0.8"/>
-          <line x1="140" y1="36" x2="55" y2="115" stroke="#64748b" stroke-width="0.8" stroke-dasharray="3 1.5"/>
-          <line x1="140" y1="52" x2="235" y2="115" stroke="#64748b" stroke-width="0.8"/>
-          <text x="8" y="104" font-family="'JetBrains Mono', monospace" font-size="6.5" font-weight="700" fill="#4f46e5" letter-spacing="0.5">/// 50Hz/60Hz CONTINUOUS HUMMING</text>
-          <text x="8" y="112" font-family="'JetBrains Mono', monospace" font-size="5.5" fill="#64748b">LAT: 35°39'10\"N LON: 139°42'30\"E // WIRED GATEWAY</text>
-        </svg>`
-      },
-      {
-        layer: 'LAYER: 02',
-        title: 'GIRLS // PSYCHE CHIP',
-        sub: 'KNIGHTS OF THE EASTERN CALCULUS · LICENSED HARDWARE',
-        kanji: 'どこに行っても、みんな繋がっている',
-        quote: '"No matter where you go, everyone\'s connected."',
-        protocol: 'PSYCHE-v4.2',
-        chip: 'QUANTUM GATE',
-        spec1: 'CLOCK: 1.44 THz BUS',
-        spec2: 'ENCRYPT: 4096-BIT RSA',
-        sn: 'MD-LAIN-9807-002',
-        svg: `<svg viewBox="0 0 280 115" class="lain-card-svg" xmlns="http://www.w3.org/2000/svg">
-          <rect x="85" y="15" width="110" height="75" rx="4" fill="#0f172a" stroke="#4338ca" stroke-width="1.5"/>
-          <rect x="92" y="22" width="96" height="61" rx="2" fill="#1e1b4b" stroke="#6366f1" stroke-width="0.8"/>
-          <g fill="#94a3b8">
-            <rect x="95" y="10" width="4" height="5"/><rect x="107" y="10" width="4" height="5"/><rect x="119" y="10" width="4" height="5"/>
-            <rect x="131" y="10" width="4" height="5"/><rect x="143" y="10" width="4" height="5"/><rect x="155" y="10" width="4" height="5"/>
-            <rect x="167" y="10" width="4" height="5"/><rect x="179" y="10" width="4" height="5"/>
-            <rect x="95" y="90" width="4" height="5"/><rect x="107" y="90" width="4" height="5"/><rect x="119" y="90" width="4" height="5"/>
-            <rect x="131" y="90" width="4" height="5"/><rect x="143" y="90" width="4" height="5"/><rect x="155" y="90" width="4" height="5"/>
-            <rect x="167" y="90" width="4" height="5"/><rect x="179" y="90" width="4" height="5"/>
-          </g>
-          <circle cx="140" cy="52" r="18" fill="none" stroke="#a855f7" stroke-width="1.2" stroke-dasharray="4 2"/>
-          <polygon points="140,40 149,56 131,56" fill="none" stroke="#ec4899" stroke-width="1.2"/>
-          <text x="140" y="55" font-family="'JetBrains Mono', monospace" font-size="7" font-weight="900" fill="#f8fafc" text-anchor="middle">Ψ</text>
-          <path d="M20,30 H85 M20,45 H85 M20,60 H85 M20,75 H85" stroke="#38bdf8" stroke-width="0.9" stroke-dasharray="6 3" opacity="0.8"/>
-          <path d="M195,30 H260 M195,45 H260 M195,60 H260 M195,75 H260" stroke="#38bdf8" stroke-width="0.9" stroke-dasharray="6 3" opacity="0.8"/>
-          <circle cx="20" cy="30" r="2.5" fill="#38bdf8"/><circle cx="20" cy="75" r="2.5" fill="#38bdf8"/>
-          <circle cx="260" cy="45" r="2.5" fill="#38bdf8"/><circle cx="260" cy="60" r="2.5" fill="#38bdf8"/>
-          <text x="140" y="76" font-family="'JetBrains Mono', monospace" font-size="6" fill="#a5b4fc" text-anchor="middle" letter-spacing="1">PSYCHE PROCESSOR // REV. 7</text>
-          <text x="8" y="108" font-family="'JetBrains Mono', monospace" font-size="5.5" fill="#64748b">MELTYDEAYS ACCELERATOR UNIT · COPLAND KERNEL READY</text>
-        </svg>`
-      },
-      {
-        layer: 'LAYER: 03',
-        title: 'PSYCHE // PRESENT TIME',
-        sub: 'UBIQUITOUS SIGNAL TRANSMISSION · ELECTROMAGNETIC GRID',
-        kanji: '誰もが繋がっている',
-        quote: '"Present day, present time... Hahahaha!"',
-        protocol: 'CARRIER-48',
-        chip: 'NEURAL LINK-X',
-        spec1: 'BUS: 2048-BIT BUS',
-        spec2: 'NODE: 100 Gbit/s OPT',
-        sn: 'MD-LAIN-9807-003',
-        svg: `<svg viewBox="0 0 280 115" class="lain-card-svg" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="140" cy="30" r="25" fill="none" stroke="#6366f1" stroke-width="0.9" stroke-dasharray="4 3" opacity="0.5"/>
-          <circle cx="140" cy="30" r="45" fill="none" stroke="#4f46e5" stroke-width="0.9" stroke-dasharray="6 4" opacity="0.6"/>
-          <circle cx="140" cy="30" r="70" fill="none" stroke="#312e81" stroke-width="0.8" stroke-dasharray="8 5" opacity="0.7"/>
-          <polygon points="140,15 125,105 155,105" fill="#0f172a" stroke="#1e293b" stroke-width="1.2"/>
-          <line x1="131" y1="40" x2="149" y2="40" stroke="#94a3b8" stroke-width="1"/>
-          <line x1="128" y1="65" x2="152" y2="65" stroke="#94a3b8" stroke-width="1"/>
-          <line x1="126" y1="88" x2="154" y2="88" stroke="#94a3b8" stroke-width="1"/>
-          <line x1="131" y1="40" x2="152" y2="65" stroke="#64748b" stroke-width="0.8"/>
-          <line x1="149" y1="40" x2="128" y2="65" stroke="#64748b" stroke-width="0.8"/>
-          <line x1="128" y1="65" x2="154" y2="88" stroke="#64748b" stroke-width="0.8"/>
-          <line x1="152" y1="65" x2="126" y2="88" stroke="#64748b" stroke-width="0.8"/>
-          <circle cx="140" cy="15" r="4.5" fill="#dc2626"/>
-          <path d="M120,38 A10,10 0 0,1 120,54" fill="none" stroke="#38bdf8" stroke-width="2"/>
-          <path d="M160,38 A10,10 0 0,0 160,54" fill="none" stroke="#38bdf8" stroke-width="2"/>
-          <path d="M15,95 L40,95 L48,82 L55,108 L62,75 L70,112 L78,85 L85,95 L115,95" fill="none" stroke="#059669" stroke-width="1.2"/>
-          <path d="M165,95 L195,95 L202,80 L210,110 L218,72 L226,115 L234,86 L242,95 L265,95" fill="none" stroke="#059669" stroke-width="1.2"/>
-        </svg>`
-      },
-      {
-        layer: 'LAYER: 04',
-        title: 'RESET // PROTOCOL',
-        sub: 'COPLAND OS CRT TERMINAL · CLIENT NODE PASS',
-        kanji: '現実と仮想の境界線',
-        quote: '"The Wired is an ocean of consciousness."',
-        protocol: 'PROTOCOL-07',
-        chip: 'NAVI CLIENT',
-        spec1: 'DISPLAY: 1024x768 CRT',
-        spec2: 'NODE: PERSISTENT',
-        sn: 'MD-LAIN-9807-004',
-        svg: `<svg viewBox="0 0 280 115" class="lain-card-svg" xmlns="http://www.w3.org/2000/svg">
-          <rect x="45" y="10" width="190" height="92" rx="10" fill="#1e293b" stroke="#0f172a" stroke-width="2"/>
-          <rect x="55" y="18" width="170" height="76" rx="6" fill="#090d16" stroke="#475569" stroke-width="1.5"/>
-          <line x1="56" y1="28" x2="224" y2="28" stroke="#1e293b" stroke-width="0.6"/>
-          <line x1="56" y1="38" x2="224" y2="38" stroke="#1e293b" stroke-width="0.6"/>
-          <line x1="56" y1="48" x2="224" y2="48" stroke="#1e293b" stroke-width="0.6"/>
-          <line x1="56" y1="58" x2="224" y2="58" stroke="#1e293b" stroke-width="0.6"/>
-          <line x1="56" y1="68" x2="224" y2="68" stroke="#1e293b" stroke-width="0.6"/>
-          <line x1="56" y1="78" x2="224" y2="78" stroke="#1e293b" stroke-width="0.6"/>
-          <rect x="65" y="24" width="150" height="12" fill="#334155"/>
-          <text x="70" y="32.5" font-family="'JetBrains Mono', monospace" font-size="6.5" font-weight="700" fill="#ffffff">COPLAND OS v21.0 - [terminal.exe]</text>
-          <circle cx="203" cy="30" r="2.5" fill="#f59e0b"/><circle cx="210" cy="30" r="2.5" fill="#10b981"/>
-          <text x="68" y="46" font-family="'JetBrains Mono', monospace" font-size="6" fill="#22c55e">> boot navi_kernel.bin ... [OK]</text>
-          <text x="68" y="55" font-family="'JetBrains Mono', monospace" font-size="6" fill="#22c55e">> connecting node: meltydeays ... [OK]</text>
-          <text x="68" y="64" font-family="'JetBrains Mono', monospace" font-size="6" fill="#38bdf8">> user authenticated: LAIN IWAKURA</text>
-          <text x="68" y="73" font-family="'JetBrains Mono', monospace" font-size="6" font-weight="700" fill="#f43f5e">> &quot;Close the world, Open the nExt.&quot;_</text>
-          <circle cx="220" cy="98" r="2" fill="#22c55e"/>
-          <text x="140" y="112" font-family="'JetBrains Mono', monospace" font-size="5.5" fill="#64748b" text-anchor="middle">MELTYDEAYS TECH LABS · SERIAL EXPERIMENTS HARDWARE PASS</text>
-        </svg>`
-      },
-      {
-        layer: 'LAYER: 05',
-        title: 'DISTORTION // SCHUMANN',
-        sub: 'SCHUMANN RESONANCE · 7.83Hz EARTH FREQUENCY',
-        kanji: '私は遍在する',
-        quote: '"I am everywhere. I am omnipresent."',
-        protocol: 'FREQ-7.83Hz',
-        chip: 'RESONANCE-V',
-        spec1: 'WAVE: 7.83Hz ELF',
-        spec2: 'AMP: VARIABLE GAIN',
-        sn: 'MD-LAIN-9807-005',
-        svg: `<svg viewBox="0 0 280 115" class="lain-card-svg" xmlns="http://www.w3.org/2000/svg">
-          <path d="M0,57 Q35,20 70,57 Q105,94 140,57 Q175,20 210,57 Q245,94 280,57" fill="none" stroke="#7c3aed" stroke-width="2" opacity="0.9"/>
-          <path d="M0,57 Q35,30 70,57 Q105,84 140,57 Q175,30 210,57 Q245,84 280,57" fill="none" stroke="#a78bfa" stroke-width="1.2" opacity="0.6"/>
-          <path d="M0,57 Q35,42 70,57 Q105,72 140,57 Q175,42 210,57 Q245,72 280,57" fill="none" stroke="#c4b5fd" stroke-width="0.8" opacity="0.4"/>
-          <circle cx="140" cy="57" r="22" fill="none" stroke="#8b5cf6" stroke-width="1.5" stroke-dasharray="3 2"/>
-          <circle cx="140" cy="57" r="12" fill="#1e1b4b" stroke="#6d28d9" stroke-width="1"/>
-          <text x="140" y="61" font-family="'JetBrains Mono', monospace" font-size="8" font-weight="900" fill="#e9d5ff" text-anchor="middle">Ω</text>
-          <line x1="10" y1="10" x2="10" y2="105" stroke="#475569" stroke-width="0.6"/>
-          <line x1="270" y1="10" x2="270" y2="105" stroke="#475569" stroke-width="0.6"/>
-          <g font-family="'JetBrains Mono', monospace" font-size="5" fill="#64748b">
-            <text x="15" y="18">7.83Hz</text><text x="15" y="30">14.3Hz</text><text x="15" y="42">20.8Hz</text>
-            <text x="242" y="18">33.0Hz</text><text x="242" y="30">39.0Hz</text><text x="242" y="42">45.0Hz</text>
-          </g>
-          <text x="140" y="108" font-family="'JetBrains Mono', monospace" font-size="5.5" fill="#64748b" text-anchor="middle">SCHUMANN NODE · MELTYDEAYS WIRED RESONANCE UNIT</text>
-        </svg>`
-      },
-      {
-        layer: 'LAYER: 06',
-        title: 'SOCIETY // KNIGHTS',
-        sub: 'KNIGHTS OF THE EASTERN CALCULUS · HACKER CELL',
-        kanji: '騎士団は真実を知っている',
-        quote: '"If you aren\'t remembered, then you never existed."',
-        protocol: 'KNGHT-v2.1',
-        chip: 'CIPHER-NODE',
-        spec1: 'KEY: ED25519-SHA3',
-        spec2: 'NET: DARKWIRED TOR',
-        sn: 'MD-LAIN-9807-006',
-        svg: `<svg viewBox="0 0 280 115" class="lain-card-svg" xmlns="http://www.w3.org/2000/svg">
-          <polygon points="140,8 195,38 195,82 140,108 85,82 85,38" fill="none" stroke="#dc2626" stroke-width="1.8"/>
-          <polygon points="140,18 185,42 185,76 140,98 95,76 95,42" fill="none" stroke="#991b1b" stroke-width="1" stroke-dasharray="4 2"/>
-          <line x1="140" y1="8" x2="140" y2="108" stroke="#7f1d1d" stroke-width="0.8"/>
-          <line x1="85" y1="38" x2="195" y2="82" stroke="#7f1d1d" stroke-width="0.8"/>
-          <line x1="195" y1="38" x2="85" y2="82" stroke="#7f1d1d" stroke-width="0.8"/>
-          <circle cx="140" cy="58" r="14" fill="#0f172a" stroke="#ef4444" stroke-width="1.2"/>
-          <text x="140" y="63" font-family="'JetBrains Mono', monospace" font-size="10" font-weight="900" fill="#fca5a5" text-anchor="middle">K</text>
-          <circle cx="140" cy="8" r="3" fill="#dc2626"/><circle cx="195" cy="38" r="3" fill="#dc2626"/>
-          <circle cx="195" cy="82" r="3" fill="#dc2626"/><circle cx="140" cy="108" r="3" fill="#dc2626"/>
-          <circle cx="85" cy="82" r="3" fill="#dc2626"/><circle cx="85" cy="38" r="3" fill="#dc2626"/>
-          <text x="8" y="112" font-family="'JetBrains Mono', monospace" font-size="5.5" fill="#64748b">EASTERN CALCULUS CELL · MELTYDEAYS ENCRYPTED NODE</text>
-        </svg>`
-      },
-      {
-        layer: 'LAYER: 07',
-        title: 'INFORNOGRAPHY // DATA',
-        sub: 'INFORMATION OVERFLOW · TACHIBANA DATASTREAM',
-        kanji: '情報は力である',
-        quote: '"What isn\'t remembered never happened."',
-        protocol: 'DATA-FLUX',
-        chip: 'STREAM-CORE',
-        spec1: 'FLOW: 10 TB/s BURST',
-        spec2: 'CACHE: 256 PB DEEP',
-        sn: 'MD-LAIN-9807-007',
-        svg: `<svg viewBox="0 0 280 115" class="lain-card-svg" xmlns="http://www.w3.org/2000/svg">
-          <g opacity="0.6">
-            <rect x="10" y="8" width="3" height="100" fill="#1e40af"/><rect x="17" y="20" width="2" height="88" fill="#3b82f6"/>
-            <rect x="23" y="5" width="4" height="103" fill="#1e3a8a"/><rect x="31" y="15" width="2" height="93" fill="#60a5fa"/>
-            <rect x="37" y="10" width="3" height="98" fill="#2563eb"/><rect x="44" y="25" width="2" height="83" fill="#93c5fd"/>
-            <rect x="50" y="8" width="4" height="100" fill="#1e40af"/><rect x="58" y="18" width="2" height="90" fill="#3b82f6"/>
-            <rect x="64" y="12" width="3" height="96" fill="#1e3a8a"/><rect x="71" y="22" width="2" height="86" fill="#60a5fa"/>
-            <rect x="215" y="8" width="3" height="100" fill="#1e40af"/><rect x="222" y="20" width="2" height="88" fill="#3b82f6"/>
-            <rect x="228" y="5" width="4" height="103" fill="#1e3a8a"/><rect x="236" y="15" width="2" height="93" fill="#60a5fa"/>
-            <rect x="242" y="10" width="3" height="98" fill="#2563eb"/><rect x="249" y="25" width="2" height="83" fill="#93c5fd"/>
-            <rect x="255" y="8" width="4" height="100" fill="#1e40af"/><rect x="263" y="18" width="2" height="90" fill="#3b82f6"/>
-          </g>
-          <rect x="80" y="30" width="120" height="55" rx="3" fill="#0c1425" stroke="#3b82f6" stroke-width="1"/>
-          <text x="140" y="52" font-family="'JetBrains Mono', monospace" font-size="6" fill="#60a5fa" text-anchor="middle">DATASTREAM ACTIVE</text>
-          <text x="140" y="64" font-family="'JetBrains Mono', monospace" font-size="9" font-weight="900" fill="#dbeafe" text-anchor="middle">01001100</text>
-          <text x="140" y="78" font-family="'JetBrains Mono', monospace" font-size="5" fill="#3b82f6" text-anchor="middle">PACKETS: ∞ · LOSS: 0.00%</text>
-          <text x="140" y="108" font-family="'JetBrains Mono', monospace" font-size="5.5" fill="#64748b" text-anchor="middle">TACHIBANA DATA LABS · INFORNOGRAPHY STREAM ACTIVE</text>
-        </svg>`
-      },
-      {
-        layer: 'LAYER: 08',
-        title: 'EGO // IDENTITY SPLIT',
-        sub: 'MULTIPLE PERSONA INTERFACE · IDENTITY DAEMON',
-        kanji: '私はレイン。あなたは誰？',
-        quote: '"There is no such thing as a separate me."',
-        protocol: 'EGO-SPLIT',
-        chip: 'PERSONA-MUX',
-        spec1: 'ID: MULTI-INSTANCE',
-        spec2: 'SYNC: REAL/WIRED',
-        sn: 'MD-LAIN-9807-008',
-        svg: `<svg viewBox="0 0 280 115" class="lain-card-svg" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="100" cy="50" r="30" fill="none" stroke="#6366f1" stroke-width="1.5" opacity="0.7"/>
-          <circle cx="180" cy="50" r="30" fill="none" stroke="#ec4899" stroke-width="1.5" opacity="0.7"/>
-          <path d="M125,28 A30,30 0 0,1 125,72" fill="none" stroke="#a855f7" stroke-width="2"/>
-          <path d="M155,28 A30,30 0 0,0 155,72" fill="none" stroke="#a855f7" stroke-width="2"/>
-          <text x="100" y="54" font-family="'JetBrains Mono', monospace" font-size="7" font-weight="700" fill="#a5b4fc" text-anchor="middle">REAL</text>
-          <text x="180" y="54" font-family="'JetBrains Mono', monospace" font-size="7" font-weight="700" fill="#f9a8d4" text-anchor="middle">WIRED</text>
-          <text x="140" y="54" font-family="'JetBrains Mono', monospace" font-size="6" font-weight="900" fill="#f8fafc" text-anchor="middle">?</text>
-          <line x1="40" y1="90" x2="240" y2="90" stroke="#334155" stroke-width="0.6"/>
-          <g font-family="'JetBrains Mono', monospace" font-size="5" fill="#475569">
-            <text x="40" y="100">IWAKURA</text><text x="100" y="100">LAIN-01</text>
-            <text x="160" y="100">LAIN-02</text><text x="220" y="100">LAIN-03</text>
-          </g>
-          <text x="140" y="112" font-family="'JetBrains Mono', monospace" font-size="5.5" fill="#64748b" text-anchor="middle">PERSONA MULTIPLEXER · MELTYDEAYS IDENTITY NODE</text>
-        </svg>`
-      },
-      {
-        layer: 'LAYER: 09',
-        title: 'NAVI // HANDHELD',
-        sub: 'PORTABLE NAVI UNIT · PSYCHE INTERFACE MODULE',
-        kanji: 'ナビは私の窓',
-        quote: '"Everyone is connected... Everyone but me."',
-        protocol: 'NAVI-OS 3.1',
-        chip: 'HAND-PROC',
-        spec1: 'SCREEN: 320x240 TN',
-        spec2: 'SLOT: PSYCHE CARD',
-        sn: 'MD-LAIN-9807-009',
-        svg: `<svg viewBox="0 0 280 115" class="lain-card-svg" xmlns="http://www.w3.org/2000/svg">
-          <rect x="95" y="5" width="90" height="105" rx="8" fill="#1e293b" stroke="#475569" stroke-width="1.5"/>
-          <rect x="102" y="12" width="76" height="55" rx="3" fill="#0a0e1a" stroke="#334155" stroke-width="1"/>
-          <text x="140" y="35" font-family="'JetBrains Mono', monospace" font-size="5.5" fill="#22c55e" text-anchor="middle">NAVI_OS v3.1</text>
-          <text x="140" y="45" font-family="'JetBrains Mono', monospace" font-size="5" fill="#38bdf8" text-anchor="middle">CONNECTION: ACTIVE</text>
-          <text x="140" y="55" font-family="'JetBrains Mono', monospace" font-size="5" fill="#a855f7" text-anchor="middle">USER: IWAKURA.L</text>
-          <circle cx="140" cy="82" r="8" fill="#0f172a" stroke="#64748b" stroke-width="1"/>
-          <circle cx="140" cy="82" r="3" fill="#475569"/>
-          <rect x="100" y="95" width="15" height="4" rx="1" fill="#334155"/>
-          <rect x="165" y="95" width="15" height="4" rx="1" fill="#334155"/>
-          <line x1="30" y1="40" x2="95" y2="40" stroke="#475569" stroke-width="0.6" stroke-dasharray="3 2"/>
-          <line x1="185" y1="40" x2="250" y2="40" stroke="#475569" stroke-width="0.6" stroke-dasharray="3 2"/>
-          <text x="30" y="38" font-family="'JetBrains Mono', monospace" font-size="5" fill="#475569">LINK</text>
-          <text x="235" y="38" font-family="'JetBrains Mono', monospace" font-size="5" fill="#475569">OUT</text>
-          <text x="140" y="112" font-family="'JetBrains Mono', monospace" font-size="5.5" fill="#64748b" text-anchor="middle">HANDHELD NAVI · TACHIBANA PORTABLE TERMINAL</text>
-        </svg>`
-      },
-      {
-        layer: 'LAYER: 10',
-        title: 'LOVE // ARISU',
-        sub: 'FRIENDSHIP PROTOCOL · EMOTIONAL ANCHOR SYSTEM',
-        kanji: '友達は大切な存在',
-        quote: '"Lain... I love you. So please, come back to me."',
-        protocol: 'BOND-v1.0',
-        chip: 'EMPATH-CORE',
-        spec1: 'LINK: EMOTIONAL',
-        spec2: 'TRUST: ABSOLUTE',
-        sn: 'MD-LAIN-9807-010',
-        svg: `<svg viewBox="0 0 280 115" class="lain-card-svg" xmlns="http://www.w3.org/2000/svg">
-          <path d="M140,90 L120,70 Q95,42 120,25 Q140,12 140,35 Q140,12 160,25 Q185,42 160,70 Z" fill="none" stroke="#ec4899" stroke-width="1.8"/>
-          <path d="M140,82 L125,68 Q106,48 125,35 Q140,24 140,42 Q140,24 155,35 Q174,48 155,68 Z" fill="none" stroke="#f9a8d4" stroke-width="1" stroke-dasharray="3 2"/>
-          <circle cx="90" cy="55" r="3" fill="#ec4899" opacity="0.5"/><circle cx="75" cy="40" r="2" fill="#f472b6" opacity="0.4"/>
-          <circle cx="190" cy="55" r="3" fill="#ec4899" opacity="0.5"/><circle cx="205" cy="40" r="2" fill="#f472b6" opacity="0.4"/>
-          <circle cx="60" cy="70" r="1.5" fill="#ec4899" opacity="0.3"/><circle cx="220" cy="70" r="1.5" fill="#ec4899" opacity="0.3"/>
-          <path d="M15,95 H265" stroke="#334155" stroke-width="0.5"/>
-          <text x="140" y="105" font-family="'JetBrains Mono', monospace" font-size="6" fill="#f9a8d4" text-anchor="middle" letter-spacing="2">ARISU · LAIN</text>
-          <text x="140" y="112" font-family="'JetBrains Mono', monospace" font-size="5" fill="#64748b" text-anchor="middle">EMOTIONAL ANCHOR · MELTYDEAYS FRIENDSHIP PROTOCOL</text>
-        </svg>`
-      },
-      {
-        layer: 'LAYER: 11',
-        title: 'RUMORS // ACCELA',
-        sub: 'ACCELA NANOMACHINE · NEURAL ENHANCEMENT DRUG',
-        kanji: '加速する意識',
-        quote: '"You can feel it, can\'t you? The pulse of the Wired."',
-        protocol: 'ACCELA-X',
-        chip: 'NANO-INJECT',
-        spec1: 'DOSE: 0.3mg/mL',
-        spec2: 'EFFECT: NEURAL++',
-        sn: 'MD-LAIN-9807-011',
-        svg: `<svg viewBox="0 0 280 115" class="lain-card-svg" xmlns="http://www.w3.org/2000/svg">
-          <ellipse cx="140" cy="55" rx="60" ry="40" fill="none" stroke="#059669" stroke-width="1.2" stroke-dasharray="5 3"/>
-          <ellipse cx="140" cy="55" rx="40" ry="25" fill="none" stroke="#10b981" stroke-width="1" stroke-dasharray="3 2"/>
-          <ellipse cx="140" cy="55" rx="20" ry="12" fill="none" stroke="#34d399" stroke-width="0.8"/>
-          <circle cx="140" cy="55" r="5" fill="#059669"/>
-          <line x1="140" y1="55" x2="200" y2="15" stroke="#10b981" stroke-width="0.8"/>
-          <line x1="140" y1="55" x2="80" y2="15" stroke="#10b981" stroke-width="0.8"/>
-          <line x1="140" y1="55" x2="80" y2="95" stroke="#10b981" stroke-width="0.8"/>
-          <line x1="140" y1="55" x2="200" y2="95" stroke="#10b981" stroke-width="0.8"/>
-          <circle cx="200" cy="15" r="3" fill="#34d399"/><circle cx="80" cy="15" r="3" fill="#34d399"/>
-          <circle cx="80" cy="95" r="3" fill="#34d399"/><circle cx="200" cy="95" r="3" fill="#34d399"/>
-          <text x="210" y="18" font-family="'JetBrains Mono', monospace" font-size="5" fill="#6ee7b7">SYNAPSE-A</text>
-          <text x="30" y="18" font-family="'JetBrains Mono', monospace" font-size="5" fill="#6ee7b7">SYNAPSE-B</text>
-          <text x="140" y="112" font-family="'JetBrains Mono', monospace" font-size="5.5" fill="#64748b" text-anchor="middle">ACCELA NANOMACHINE · MELTYDEAYS NEURAL BOOST UNIT</text>
-        </svg>`
-      },
-      {
-        layer: 'LAYER: 12',
-        title: 'LANDSCAPE // GOD',
-        sub: 'DEUS EX MACHINA · EIRI MASAMI PROTOCOL',
-        kanji: '神になれるのか',
-        quote: '"God is here. I am God."',
-        protocol: 'DEUS-v0.1',
-        chip: 'OMNISCIENT',
-        spec1: 'STATE: ASCENDED',
-        spec2: 'PLANE: METAVERSE',
-        sn: 'MD-LAIN-9807-012',
-        svg: `<svg viewBox="0 0 280 115" class="lain-card-svg" xmlns="http://www.w3.org/2000/svg">
-          <polygon points="140,5 170,100 40,40 240,40 110,100" fill="none" stroke="#f59e0b" stroke-width="1.5"/>
-          <circle cx="140" cy="48" r="20" fill="none" stroke="#fbbf24" stroke-width="1.2"/>
-          <circle cx="140" cy="48" r="10" fill="none" stroke="#f59e0b" stroke-width="0.8" stroke-dasharray="2 2"/>
-          <circle cx="140" cy="48" r="4" fill="#f59e0b"/>
-          <line x1="140" y1="28" x2="140" y2="5" stroke="#fbbf24" stroke-width="0.8"/>
-          <line x1="120" y1="48" x2="40" y2="40" stroke="#fbbf24" stroke-width="0.6" opacity="0.6"/>
-          <line x1="160" y1="48" x2="240" y2="40" stroke="#fbbf24" stroke-width="0.6" opacity="0.6"/>
-          <line x1="130" y1="65" x2="110" y2="100" stroke="#fbbf24" stroke-width="0.6" opacity="0.6"/>
-          <line x1="150" y1="65" x2="170" y2="100" stroke="#fbbf24" stroke-width="0.6" opacity="0.6"/>
-          <text x="140" y="52" font-family="'JetBrains Mono', monospace" font-size="6" font-weight="900" fill="#fef3c7" text-anchor="middle">∞</text>
-          <text x="140" y="112" font-family="'JetBrains Mono', monospace" font-size="5.5" fill="#64748b" text-anchor="middle">DEUS PROTOCOL · EIRI MASAMI ASCENSION ENGINE</text>
-        </svg>`
-      },
-      {
-        layer: 'LAYER: 13',
-        title: 'CLOSURE // MEMORY',
-        sub: 'MEMORY WIPE DAEMON · ERASURE PROTOCOL ACTIVE',
-        kanji: '記憶を消しても、私は存在する',
-        quote: '"People only have substance within the memories of others."',
-        protocol: 'MEM-WIPE',
-        chip: 'ERASURE-V',
-        spec1: 'MODE: SELECTIVE',
-        spec2: 'DEPTH: TOTAL',
-        sn: 'MD-LAIN-9807-013',
-        svg: `<svg viewBox="0 0 280 115" class="lain-card-svg" xmlns="http://www.w3.org/2000/svg">
-          <rect x="30" y="15" width="220" height="80" rx="2" fill="none" stroke="#475569" stroke-width="1"/>
-          <g stroke="#334155" stroke-width="0.5">
-            <line x1="30" y1="30" x2="250" y2="30"/><line x1="30" y1="45" x2="250" y2="45"/>
-            <line x1="30" y1="60" x2="250" y2="60"/><line x1="30" y1="75" x2="250" y2="75"/>
-          </g>
-          <text x="40" y="28" font-family="'JetBrains Mono', monospace" font-size="5.5" fill="#94a3b8">ADDR: 0x0000 - 0xFFFF</text>
-          <rect x="40" y="33" width="200" height="8" fill="#1e293b" rx="1"/>
-          <rect x="40" y="33" width="160" height="8" fill="#dc2626" rx="1" opacity="0.7"/>
-          <text x="40" y="54" font-family="'JetBrains Mono', monospace" font-size="5.5" fill="#f87171">ERASING: ████████████████░░░░ 80%</text>
-          <text x="40" y="70" font-family="'JetBrains Mono', monospace" font-size="5.5" fill="#94a3b8">SECTORS: 1024/1280 WIPED</text>
-          <text x="40" y="85" font-family="'JetBrains Mono', monospace" font-size="5.5" fill="#fbbf24">WARNING: IRREVERSIBLE OPERATION</text>
-          <text x="140" y="112" font-family="'JetBrains Mono', monospace" font-size="5.5" fill="#64748b" text-anchor="middle">MEMORY DAEMON · MELTYDEAYS ERASURE PROTOCOL</text>
-        </svg>`
-      },
-      {
-        layer: 'LAYER: 14',
-        title: 'DEUS // PROPHECY',
-        sub: 'PROPHECY MATRIX · SEVENTH PROTOCOL GATE',
-        kanji: '未来は既に書かれている',
-        quote: '"The border between the Wired and the real world is disappearing."',
-        protocol: 'GATE-VII',
-        chip: 'ORACLE-X',
-        spec1: 'VISION: PRECOG',
-        spec2: 'LAYER: PROTOCOL 7',
-        sn: 'MD-LAIN-9807-014',
-        svg: `<svg viewBox="0 0 280 115" class="lain-card-svg" xmlns="http://www.w3.org/2000/svg">
-          <ellipse cx="140" cy="50" rx="55" ry="38" fill="none" stroke="#6366f1" stroke-width="1.5"/>
-          <ellipse cx="140" cy="50" rx="55" ry="38" fill="none" stroke="#818cf8" stroke-width="0.8" transform="rotate(60 140 50)"/>
-          <ellipse cx="140" cy="50" rx="55" ry="38" fill="none" stroke="#a5b4fc" stroke-width="0.8" transform="rotate(120 140 50)"/>
-          <circle cx="140" cy="50" r="8" fill="#312e81" stroke="#6366f1" stroke-width="1"/>
-          <circle cx="140" cy="50" r="3" fill="#818cf8"/>
-          <g font-family="'JetBrains Mono', monospace" font-size="5" fill="#475569">
-            <text x="10" y="15">GATE:I</text><text x="50" y="15">GATE:II</text><text x="90" y="15">GATE:III</text>
-            <text x="170" y="15">GATE:V</text><text x="210" y="15">GATE:VI</text><text x="245" y="15">GATE:VII</text>
-          </g>
-          <text x="140" y="108" font-family="'JetBrains Mono', monospace" font-size="5.5" fill="#64748b" text-anchor="middle">PROPHECY MATRIX · SEVENTH PROTOCOL ACTIVE</text>
-        </svg>`
-      },
-      {
-        layer: 'LAYER: 15',
-        title: 'BRIDGE // CROSSOVER',
-        sub: 'REALITY BRIDGE · DIMENSIONAL CROSSOVER UNIT',
-        kanji: '現実と仮想の橋',
-        quote: '"In the Wired, there is no need for bodies."',
-        protocol: 'BRIDGE-DX',
-        chip: 'CROSS-GATE',
-        spec1: 'DIM: REAL↔WIRED',
-        spec2: 'PHASE: SYNC 100%',
-        sn: 'MD-LAIN-9807-015',
-        svg: `<svg viewBox="0 0 280 115" class="lain-card-svg" xmlns="http://www.w3.org/2000/svg">
-          <rect x="15" y="25" width="100" height="65" rx="3" fill="#0c1425" stroke="#334155" stroke-width="1"/>
-          <rect x="165" y="25" width="100" height="65" rx="3" fill="#0c1425" stroke="#334155" stroke-width="1"/>
-          <text x="65" y="55" font-family="'JetBrains Mono', monospace" font-size="7" font-weight="700" fill="#94a3b8" text-anchor="middle">REAL</text>
-          <text x="65" y="66" font-family="'JetBrains Mono', monospace" font-size="5" fill="#475569" text-anchor="middle">WORLD</text>
-          <text x="215" y="55" font-family="'JetBrains Mono', monospace" font-size="7" font-weight="700" fill="#a78bfa" text-anchor="middle">WIRED</text>
-          <text x="215" y="66" font-family="'JetBrains Mono', monospace" font-size="5" fill="#7c3aed" text-anchor="middle">WORLD</text>
-          <path d="M115,45 C130,45 150,45 165,45" stroke="#f59e0b" stroke-width="1.5" fill="none" marker-end="url(#arrowB)"/>
-          <path d="M165,65 C150,65 130,65 115,65" stroke="#f59e0b" stroke-width="1.5" fill="none" marker-end="url(#arrowB)"/>
-          <text x="140" y="42" font-family="'JetBrains Mono', monospace" font-size="5" fill="#fbbf24" text-anchor="middle">→→→</text>
-          <text x="140" y="75" font-family="'JetBrains Mono', monospace" font-size="5" fill="#fbbf24" text-anchor="middle">←←←</text>
-          <text x="140" y="112" font-family="'JetBrains Mono', monospace" font-size="5.5" fill="#64748b" text-anchor="middle">REALITY BRIDGE · MELTYDEAYS CROSSOVER UNIT</text>
-        </svg>`
-      },
-      {
-        layer: 'LAYER: 16',
-        title: 'STATIC // NOISE',
-        sub: 'WHITE NOISE GENERATOR · SIGNAL INTERFERENCE',
-        kanji: 'ノイズの中に真実がある',
-        quote: '"Do you want to be hurt? Or do you want to hurt others?"',
-        protocol: 'NOISE-GEN',
-        chip: 'STATIC-V',
-        spec1: 'FREQ: 20Hz-20kHz',
-        spec2: 'POWER: -3dBFS',
-        sn: 'MD-LAIN-9807-016',
-        svg: `<svg viewBox="0 0 280 115" class="lain-card-svg" xmlns="http://www.w3.org/2000/svg">
-          <g stroke="#475569" stroke-width="0.5" opacity="0.8">
-            ${Array.from({length: 40}, (_, i) => {
-              const x = 7 * i; const y1 = 20 + Math.sin(i * 0.7) * 15; const y2 = 55 + Math.cos(i * 0.9) * 20;
-              return '<line x1="' + x + '" y1="' + y1 + '" x2="' + x + '" y2="' + y2 + '"/>';
-            }).join('')}
-          </g>
-          <g stroke="#64748b" stroke-width="0.4" opacity="0.6">
-            ${Array.from({length: 40}, (_, i) => {
-              const x = 7 * i; const y1 = 60 + Math.sin(i * 1.1) * 12; const y2 = 90 + Math.cos(i * 0.5) * 10;
-              return '<line x1="' + x + '" y1="' + y1 + '" x2="' + x + '" y2="' + y2 + '"/>';
-            }).join('')}
-          </g>
-          <rect x="90" y="38" width="100" height="30" rx="2" fill="#0f172a" stroke="#64748b" stroke-width="1"/>
-          <text x="140" y="56" font-family="'JetBrains Mono', monospace" font-size="8" font-weight="900" fill="#e2e8f0" text-anchor="middle">▓▒░ STATIC ░▒▓</text>
-          <text x="140" y="108" font-family="'JetBrains Mono', monospace" font-size="5.5" fill="#64748b" text-anchor="middle">WHITE NOISE · MELTYDEAYS SIGNAL INTERFERENCE UNIT</text>
-        </svg>`
-      },
-      {
-        layer: 'LAYER: 17',
-        title: 'WIRE // POWERLINES',
-        sub: 'ELECTROMAGNETIC FIELD · POWER LINE COMMUNICATION',
-        kanji: '電線は世界を繋ぐ',
-        quote: '"The humming of the power lines... Can you hear it?"',
-        protocol: 'PLC-60Hz',
-        chip: 'EMF-SENSE',
-        spec1: 'VOLTAGE: 100V AC',
-        spec2: 'FIELD: 60Hz HUM',
-        sn: 'MD-LAIN-9807-017',
-        svg: `<svg viewBox="0 0 280 115" class="lain-card-svg" xmlns="http://www.w3.org/2000/svg">
-          <rect x="25" y="8" width="6" height="90" fill="#1e293b"/>
-          <rect x="249" y="8" width="6" height="90" fill="#1e293b"/>
-          <rect x="20" y="8" width="16" height="4" fill="#334155"/><rect x="244" y="8" width="16" height="4" fill="#334155"/>
-          <rect x="22" y="20" width="12" height="3" fill="#475569"/><rect x="246" y="20" width="12" height="3" fill="#475569"/>
-          <path d="M31,22 Q80,35 140,28 Q200,22 249,22" fill="none" stroke="#0f172a" stroke-width="2"/>
-          <path d="M31,22 Q80,40 140,32 Q200,26 249,22" fill="none" stroke="#1e293b" stroke-width="1.5"/>
-          <path d="M31,22 Q80,45 140,36 Q200,30 249,22" fill="none" stroke="#334155" stroke-width="1"/>
-          <circle cx="140" cy="30" r="3" fill="#fbbf24"/>
-          <g opacity="0.5">
-            <circle cx="140" cy="30" r="8" fill="none" stroke="#fbbf24" stroke-width="0.6"/>
-            <circle cx="140" cy="30" r="15" fill="none" stroke="#f59e0b" stroke-width="0.4"/>
-            <circle cx="140" cy="30" r="22" fill="none" stroke="#d97706" stroke-width="0.3"/>
-          </g>
-          <path d="M15,80 L40,80 L48,65 L55,95 L62,60 L70,100 L78,70 L85,80 L265,80" fill="none" stroke="#059669" stroke-width="1"/>
-          <text x="140" y="108" font-family="'JetBrains Mono', monospace" font-size="5.5" fill="#64748b" text-anchor="middle">POWERLINE COMM · MELTYDEAYS 60Hz EMF TRANSCEIVER</text>
-        </svg>`
-      },
-      {
-        layer: 'LAYER: 18',
-        title: 'MOUTH // BEAR SUIT',
-        sub: 'BEAR PAJAMA INTERFACE · COMFORT PROTOCOL ACTIVE',
-        kanji: 'くまさんパジャマ',
-        quote: '"I don\'t need to pretend anymore."',
-        protocol: 'BEAR-OS',
-        chip: 'COMFORT-V',
-        spec1: 'MODE: PAJAMA',
-        spec2: 'TEMP: WARM 37°C',
-        sn: 'MD-LAIN-9807-018',
-        svg: `<svg viewBox="0 0 280 115" class="lain-card-svg" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="115" cy="35" r="18" fill="none" stroke="#a78bfa" stroke-width="1.5"/>
-          <circle cx="165" cy="35" r="18" fill="none" stroke="#a78bfa" stroke-width="1.5"/>
-          <ellipse cx="140" cy="60" rx="42" ry="35" fill="none" stroke="#7c3aed" stroke-width="2"/>
-          <circle cx="125" cy="52" r="4" fill="#1e1b4b" stroke="#6d28d9" stroke-width="1"/>
-          <circle cx="155" cy="52" r="4" fill="#1e1b4b" stroke="#6d28d9" stroke-width="1"/>
-          <circle cx="125" cy="51" r="1.5" fill="#e9d5ff"/>
-          <circle cx="155" cy="51" r="1.5" fill="#e9d5ff"/>
-          <ellipse cx="140" cy="65" rx="5" ry="3" fill="#c084fc"/>
-          <path d="M135,68 Q140,74 145,68" fill="none" stroke="#7c3aed" stroke-width="1"/>
-          <line x1="85" y1="60" x2="98" y2="60" stroke="#a78bfa" stroke-width="0.8"/><line x1="85" y1="64" x2="98" y2="64" stroke="#a78bfa" stroke-width="0.8"/>
-          <line x1="182" y1="60" x2="195" y2="60" stroke="#a78bfa" stroke-width="0.8"/><line x1="182" y1="64" x2="195" y2="64" stroke="#a78bfa" stroke-width="0.8"/>
-          <text x="140" y="108" font-family="'JetBrains Mono', monospace" font-size="5.5" fill="#64748b" text-anchor="middle">BEAR SUIT PROTOCOL · MELTYDEAYS COMFORT MODULE</text>
-        </svg>`
-      },
-      {
-        layer: 'LAYER: 19',
-        title: 'PROTOCOL // LAYER 7',
-        sub: 'APPLICATION LAYER · OSI MODEL ENDPOINT',
-        kanji: 'プロトコル七層',
-        quote: '"All I need to do is get rid of the ego that anchors me."',
-        protocol: 'OSI-L7',
-        chip: 'APP-GATE',
-        spec1: 'STACK: TCP/IP+',
-        spec2: 'PORT: 7777',
-        sn: 'MD-LAIN-9807-019',
-        svg: `<svg viewBox="0 0 280 115" class="lain-card-svg" xmlns="http://www.w3.org/2000/svg">
-          <g font-family="'JetBrains Mono', monospace" font-size="5.5">
-            <rect x="80" y="6" width="120" height="12" rx="1" fill="#1e40af" stroke="#3b82f6" stroke-width="0.8"/>
-            <text x="140" y="14.5" fill="#dbeafe" text-anchor="middle">7 · APPLICATION</text>
-            <rect x="80" y="20" width="120" height="12" rx="1" fill="#1e3a8a" stroke="#2563eb" stroke-width="0.8"/>
-            <text x="140" y="28.5" fill="#bfdbfe" text-anchor="middle">6 · PRESENTATION</text>
-            <rect x="80" y="34" width="120" height="12" rx="1" fill="#172554" stroke="#1d4ed8" stroke-width="0.8"/>
-            <text x="140" y="42.5" fill="#93c5fd" text-anchor="middle">5 · SESSION</text>
-            <rect x="80" y="48" width="120" height="12" rx="1" fill="#0c1425" stroke="#1e40af" stroke-width="0.8"/>
-            <text x="140" y="56.5" fill="#60a5fa" text-anchor="middle">4 · TRANSPORT</text>
-            <rect x="80" y="62" width="120" height="12" rx="1" fill="#0a0f1f" stroke="#1e3a8a" stroke-width="0.8"/>
-            <text x="140" y="70.5" fill="#3b82f6" text-anchor="middle">3 · NETWORK</text>
-            <rect x="80" y="76" width="120" height="12" rx="1" fill="#070b15" stroke="#172554" stroke-width="0.8"/>
-            <text x="140" y="84.5" fill="#2563eb" text-anchor="middle">2 · DATA LINK</text>
-            <rect x="80" y="90" width="120" height="12" rx="1" fill="#050810" stroke="#0c1425" stroke-width="0.8"/>
-            <text x="140" y="98.5" fill="#1d4ed8" text-anchor="middle">1 · PHYSICAL</text>
-          </g>
-          <rect x="78" y="4" width="124" height="16" rx="2" fill="none" stroke="#f59e0b" stroke-width="2"/>
-          <text x="140" y="112" font-family="'JetBrains Mono', monospace" font-size="5" fill="#64748b" text-anchor="middle">OSI STACK · MELTYDEAYS APPLICATION LAYER GATEWAY</text>
-        </svg>`
-      },
-      {
-        layer: 'LAYER: 20',
-        title: 'FEAR // SHADOWS',
-        sub: 'SHADOW ENTITY · LURKING PRESENCE DETECTOR',
-        kanji: '影の中に何かいる',
-        quote: '"You\'re scared, aren\'t you? But there\'s nothing to be afraid of."',
-        protocol: 'SHADOW-X',
-        chip: 'DARK-SENSE',
-        spec1: 'DETECT: INFRARED',
-        spec2: 'RANGE: UNKNOWN',
-        sn: 'MD-LAIN-9807-020',
-        svg: `<svg viewBox="0 0 280 115" class="lain-card-svg" xmlns="http://www.w3.org/2000/svg">
-          <rect x="0" y="0" width="280" height="115" fill="#050510"/>
-          <circle cx="140" cy="45" r="35" fill="#0a0a1a" stroke="#1e1b4b" stroke-width="0.8"/>
-          <circle cx="128" cy="40" r="6" fill="#dc2626"/>
-          <circle cx="152" cy="40" r="6" fill="#dc2626"/>
-          <circle cx="128" cy="40" r="2.5" fill="#fca5a5"/>
-          <circle cx="152" cy="40" r="2.5" fill="#fca5a5"/>
-          <path d="M105,75 Q140,85 175,75" fill="none" stroke="#1e1b4b" stroke-width="0.8"/>
-          <g opacity="0.15">
-            <rect x="20" y="15" width="40" height="60" rx="2" fill="#1e1b4b"/>
-            <rect x="220" y="15" width="40" height="60" rx="2" fill="#1e1b4b"/>
-            <rect x="40" y="25" width="25" height="50" rx="2" fill="#1e1b4b"/>
-            <rect x="215" y="25" width="25" height="50" rx="2" fill="#1e1b4b"/>
-          </g>
-          <text x="140" y="100" font-family="'JetBrains Mono', monospace" font-size="5.5" fill="#475569" text-anchor="middle">/// ENTITY DETECTED · CLASSIFICATION: UNKNOWN</text>
-          <text x="140" y="110" font-family="'JetBrains Mono', monospace" font-size="5" fill="#334155" text-anchor="middle">SHADOW SENSOR · MELTYDEAYS DARK DETECTION UNIT</text>
-        </svg>`
-      },
-      {
-        layer: 'LAYER: 21',
-        title: 'SMOKE // CYBERIA',
-        sub: 'CYBERIA CLUB · UNDERGROUND ACCESS PASS',
-        kanji: 'サイベリアへようこそ',
-        quote: '"Welcome to Cyberia. What would you like?"',
-        protocol: 'CLUB-v2.0',
-        chip: 'BASS-CORE',
-        spec1: 'BPM: 140 TRANCE',
-        spec2: 'ACCESS: VIP PASS',
-        sn: 'MD-LAIN-9807-021',
-        svg: `<svg viewBox="0 0 280 115" class="lain-card-svg" xmlns="http://www.w3.org/2000/svg">
-          <rect x="0" y="0" width="280" height="115" fill="#0a0010" rx="0"/>
-          <rect x="30" y="15" width="220" height="50" rx="4" fill="#1a0030" stroke="#7c3aed" stroke-width="1.5"/>
-          <text x="140" y="35" font-family="'JetBrains Mono', monospace" font-size="12" font-weight="900" fill="#c084fc" text-anchor="middle" letter-spacing="4">CYBERIA</text>
-          <text x="140" y="50" font-family="'JetBrains Mono', monospace" font-size="6" fill="#a855f7" text-anchor="middle" letter-spacing="2">CLUB · UNDERGROUND</text>
-          <g opacity="0.6">
-            <rect x="40" y="72" width="4" height="20" fill="#a855f7"/><rect x="50" y="78" width="4" height="14" fill="#7c3aed"/>
-            <rect x="60" y="68" width="4" height="24" fill="#c084fc"/><rect x="70" y="75" width="4" height="17" fill="#6d28d9"/>
-            <rect x="80" y="70" width="4" height="22" fill="#a855f7"/><rect x="90" y="80" width="4" height="12" fill="#7c3aed"/>
-            <rect x="100" y="65" width="4" height="27" fill="#c084fc"/><rect x="110" y="74" width="4" height="18" fill="#6d28d9"/>
-            <rect x="166" y="72" width="4" height="20" fill="#a855f7"/><rect x="176" y="78" width="4" height="14" fill="#7c3aed"/>
-            <rect x="186" y="68" width="4" height="24" fill="#c084fc"/><rect x="196" y="75" width="4" height="17" fill="#6d28d9"/>
-            <rect x="206" y="70" width="4" height="22" fill="#a855f7"/><rect x="216" y="80" width="4" height="12" fill="#7c3aed"/>
-            <rect x="226" y="65" width="4" height="27" fill="#c084fc"/><rect x="236" y="74" width="4" height="18" fill="#6d28d9"/>
-          </g>
-          <text x="140" y="82" font-family="'JetBrains Mono', monospace" font-size="6" fill="#e9d5ff" text-anchor="middle">♫ ♫ ♫</text>
-          <text x="140" y="108" font-family="'JetBrains Mono', monospace" font-size="5.5" fill="#64748b" text-anchor="middle">CYBERIA PASS · MELTYDEAYS UNDERGROUND ACCESS</text>
-        </svg>`
-      },
-      {
-        layer: 'LAYER: 22',
-        title: 'FULFILL // TRUTH',
-        sub: 'TRUTH ENGINE · ABSOLUTE VERIFICATION SYSTEM',
-        kanji: '真実は一つではない',
-        quote: '"I don\'t need parents. I can live by myself."',
-        protocol: 'TRUTH-ABS',
-        chip: 'VERIFY-X',
-        spec1: 'LOGIC: BOOLEAN',
-        spec2: 'STATE: TRUE/NULL',
-        sn: 'MD-LAIN-9807-022',
-        svg: `<svg viewBox="0 0 280 115" class="lain-card-svg" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="140" cy="50" r="40" fill="none" stroke="#475569" stroke-width="1"/>
-          <line x1="140" y1="10" x2="140" y2="90" stroke="#334155" stroke-width="0.8"/>
-          <line x1="100" y1="50" x2="180" y2="50" stroke="#334155" stroke-width="0.8"/>
-          <line x1="112" y1="22" x2="168" y2="78" stroke="#334155" stroke-width="0.6"/>
-          <line x1="168" y1="22" x2="112" y2="78" stroke="#334155" stroke-width="0.6"/>
-          <text x="140" y="16" font-family="'JetBrains Mono', monospace" font-size="5" fill="#94a3b8" text-anchor="middle">TRUE</text>
-          <text x="140" y="97" font-family="'JetBrains Mono', monospace" font-size="5" fill="#94a3b8" text-anchor="middle">FALSE</text>
-          <text x="96" y="53" font-family="'JetBrains Mono', monospace" font-size="5" fill="#94a3b8" text-anchor="end">0</text>
-          <text x="184" y="53" font-family="'JetBrains Mono', monospace" font-size="5" fill="#94a3b8">1</text>
-          <circle cx="140" cy="50" r="15" fill="#0f172a" stroke="#6366f1" stroke-width="1.5"/>
-          <text x="140" y="54" font-family="'JetBrains Mono', monospace" font-size="8" font-weight="900" fill="#a5b4fc" text-anchor="middle">?!</text>
-          <text x="140" y="112" font-family="'JetBrains Mono', monospace" font-size="5.5" fill="#64748b" text-anchor="middle">TRUTH ENGINE · MELTYDEAYS VERIFICATION NODE</text>
-        </svg>`
-      },
-      {
-        layer: 'LAYER: 23',
-        title: 'EGO // DISSOLUTION',
-        sub: 'SELF-DISSOLUTION MATRIX · CONSCIOUSNESS UNBINDING',
-        kanji: '自我は幻想に過ぎない',
-        quote: '"Then, I\'ll have to erase your memories too."',
-        protocol: 'DISSOLVE',
-        chip: 'UNBIND-V',
-        spec1: 'EGO: DISSOLVING',
-        spec2: 'SELF: NULL',
-        sn: 'MD-LAIN-9807-023',
-        svg: `<svg viewBox="0 0 280 115" class="lain-card-svg" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="140" cy="45" r="35" fill="none" stroke="#6366f1" stroke-width="1.5" stroke-dasharray="2 3"/>
-          <circle cx="140" cy="45" r="28" fill="none" stroke="#818cf8" stroke-width="1" stroke-dasharray="4 4"/>
-          <circle cx="140" cy="45" r="20" fill="none" stroke="#a5b4fc" stroke-width="0.8" stroke-dasharray="6 5"/>
-          <circle cx="140" cy="45" r="12" fill="none" stroke="#c7d2fe" stroke-width="0.6" stroke-dasharray="8 6"/>
-          <g opacity="0.5">
-            <circle cx="110" cy="25" r="2" fill="#6366f1"/><circle cx="170" cy="25" r="2" fill="#6366f1"/>
-            <circle cx="105" cy="60" r="1.5" fill="#818cf8"/><circle cx="175" cy="60" r="1.5" fill="#818cf8"/>
-            <circle cx="120" cy="75" r="1" fill="#a5b4fc"/><circle cx="160" cy="75" r="1" fill="#a5b4fc"/>
-            <circle cx="90" cy="40" r="1.5" fill="#c7d2fe"/><circle cx="190" cy="40" r="1.5" fill="#c7d2fe"/>
-          </g>
-          <text x="140" y="49" font-family="'JetBrains Mono', monospace" font-size="6" font-weight="700" fill="#e0e7ff" text-anchor="middle">VOID</text>
-          <text x="140" y="95" font-family="'JetBrains Mono', monospace" font-size="5" fill="#475569" text-anchor="middle">/// SELF-DISSOLUTION IN PROGRESS ///</text>
-          <text x="140" y="110" font-family="'JetBrains Mono', monospace" font-size="5.5" fill="#64748b" text-anchor="middle">DISSOLUTION MATRIX · MELTYDEAYS UNBINDING ENGINE</text>
-        </svg>`
-      },
-      {
-        layer: 'LAYER: 24',
-        title: 'RESET // GOODBYE',
-        sub: 'FINAL RESET · WORLD RECONSTRUCTION PROTOCOL',
-        kanji: 'さようなら、もう一つの私',
-        quote: '"Lain, if you were to tell everyone that the Wired and the real world were not separate..."',
-        protocol: 'RESET-FIN',
-        chip: 'REBUILD-X',
-        spec1: 'ACTION: WORLD RESET',
-        spec2: 'RESULT: CLEAN BOOT',
-        sn: 'MD-LAIN-9807-024',
-        svg: `<svg viewBox="0 0 280 115" class="lain-card-svg" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="140" cy="50" r="45" fill="none" stroke="#0ea5e9" stroke-width="0.8"/>
-          <circle cx="140" cy="50" r="35" fill="none" stroke="#38bdf8" stroke-width="0.6" stroke-dasharray="3 3"/>
-          <path d="M140,5 L140,15 M140,85 L140,95 M95,50 L105,50 M175,50 L185,50" stroke="#0ea5e9" stroke-width="1.5"/>
-          <path d="M115,25 L121,31 M159,69 L165,75 M165,25 L159,31 M121,69 L115,75" stroke="#0ea5e9" stroke-width="1"/>
-          <circle cx="140" cy="50" r="20" fill="#0c1425" stroke="#0ea5e9" stroke-width="1.5"/>
-          <path d="M130,50 A10,10 0 0,1 140,40" fill="none" stroke="#38bdf8" stroke-width="2"/>
-          <path d="M150,50 A10,10 0 0,1 140,60" fill="none" stroke="#38bdf8" stroke-width="2"/>
-          <polygon points="141,38 144,42 138,42" fill="#38bdf8"/>
-          <polygon points="139,62 136,58 142,58" fill="#38bdf8"/>
-          <text x="140" y="108" font-family="'JetBrains Mono', monospace" font-size="5.5" fill="#64748b" text-anchor="middle">WORLD RESET · MELTYDEAYS RECONSTRUCTION PROTOCOL</text>
-        </svg>`
-      }
-    ];
-
+    const configs = InvoiceTemplateService.getPhysical4x1DesignsList();
     const idx = (typeof templateIdx === 'number' && templateIdx >= 0)
       ? (templateIdx % configs.length)
-      : Math.floor(Math.random() * configs.length);
+      : (slotId != null ? (slotId % configs.length) : Math.floor(Math.random() * configs.length));
     const item = configs[idx];
     item.layer = 'LAYER: ' + String(idx + 1).padStart(2, '0');
     const tokenCode = tok ? tok.tokenCode : item.sn;
@@ -874,7 +230,7 @@ export class InvoiceTemplateService {
     const folioStr = tok ? ("F" + tok.invoiceFolio) : "0000";
 
     return [
-      '    <!-- TARJETA TRASERA ' + cardNum + ' (LAIN / COPLAND OS) -->',
+      '    <!-- TARJETA TRASERA ' + cardNum + ' (LAIN / COPLAND OS // ' + item.layer + ') -->',
       '    <article class="lain-card" id="back-card-' + cardNum + '">',
       '      <div class="tech-corner top-left">+</div>',
       '      <div class="tech-corner top-right">+</div>',
@@ -897,60 +253,44 @@ export class InvoiceTemplateService {
       '      <div class="lain-main-body-row">',
       '        <div class="lain-figure-col">',
       '          <div class="figure-hud-header">',
-      '            <div style="display:flex;align-items:center;gap:3px;">',
-      '              <span class="hud-status-dot"></span>',
-      '              <span class="hud-title">SCHEMATIC // ' + item.layer + '</span>',
-      '            </div>',
+      '            <div style="display:flex;align-items:center;gap:3px;"><span class="hud-status-dot"></span><span class="hud-title">' + item.layer + '</span></div>',
       '            <span class="hud-protocol">' + item.protocol + '</span>',
       '          </div>',
       '          <div class="lain-svg-container">',
-      '            <span class="hud-cross-tl">+</span>',
-      '            <span class="hud-cross-tr">+</span>',
-      '            <span class="hud-cross-bl">+</span>',
-      '            <span class="hud-cross-br">+</span>',
-      item.svg,
+      '            <span class="hud-cross-tl">+</span><span class="hud-cross-tr">+</span>',
+      '            <span class="hud-cross-bl">+</span><span class="hud-cross-br">+</span>',
+      '            ' + item.svg,
       '          </div>',
       '          <div class="figure-hud-footer">',
       '            <span class="hud-chip">' + item.chip + '</span>',
-      '            <span class="hud-pass">HARDWARE PASS</span>',
+      '            <span class="hud-pass">PASS</span>',
       '          </div>',
       '        </div>',
       '',
       '        <div class="lain-reward-col">',
-      '          <div class="reward-tag"><span class="reward-icon">❖</span> RECOMPENSA DIGITAL</div>',
+      '          <div class="reward-tag">❖ THE WIRED CLUB // PASS</div>',
       '          <div class="reward-points-row">',
       '            <span class="reward-plus">+</span>',
-      '            <div class="reward-pencil-box" title="Escribir puntos a lápiz">',
-      '              <span class="pencil-guide-line"></span>',
+      '            <div class="reward-pencil-box" title="Escribe aquí los puntos ganados con lápiz">',
+      '              <div class="pencil-guide-line"></div>',
       '            </div>',
       '            <span class="reward-wp">WP</span>',
       '          </div>',
       '          <div class="reward-qr-frame">',
-      '            <span class="qr-reticle-tl">⌜</span>',
-      '            <span class="qr-reticle-tr">⌝</span>',
-      '            <span class="qr-reticle-bl">⌞</span>',
-      '            <span class="qr-reticle-br">⌟</span>',
-      '            <div class="qr-canvas-box" id="print-qr-' + slotId + '"><img src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=' + encodeURIComponent('https://meltydeays-wired-club.vercel.app/?claim=' + encodeURIComponent(tok.tokenCode || '')) + '&color=0f172a&bgcolor=ffffff" alt="QR Recompensa" style="width:100%;height:100%;object-fit:contain;display:block;" onerror="this.onerror=null;this.src=\'' + QR_CATALOG_BASE64 + '\';"></div>',
+      '            <span class="qr-reticle-tl">⌜</span><span class="qr-reticle-tr">⌝</span>',
+      '            <span class="qr-reticle-bl">⌞</span><span class="qr-reticle-br">⌟</span>',
+      '            <div class="qr-canvas-box" id="print-qr-' + slotId + '"></div>',
       '          </div>',
       '          <div class="reward-pin-tag">PIN: <strong>' + pin + '</strong></div>',
-      '          <div class="reward-sub">Escanea para acreditar WP</div>',
+      '          <div class="reward-sub">ESCANEA CON TU SMARTPHONE PARA ACREDITAR TUS PUNTOS</div>',
+      '          <div class="lain-quote-box">',
+      '            <div class="lain-kanji">' + item.kanji + '</div>',
+      '            <div class="lain-quote-text">' + item.quote + '</div>',
+      '          </div>',
       '        </div>',
-      '      </div>',
-      '',
-      '      <div class="lain-quote-box">',
-      '        <div class="lain-kanji">' + item.kanji + '</div>',
-      '        <div class="lain-quote-text">' + item.quote + '</div>',
       '      </div>',
       '',
       '      <div class="specs-grid">',
-      '        <div class="spec-cell">',
-      '          <span class="spec-k">PROTOCOL</span>',
-      '          <span class="spec-v">' + item.protocol + '</span>',
-      '        </div>',
-      '        <div class="spec-cell">',
-      '          <span class="spec-k">PROCESSOR</span>',
-      '          <span class="spec-v">' + item.chip + '</span>',
-      '        </div>',
       '        <div class="spec-cell">',
       '          <span class="spec-k">HARDWARE</span>',
       '          <span class="spec-v">' + item.spec1 + '</span>',
@@ -964,21 +304,7 @@ export class InvoiceTemplateService {
       '      <div class="lain-footer">',
       '        <div class="barcode-wrapper">',
       '          <div class="vector-barcode">',
-      '            <span class="b-line b-w2"></span><span class="b-gap"></span>',
-      '            <span class="b-line b-w1"></span><span class="b-gap b-g2"></span>',
-      '            <span class="b-line b-w3"></span><span class="b-gap"></span>',
-      '            <span class="b-line b-w1"></span><span class="b-gap"></span>',
-      '            <span class="b-line b-w2"></span><span class="b-gap b-g2"></span>',
-      '            <span class="b-line b-w4"></span><span class="b-gap"></span>',
-      '            <span class="b-line b-w1"></span><span class="b-gap"></span>',
-      '            <span class="b-line b-w2"></span><span class="b-gap"></span>',
-      '            <span class="b-line b-w3"></span><span class="b-gap b-g2"></span>',
-      '            <span class="b-line b-w1"></span><span class="b-gap"></span>',
-      '            <span class="b-line b-w2"></span><span class="b-gap"></span>',
-      '            <span class="b-line b-w4"></span><span class="b-gap"></span>',
-      '            <span class="b-line b-w1"></span><span class="b-gap"></span>',
-      '            <span class="b-line b-w3"></span><span class="b-gap b-g2"></span>',
-      '            <span class="b-line b-w2"></span>',
+      '            ' + InvoiceTemplateService.getFullWidthBarcodeSvg(tokenCode),
       '          </div>',
       '          <div class="serial-code">CÓDIGO: ' + tokenCode + '</div>',
       '        </div>',
@@ -992,12 +318,6 @@ export class InvoiceTemplateService {
     ].join('\n');
   }
 
-  /**
-   * Genera el documento imprimible completo (Anverso con 4 facturas + Reverso con 4 tarjetas Lain y QRs dinámicos)
-   * @param {Array} tokens - Array de 4 tokens de factura
-   * @param {object} paperDims - Dimensiones de papel ({ name, widthMm, heightMm, cssSize })
-   * @param {string} mode - "both" | "front" | "back"
-   */
   static generatePrintDocument(tokens, paperDims, mode = "both", autoPrint = true) {
     const dims = paperDims || { name: 'Carta (Letter)', widthMm: 215.9, heightMm: 279.4, cssSize: 'letter portrait' };
     const allTokens = (tokens && tokens.length > 0) ? tokens : [
@@ -1494,7 +814,7 @@ export class InvoiceTemplateService {
       <!-- SECCIÓN TOTALES EQUILIBRADA (CON DETALLES DE CONVERSIÓN Y WIRED POINTS) -->
       <div class="totals-area">
         <div class="thanks-note">
-          <div class="thanks-title">¡Gracias por tu compra en MeltyDeays STORE!</div>
+          <div class="thanks-title">¡Gracias por tu compra!</div>
           <div class="thanks-conversion">
             Equivalencia cambiaria oficial: <strong>1 USD = 37.00 NIO</strong> · 
             ${currency === "USD" 
@@ -1550,17 +870,13 @@ export class InvoiceTemplateService {
       <div class="inv-bottom">
         <div class="contact-qr-group">
           <div class="qr-col">
-            <div class="qr-frame" id="digital-inv-qr">
-              <img src="${hasPoints 
-                ? `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(claimUrl)}&color=0f172a&bgcolor=ffffff` 
-                : QR_CATALOG_BASE64}" 
-                alt="${hasPoints ? 'QR Wired Points' : 'QR WhatsApp'}" 
-                class="qr-img"
+            <div class="qr-frame">
+              <img src="${QR_CATALOG_BASE64}" 
+                alt="QR WhatsApp" 
+                class="qr-img" 
                 onerror="this.onerror=null;this.src='${QR_CATALOG_BASE64}';">
             </div>
-            <span class="${hasPoints ? 'qr-badge-wired' : 'qr-badge-wa'}">
-              ${hasPoints ? '⚡ WIRED PASS' : '📱 WHATSAPP'}
-            </span>
+            <span class="qr-badge-wa">📱 WHATSAPP</span>
           </div>
           <div class="contact-meta">
             <div class="contact-row">
@@ -1594,59 +910,1189 @@ export class InvoiceTemplateService {
   }
 
   /**
-   * Genera el HTML de la Contraportada Coleccionable Lain para la Factura Digital Única
-   * @param {object} inv - Datos de la factura
+   * Colección oficial de 20 Diseños temáticos Serial Experiments Lain para Factura Digital
+   * Diseños con uso completo de espacio (Letter / 1 Página)
    */
-  static getSingleDigitalLainBackCardHtml(inv) {
+  /**
+   * Catálogo completo de 44 diseños temáticos para Facturas 4x1 (Talonario Físico)
+   * Serie 1: Layers 01 a 24 (24 diseños originales)
+   * Serie 2: Layers 25 a 44 (20 nuevos diseños exclusivos)
+   * @returns {Array<object>}
+   */
+  static getPhysical4x1DesignsList() {
+    return [
+  {
+    "layer": "LAYER: 01",
+    "title": "WEIRDO // THE WIRED",
+    "sub": "TACHIBANA GENERAL LABORATORIES · COPLAND OS 21.0",
+    "kanji": "全ては繋がっている",
+    "quote": "\"Close the world, Open the nExt.\"",
+    "protocol": "IPv7.06.4",
+    "chip": "NAVI-CORE IX",
+    "spec1": "BUS: 1024-BIT QUANTUM",
+    "spec2": "MEM: RESIDUAL BUFFER",
+    "sn": "MD-LAIN-9807-001",
+    "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n          <path d=\"M-10,12 Q65,42 140,20 Q205,4 290,16\" fill=\"none\" stroke=\"#4338ca\" stroke-width=\"1.3\" opacity=\"0.85\"/>\n          <path d=\"M-10,22 Q75,54 140,28 Q215,10 290,24\" fill=\"none\" stroke=\"#6366f1\" stroke-width=\"0.9\" opacity=\"0.7\"/>\n          <path d=\"M-10,32 Q85,65 140,36 Q225,18 290,32\" fill=\"none\" stroke=\"#1e1b4b\" stroke-width=\"1.4\" opacity=\"0.95\"/>\n          <path d=\"M-10,50 Q80,78 140,52 Q210,38 290,48\" fill=\"none\" stroke=\"#0f172a\" stroke-width=\"1.6\"/>\n          <path d=\"M-10,60 Q80,90 145,58 Q215,46 290,58\" fill=\"none\" stroke=\"#4338ca\" stroke-width=\"1.1\"/>\n          <rect x=\"135\" y=\"10\" width=\"10\" height=\"105\" rx=\"1\" fill=\"#1e293b\"/>\n          <rect x=\"115\" y=\"18\" width=\"50\" height=\"4\" rx=\"1\" fill=\"#334155\"/>\n          <rect x=\"122\" y=\"32\" width=\"36\" height=\"3.5\" rx=\"1\" fill=\"#334155\"/>\n          <rect x=\"110\" y=\"46\" width=\"60\" height=\"4\" rx=\"1\" fill=\"#334155\"/>\n          <circle cx=\"118\" cy=\"16\" r=\"2.2\" fill=\"#64748b\"/>\n          <circle cx=\"162\" cy=\"16\" r=\"2.2\" fill=\"#64748b\"/>\n          <circle cx=\"125\" cy=\"30\" r=\"2\" fill=\"#64748b\"/>\n          <circle cx=\"155\" cy=\"30\" r=\"2\" fill=\"#64748b\"/>\n          <circle cx=\"113\" cy=\"44\" r=\"2.2\" fill=\"#64748b\"/>\n          <circle cx=\"167\" cy=\"44\" r=\"2.2\" fill=\"#64748b\"/>\n          <rect x=\"146\" y=\"36\" width=\"16\" height=\"25\" rx=\"2\" fill=\"#475569\" stroke=\"#1e293b\" stroke-width=\"1\"/>\n          <line x1=\"146\" y1=\"40\" x2=\"162\" y2=\"40\" stroke=\"#94a3b8\" stroke-width=\"0.8\"/>\n          <line x1=\"146\" y1=\"58\" x2=\"162\" y2=\"58\" stroke=\"#94a3b8\" stroke-width=\"0.8\"/>\n          <line x1=\"140\" y1=\"36\" x2=\"55\" y2=\"115\" stroke=\"#64748b\" stroke-width=\"0.8\" stroke-dasharray=\"3 1.5\"/>\n          <line x1=\"140\" y1=\"52\" x2=\"235\" y2=\"115\" stroke=\"#64748b\" stroke-width=\"0.8\"/>\n          <text x=\"8\" y=\"104\" font-family=\"'JetBrains Mono', monospace\" font-size=\"6.5\" font-weight=\"700\" fill=\"#4f46e5\" letter-spacing=\"0.5\">/// 50Hz/60Hz CONTINUOUS HUMMING</text>\n          <text x=\"8\" y=\"112\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.5\" fill=\"#64748b\">LAT: 35°39'10\"N LON: 139°42'30\"E // WIRED GATEWAY</text>\n        </svg>",
+    "series": "SERIE 1",
+    "name": "SERIE 1 · 01. WEIRDO // THE WIRED"
+  },
+  {
+    "layer": "LAYER: 02",
+    "title": "GIRLS // PSYCHE CHIP",
+    "sub": "KNIGHTS OF THE EASTERN CALCULUS · LICENSED HARDWARE",
+    "kanji": "どこに行っても、みんな繋がっている",
+    "quote": "\"No matter where you go, everyone's connected.\"",
+    "protocol": "PSYCHE-v4.2",
+    "chip": "QUANTUM GATE",
+    "spec1": "CLOCK: 1.44 THz BUS",
+    "spec2": "ENCRYPT: 4096-BIT RSA",
+    "sn": "MD-LAIN-9807-002",
+    "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n          <rect x=\"85\" y=\"15\" width=\"110\" height=\"75\" rx=\"4\" fill=\"#0f172a\" stroke=\"#4338ca\" stroke-width=\"1.5\"/>\n          <rect x=\"92\" y=\"22\" width=\"96\" height=\"61\" rx=\"2\" fill=\"#1e1b4b\" stroke=\"#6366f1\" stroke-width=\"0.8\"/>\n          <g fill=\"#94a3b8\">\n            <rect x=\"95\" y=\"10\" width=\"4\" height=\"5\"/><rect x=\"107\" y=\"10\" width=\"4\" height=\"5\"/><rect x=\"119\" y=\"10\" width=\"4\" height=\"5\"/>\n            <rect x=\"131\" y=\"10\" width=\"4\" height=\"5\"/><rect x=\"143\" y=\"10\" width=\"4\" height=\"5\"/><rect x=\"155\" y=\"10\" width=\"4\" height=\"5\"/>\n            <rect x=\"167\" y=\"10\" width=\"4\" height=\"5\"/><rect x=\"179\" y=\"10\" width=\"4\" height=\"5\"/>\n            <rect x=\"95\" y=\"90\" width=\"4\" height=\"5\"/><rect x=\"107\" y=\"90\" width=\"4\" height=\"5\"/><rect x=\"119\" y=\"90\" width=\"4\" height=\"5\"/>\n            <rect x=\"131\" y=\"90\" width=\"4\" height=\"5\"/><rect x=\"143\" y=\"90\" width=\"4\" height=\"5\"/><rect x=\"155\" y=\"90\" width=\"4\" height=\"5\"/>\n            <rect x=\"167\" y=\"90\" width=\"4\" height=\"5\"/><rect x=\"179\" y=\"90\" width=\"4\" height=\"5\"/>\n          </g>\n          <circle cx=\"140\" cy=\"52\" r=\"18\" fill=\"none\" stroke=\"#a855f7\" stroke-width=\"1.2\" stroke-dasharray=\"4 2\"/>\n          <polygon points=\"140,40 149,56 131,56\" fill=\"none\" stroke=\"#ec4899\" stroke-width=\"1.2\"/>\n          <text x=\"140\" y=\"55\" font-family=\"'JetBrains Mono', monospace\" font-size=\"7\" font-weight=\"900\" fill=\"#f8fafc\" text-anchor=\"middle\">Ψ</text>\n          <path d=\"M20,30 H85 M20,45 H85 M20,60 H85 M20,75 H85\" stroke=\"#38bdf8\" stroke-width=\"0.9\" stroke-dasharray=\"6 3\" opacity=\"0.8\"/>\n          <path d=\"M195,30 H260 M195,45 H260 M195,60 H260 M195,75 H260\" stroke=\"#38bdf8\" stroke-width=\"0.9\" stroke-dasharray=\"6 3\" opacity=\"0.8\"/>\n          <circle cx=\"20\" cy=\"30\" r=\"2.5\" fill=\"#38bdf8\"/><circle cx=\"20\" cy=\"75\" r=\"2.5\" fill=\"#38bdf8\"/>\n          <circle cx=\"260\" cy=\"45\" r=\"2.5\" fill=\"#38bdf8\"/><circle cx=\"260\" cy=\"60\" r=\"2.5\" fill=\"#38bdf8\"/>\n          <text x=\"140\" y=\"76\" font-family=\"'JetBrains Mono', monospace\" font-size=\"6\" fill=\"#a5b4fc\" text-anchor=\"middle\" letter-spacing=\"1\">PSYCHE PROCESSOR // REV. 7</text>\n          <text x=\"8\" y=\"108\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.5\" fill=\"#64748b\">MELTYDEAYS ACCELERATOR UNIT · COPLAND KERNEL READY</text>\n        </svg>",
+    "series": "SERIE 1",
+    "name": "SERIE 1 · 02. GIRLS // PSYCHE CHIP"
+  },
+  {
+    "layer": "LAYER: 03",
+    "title": "PSYCHE // PRESENT TIME",
+    "sub": "UBIQUITOUS SIGNAL TRANSMISSION · ELECTROMAGNETIC GRID",
+    "kanji": "誰もが繋がっている",
+    "quote": "\"Present day, present time... Hahahaha!\"",
+    "protocol": "CARRIER-48",
+    "chip": "NEURAL LINK-X",
+    "spec1": "BUS: 2048-BIT BUS",
+    "spec2": "NODE: 100 Gbit/s OPT",
+    "sn": "MD-LAIN-9807-003",
+    "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n          <circle cx=\"140\" cy=\"30\" r=\"25\" fill=\"none\" stroke=\"#6366f1\" stroke-width=\"0.9\" stroke-dasharray=\"4 3\" opacity=\"0.5\"/>\n          <circle cx=\"140\" cy=\"30\" r=\"45\" fill=\"none\" stroke=\"#4f46e5\" stroke-width=\"0.9\" stroke-dasharray=\"6 4\" opacity=\"0.6\"/>\n          <circle cx=\"140\" cy=\"30\" r=\"70\" fill=\"none\" stroke=\"#312e81\" stroke-width=\"0.8\" stroke-dasharray=\"8 5\" opacity=\"0.7\"/>\n          <polygon points=\"140,15 125,105 155,105\" fill=\"#0f172a\" stroke=\"#1e293b\" stroke-width=\"1.2\"/>\n          <line x1=\"131\" y1=\"40\" x2=\"149\" y2=\"40\" stroke=\"#94a3b8\" stroke-width=\"1\"/>\n          <line x1=\"128\" y1=\"65\" x2=\"152\" y2=\"65\" stroke=\"#94a3b8\" stroke-width=\"1\"/>\n          <line x1=\"126\" y1=\"88\" x2=\"154\" y2=\"88\" stroke=\"#94a3b8\" stroke-width=\"1\"/>\n          <line x1=\"131\" y1=\"40\" x2=\"152\" y2=\"65\" stroke=\"#64748b\" stroke-width=\"0.8\"/>\n          <line x1=\"149\" y1=\"40\" x2=\"128\" y2=\"65\" stroke=\"#64748b\" stroke-width=\"0.8\"/>\n          <line x1=\"128\" y1=\"65\" x2=\"154\" y2=\"88\" stroke=\"#64748b\" stroke-width=\"0.8\"/>\n          <line x1=\"152\" y1=\"65\" x2=\"126\" y2=\"88\" stroke=\"#64748b\" stroke-width=\"0.8\"/>\n          <circle cx=\"140\" cy=\"15\" r=\"4.5\" fill=\"#dc2626\"/>\n          <path d=\"M120,38 A10,10 0 0,1 120,54\" fill=\"none\" stroke=\"#38bdf8\" stroke-width=\"2\"/>\n          <path d=\"M160,38 A10,10 0 0,0 160,54\" fill=\"none\" stroke=\"#38bdf8\" stroke-width=\"2\"/>\n          <path d=\"M15,95 L40,95 L48,82 L55,108 L62,75 L70,112 L78,85 L85,95 L115,95\" fill=\"none\" stroke=\"#059669\" stroke-width=\"1.2\"/>\n          <path d=\"M165,95 L195,95 L202,80 L210,110 L218,72 L226,115 L234,86 L242,95 L265,95\" fill=\"none\" stroke=\"#059669\" stroke-width=\"1.2\"/>\n        </svg>",
+    "series": "SERIE 1",
+    "name": "SERIE 1 · 03. PSYCHE // PRESENT TIME"
+  },
+  {
+    "layer": "LAYER: 04",
+    "title": "RESET // PROTOCOL",
+    "sub": "COPLAND OS CRT TERMINAL · CLIENT NODE PASS",
+    "kanji": "現実と仮想の境界線",
+    "quote": "\"The Wired is an ocean of consciousness.\"",
+    "protocol": "PROTOCOL-07",
+    "chip": "NAVI CLIENT",
+    "spec1": "DISPLAY: 1024x768 CRT",
+    "spec2": "NODE: PERSISTENT",
+    "sn": "MD-LAIN-9807-004",
+    "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n          <rect x=\"45\" y=\"10\" width=\"190\" height=\"92\" rx=\"10\" fill=\"#1e293b\" stroke=\"#0f172a\" stroke-width=\"2\"/>\n          <rect x=\"55\" y=\"18\" width=\"170\" height=\"76\" rx=\"6\" fill=\"#090d16\" stroke=\"#475569\" stroke-width=\"1.5\"/>\n          <line x1=\"56\" y1=\"28\" x2=\"224\" y2=\"28\" stroke=\"#1e293b\" stroke-width=\"0.6\"/>\n          <line x1=\"56\" y1=\"38\" x2=\"224\" y2=\"38\" stroke=\"#1e293b\" stroke-width=\"0.6\"/>\n          <line x1=\"56\" y1=\"48\" x2=\"224\" y2=\"48\" stroke=\"#1e293b\" stroke-width=\"0.6\"/>\n          <line x1=\"56\" y1=\"58\" x2=\"224\" y2=\"58\" stroke=\"#1e293b\" stroke-width=\"0.6\"/>\n          <line x1=\"56\" y1=\"68\" x2=\"224\" y2=\"68\" stroke=\"#1e293b\" stroke-width=\"0.6\"/>\n          <line x1=\"56\" y1=\"78\" x2=\"224\" y2=\"78\" stroke=\"#1e293b\" stroke-width=\"0.6\"/>\n          <rect x=\"65\" y=\"24\" width=\"150\" height=\"12\" fill=\"#334155\"/>\n          <text x=\"70\" y=\"32.5\" font-family=\"'JetBrains Mono', monospace\" font-size=\"6.5\" font-weight=\"700\" fill=\"#ffffff\">COPLAND OS v21.0 - [terminal.exe]</text>\n          <circle cx=\"203\" cy=\"30\" r=\"2.5\" fill=\"#f59e0b\"/><circle cx=\"210\" cy=\"30\" r=\"2.5\" fill=\"#10b981\"/>\n          <text x=\"68\" y=\"46\" font-family=\"'JetBrains Mono', monospace\" font-size=\"6\" fill=\"#22c55e\">> boot navi_kernel.bin ... [OK]</text>\n          <text x=\"68\" y=\"55\" font-family=\"'JetBrains Mono', monospace\" font-size=\"6\" fill=\"#22c55e\">> connecting node: meltydeays ... [OK]</text>\n          <text x=\"68\" y=\"64\" font-family=\"'JetBrains Mono', monospace\" font-size=\"6\" fill=\"#38bdf8\">> user authenticated: LAIN IWAKURA</text>\n          <text x=\"68\" y=\"73\" font-family=\"'JetBrains Mono', monospace\" font-size=\"6\" font-weight=\"700\" fill=\"#f43f5e\">> &quot;Close the world, Open the nExt.&quot;_</text>\n          <circle cx=\"220\" cy=\"98\" r=\"2\" fill=\"#22c55e\"/>\n          <text x=\"140\" y=\"112\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.5\" fill=\"#64748b\" text-anchor=\"middle\">MELTYDEAYS TECH LABS · SERIAL EXPERIMENTS HARDWARE PASS</text>\n        </svg>",
+    "series": "SERIE 1",
+    "name": "SERIE 1 · 04. RESET // PROTOCOL"
+  },
+  {
+    "layer": "LAYER: 05",
+    "title": "DISTORTION // SCHUMANN",
+    "sub": "SCHUMANN RESONANCE · 7.83Hz EARTH FREQUENCY",
+    "kanji": "私は遍在する",
+    "quote": "\"I am everywhere. I am omnipresent.\"",
+    "protocol": "FREQ-7.83Hz",
+    "chip": "RESONANCE-V",
+    "spec1": "WAVE: 7.83Hz ELF",
+    "spec2": "AMP: VARIABLE GAIN",
+    "sn": "MD-LAIN-9807-005",
+    "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n          <path d=\"M0,57 Q35,20 70,57 Q105,94 140,57 Q175,20 210,57 Q245,94 280,57\" fill=\"none\" stroke=\"#7c3aed\" stroke-width=\"2\" opacity=\"0.9\"/>\n          <path d=\"M0,57 Q35,30 70,57 Q105,84 140,57 Q175,30 210,57 Q245,84 280,57\" fill=\"none\" stroke=\"#a78bfa\" stroke-width=\"1.2\" opacity=\"0.6\"/>\n          <path d=\"M0,57 Q35,42 70,57 Q105,72 140,57 Q175,42 210,57 Q245,72 280,57\" fill=\"none\" stroke=\"#c4b5fd\" stroke-width=\"0.8\" opacity=\"0.4\"/>\n          <circle cx=\"140\" cy=\"57\" r=\"22\" fill=\"none\" stroke=\"#8b5cf6\" stroke-width=\"1.5\" stroke-dasharray=\"3 2\"/>\n          <circle cx=\"140\" cy=\"57\" r=\"12\" fill=\"#1e1b4b\" stroke=\"#6d28d9\" stroke-width=\"1\"/>\n          <text x=\"140\" y=\"61\" font-family=\"'JetBrains Mono', monospace\" font-size=\"8\" font-weight=\"900\" fill=\"#e9d5ff\" text-anchor=\"middle\">Ω</text>\n          <line x1=\"10\" y1=\"10\" x2=\"10\" y2=\"105\" stroke=\"#475569\" stroke-width=\"0.6\"/>\n          <line x1=\"270\" y1=\"10\" x2=\"270\" y2=\"105\" stroke=\"#475569\" stroke-width=\"0.6\"/>\n          <g font-family=\"'JetBrains Mono', monospace\" font-size=\"5\" fill=\"#64748b\">\n            <text x=\"15\" y=\"18\">7.83Hz</text><text x=\"15\" y=\"30\">14.3Hz</text><text x=\"15\" y=\"42\">20.8Hz</text>\n            <text x=\"242\" y=\"18\">33.0Hz</text><text x=\"242\" y=\"30\">39.0Hz</text><text x=\"242\" y=\"42\">45.0Hz</text>\n          </g>\n          <text x=\"140\" y=\"108\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.5\" fill=\"#64748b\" text-anchor=\"middle\">SCHUMANN NODE · MELTYDEAYS WIRED RESONANCE UNIT</text>\n        </svg>",
+    "series": "SERIE 1",
+    "name": "SERIE 1 · 05. DISTORTION // SCHUMANN"
+  },
+  {
+    "layer": "LAYER: 06",
+    "title": "SOCIETY // KNIGHTS",
+    "sub": "KNIGHTS OF THE EASTERN CALCULUS · HACKER CELL",
+    "kanji": "騎士団は真実を知っている",
+    "quote": "\"If you aren't remembered, then you never existed.\"",
+    "protocol": "KNGHT-v2.1",
+    "chip": "CIPHER-NODE",
+    "spec1": "KEY: ED25519-SHA3",
+    "spec2": "NET: DARKWIRED TOR",
+    "sn": "MD-LAIN-9807-006",
+    "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n          <polygon points=\"140,8 195,38 195,82 140,108 85,82 85,38\" fill=\"none\" stroke=\"#dc2626\" stroke-width=\"1.8\"/>\n          <polygon points=\"140,18 185,42 185,76 140,98 95,76 95,42\" fill=\"none\" stroke=\"#991b1b\" stroke-width=\"1\" stroke-dasharray=\"4 2\"/>\n          <line x1=\"140\" y1=\"8\" x2=\"140\" y2=\"108\" stroke=\"#7f1d1d\" stroke-width=\"0.8\"/>\n          <line x1=\"85\" y1=\"38\" x2=\"195\" y2=\"82\" stroke=\"#7f1d1d\" stroke-width=\"0.8\"/>\n          <line x1=\"195\" y1=\"38\" x2=\"85\" y2=\"82\" stroke=\"#7f1d1d\" stroke-width=\"0.8\"/>\n          <circle cx=\"140\" cy=\"58\" r=\"14\" fill=\"#0f172a\" stroke=\"#ef4444\" stroke-width=\"1.2\"/>\n          <text x=\"140\" y=\"63\" font-family=\"'JetBrains Mono', monospace\" font-size=\"10\" font-weight=\"900\" fill=\"#fca5a5\" text-anchor=\"middle\">K</text>\n          <circle cx=\"140\" cy=\"8\" r=\"3\" fill=\"#dc2626\"/><circle cx=\"195\" cy=\"38\" r=\"3\" fill=\"#dc2626\"/>\n          <circle cx=\"195\" cy=\"82\" r=\"3\" fill=\"#dc2626\"/><circle cx=\"140\" cy=\"108\" r=\"3\" fill=\"#dc2626\"/>\n          <circle cx=\"85\" cy=\"82\" r=\"3\" fill=\"#dc2626\"/><circle cx=\"85\" cy=\"38\" r=\"3\" fill=\"#dc2626\"/>\n          <text x=\"8\" y=\"112\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.5\" fill=\"#64748b\">EASTERN CALCULUS CELL · MELTYDEAYS ENCRYPTED NODE</text>\n        </svg>",
+    "series": "SERIE 1",
+    "name": "SERIE 1 · 06. SOCIETY // KNIGHTS"
+  },
+  {
+    "layer": "LAYER: 07",
+    "title": "INFORNOGRAPHY // DATA",
+    "sub": "INFORMATION OVERFLOW · TACHIBANA DATASTREAM",
+    "kanji": "情報は力である",
+    "quote": "\"What isn't remembered never happened.\"",
+    "protocol": "DATA-FLUX",
+    "chip": "STREAM-CORE",
+    "spec1": "FLOW: 10 TB/s BURST",
+    "spec2": "CACHE: 256 PB DEEP",
+    "sn": "MD-LAIN-9807-007",
+    "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n          <g opacity=\"0.6\">\n            <rect x=\"10\" y=\"8\" width=\"3\" height=\"100\" fill=\"#1e40af\"/><rect x=\"17\" y=\"20\" width=\"2\" height=\"88\" fill=\"#3b82f6\"/>\n            <rect x=\"23\" y=\"5\" width=\"4\" height=\"103\" fill=\"#1e3a8a\"/><rect x=\"31\" y=\"15\" width=\"2\" height=\"93\" fill=\"#60a5fa\"/>\n            <rect x=\"37\" y=\"10\" width=\"3\" height=\"98\" fill=\"#2563eb\"/><rect x=\"44\" y=\"25\" width=\"2\" height=\"83\" fill=\"#93c5fd\"/>\n            <rect x=\"50\" y=\"8\" width=\"4\" height=\"100\" fill=\"#1e40af\"/><rect x=\"58\" y=\"18\" width=\"2\" height=\"90\" fill=\"#3b82f6\"/>\n            <rect x=\"64\" y=\"12\" width=\"3\" height=\"96\" fill=\"#1e3a8a\"/><rect x=\"71\" y=\"22\" width=\"2\" height=\"86\" fill=\"#60a5fa\"/>\n            <rect x=\"215\" y=\"8\" width=\"3\" height=\"100\" fill=\"#1e40af\"/><rect x=\"222\" y=\"20\" width=\"2\" height=\"88\" fill=\"#3b82f6\"/>\n            <rect x=\"228\" y=\"5\" width=\"4\" height=\"103\" fill=\"#1e3a8a\"/><rect x=\"236\" y=\"15\" width=\"2\" height=\"93\" fill=\"#60a5fa\"/>\n            <rect x=\"242\" y=\"10\" width=\"3\" height=\"98\" fill=\"#2563eb\"/><rect x=\"249\" y=\"25\" width=\"2\" height=\"83\" fill=\"#93c5fd\"/>\n            <rect x=\"255\" y=\"8\" width=\"4\" height=\"100\" fill=\"#1e40af\"/><rect x=\"263\" y=\"18\" width=\"2\" height=\"90\" fill=\"#3b82f6\"/>\n          </g>\n          <rect x=\"80\" y=\"30\" width=\"120\" height=\"55\" rx=\"3\" fill=\"#0c1425\" stroke=\"#3b82f6\" stroke-width=\"1\"/>\n          <text x=\"140\" y=\"52\" font-family=\"'JetBrains Mono', monospace\" font-size=\"6\" fill=\"#60a5fa\" text-anchor=\"middle\">DATASTREAM ACTIVE</text>\n          <text x=\"140\" y=\"64\" font-family=\"'JetBrains Mono', monospace\" font-size=\"9\" font-weight=\"900\" fill=\"#dbeafe\" text-anchor=\"middle\">01001100</text>\n          <text x=\"140\" y=\"78\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5\" fill=\"#3b82f6\" text-anchor=\"middle\">PACKETS: ∞ · LOSS: 0.00%</text>\n          <text x=\"140\" y=\"108\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.5\" fill=\"#64748b\" text-anchor=\"middle\">TACHIBANA DATA LABS · INFORNOGRAPHY STREAM ACTIVE</text>\n        </svg>",
+    "series": "SERIE 1",
+    "name": "SERIE 1 · 07. INFORNOGRAPHY // DATA"
+  },
+  {
+    "layer": "LAYER: 08",
+    "title": "EGO // IDENTITY SPLIT",
+    "sub": "MULTIPLE PERSONA INTERFACE · IDENTITY DAEMON",
+    "kanji": "私はレイン。あなたは誰？",
+    "quote": "\"There is no such thing as a separate me.\"",
+    "protocol": "EGO-SPLIT",
+    "chip": "PERSONA-MUX",
+    "spec1": "ID: MULTI-INSTANCE",
+    "spec2": "SYNC: REAL/WIRED",
+    "sn": "MD-LAIN-9807-008",
+    "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n          <circle cx=\"100\" cy=\"50\" r=\"30\" fill=\"none\" stroke=\"#6366f1\" stroke-width=\"1.5\" opacity=\"0.7\"/>\n          <circle cx=\"180\" cy=\"50\" r=\"30\" fill=\"none\" stroke=\"#ec4899\" stroke-width=\"1.5\" opacity=\"0.7\"/>\n          <path d=\"M125,28 A30,30 0 0,1 125,72\" fill=\"none\" stroke=\"#a855f7\" stroke-width=\"2\"/>\n          <path d=\"M155,28 A30,30 0 0,0 155,72\" fill=\"none\" stroke=\"#a855f7\" stroke-width=\"2\"/>\n          <text x=\"100\" y=\"54\" font-family=\"'JetBrains Mono', monospace\" font-size=\"7\" font-weight=\"700\" fill=\"#a5b4fc\" text-anchor=\"middle\">REAL</text>\n          <text x=\"180\" y=\"54\" font-family=\"'JetBrains Mono', monospace\" font-size=\"7\" font-weight=\"700\" fill=\"#f9a8d4\" text-anchor=\"middle\">WIRED</text>\n          <text x=\"140\" y=\"54\" font-family=\"'JetBrains Mono', monospace\" font-size=\"6\" font-weight=\"900\" fill=\"#f8fafc\" text-anchor=\"middle\">?</text>\n          <line x1=\"40\" y1=\"90\" x2=\"240\" y2=\"90\" stroke=\"#334155\" stroke-width=\"0.6\"/>\n          <g font-family=\"'JetBrains Mono', monospace\" font-size=\"5\" fill=\"#475569\">\n            <text x=\"40\" y=\"100\">IWAKURA</text><text x=\"100\" y=\"100\">LAIN-01</text>\n            <text x=\"160\" y=\"100\">LAIN-02</text><text x=\"220\" y=\"100\">LAIN-03</text>\n          </g>\n          <text x=\"140\" y=\"112\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.5\" fill=\"#64748b\" text-anchor=\"middle\">PERSONA MULTIPLEXER · MELTYDEAYS IDENTITY NODE</text>\n        </svg>",
+    "series": "SERIE 1",
+    "name": "SERIE 1 · 08. EGO // IDENTITY SPLIT"
+  },
+  {
+    "layer": "LAYER: 09",
+    "title": "NAVI // HANDHELD",
+    "sub": "PORTABLE NAVI UNIT · PSYCHE INTERFACE MODULE",
+    "kanji": "ナビは私の窓",
+    "quote": "\"Everyone is connected... Everyone but me.\"",
+    "protocol": "NAVI-OS 3.1",
+    "chip": "HAND-PROC",
+    "spec1": "SCREEN: 320x240 TN",
+    "spec2": "SLOT: PSYCHE CARD",
+    "sn": "MD-LAIN-9807-009",
+    "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n          <rect x=\"95\" y=\"5\" width=\"90\" height=\"105\" rx=\"8\" fill=\"#1e293b\" stroke=\"#475569\" stroke-width=\"1.5\"/>\n          <rect x=\"102\" y=\"12\" width=\"76\" height=\"55\" rx=\"3\" fill=\"#0a0e1a\" stroke=\"#334155\" stroke-width=\"1\"/>\n          <text x=\"140\" y=\"35\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.5\" fill=\"#22c55e\" text-anchor=\"middle\">NAVI_OS v3.1</text>\n          <text x=\"140\" y=\"45\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5\" fill=\"#38bdf8\" text-anchor=\"middle\">CONNECTION: ACTIVE</text>\n          <text x=\"140\" y=\"55\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5\" fill=\"#a855f7\" text-anchor=\"middle\">USER: IWAKURA.L</text>\n          <circle cx=\"140\" cy=\"82\" r=\"8\" fill=\"#0f172a\" stroke=\"#64748b\" stroke-width=\"1\"/>\n          <circle cx=\"140\" cy=\"82\" r=\"3\" fill=\"#475569\"/>\n          <rect x=\"100\" y=\"95\" width=\"15\" height=\"4\" rx=\"1\" fill=\"#334155\"/>\n          <rect x=\"165\" y=\"95\" width=\"15\" height=\"4\" rx=\"1\" fill=\"#334155\"/>\n          <line x1=\"30\" y1=\"40\" x2=\"95\" y2=\"40\" stroke=\"#475569\" stroke-width=\"0.6\" stroke-dasharray=\"3 2\"/>\n          <line x1=\"185\" y1=\"40\" x2=\"250\" y2=\"40\" stroke=\"#475569\" stroke-width=\"0.6\" stroke-dasharray=\"3 2\"/>\n          <text x=\"30\" y=\"38\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5\" fill=\"#475569\">LINK</text>\n          <text x=\"235\" y=\"38\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5\" fill=\"#475569\">OUT</text>\n          <text x=\"140\" y=\"112\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.5\" fill=\"#64748b\" text-anchor=\"middle\">HANDHELD NAVI · TACHIBANA PORTABLE TERMINAL</text>\n        </svg>",
+    "series": "SERIE 1",
+    "name": "SERIE 1 · 09. NAVI // HANDHELD"
+  },
+  {
+    "layer": "LAYER: 10",
+    "title": "LOVE // ARISU",
+    "sub": "FRIENDSHIP PROTOCOL · EMOTIONAL ANCHOR SYSTEM",
+    "kanji": "友達は大切な存在",
+    "quote": "\"Lain... I love you. So please, come back to me.\"",
+    "protocol": "BOND-v1.0",
+    "chip": "EMPATH-CORE",
+    "spec1": "LINK: EMOTIONAL",
+    "spec2": "TRUST: ABSOLUTE",
+    "sn": "MD-LAIN-9807-010",
+    "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n          <path d=\"M140,90 L120,70 Q95,42 120,25 Q140,12 140,35 Q140,12 160,25 Q185,42 160,70 Z\" fill=\"none\" stroke=\"#ec4899\" stroke-width=\"1.8\"/>\n          <path d=\"M140,82 L125,68 Q106,48 125,35 Q140,24 140,42 Q140,24 155,35 Q174,48 155,68 Z\" fill=\"none\" stroke=\"#f9a8d4\" stroke-width=\"1\" stroke-dasharray=\"3 2\"/>\n          <circle cx=\"90\" cy=\"55\" r=\"3\" fill=\"#ec4899\" opacity=\"0.5\"/><circle cx=\"75\" cy=\"40\" r=\"2\" fill=\"#f472b6\" opacity=\"0.4\"/>\n          <circle cx=\"190\" cy=\"55\" r=\"3\" fill=\"#ec4899\" opacity=\"0.5\"/><circle cx=\"205\" cy=\"40\" r=\"2\" fill=\"#f472b6\" opacity=\"0.4\"/>\n          <circle cx=\"60\" cy=\"70\" r=\"1.5\" fill=\"#ec4899\" opacity=\"0.3\"/><circle cx=\"220\" cy=\"70\" r=\"1.5\" fill=\"#ec4899\" opacity=\"0.3\"/>\n          <path d=\"M15,95 H265\" stroke=\"#334155\" stroke-width=\"0.5\"/>\n          <text x=\"140\" y=\"105\" font-family=\"'JetBrains Mono', monospace\" font-size=\"6\" fill=\"#f9a8d4\" text-anchor=\"middle\" letter-spacing=\"2\">ARISU · LAIN</text>\n          <text x=\"140\" y=\"112\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5\" fill=\"#64748b\" text-anchor=\"middle\">EMOTIONAL ANCHOR · MELTYDEAYS FRIENDSHIP PROTOCOL</text>\n        </svg>",
+    "series": "SERIE 1",
+    "name": "SERIE 1 · 10. LOVE // ARISU"
+  },
+  {
+    "layer": "LAYER: 11",
+    "title": "RUMORS // ACCELA",
+    "sub": "ACCELA NANOMACHINE · NEURAL ENHANCEMENT DRUG",
+    "kanji": "加速する意識",
+    "quote": "\"You can feel it, can't you? The pulse of the Wired.\"",
+    "protocol": "ACCELA-X",
+    "chip": "NANO-INJECT",
+    "spec1": "DOSE: 0.3mg/mL",
+    "spec2": "EFFECT: NEURAL++",
+    "sn": "MD-LAIN-9807-011",
+    "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n          <ellipse cx=\"140\" cy=\"55\" rx=\"60\" ry=\"40\" fill=\"none\" stroke=\"#059669\" stroke-width=\"1.2\" stroke-dasharray=\"5 3\"/>\n          <ellipse cx=\"140\" cy=\"55\" rx=\"40\" ry=\"25\" fill=\"none\" stroke=\"#10b981\" stroke-width=\"1\" stroke-dasharray=\"3 2\"/>\n          <ellipse cx=\"140\" cy=\"55\" rx=\"20\" ry=\"12\" fill=\"none\" stroke=\"#34d399\" stroke-width=\"0.8\"/>\n          <circle cx=\"140\" cy=\"55\" r=\"5\" fill=\"#059669\"/>\n          <line x1=\"140\" y1=\"55\" x2=\"200\" y2=\"15\" stroke=\"#10b981\" stroke-width=\"0.8\"/>\n          <line x1=\"140\" y1=\"55\" x2=\"80\" y2=\"15\" stroke=\"#10b981\" stroke-width=\"0.8\"/>\n          <line x1=\"140\" y1=\"55\" x2=\"80\" y2=\"95\" stroke=\"#10b981\" stroke-width=\"0.8\"/>\n          <line x1=\"140\" y1=\"55\" x2=\"200\" y2=\"95\" stroke=\"#10b981\" stroke-width=\"0.8\"/>\n          <circle cx=\"200\" cy=\"15\" r=\"3\" fill=\"#34d399\"/><circle cx=\"80\" cy=\"15\" r=\"3\" fill=\"#34d399\"/>\n          <circle cx=\"80\" cy=\"95\" r=\"3\" fill=\"#34d399\"/><circle cx=\"200\" cy=\"95\" r=\"3\" fill=\"#34d399\"/>\n          <text x=\"210\" y=\"18\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5\" fill=\"#6ee7b7\">SYNAPSE-A</text>\n          <text x=\"30\" y=\"18\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5\" fill=\"#6ee7b7\">SYNAPSE-B</text>\n          <text x=\"140\" y=\"112\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.5\" fill=\"#64748b\" text-anchor=\"middle\">ACCELA NANOMACHINE · MELTYDEAYS NEURAL BOOST UNIT</text>\n        </svg>",
+    "series": "SERIE 1",
+    "name": "SERIE 1 · 11. RUMORS // ACCELA"
+  },
+  {
+    "layer": "LAYER: 12",
+    "title": "LANDSCAPE // GOD",
+    "sub": "DEUS EX MACHINA · EIRI MASAMI PROTOCOL",
+    "kanji": "神になれるのか",
+    "quote": "\"God is here. I am God.\"",
+    "protocol": "DEUS-v0.1",
+    "chip": "OMNISCIENT",
+    "spec1": "STATE: ASCENDED",
+    "spec2": "PLANE: METAVERSE",
+    "sn": "MD-LAIN-9807-012",
+    "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n          <polygon points=\"140,5 170,100 40,40 240,40 110,100\" fill=\"none\" stroke=\"#f59e0b\" stroke-width=\"1.5\"/>\n          <circle cx=\"140\" cy=\"48\" r=\"20\" fill=\"none\" stroke=\"#fbbf24\" stroke-width=\"1.2\"/>\n          <circle cx=\"140\" cy=\"48\" r=\"10\" fill=\"none\" stroke=\"#f59e0b\" stroke-width=\"0.8\" stroke-dasharray=\"2 2\"/>\n          <circle cx=\"140\" cy=\"48\" r=\"4\" fill=\"#f59e0b\"/>\n          <line x1=\"140\" y1=\"28\" x2=\"140\" y2=\"5\" stroke=\"#fbbf24\" stroke-width=\"0.8\"/>\n          <line x1=\"120\" y1=\"48\" x2=\"40\" y2=\"40\" stroke=\"#fbbf24\" stroke-width=\"0.6\" opacity=\"0.6\"/>\n          <line x1=\"160\" y1=\"48\" x2=\"240\" y2=\"40\" stroke=\"#fbbf24\" stroke-width=\"0.6\" opacity=\"0.6\"/>\n          <line x1=\"130\" y1=\"65\" x2=\"110\" y2=\"100\" stroke=\"#fbbf24\" stroke-width=\"0.6\" opacity=\"0.6\"/>\n          <line x1=\"150\" y1=\"65\" x2=\"170\" y2=\"100\" stroke=\"#fbbf24\" stroke-width=\"0.6\" opacity=\"0.6\"/>\n          <text x=\"140\" y=\"52\" font-family=\"'JetBrains Mono', monospace\" font-size=\"6\" font-weight=\"900\" fill=\"#fef3c7\" text-anchor=\"middle\">∞</text>\n          <text x=\"140\" y=\"112\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.5\" fill=\"#64748b\" text-anchor=\"middle\">DEUS PROTOCOL · EIRI MASAMI ASCENSION ENGINE</text>\n        </svg>",
+    "series": "SERIE 1",
+    "name": "SERIE 1 · 12. LANDSCAPE // GOD"
+  },
+  {
+    "layer": "LAYER: 13",
+    "title": "CLOSURE // MEMORY",
+    "sub": "MEMORY WIPE DAEMON · ERASURE PROTOCOL ACTIVE",
+    "kanji": "記憶を消しても、私は存在する",
+    "quote": "\"People only have substance within the memories of others.\"",
+    "protocol": "MEM-WIPE",
+    "chip": "ERASURE-V",
+    "spec1": "MODE: SELECTIVE",
+    "spec2": "DEPTH: TOTAL",
+    "sn": "MD-LAIN-9807-013",
+    "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n          <rect x=\"30\" y=\"15\" width=\"220\" height=\"80\" rx=\"2\" fill=\"none\" stroke=\"#475569\" stroke-width=\"1\"/>\n          <g stroke=\"#334155\" stroke-width=\"0.5\">\n            <line x1=\"30\" y1=\"30\" x2=\"250\" y2=\"30\"/><line x1=\"30\" y1=\"45\" x2=\"250\" y2=\"45\"/>\n            <line x1=\"30\" y1=\"60\" x2=\"250\" y2=\"60\"/><line x1=\"30\" y1=\"75\" x2=\"250\" y2=\"75\"/>\n          </g>\n          <text x=\"40\" y=\"28\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.5\" fill=\"#94a3b8\">ADDR: 0x0000 - 0xFFFF</text>\n          <rect x=\"40\" y=\"33\" width=\"200\" height=\"8\" fill=\"#1e293b\" rx=\"1\"/>\n          <rect x=\"40\" y=\"33\" width=\"160\" height=\"8\" fill=\"#dc2626\" rx=\"1\" opacity=\"0.7\"/>\n          <text x=\"40\" y=\"54\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.5\" fill=\"#f87171\">ERASING: ████████████████░░░░ 80%</text>\n          <text x=\"40\" y=\"70\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.5\" fill=\"#94a3b8\">SECTORS: 1024/1280 WIPED</text>\n          <text x=\"40\" y=\"85\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.5\" fill=\"#fbbf24\">WARNING: IRREVERSIBLE OPERATION</text>\n          <text x=\"140\" y=\"112\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.5\" fill=\"#64748b\" text-anchor=\"middle\">MEMORY DAEMON · MELTYDEAYS ERASURE PROTOCOL</text>\n        </svg>",
+    "series": "SERIE 1",
+    "name": "SERIE 1 · 13. CLOSURE // MEMORY"
+  },
+  {
+    "layer": "LAYER: 14",
+    "title": "DEUS // PROPHECY",
+    "sub": "PROPHECY MATRIX · SEVENTH PROTOCOL GATE",
+    "kanji": "未来は既に書かれている",
+    "quote": "\"The border between the Wired and the real world is disappearing.\"",
+    "protocol": "GATE-VII",
+    "chip": "ORACLE-X",
+    "spec1": "VISION: PRECOG",
+    "spec2": "LAYER: PROTOCOL 7",
+    "sn": "MD-LAIN-9807-014",
+    "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n          <ellipse cx=\"140\" cy=\"50\" rx=\"55\" ry=\"38\" fill=\"none\" stroke=\"#6366f1\" stroke-width=\"1.5\"/>\n          <ellipse cx=\"140\" cy=\"50\" rx=\"55\" ry=\"38\" fill=\"none\" stroke=\"#818cf8\" stroke-width=\"0.8\" transform=\"rotate(60 140 50)\"/>\n          <ellipse cx=\"140\" cy=\"50\" rx=\"55\" ry=\"38\" fill=\"none\" stroke=\"#a5b4fc\" stroke-width=\"0.8\" transform=\"rotate(120 140 50)\"/>\n          <circle cx=\"140\" cy=\"50\" r=\"8\" fill=\"#312e81\" stroke=\"#6366f1\" stroke-width=\"1\"/>\n          <circle cx=\"140\" cy=\"50\" r=\"3\" fill=\"#818cf8\"/>\n          <g font-family=\"'JetBrains Mono', monospace\" font-size=\"5\" fill=\"#475569\">\n            <text x=\"10\" y=\"15\">GATE:I</text><text x=\"50\" y=\"15\">GATE:II</text><text x=\"90\" y=\"15\">GATE:III</text>\n            <text x=\"170\" y=\"15\">GATE:V</text><text x=\"210\" y=\"15\">GATE:VI</text><text x=\"245\" y=\"15\">GATE:VII</text>\n          </g>\n          <text x=\"140\" y=\"108\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.5\" fill=\"#64748b\" text-anchor=\"middle\">PROPHECY MATRIX · SEVENTH PROTOCOL ACTIVE</text>\n        </svg>",
+    "series": "SERIE 1",
+    "name": "SERIE 1 · 14. DEUS // PROPHECY"
+  },
+  {
+    "layer": "LAYER: 15",
+    "title": "BRIDGE // CROSSOVER",
+    "sub": "REALITY BRIDGE · DIMENSIONAL CROSSOVER UNIT",
+    "kanji": "現実と仮想の橋",
+    "quote": "\"In the Wired, there is no need for bodies.\"",
+    "protocol": "BRIDGE-DX",
+    "chip": "CROSS-GATE",
+    "spec1": "DIM: REAL↔WIRED",
+    "spec2": "PHASE: SYNC 100%",
+    "sn": "MD-LAIN-9807-015",
+    "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n          <rect x=\"15\" y=\"25\" width=\"100\" height=\"65\" rx=\"3\" fill=\"#0c1425\" stroke=\"#334155\" stroke-width=\"1\"/>\n          <rect x=\"165\" y=\"25\" width=\"100\" height=\"65\" rx=\"3\" fill=\"#0c1425\" stroke=\"#334155\" stroke-width=\"1\"/>\n          <text x=\"65\" y=\"55\" font-family=\"'JetBrains Mono', monospace\" font-size=\"7\" font-weight=\"700\" fill=\"#94a3b8\" text-anchor=\"middle\">REAL</text>\n          <text x=\"65\" y=\"66\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5\" fill=\"#475569\" text-anchor=\"middle\">WORLD</text>\n          <text x=\"215\" y=\"55\" font-family=\"'JetBrains Mono', monospace\" font-size=\"7\" font-weight=\"700\" fill=\"#a78bfa\" text-anchor=\"middle\">WIRED</text>\n          <text x=\"215\" y=\"66\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5\" fill=\"#7c3aed\" text-anchor=\"middle\">WORLD</text>\n          <path d=\"M115,45 C130,45 150,45 165,45\" stroke=\"#f59e0b\" stroke-width=\"1.5\" fill=\"none\" marker-end=\"url(#arrowB)\"/>\n          <path d=\"M165,65 C150,65 130,65 115,65\" stroke=\"#f59e0b\" stroke-width=\"1.5\" fill=\"none\" marker-end=\"url(#arrowB)\"/>\n          <text x=\"140\" y=\"42\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5\" fill=\"#fbbf24\" text-anchor=\"middle\">→→→</text>\n          <text x=\"140\" y=\"75\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5\" fill=\"#fbbf24\" text-anchor=\"middle\">←←←</text>\n          <text x=\"140\" y=\"112\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.5\" fill=\"#64748b\" text-anchor=\"middle\">REALITY BRIDGE · MELTYDEAYS CROSSOVER UNIT</text>\n        </svg>",
+    "series": "SERIE 1",
+    "name": "SERIE 1 · 15. BRIDGE // CROSSOVER"
+  },
+  {
+    "layer": "LAYER: 16",
+    "title": "STATIC // NOISE",
+    "sub": "WHITE NOISE GENERATOR · SIGNAL INTERFERENCE",
+    "kanji": "ノイズの中に真実がある",
+    "quote": "\"Do you want to be hurt? Or do you want to hurt others?\"",
+    "protocol": "NOISE-GEN",
+    "chip": "STATIC-V",
+    "spec1": "FREQ: 20Hz-20kHz",
+    "spec2": "POWER: -3dBFS",
+    "sn": "MD-LAIN-9807-016",
+    "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n          <g stroke=\"#475569\" stroke-width=\"0.5\" opacity=\"0.8\">\n            <line x1=\"0\" y1=\"20\" x2=\"0\" y2=\"75\"/><line x1=\"7\" y1=\"29.663265308565364\" x2=\"7\" y2=\"67.43219936541328\"/><line x1=\"14\" y1=\"34.7817459498269\" x2=\"14\" y2=\"50.455958106138254\"/><line x1=\"21\" y1=\"32.94814049973311\" x2=\"21\" y2=\"36.918557159658775\"/><line x1=\"28\" y1=\"25.024822252338577\" x2=\"28\" y2=\"37.06483167331706\"/><line x1=\"35\" y1=\"14.738251584655703\" x2=\"35\" y2=\"50.78408401138441\"/><line x1=\"42\" y1=\"6.926363413796183\" x2=\"42\" y2=\"67.6938575188527\"/><line x1=\"49\" y1=\"5.263210810635011\" x2=\"49\" y2=\"74.9971727276683\"/><line x1=\"56\" y1=\"10.531000431915176\" x2=\"56\" y2=\"67.16702629064508\"/><line x1=\"63\" y1=\"20.252208507265244\" x2=\"63\" y2=\"50.12911692528418\"/><line x1=\"70\" y1=\"29.854798980781837\" x2=\"70\" y2=\"36.77739476230646\"/><line x1=\"77\" y1=\"34.822523508155\" x2=\"77\" y2=\"37.216176947492784\"/><line x1=\"84\" y1=\"32.81898362132422\" x2=\"84\" y2=\"51.113401870893306\"/><line x1=\"91\" y1=\"24.786475435240284\" x2=\"91\" y2=\"67.95192677307755\"/><line x1=\"98\" y1=\"14.502813061221097\" x2=\"98\" y2=\"74.98869171002009\"/><line x1=\"105\" y1=\"6.804563600424949\" x2=\"105\" y2=\"66.89841326619784\"/><line x1=\"112\" y1=\"5.312334062730239\" x2=\"112\" y2=\"49.803652875724886\"/><line x1=\"119\" y1=\"10.72794331644448\" x2=\"119\" y2=\"36.64138439171414\"/><line x1=\"126\" y1=\"20.50434570831705\" x2=\"126\" y2=\"37.372550192755305\"/><line x1=\"133\" y1=\"30.043546432949015\" x2=\"133\" y2=\"51.443818577537684\"/><line x1=\"140\" y1=\"34.859110335423054\" x2=\"140\" y2=\"68.20633416488161\"/><line x1=\"147\" y1=\"32.686202467144014\" x2=\"147\" y2=\"74.97455934487003\"/><line x1=\"154\" y1=\"24.54677535118556\" x2=\"154\" y2=\"66.62643623628871\"/><line x1=\"161\" y1=\"14.268928742239913\" x2=\"161\" y2=\"49.47965797501066\"/><line x1=\"168\" y1=\"6.686494496277456\" x2=\"168\" y2=\"36.51056450171757\"/><line x1=\"175\" y1=\"5.365609917977636\" x2=\"175\" y2=\"37.53390719812969\"/><line x1=\"182\" y1=\"10.927507663905738\" x2=\"182\" y2=\"51.77524071351629\"/><line x1=\"189\" y1=\"20.75634031710217\" x2=\"189\" y2=\"68.45700776636693\"/><line x1=\"196\" y1=\"30.229454301021995\" x2=\"196\" y2=\"74.9547796278226\"/><line x1=\"203\" y1=\"34.8914960875386\" x2=\"203\" y2=\"66.35117209623088\"/><line x1=\"210\" y1=\"32.549834578040844\" x2=\"210\" y2=\"49.15722382532328\"/><line x1=\"217\" y1=\"24.305789769915926\" x2=\"217\" y2=\"36.3849720786623\"/><line x1=\"224\" y1=\"14.036664753178506\" x2=\"224\" y2=\"37.70020234359623\"/><line x1=\"231\" y1=\"6.572189482704797\" x2=\"231\" y2=\"52.107574576765536\"/><line x1=\"238\" y1=\"5.423023313842039\" x2=\"238\" y2=\"68.70387670527974\"/><line x1=\"245\" y1=\"11.129637052023135\" x2=\"245\" y2=\"74.9293581511425\"/><line x1=\"252\" y1=\"21.008121087882124\" x2=\"252\" y2=\"66.0726986706931\"/><line x1=\"259\" y1=\"30.41247002378363\" x2=\"259\" y2=\"48.836441587577724\"/><line x1=\"266\" y1=\"34.91967160816757\" x2=\"266\" y2=\"36.26464263094661\"/><line x1=\"273\" y1=\"32.40991850893071\" x2=\"273\" y2=\"37.87138861298856\"/>\n          </g>\n          <g stroke=\"#64748b\" stroke-width=\"0.4\" opacity=\"0.6\">\n            <line x1=\"0\" y1=\"60\" x2=\"0\" y2=\"100\"/><line x1=\"7\" y1=\"70.69448832073722\" x2=\"7\" y2=\"98.77582561890372\"/><line x1=\"14\" y1=\"69.70195684583508\" x2=\"14\" y2=\"95.4030230586814\"/><line x1=\"21\" y1=\"58.10705167028102\" x2=\"21\" y2=\"90.70737201667703\"/><line x1=\"28\" y1=\"48.58077511332581\" x2=\"28\" y2=\"85.83853163452858\"/><line x1=\"35\" y1=\"51.5335160931553\" x2=\"35\" y2=\"81.98856384453066\"/><line x1=\"42\" y1=\"63.73849636216055\" x2=\"42\" y2=\"80.10007503399555\"/><line x1=\"49\" y1=\"71.858018806524\" x2=\"49\" y2=\"80.63543312709204\"/><line x1=\"56\" y1=\"67.01900631470114\" x2=\"56\" y2=\"83.46356379136388\"/><line x1=\"63\" y1=\"54.50956927469614\" x2=\"63\" y2=\"87.8920420056922\"/><line x1=\"70\" y1=\"48.00011752139156\" x2=\"70\" y2=\"92.83662185463226\"/><line x1=\"77\" y1=\"54.6042304255848\" x2=\"77\" y2=\"97.0866977429126\"/><line x1=\"84\" y1=\"67.1048821764867\" x2=\"84\" y2=\"99.60170286650366\"/><line x1=\"91\" y1=\"71.84126357129536\" x2=\"91\" y2=\"99.76587625728024\"/><line x1=\"98\" y1=\"63.637420280948405\" x2=\"98\" y2=\"97.53902254343305\"/><line x1=\"105\" y1=\"51.458575891570526\" x2=\"105\" y2=\"93.46635317835026\"/><line x1=\"112\" y1=\"48.613866024982514\" x2=\"112\" y2=\"88.54499966191386\"/><line x1=\"119\" y1=\"58.21201169022966\" x2=\"119\" y2=\"83.97988097315177\"/><line x1=\"126\" y1=\"69.76408485008527\" x2=\"126\" y2=\"80.88869738115324\"/><line x1=\"133\" y1=\"70.64589034430819\" x2=\"133\" y2=\"80.02827843803621\"/><line x1=\"140\" y1=\"59.89378428851516\" x2=\"140\" y2=\"81.60928470923548\"/><line x1=\"147\" y1=\"49.25775158616382\" x2=\"147\" y2=\"85.24463072004008\"/><line x1=\"154\" y1=\"50.36093127967257\" x2=\"154\" y2=\"90.0442569798805\"/><line x1=\"161\" y1=\"61.99776004244591\" x2=\"161\" y2=\"94.83304758753006\"/><line x1=\"168\" y1=\"71.45142113391238\" x2=\"168\" y2=\"98.43853958732493\"/><line x1=\"175\" y1=\"68.39088037986114\" x2=\"175\" y2=\"99.9779827917858\"/><line x1=\"182\" y1=\"56.16072045738962\" x2=\"182\" y2=\"99.07446781450196\"/><line x1=\"189\" y1=\"48.12615500094557\" x2=\"189\" y2=\"95.94920663309892\"/><line x1=\"196\" y1=\"53.06741946665125\" x2=\"196\" y2=\"91.36737218207834\"/><line x1=\"203\" y1=\"65.5846617162595\" x2=\"203\" y2=\"86.45075733211296\"/><line x1=\"210\" y1=\"71.9989423212872\" x2=\"210\" y2=\"82.40312087141179\"/><line x1=\"217\" y1=\"65.30068568003068\" x2=\"217\" y2=\"80.21546537181116\"/><line x1=\"224\" y1=\"52.80979860942882\" x2=\"224\" y2=\"80.42340519676615\"/><line x1=\"231\" y1=\"48.17641939390557\" x2=\"231\" y2=\"82.97602942497286\"/><line x1=\"238\" y1=\"56.46394078199699\" x2=\"238\" y2=\"87.24836661948403\"/><line x1=\"245\" y1=\"68.61569511325973\" x2=\"245\" y2=\"92.1943996321146\"/><line x1=\"252\" y1=\"71.3521509915229\" x2=\"252\" y2=\"96.6031670824408\"/><line x1=\"259\" y1=\"61.68288820592486\" x2=\"259\" y2=\"99.39524893748256\"/><line x1=\"266\" y1=\"50.17455213447783\" x2=\"266\" y2=\"99.8870461818667\"/><line x1=\"273\" y1=\"49.40354170793501\" x2=\"273\" y2=\"97.95814969813944\"/>\n          </g>\n          <rect x=\"90\" y=\"38\" width=\"100\" height=\"30\" rx=\"2\" fill=\"#0f172a\" stroke=\"#64748b\" stroke-width=\"1\"/>\n          <text x=\"140\" y=\"56\" font-family=\"'JetBrains Mono', monospace\" font-size=\"8\" font-weight=\"900\" fill=\"#e2e8f0\" text-anchor=\"middle\">▓▒░ STATIC ░▒▓</text>\n          <text x=\"140\" y=\"108\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.5\" fill=\"#64748b\" text-anchor=\"middle\">WHITE NOISE · MELTYDEAYS SIGNAL INTERFERENCE UNIT</text>\n        </svg>",
+    "series": "SERIE 1",
+    "name": "SERIE 1 · 16. STATIC // NOISE"
+  },
+  {
+    "layer": "LAYER: 17",
+    "title": "WIRE // POWERLINES",
+    "sub": "ELECTROMAGNETIC FIELD · POWER LINE COMMUNICATION",
+    "kanji": "電線は世界を繋ぐ",
+    "quote": "\"The humming of the power lines... Can you hear it?\"",
+    "protocol": "PLC-60Hz",
+    "chip": "EMF-SENSE",
+    "spec1": "VOLTAGE: 100V AC",
+    "spec2": "FIELD: 60Hz HUM",
+    "sn": "MD-LAIN-9807-017",
+    "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n          <rect x=\"25\" y=\"8\" width=\"6\" height=\"90\" fill=\"#1e293b\"/>\n          <rect x=\"249\" y=\"8\" width=\"6\" height=\"90\" fill=\"#1e293b\"/>\n          <rect x=\"20\" y=\"8\" width=\"16\" height=\"4\" fill=\"#334155\"/><rect x=\"244\" y=\"8\" width=\"16\" height=\"4\" fill=\"#334155\"/>\n          <rect x=\"22\" y=\"20\" width=\"12\" height=\"3\" fill=\"#475569\"/><rect x=\"246\" y=\"20\" width=\"12\" height=\"3\" fill=\"#475569\"/>\n          <path d=\"M31,22 Q80,35 140,28 Q200,22 249,22\" fill=\"none\" stroke=\"#0f172a\" stroke-width=\"2\"/>\n          <path d=\"M31,22 Q80,40 140,32 Q200,26 249,22\" fill=\"none\" stroke=\"#1e293b\" stroke-width=\"1.5\"/>\n          <path d=\"M31,22 Q80,45 140,36 Q200,30 249,22\" fill=\"none\" stroke=\"#334155\" stroke-width=\"1\"/>\n          <circle cx=\"140\" cy=\"30\" r=\"3\" fill=\"#fbbf24\"/>\n          <g opacity=\"0.5\">\n            <circle cx=\"140\" cy=\"30\" r=\"8\" fill=\"none\" stroke=\"#fbbf24\" stroke-width=\"0.6\"/>\n            <circle cx=\"140\" cy=\"30\" r=\"15\" fill=\"none\" stroke=\"#f59e0b\" stroke-width=\"0.4\"/>\n            <circle cx=\"140\" cy=\"30\" r=\"22\" fill=\"none\" stroke=\"#d97706\" stroke-width=\"0.3\"/>\n          </g>\n          <path d=\"M15,80 L40,80 L48,65 L55,95 L62,60 L70,100 L78,70 L85,80 L265,80\" fill=\"none\" stroke=\"#059669\" stroke-width=\"1\"/>\n          <text x=\"140\" y=\"108\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.5\" fill=\"#64748b\" text-anchor=\"middle\">POWERLINE COMM · MELTYDEAYS 60Hz EMF TRANSCEIVER</text>\n        </svg>",
+    "series": "SERIE 1",
+    "name": "SERIE 1 · 17. WIRE // POWERLINES"
+  },
+  {
+    "layer": "LAYER: 18",
+    "title": "MOUTH // BEAR SUIT",
+    "sub": "BEAR PAJAMA INTERFACE · COMFORT PROTOCOL ACTIVE",
+    "kanji": "くまさんパジャマ",
+    "quote": "\"I don't need to pretend anymore.\"",
+    "protocol": "BEAR-OS",
+    "chip": "COMFORT-V",
+    "spec1": "MODE: PAJAMA",
+    "spec2": "TEMP: WARM 37°C",
+    "sn": "MD-LAIN-9807-018",
+    "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n          <circle cx=\"115\" cy=\"35\" r=\"18\" fill=\"none\" stroke=\"#a78bfa\" stroke-width=\"1.5\"/>\n          <circle cx=\"165\" cy=\"35\" r=\"18\" fill=\"none\" stroke=\"#a78bfa\" stroke-width=\"1.5\"/>\n          <ellipse cx=\"140\" cy=\"60\" rx=\"42\" ry=\"35\" fill=\"none\" stroke=\"#7c3aed\" stroke-width=\"2\"/>\n          <circle cx=\"125\" cy=\"52\" r=\"4\" fill=\"#1e1b4b\" stroke=\"#6d28d9\" stroke-width=\"1\"/>\n          <circle cx=\"155\" cy=\"52\" r=\"4\" fill=\"#1e1b4b\" stroke=\"#6d28d9\" stroke-width=\"1\"/>\n          <circle cx=\"125\" cy=\"51\" r=\"1.5\" fill=\"#e9d5ff\"/>\n          <circle cx=\"155\" cy=\"51\" r=\"1.5\" fill=\"#e9d5ff\"/>\n          <ellipse cx=\"140\" cy=\"65\" rx=\"5\" ry=\"3\" fill=\"#c084fc\"/>\n          <path d=\"M135,68 Q140,74 145,68\" fill=\"none\" stroke=\"#7c3aed\" stroke-width=\"1\"/>\n          <line x1=\"85\" y1=\"60\" x2=\"98\" y2=\"60\" stroke=\"#a78bfa\" stroke-width=\"0.8\"/><line x1=\"85\" y1=\"64\" x2=\"98\" y2=\"64\" stroke=\"#a78bfa\" stroke-width=\"0.8\"/>\n          <line x1=\"182\" y1=\"60\" x2=\"195\" y2=\"60\" stroke=\"#a78bfa\" stroke-width=\"0.8\"/><line x1=\"182\" y1=\"64\" x2=\"195\" y2=\"64\" stroke=\"#a78bfa\" stroke-width=\"0.8\"/>\n          <text x=\"140\" y=\"108\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.5\" fill=\"#64748b\" text-anchor=\"middle\">BEAR SUIT PROTOCOL · MELTYDEAYS COMFORT MODULE</text>\n        </svg>",
+    "series": "SERIE 1",
+    "name": "SERIE 1 · 18. MOUTH // BEAR SUIT"
+  },
+  {
+    "layer": "LAYER: 19",
+    "title": "PROTOCOL // LAYER 7",
+    "sub": "APPLICATION LAYER · OSI MODEL ENDPOINT",
+    "kanji": "プロトコル七層",
+    "quote": "\"All I need to do is get rid of the ego that anchors me.\"",
+    "protocol": "OSI-L7",
+    "chip": "APP-GATE",
+    "spec1": "STACK: TCP/IP+",
+    "spec2": "PORT: 7777",
+    "sn": "MD-LAIN-9807-019",
+    "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n          <g font-family=\"'JetBrains Mono', monospace\" font-size=\"5.5\">\n            <rect x=\"80\" y=\"6\" width=\"120\" height=\"12\" rx=\"1\" fill=\"#1e40af\" stroke=\"#3b82f6\" stroke-width=\"0.8\"/>\n            <text x=\"140\" y=\"14.5\" fill=\"#dbeafe\" text-anchor=\"middle\">7 · APPLICATION</text>\n            <rect x=\"80\" y=\"20\" width=\"120\" height=\"12\" rx=\"1\" fill=\"#1e3a8a\" stroke=\"#2563eb\" stroke-width=\"0.8\"/>\n            <text x=\"140\" y=\"28.5\" fill=\"#bfdbfe\" text-anchor=\"middle\">6 · PRESENTATION</text>\n            <rect x=\"80\" y=\"34\" width=\"120\" height=\"12\" rx=\"1\" fill=\"#172554\" stroke=\"#1d4ed8\" stroke-width=\"0.8\"/>\n            <text x=\"140\" y=\"42.5\" fill=\"#93c5fd\" text-anchor=\"middle\">5 · SESSION</text>\n            <rect x=\"80\" y=\"48\" width=\"120\" height=\"12\" rx=\"1\" fill=\"#0c1425\" stroke=\"#1e40af\" stroke-width=\"0.8\"/>\n            <text x=\"140\" y=\"56.5\" fill=\"#60a5fa\" text-anchor=\"middle\">4 · TRANSPORT</text>\n            <rect x=\"80\" y=\"62\" width=\"120\" height=\"12\" rx=\"1\" fill=\"#0a0f1f\" stroke=\"#1e3a8a\" stroke-width=\"0.8\"/>\n            <text x=\"140\" y=\"70.5\" fill=\"#3b82f6\" text-anchor=\"middle\">3 · NETWORK</text>\n            <rect x=\"80\" y=\"76\" width=\"120\" height=\"12\" rx=\"1\" fill=\"#070b15\" stroke=\"#172554\" stroke-width=\"0.8\"/>\n            <text x=\"140\" y=\"84.5\" fill=\"#2563eb\" text-anchor=\"middle\">2 · DATA LINK</text>\n            <rect x=\"80\" y=\"90\" width=\"120\" height=\"12\" rx=\"1\" fill=\"#050810\" stroke=\"#0c1425\" stroke-width=\"0.8\"/>\n            <text x=\"140\" y=\"98.5\" fill=\"#1d4ed8\" text-anchor=\"middle\">1 · PHYSICAL</text>\n          </g>\n          <rect x=\"78\" y=\"4\" width=\"124\" height=\"16\" rx=\"2\" fill=\"none\" stroke=\"#f59e0b\" stroke-width=\"2\"/>\n          <text x=\"140\" y=\"112\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5\" fill=\"#64748b\" text-anchor=\"middle\">OSI STACK · MELTYDEAYS APPLICATION LAYER GATEWAY</text>\n        </svg>",
+    "series": "SERIE 1",
+    "name": "SERIE 1 · 19. PROTOCOL // LAYER 7"
+  },
+  {
+    "layer": "LAYER: 20",
+    "title": "FEAR // SHADOWS",
+    "sub": "SHADOW ENTITY · LURKING PRESENCE DETECTOR",
+    "kanji": "影の中に何かいる",
+    "quote": "\"You're scared, aren't you? But there's nothing to be afraid of.\"",
+    "protocol": "SHADOW-X",
+    "chip": "DARK-SENSE",
+    "spec1": "DETECT: INFRARED",
+    "spec2": "RANGE: UNKNOWN",
+    "sn": "MD-LAIN-9807-020",
+    "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n          <rect x=\"0\" y=\"0\" width=\"280\" height=\"115\" fill=\"#050510\"/>\n          <circle cx=\"140\" cy=\"45\" r=\"35\" fill=\"#0a0a1a\" stroke=\"#1e1b4b\" stroke-width=\"0.8\"/>\n          <circle cx=\"128\" cy=\"40\" r=\"6\" fill=\"#dc2626\"/>\n          <circle cx=\"152\" cy=\"40\" r=\"6\" fill=\"#dc2626\"/>\n          <circle cx=\"128\" cy=\"40\" r=\"2.5\" fill=\"#fca5a5\"/>\n          <circle cx=\"152\" cy=\"40\" r=\"2.5\" fill=\"#fca5a5\"/>\n          <path d=\"M105,75 Q140,85 175,75\" fill=\"none\" stroke=\"#1e1b4b\" stroke-width=\"0.8\"/>\n          <g opacity=\"0.15\">\n            <rect x=\"20\" y=\"15\" width=\"40\" height=\"60\" rx=\"2\" fill=\"#1e1b4b\"/>\n            <rect x=\"220\" y=\"15\" width=\"40\" height=\"60\" rx=\"2\" fill=\"#1e1b4b\"/>\n            <rect x=\"40\" y=\"25\" width=\"25\" height=\"50\" rx=\"2\" fill=\"#1e1b4b\"/>\n            <rect x=\"215\" y=\"25\" width=\"25\" height=\"50\" rx=\"2\" fill=\"#1e1b4b\"/>\n          </g>\n          <text x=\"140\" y=\"100\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.5\" fill=\"#475569\" text-anchor=\"middle\">/// ENTITY DETECTED · CLASSIFICATION: UNKNOWN</text>\n          <text x=\"140\" y=\"110\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5\" fill=\"#334155\" text-anchor=\"middle\">SHADOW SENSOR · MELTYDEAYS DARK DETECTION UNIT</text>\n        </svg>",
+    "series": "SERIE 1",
+    "name": "SERIE 1 · 20. FEAR // SHADOWS"
+  },
+  {
+    "layer": "LAYER: 21",
+    "title": "SMOKE // CYBERIA",
+    "sub": "CYBERIA CLUB · UNDERGROUND ACCESS PASS",
+    "kanji": "サイベリアへようこそ",
+    "quote": "\"Welcome to Cyberia. What would you like?\"",
+    "protocol": "CLUB-v2.0",
+    "chip": "BASS-CORE",
+    "spec1": "BPM: 140 TRANCE",
+    "spec2": "ACCESS: VIP PASS",
+    "sn": "MD-LAIN-9807-021",
+    "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n          <rect x=\"0\" y=\"0\" width=\"280\" height=\"115\" fill=\"#0a0010\" rx=\"0\"/>\n          <rect x=\"30\" y=\"15\" width=\"220\" height=\"50\" rx=\"4\" fill=\"#1a0030\" stroke=\"#7c3aed\" stroke-width=\"1.5\"/>\n          <text x=\"140\" y=\"35\" font-family=\"'JetBrains Mono', monospace\" font-size=\"12\" font-weight=\"900\" fill=\"#c084fc\" text-anchor=\"middle\" letter-spacing=\"4\">CYBERIA</text>\n          <text x=\"140\" y=\"50\" font-family=\"'JetBrains Mono', monospace\" font-size=\"6\" fill=\"#a855f7\" text-anchor=\"middle\" letter-spacing=\"2\">CLUB · UNDERGROUND</text>\n          <g opacity=\"0.6\">\n            <rect x=\"40\" y=\"72\" width=\"4\" height=\"20\" fill=\"#a855f7\"/><rect x=\"50\" y=\"78\" width=\"4\" height=\"14\" fill=\"#7c3aed\"/>\n            <rect x=\"60\" y=\"68\" width=\"4\" height=\"24\" fill=\"#c084fc\"/><rect x=\"70\" y=\"75\" width=\"4\" height=\"17\" fill=\"#6d28d9\"/>\n            <rect x=\"80\" y=\"70\" width=\"4\" height=\"22\" fill=\"#a855f7\"/><rect x=\"90\" y=\"80\" width=\"4\" height=\"12\" fill=\"#7c3aed\"/>\n            <rect x=\"100\" y=\"65\" width=\"4\" height=\"27\" fill=\"#c084fc\"/><rect x=\"110\" y=\"74\" width=\"4\" height=\"18\" fill=\"#6d28d9\"/>\n            <rect x=\"166\" y=\"72\" width=\"4\" height=\"20\" fill=\"#a855f7\"/><rect x=\"176\" y=\"78\" width=\"4\" height=\"14\" fill=\"#7c3aed\"/>\n            <rect x=\"186\" y=\"68\" width=\"4\" height=\"24\" fill=\"#c084fc\"/><rect x=\"196\" y=\"75\" width=\"4\" height=\"17\" fill=\"#6d28d9\"/>\n            <rect x=\"206\" y=\"70\" width=\"4\" height=\"22\" fill=\"#a855f7\"/><rect x=\"216\" y=\"80\" width=\"4\" height=\"12\" fill=\"#7c3aed\"/>\n            <rect x=\"226\" y=\"65\" width=\"4\" height=\"27\" fill=\"#c084fc\"/><rect x=\"236\" y=\"74\" width=\"4\" height=\"18\" fill=\"#6d28d9\"/>\n          </g>\n          <text x=\"140\" y=\"82\" font-family=\"'JetBrains Mono', monospace\" font-size=\"6\" fill=\"#e9d5ff\" text-anchor=\"middle\">♫ ♫ ♫</text>\n          <text x=\"140\" y=\"108\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.5\" fill=\"#64748b\" text-anchor=\"middle\">CYBERIA PASS · MELTYDEAYS UNDERGROUND ACCESS</text>\n        </svg>",
+    "series": "SERIE 1",
+    "name": "SERIE 1 · 21. SMOKE // CYBERIA"
+  },
+  {
+    "layer": "LAYER: 22",
+    "title": "FULFILL // TRUTH",
+    "sub": "TRUTH ENGINE · ABSOLUTE VERIFICATION SYSTEM",
+    "kanji": "真実は一つではない",
+    "quote": "\"I don't need parents. I can live by myself.\"",
+    "protocol": "TRUTH-ABS",
+    "chip": "VERIFY-X",
+    "spec1": "LOGIC: BOOLEAN",
+    "spec2": "STATE: TRUE/NULL",
+    "sn": "MD-LAIN-9807-022",
+    "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n          <circle cx=\"140\" cy=\"50\" r=\"40\" fill=\"none\" stroke=\"#475569\" stroke-width=\"1\"/>\n          <line x1=\"140\" y1=\"10\" x2=\"140\" y2=\"90\" stroke=\"#334155\" stroke-width=\"0.8\"/>\n          <line x1=\"100\" y1=\"50\" x2=\"180\" y2=\"50\" stroke=\"#334155\" stroke-width=\"0.8\"/>\n          <line x1=\"112\" y1=\"22\" x2=\"168\" y2=\"78\" stroke=\"#334155\" stroke-width=\"0.6\"/>\n          <line x1=\"168\" y1=\"22\" x2=\"112\" y2=\"78\" stroke=\"#334155\" stroke-width=\"0.6\"/>\n          <text x=\"140\" y=\"16\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5\" fill=\"#94a3b8\" text-anchor=\"middle\">TRUE</text>\n          <text x=\"140\" y=\"97\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5\" fill=\"#94a3b8\" text-anchor=\"middle\">FALSE</text>\n          <text x=\"96\" y=\"53\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5\" fill=\"#94a3b8\" text-anchor=\"end\">0</text>\n          <text x=\"184\" y=\"53\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5\" fill=\"#94a3b8\">1</text>\n          <circle cx=\"140\" cy=\"50\" r=\"15\" fill=\"#0f172a\" stroke=\"#6366f1\" stroke-width=\"1.5\"/>\n          <text x=\"140\" y=\"54\" font-family=\"'JetBrains Mono', monospace\" font-size=\"8\" font-weight=\"900\" fill=\"#a5b4fc\" text-anchor=\"middle\">?!</text>\n          <text x=\"140\" y=\"112\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.5\" fill=\"#64748b\" text-anchor=\"middle\">TRUTH ENGINE · MELTYDEAYS VERIFICATION NODE</text>\n        </svg>",
+    "series": "SERIE 1",
+    "name": "SERIE 1 · 22. FULFILL // TRUTH"
+  },
+  {
+    "layer": "LAYER: 23",
+    "title": "EGO // DISSOLUTION",
+    "sub": "SELF-DISSOLUTION MATRIX · CONSCIOUSNESS UNBINDING",
+    "kanji": "自我は幻想に過ぎない",
+    "quote": "\"Then, I'll have to erase your memories too.\"",
+    "protocol": "DISSOLVE",
+    "chip": "UNBIND-V",
+    "spec1": "EGO: DISSOLVING",
+    "spec2": "SELF: NULL",
+    "sn": "MD-LAIN-9807-023",
+    "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n          <circle cx=\"140\" cy=\"45\" r=\"35\" fill=\"none\" stroke=\"#6366f1\" stroke-width=\"1.5\" stroke-dasharray=\"2 3\"/>\n          <circle cx=\"140\" cy=\"45\" r=\"28\" fill=\"none\" stroke=\"#818cf8\" stroke-width=\"1\" stroke-dasharray=\"4 4\"/>\n          <circle cx=\"140\" cy=\"45\" r=\"20\" fill=\"none\" stroke=\"#a5b4fc\" stroke-width=\"0.8\" stroke-dasharray=\"6 5\"/>\n          <circle cx=\"140\" cy=\"45\" r=\"12\" fill=\"none\" stroke=\"#c7d2fe\" stroke-width=\"0.6\" stroke-dasharray=\"8 6\"/>\n          <g opacity=\"0.5\">\n            <circle cx=\"110\" cy=\"25\" r=\"2\" fill=\"#6366f1\"/><circle cx=\"170\" cy=\"25\" r=\"2\" fill=\"#6366f1\"/>\n            <circle cx=\"105\" cy=\"60\" r=\"1.5\" fill=\"#818cf8\"/><circle cx=\"175\" cy=\"60\" r=\"1.5\" fill=\"#818cf8\"/>\n            <circle cx=\"120\" cy=\"75\" r=\"1\" fill=\"#a5b4fc\"/><circle cx=\"160\" cy=\"75\" r=\"1\" fill=\"#a5b4fc\"/>\n            <circle cx=\"90\" cy=\"40\" r=\"1.5\" fill=\"#c7d2fe\"/><circle cx=\"190\" cy=\"40\" r=\"1.5\" fill=\"#c7d2fe\"/>\n          </g>\n          <text x=\"140\" y=\"49\" font-family=\"'JetBrains Mono', monospace\" font-size=\"6\" font-weight=\"700\" fill=\"#e0e7ff\" text-anchor=\"middle\">VOID</text>\n          <text x=\"140\" y=\"95\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5\" fill=\"#475569\" text-anchor=\"middle\">/// SELF-DISSOLUTION IN PROGRESS ///</text>\n          <text x=\"140\" y=\"110\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.5\" fill=\"#64748b\" text-anchor=\"middle\">DISSOLUTION MATRIX · MELTYDEAYS UNBINDING ENGINE</text>\n        </svg>",
+    "series": "SERIE 1",
+    "name": "SERIE 1 · 23. EGO // DISSOLUTION"
+  },
+  {
+    "layer": "LAYER: 24",
+    "title": "RESET // GOODBYE",
+    "sub": "FINAL RESET · WORLD RECONSTRUCTION PROTOCOL",
+    "kanji": "さようなら、もう一つの私",
+    "quote": "\"Lain, if you were to tell everyone that the Wired and the real world were not separate...\"",
+    "protocol": "RESET-FIN",
+    "chip": "REBUILD-X",
+    "spec1": "ACTION: WORLD RESET",
+    "spec2": "RESULT: CLEAN BOOT",
+    "sn": "MD-LAIN-9807-024",
+    "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n          <circle cx=\"140\" cy=\"50\" r=\"45\" fill=\"none\" stroke=\"#0ea5e9\" stroke-width=\"0.8\"/>\n          <circle cx=\"140\" cy=\"50\" r=\"35\" fill=\"none\" stroke=\"#38bdf8\" stroke-width=\"0.6\" stroke-dasharray=\"3 3\"/>\n          <path d=\"M140,5 L140,15 M140,85 L140,95 M95,50 L105,50 M175,50 L185,50\" stroke=\"#0ea5e9\" stroke-width=\"1.5\"/>\n          <path d=\"M115,25 L121,31 M159,69 L165,75 M165,25 L159,31 M121,69 L115,75\" stroke=\"#0ea5e9\" stroke-width=\"1\"/>\n          <circle cx=\"140\" cy=\"50\" r=\"20\" fill=\"#0c1425\" stroke=\"#0ea5e9\" stroke-width=\"1.5\"/>\n          <path d=\"M130,50 A10,10 0 0,1 140,40\" fill=\"none\" stroke=\"#38bdf8\" stroke-width=\"2\"/>\n          <path d=\"M150,50 A10,10 0 0,1 140,60\" fill=\"none\" stroke=\"#38bdf8\" stroke-width=\"2\"/>\n          <polygon points=\"141,38 144,42 138,42\" fill=\"#38bdf8\"/>\n          <polygon points=\"139,62 136,58 142,58\" fill=\"#38bdf8\"/>\n          <text x=\"140\" y=\"108\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.5\" fill=\"#64748b\" text-anchor=\"middle\">WORLD RESET · MELTYDEAYS RECONSTRUCTION PROTOCOL</text>\n        </svg>",
+    "series": "SERIE 1",
+    "name": "SERIE 1 · 24. RESET // GOODBYE"
+  },
+  {
+    "layer": "LAYER: 25",
+    "series": "SERIE 2 · 01",
+    "name": "SERIE 2 · 01. SYNAPSE // PROTOCOL (Red Neuronal Bio-Digital)",
+    "title": "SYNAPSE // PROTOCOL",
+    "sub": "TACHIBANA GENERAL LABORATORIES · COPLAND OS 21.0",
+    "kanji": "神経シナプスの同期",
+    "quote": "\"No matter where you go, everyone's always connected.\"",
+    "protocol": "IPv7.25.1",
+    "chip": "NAVI-NEURAL X",
+    "spec1": "BUS: 2048-BIT SYNAPSE",
+    "spec2": "MEM: DUAL-PORT DUMP",
+    "sn": "MD-LAIN-9807-025",
+    "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n      <rect width=\"280\" height=\"115\" fill=\"#f8fafc\" rx=\"2\"/>\n      <g stroke=\"#cbd5e1\" stroke-width=\"0.5\" stroke-dasharray=\"2 3\">\n        <line x1=\"0\" y1=\"30\" x2=\"280\" y2=\"30\"/><line x1=\"0\" y1=\"60\" x2=\"280\" y2=\"60\"/><line x1=\"0\" y1=\"90\" x2=\"280\" y2=\"90\"/>\n        <line x1=\"70\" y1=\"0\" x2=\"70\" y2=\"115\"/><line x1=\"140\" y1=\"0\" x2=\"140\" y2=\"115\"/><line x1=\"210\" y1=\"0\" x2=\"210\" y2=\"115\"/>\n      </g>\n      <path d=\"M20,60 Q80,20 140,55 T260,50\" fill=\"none\" stroke=\"#4f46e5\" stroke-width=\"1.8\"/>\n      <path d=\"M20,80 Q80,105 140,65 T260,70\" fill=\"none\" stroke=\"#0ea5e9\" stroke-width=\"1.4\" opacity=\"0.8\"/>\n      <g fill=\"#4338ca\">\n        <circle cx=\"50\" cy=\"40\" r=\"3.5\"/><circle cx=\"100\" cy=\"32\" r=\"3\"/>\n        <circle cx=\"140\" cy=\"55\" r=\"4.5\"/><circle cx=\"180\" cy=\"45\" r=\"3\"/>\n        <circle cx=\"230\" cy=\"52\" r=\"3.5\"/><circle cx=\"80\" cy=\"85\" r=\"3\"/>\n        <circle cx=\"190\" cy=\"72\" r=\"3.5\"/>\n      </g>\n      <line x1=\"50\" y1=\"40\" x2=\"80\" y2=\"85\" stroke=\"#6366f1\" stroke-width=\"0.8\" stroke-dasharray=\"3 2\"/>\n      <line x1=\"100\" y1=\"32\" x2=\"140\" y2=\"55\" stroke=\"#6366f1\" stroke-width=\"0.8\"/>\n      <line x1=\"140\" y1=\"55\" x2=\"190\" y2=\"72\" stroke=\"#6366f1\" stroke-width=\"0.8\"/>\n      <line x1=\"180\" y1=\"45\" x2=\"230\" y2=\"52\" stroke=\"#6366f1\" stroke-width=\"0.8\"/>\n      <circle cx=\"140\" cy=\"55\" r=\"9\" fill=\"none\" stroke=\"#6366f1\" stroke-width=\"0.9\" stroke-dasharray=\"2 2\"/>\n      <text x=\"140\" y=\"108\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.2\" fill=\"#64748b\" text-anchor=\"middle\">SYNAPSE MESH · BIO-DIGITAL NEURAL ROUTER</text>\n    </svg>"
+  },
+  {
+    "layer": "LAYER: 26",
+    "series": "SERIE 2 · 02",
+    "name": "SERIE 2 · 02. CARRIER // 50HZ HUM (Zumbido Electromagnético)",
+    "title": "CARRIER // 50HZ HUM",
+    "sub": "TACHIBANA GENERAL LABORATORIES · COPLAND OS 21.0",
+    "kanji": "東京の五〇ヘルツ唸り",
+    "quote": "\"If you aren't remembered, then you never existed.\"",
+    "protocol": "50HZ-OSC",
+    "chip": "POWER-MOD II",
+    "spec1": "FREQ: 50.003 HZ",
+    "spec2": "SIGNAL: HIGH SINE",
+    "sn": "MD-LAIN-9807-026",
+    "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n      <rect width=\"280\" height=\"115\" fill=\"#f8fafc\" rx=\"2\"/>\n      <path d=\"M0,58 Q35,18 70,58 T140,58 T210,58 T280,58\" fill=\"none\" stroke=\"#1e1b4b\" stroke-width=\"2\"/>\n      <path d=\"M0,58 Q35,32 70,58 T140,58 T210,58 T280,58\" fill=\"none\" stroke=\"#6366f1\" stroke-width=\"1.2\" opacity=\"0.65\"/>\n      <path d=\"M0,58 Q35,42 70,58 T140,58 T210,58 T280,58\" fill=\"none\" stroke=\"#a5b4fc\" stroke-width=\"0.8\" opacity=\"0.5\"/>\n      <line x1=\"0\" y1=\"58\" x2=\"280\" y2=\"58\" stroke=\"#cbd5e1\" stroke-width=\"0.8\" stroke-dasharray=\"3 3\"/>\n      <rect x=\"15\" y=\"12\" width=\"60\" height=\"16\" rx=\"2\" fill=\"#eef2ff\" stroke=\"#c7d2fe\" stroke-width=\"0.8\"/>\n      <text x=\"45\" y=\"23\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.5\" font-weight=\"800\" fill=\"#312e81\" text-anchor=\"middle\">50Hz HARMONIC</text>\n      <text x=\"140\" y=\"108\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.2\" fill=\"#64748b\" text-anchor=\"middle\">SUBSTATION GRID · RESIDUAL CARRIER INTERFERENCE</text>\n    </svg>"
+  },
+  {
+    "layer": "LAYER: 27",
+    "series": "SERIE 2 · 03",
+    "name": "SERIE 2 · 03. KNIGHTS // SUBROUTINE (Célula Criptográfica)",
+    "title": "KNIGHTS // SUBROUTINE",
+    "sub": "TACHIBANA GENERAL LABORATORIES · COPLAND OS 21.0",
+    "kanji": "東方暗号結社ナイツ",
+    "quote": "\"The Knights aren't just developers. They are believers.\"",
+    "protocol": "K-CRYPT-4096",
+    "chip": "CIPHER-KEY VII",
+    "spec1": "PGP: 4096-BIT RSA",
+    "spec2": "NODE: ANONYMOUS",
+    "sn": "MD-LAIN-9807-027",
+    "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n      <rect width=\"280\" height=\"115\" fill=\"#f8fafc\" rx=\"2\"/>\n      <polygon points=\"140,15 200,45 200,85 140,105 80,85 80,45\" fill=\"#f1f5f9\" stroke=\"#0f172a\" stroke-width=\"1.6\"/>\n      <polygon points=\"140,25 185,48 185,80 140,95 95,80 95,48\" fill=\"none\" stroke=\"#4f46e5\" stroke-width=\"1\" stroke-dasharray=\"4 2\"/>\n      <text x=\"140\" y=\"62\" font-family=\"'JetBrains Mono', monospace\" font-size=\"14\" font-weight=\"900\" fill=\"#0f172a\" text-anchor=\"middle\" letter-spacing=\"1\">騎士</text>\n      <text x=\"140\" y=\"74\" font-family=\"'JetBrains Mono', monospace\" font-size=\"6\" font-weight=\"800\" fill=\"#4338ca\" text-anchor=\"middle\" letter-spacing=\"2\">KNIGHTS</text>\n      <circle cx=\"80\" cy=\"45\" r=\"3\" fill=\"#0ea5e9\"/><circle cx=\"200\" cy=\"45\" r=\"3\" fill=\"#0ea5e9\"/>\n      <circle cx=\"140\" cy=\"15\" r=\"3\" fill=\"#0ea5e9\"/><circle cx=\"140\" cy=\"105\" r=\"3\" fill=\"#0ea5e9\"/>\n      <text x=\"140\" y=\"111\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5\" fill=\"#64748b\" text-anchor=\"middle\">KNIGHTS OF THE EASTERN CALCULUS · ENCRYPTED PASS</text>\n    </svg>"
+  },
+  {
+    "layer": "LAYER: 28",
+    "series": "SERIE 2 · 04",
+    "name": "SERIE 2 · 04. NAVI // CRT PHOSPHOR (Monitor Ámbar 120Hz)",
+    "title": "NAVI // CRT PHOSPHOR",
+    "sub": "TACHIBANA GENERAL LABORATORIES · COPLAND OS 21.0",
+    "kanji": "陰極線管の走査線",
+    "quote": "\"Your Navi can do anything if you just talk to it.\"",
+    "protocol": "CRT-SCAN-V",
+    "chip": "RASTER-X 120",
+    "spec1": "VERT: 120 HZ",
+    "spec2": "TUBE: SONY TRINITRON",
+    "sn": "MD-LAIN-9807-028",
+    "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n      <rect width=\"280\" height=\"115\" fill=\"#0b132b\" rx=\"2\"/>\n      <rect x=\"25\" y=\"10\" width=\"230\" height=\"85\" rx=\"10\" fill=\"#1c2541\" stroke=\"#48cae4\" stroke-width=\"1.4\"/>\n      <g stroke=\"#00b4d8\" stroke-width=\"0.4\" opacity=\"0.3\">\n        <line x1=\"30\" y1=\"20\" x2=\"250\" y2=\"20\"/><line x1=\"30\" y1=\"30\" x2=\"250\" y2=\"30\"/>\n        <line x1=\"30\" y1=\"40\" x2=\"250\" y2=\"40\"/><line x1=\"30\" y1=\"50\" x2=\"250\" y2=\"50\"/>\n        <line x1=\"30\" y1=\"60\" x2=\"250\" y2=\"60\"/><line x1=\"30\" y1=\"70\" x2=\"250\" y2=\"70\"/>\n        <line x1=\"30\" y1=\"80\" x2=\"250\" y2=\"80\"/>\n      </g>\n      <text x=\"40\" y=\"32\" font-family=\"'JetBrains Mono', monospace\" font-size=\"7\" font-weight=\"800\" fill=\"#00f5d4\">&gt; COPLAND OS 21.0 BOOT...</text>\n      <text x=\"40\" y=\"44\" font-family=\"'JetBrains Mono', monospace\" font-size=\"6.5\" fill=\"#48cae4\">&gt; KERNEL CHECK: PASS [OK]</text>\n      <text x=\"40\" y=\"56\" font-family=\"'JetBrains Mono', monospace\" font-size=\"6.5\" fill=\"#48cae4\">&gt; PROTOCOL L7 SYNCHRONIZED</text>\n      <text x=\"40\" y=\"68\" font-family=\"'JetBrains Mono', monospace\" font-size=\"6.5\" fill=\"#7209b7\">&gt; CONNECTING TO THE WIRED_</text>\n      <rect x=\"150\" y=\"60\" width=\"5\" height=\"9\" fill=\"#00f5d4\"/>\n      <text x=\"140\" y=\"108\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5\" fill=\"#94a3b8\" text-anchor=\"middle\">CRT TERMINAL VIEW · HIGH VOLTAGE PHOSPHOR RASTER</text>\n    </svg>"
+  },
+  {
+    "layer": "LAYER: 29",
+    "series": "SERIE 2 · 05",
+    "name": "SERIE 2 · 05. MEMORY // LEAK (Volcado Hexadecimal)",
+    "title": "MEMORY // LEAK",
+    "sub": "TACHIBANA GENERAL LABORATORIES · COPLAND OS 21.0",
+    "kanji": "記憶領域の流出",
+    "quote": "\"Memory is merely a record. You can rewrite it anytime.\"",
+    "protocol": "MEM-DUMP-HEX",
+    "chip": "RAM-DDR 1024",
+    "spec1": "PAGE: 0x4F00-0x5000",
+    "spec2": "LEAK: DETECTED",
+    "sn": "MD-LAIN-9807-029",
+    "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n      <rect width=\"280\" height=\"115\" fill=\"#f8fafc\" rx=\"2\"/>\n      <g font-family=\"'JetBrains Mono', monospace\" font-size=\"6\" fill=\"#334155\" opacity=\"0.9\">\n        <text x=\"20\" y=\"24\"><tspan fill=\"#4f46e5\" font-weight=\"800\">0x4F00:</tspan> 4C 41 49 4E 20 49 57 41 4B 55 52 41 20 56 45 52</text>\n        <text x=\"20\" y=\"38\"><tspan fill=\"#4f46e5\" font-weight=\"800\">0x4F10:</tspan> 54 48 45 20 57 49 52 45 44 20 4E 4F 44 45 20 37</text>\n        <text x=\"20\" y=\"52\"><tspan fill=\"#4f46e5\" font-weight=\"800\">0x4F20:</tspan> 43 4F 50 4C 41 4E 44 20 4F 53 20 32 31 2E 30 20</text>\n        <text x=\"20\" y=\"66\"><tspan fill=\"#4f46e5\" font-weight=\"800\">0x4F30:</tspan> 50 53 59 43 48 45 20 43 48 49 50 20 53 59 4E 43</text>\n        <text x=\"20\" y=\"80\"><tspan fill=\"#e11d48\" font-weight=\"800\">0x4F40:</tspan> 45 52 52 4F 52 20 46 41 54 41 4C 20 4C 45 41 4B</text>\n      </g>\n      <rect x=\"18\" y=\"70\" width=\"244\" height=\"14\" fill=\"#fee2e2\" opacity=\"0.3\" stroke=\"#ef4444\" stroke-width=\"0.8\" stroke-dasharray=\"4 2\"/>\n      <text x=\"140\" y=\"108\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.2\" fill=\"#64748b\" text-anchor=\"middle\">KERNEL DUMP · BUFFER RESIDUE AND RAW HEX TRACE</text>\n    </svg>"
+  },
+  {
+    "layer": "LAYER: 30",
+    "series": "SERIE 2 · 06",
+    "name": "SERIE 2 · 06. PHANTOM // PRESENCE (Presencia en Cables)",
+    "title": "PHANTOM // PRESENCE",
+    "sub": "TACHIBANA GENERAL LABORATORIES · COPLAND OS 21.0",
+    "kanji": "電線に宿る亡霊",
+    "quote": "\"God is here. He is everywhere in the Wired.\"",
+    "protocol": "GHOST-07",
+    "chip": "EIRI-CORE",
+    "spec1": "STATUS: SPECTRAL",
+    "spec2": "SIGNAL: ETHER-SYNC",
+    "sn": "MD-LAIN-9807-030",
+    "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n      <rect width=\"280\" height=\"115\" fill=\"#0f172a\" rx=\"2\"/>\n      <path d=\"M0,20 L280,25 M0,40 L280,48 M0,60 L280,68 M0,85 L280,88\" stroke=\"#334155\" stroke-width=\"1.2\"/>\n      <ellipse cx=\"140\" cy=\"55\" rx=\"35\" ry=\"40\" fill=\"none\" stroke=\"#6366f1\" stroke-width=\"1\" opacity=\"0.4\" stroke-dasharray=\"2 3\"/>\n      <ellipse cx=\"140\" cy=\"55\" rx=\"20\" ry=\"25\" fill=\"#1e1b4b\" stroke=\"#818cf8\" stroke-width=\"1.2\"/>\n      <circle cx=\"132\" cy=\"50\" r=\"2.5\" fill=\"#38bdf8\"/><circle cx=\"148\" cy=\"50\" r=\"2.5\" fill=\"#38bdf8\"/>\n      <path d=\"M136,65 Q140,68 144,65\" fill=\"none\" stroke=\"#94a3b8\" stroke-width=\"0.8\"/>\n      <path d=\"M110,95 Q140,80 170,95\" fill=\"none\" stroke=\"#6366f1\" stroke-width=\"1.5\" opacity=\"0.7\"/>\n      <text x=\"140\" y=\"108\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5\" fill=\"#94a3b8\" text-anchor=\"middle\">SPECTRAL RESIDUE · UNIDENTIFIED CONSCIOUSNESS</text>\n    </svg>"
+  },
+  {
+    "layer": "LAYER: 31",
+    "series": "SERIE 2 · 07",
+    "name": "SERIE 2 · 07. COPLAND // KERNEL PANIC (Error Crítico 0x00)",
+    "title": "COPLAND // KERNEL PANIC",
+    "sub": "TACHIBANA GENERAL LABORATORIES · COPLAND OS 21.0",
+    "kanji": "システム崩壊の警告",
+    "quote": "\"Why did you come here? You don't belong in this layer.\"",
+    "protocol": "PANIC-0x00",
+    "chip": "BOOT-FAIL-SAFE",
+    "spec1": "STACK: CORRUPT",
+    "spec2": "CORE: HALTED",
+    "sn": "MD-LAIN-9807-031",
+    "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n      <rect width=\"280\" height=\"115\" fill=\"#450a0a\" rx=\"2\"/>\n      <rect x=\"15\" y=\"12\" width=\"250\" height=\"82\" rx=\"4\" fill=\"#180505\" stroke=\"#ef4444\" stroke-width=\"1.5\"/>\n      <text x=\"140\" y=\"32\" font-family=\"'JetBrains Mono', monospace\" font-size=\"9\" font-weight=\"900\" fill=\"#f87171\" text-anchor=\"middle\">!!! KERNEL PANIC : CRITICAL FAULT !!!</text>\n      <line x1=\"30\" y1=\"40\" x2=\"250\" y2=\"40\" stroke=\"#7f1d1d\" stroke-width=\"1\"/>\n      <text x=\"35\" y=\"54\" font-family=\"'JetBrains Mono', monospace\" font-size=\"6\" fill=\"#fca5a5\">&gt; EXCEPTION AT 0x7FFF0049 : IRQ_NOT_LESS_OR_EQUAL</text>\n      <text x=\"35\" y=\"66\" font-family=\"'JetBrains Mono', monospace\" font-size=\"6\" fill=\"#fca5a5\">&gt; REGISTER CR0: 0x80050033  PROCESS: NAVI_DAEMON</text>\n      <text x=\"35\" y=\"78\" font-family=\"'JetBrains Mono', monospace\" font-size=\"6\" fill=\"#f87171\">&gt; SYSTEM ABORT: FORCED MEMORY DUMP INITIATED...</text>\n      <text x=\"140\" y=\"108\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5\" fill=\"#fca5a5\" text-anchor=\"middle\">COPLAND OS 21.0 · EMERGENCY HALT DIAGNOSTIC</text>\n    </svg>"
+  },
+  {
+    "layer": "LAYER: 32",
+    "series": "SERIE 2 · 08",
+    "name": "SERIE 2 · 08. QUANTUM // TUNNELING (Barrera de Probabilidad)",
+    "title": "QUANTUM // TUNNELING",
+    "sub": "TACHIBANA GENERAL LABORATORIES · COPLAND OS 21.0",
+    "kanji": "量子トンネル効果",
+    "quote": "\"The body exists only to verify one's existence.\"",
+    "protocol": "PSI-WAVE-08",
+    "chip": "Q-TUNNEL 8",
+    "spec1": "PROB: 0.99984",
+    "spec2": "BARRIER: TRANSCENDED",
+    "sn": "MD-LAIN-9807-032",
+    "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n      <rect width=\"280\" height=\"115\" fill=\"#f8fafc\" rx=\"2\"/>\n      <rect x=\"125\" y=\"15\" width=\"30\" height=\"80\" fill=\"#e2e8f0\" stroke=\"#0f172a\" stroke-width=\"1.5\"/>\n      <path d=\"M10,55 Q40,15 70,55 T125,55\" fill=\"none\" stroke=\"#2563eb\" stroke-width=\"2\"/>\n      <path d=\"M125,55 L155,55\" fill=\"none\" stroke=\"#9333ea\" stroke-width=\"1\" stroke-dasharray=\"2 2\"/>\n      <path d=\"M155,55 Q185,40 215,55 T275,55\" fill=\"none\" stroke=\"#2563eb\" stroke-width=\"1.2\"/>\n      <text x=\"140\" y=\"58\" font-family=\"'JetBrains Mono', monospace\" font-size=\"6\" font-weight=\"900\" fill=\"#0f172a\" text-anchor=\"middle\">Ψ</text>\n      <text x=\"65\" y=\"25\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.5\" font-weight=\"800\" fill=\"#1e40af\">INCIDENT</text>\n      <text x=\"215\" y=\"35\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.5\" font-weight=\"800\" fill=\"#1e40af\">TRANSMITTED</text>\n      <text x=\"140\" y=\"108\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.2\" fill=\"#64748b\" text-anchor=\"middle\">QUANTUM PROBABILITY AMPLITUDE · PSI WAVEFORM</text>\n    </svg>"
+  },
+  {
+    "layer": "LAYER: 33",
+    "series": "SERIE 2 · 09",
+    "name": "SERIE 2 · 09. CYBERIA // LASER GRID (Estroboscopía Underground)",
+    "title": "CYBERIA // LASER GRID",
+    "sub": "TACHIBANA GENERAL LABORATORIES · COPLAND OS 21.0",
+    "kanji": "地下空間のレーザー",
+    "quote": "\"Music connects people who don't even want to speak.\"",
+    "protocol": "BEAT-145BPM",
+    "chip": "SYNTH-DSP IX",
+    "spec1": "LASER: 532NM GREEN",
+    "spec2": "BASS: 32 HZ SUB",
+    "sn": "MD-LAIN-9807-033",
+    "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n      <rect width=\"280\" height=\"115\" fill=\"#030712\" rx=\"2\"/>\n      <g stroke=\"#10b981\" stroke-width=\"0.8\" opacity=\"0.75\">\n        <line x1=\"140\" y1=\"10\" x2=\"10\" y2=\"100\"/><line x1=\"140\" y1=\"10\" x2=\"50\" y2=\"100\"/>\n        <line x1=\"140\" y1=\"10\" x2=\"90\" y2=\"100\"/><line x1=\"140\" y1=\"10\" x2=\"140\" y2=\"100\"/>\n        <line x1=\"140\" y1=\"10\" x2=\"190\" y2=\"100\"/><line x1=\"140\" y1=\"10\" x2=\"230\" y2=\"100\"/>\n        <line x1=\"140\" y1=\"10\" x2=\"270\" y2=\"100\"/>\n      </g>\n      <g stroke=\"#ec4899\" stroke-width=\"1\">\n        <line x1=\"20\" y1=\"40\" x2=\"260\" y2=\"40\"/><line x1=\"40\" y1=\"60\" x2=\"240\" y2=\"60\"/><line x1=\"70\" y1=\"80\" x2=\"210\" y2=\"80\"/>\n      </g>\n      <circle cx=\"140\" cy=\"10\" r=\"5\" fill=\"#f43f5e\"/>\n      <text x=\"140\" y=\"108\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5\" fill=\"#10b981\" text-anchor=\"middle\">CYBERIA UNDERGROUND · MULTI-AXIS LASER PROJECTION</text>\n    </svg>"
+  },
+  {
+    "layer": "LAYER: 34",
+    "series": "SERIE 2 · 10",
+    "name": "SERIE 2 · 10. VOICE // RESIDUAL (Firma Espectral de Audio)",
+    "title": "VOICE // RESIDUAL",
+    "sub": "TACHIBANA GENERAL LABORATORIES · COPLAND OS 21.0",
+    "kanji": "遺留された音声信号",
+    "quote": "\"Chisa Yomoda sent an email. But she died last week.\"",
+    "protocol": "VOICE-DSP-24",
+    "chip": "AUDIO-RESIDUAL",
+    "spec1": "SNR: 96 DB",
+    "spec2": "SAMPLE: 96 KHZ",
+    "sn": "MD-LAIN-9807-034",
+    "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n      <rect width=\"280\" height=\"115\" fill=\"#f8fafc\" rx=\"2\"/>\n      <path d=\"M10,58 L40,58 L45,40 L50,75 L55,30 L60,85 L65,45 L70,70 L75,55 L100,58 L110,20 L120,95 L130,15 L140,100 L150,25 L160,85 L170,58 L200,58 L205,48 L210,68 L215,52 L220,62 L225,58 L270,58\" fill=\"none\" stroke=\"#4f46e5\" stroke-width=\"1.6\"/>\n      <rect x=\"95\" y=\"10\" width=\"90\" height=\"90\" fill=\"none\" stroke=\"#cbd5e1\" stroke-width=\"0.8\" stroke-dasharray=\"3 3\"/>\n      <text x=\"140\" y=\"22\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.5\" font-weight=\"800\" fill=\"#312e81\" text-anchor=\"middle\">MATCH: 99.4% CHISA.Y</text>\n      <text x=\"140\" y=\"108\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.2\" fill=\"#64748b\" text-anchor=\"middle\">SPECTROGRAM OSCILLOSCOPE · RESIDUAL VOCODER TRACE</text>\n    </svg>"
+  },
+  {
+    "layer": "LAYER: 35",
+    "series": "SERIE 2 · 11",
+    "name": "SERIE 2 · 11. TACHIBANA // ARCHIVE (Plano de Chip VLSI)",
+    "title": "TACHIBANA // ARCHIVE",
+    "sub": "TACHIBANA GENERAL LABORATORIES · COPLAND OS 21.0",
+    "kanji": "橘総研機密アーカイブ",
+    "quote": "\"Tachibana General Laboratories denies any connection.\"",
+    "protocol": "VLSI-CAD-09",
+    "chip": "TACHIBANA-IX",
+    "spec1": "GATE: 1.2M CMOS",
+    "spec2": "CLASSIFIED: LEVEL 5",
+    "sn": "MD-LAIN-9807-035",
+    "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n      <rect width=\"280\" height=\"115\" fill=\"#f8fafc\" rx=\"2\"/>\n      <rect x=\"90\" y=\"20\" width=\"100\" height=\"65\" rx=\"3\" fill=\"#1e293b\" stroke=\"#0f172a\" stroke-width=\"1.8\"/>\n      <g fill=\"#f59e0b\">\n        <rect x=\"95\" y=\"14\" width=\"4\" height=\"6\"/><rect x=\"105\" y=\"14\" width=\"4\" height=\"6\"/><rect x=\"115\" y=\"14\" width=\"4\" height=\"6\"/>\n        <rect x=\"160\" y=\"14\" width=\"4\" height=\"6\"/><rect x=\"170\" y=\"14\" width=\"4\" height=\"6\"/><rect x=\"180\" y=\"14\" width=\"4\" height=\"6\"/>\n        <rect x=\"95\" y=\"85\" width=\"4\" height=\"6\"/><rect x=\"105\" y=\"85\" width=\"4\" height=\"6\"/><rect x=\"115\" y=\"85\" width=\"4\" height=\"6\"/>\n        <rect x=\"160\" y=\"85\" width=\"4\" height=\"6\"/><rect x=\"170\" y=\"85\" width=\"4\" height=\"6\"/><rect x=\"180\" y=\"85\" width=\"4\" height=\"6\"/>\n      </g>\n      <text x=\"140\" y=\"50\" font-family=\"'JetBrains Mono', monospace\" font-size=\"8\" font-weight=\"900\" fill=\"#f8fafc\" text-anchor=\"middle\">TACHIBANA</text>\n      <text x=\"140\" y=\"62\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5\" fill=\"#94a3b8\" text-anchor=\"middle\">VLSI CHIP · REV 4.2</text>\n      <path d=\"M20,52 L90,52 M190,52 L260,52\" stroke=\"#4f46e5\" stroke-width=\"1.2\"/>\n      <text x=\"140\" y=\"108\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.2\" fill=\"#64748b\" text-anchor=\"middle\">HARDWARE BLUEPRINT · CONFIDENTIAL RESEARCH SPEC</text>\n    </svg>"
+  },
+  {
+    "layer": "LAYER: 36",
+    "series": "SERIE 2 · 12",
+    "name": "SERIE 2 · 12. HOMOLOGOUS // MIRROR (Reflejo Bifurcado)",
+    "title": "HOMOLOGOUS // MIRROR",
+    "sub": "TACHIBANA GENERAL LABORATORIES · COPLAND OS 21.0",
+    "kanji": "鏡像の自己同一性",
+    "quote": "\"Which one is the real Lain? The one here, or in the Wired?\"",
+    "protocol": "MIRROR-DUAL",
+    "chip": "EGO-SPLIT II",
+    "spec1": "REALITY: DIVERGENT",
+    "spec2": "WIRED: CONVERGENT",
+    "sn": "MD-LAIN-9807-036",
+    "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n      <rect width=\"280\" height=\"115\" fill=\"#f8fafc\" rx=\"2\"/>\n      <line x1=\"140\" y1=\"10\" x2=\"140\" y2=\"95\" stroke=\"#0f172a\" stroke-width=\"1.8\" stroke-dasharray=\"4 2\"/>\n      <circle cx=\"95\" cy=\"50\" r=\"28\" fill=\"#e0e7ff\" stroke=\"#4f46e5\" stroke-width=\"1.5\"/>\n      <circle cx=\"185\" cy=\"50\" r=\"28\" fill=\"#fce7f3\" stroke=\"#db2777\" stroke-width=\"1.5\"/>\n      <text x=\"95\" y=\"54\" font-family=\"'JetBrains Mono', monospace\" font-size=\"10\" font-weight=\"900\" fill=\"#312e81\" text-anchor=\"middle\">REAL</text>\n      <text x=\"185\" y=\"54\" font-family=\"'JetBrains Mono', monospace\" font-size=\"10\" font-weight=\"900\" fill=\"#831843\" text-anchor=\"middle\">WIRED</text>\n      <path d=\"M123,50 L157,50\" stroke=\"#6366f1\" stroke-width=\"1.2\" stroke-dasharray=\"2 2\"/>\n      <text x=\"140\" y=\"108\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.2\" fill=\"#64748b\" text-anchor=\"middle\">DUAL HOMOLOGY · PARALLEL CONSCIOUSNESS SPLIT</text>\n    </svg>"
+  },
+  {
+    "layer": "LAYER: 37",
+    "series": "SERIE 2 · 13",
+    "name": "SERIE 2 · 13. BANDWIDTH // SATURATION (Haz de Fibra Óptica)",
+    "title": "BANDWIDTH // SATURATION",
+    "sub": "TACHIBANA GENERAL LABORATORIES · COPLAND OS 21.0",
+    "kanji": "光ファイバー帯域飽和",
+    "quote": "\"The flow of information never stops. It only accelerates.\"",
+    "protocol": "100G-OPTICAL",
+    "chip": "PHOTONIC-IV",
+    "spec1": "THROUGHPUT: 1.2 TBPS",
+    "spec2": "LOSS: 0.001 DB/KM",
+    "sn": "MD-LAIN-9807-037",
+    "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n      <rect width=\"280\" height=\"115\" fill=\"#f8fafc\" rx=\"2\"/>\n      <path d=\"M0,85 C90,85 110,25 280,25\" fill=\"none\" stroke=\"#0284c7\" stroke-width=\"2\"/>\n      <path d=\"M0,90 C90,90 120,35 280,35\" fill=\"none\" stroke=\"#0ea5e9\" stroke-width=\"1.6\"/>\n      <path d=\"M0,95 C90,95 130,45 280,45\" fill=\"none\" stroke=\"#38bdf8\" stroke-width=\"1.2\"/>\n      <path d=\"M0,100 C90,100 140,55 280,55\" fill=\"none\" stroke=\"#7dd3fc\" stroke-width=\"0.8\"/>\n      <rect x=\"180\" y=\"65\" width=\"85\" height=\"18\" rx=\"2\" fill=\"#0f172a\"/>\n      <text x=\"222\" y=\"77\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.5\" font-weight=\"800\" fill=\"#38bdf8\" text-anchor=\"middle\">OPTIC SATURATION</text>\n      <text x=\"140\" y=\"108\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.2\" fill=\"#64748b\" text-anchor=\"middle\">MULTI-STRAND FIBER BUNDLE · CWDM LASER ARRAY</text>\n    </svg>"
+  },
+  {
+    "layer": "LAYER: 38",
+    "series": "SERIE 2 · 14",
+    "name": "SERIE 2 · 14. EIRI // MANIFESTO (Profecía del Séptimo Protocolo)",
+    "title": "EIRI // MANIFESTO",
+    "sub": "TACHIBANA GENERAL LABORATORIES · COPLAND OS 21.0",
+    "kanji": "電脳神の預言書",
+    "quote": "\"I am the creator of Protocol 7. Therefore, I am God.\"",
+    "protocol": "DEUS-07-FINAL",
+    "chip": "EIRI-PROPHECY",
+    "spec1": "CREATOR: MASAMI EIRI",
+    "spec2": "TARGET: OMNIPRESENCE",
+    "sn": "MD-LAIN-9807-038",
+    "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n      <rect width=\"280\" height=\"115\" fill=\"#f8fafc\" rx=\"2\"/>\n      <circle cx=\"140\" cy=\"50\" r=\"38\" fill=\"none\" stroke=\"#0f172a\" stroke-width=\"1.2\"/>\n      <polygon points=\"140,16 173,73 107,73\" fill=\"none\" stroke=\"#4f46e5\" stroke-width=\"1.4\"/>\n      <circle cx=\"140\" cy=\"48\" r=\"8\" fill=\"#0f172a\"/>\n      <circle cx=\"140\" cy=\"48\" r=\"3\" fill=\"#38bdf8\"/>\n      <text x=\"140\" y=\"70\" font-family=\"'JetBrains Mono', monospace\" font-size=\"6\" font-weight=\"900\" fill=\"#4f46e5\" text-anchor=\"middle\">PROTO 7</text>\n      <text x=\"140\" y=\"108\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.2\" fill=\"#64748b\" text-anchor=\"middle\">PROTOCOL 7 MANIFESTO · PROPHETIC NETWORK TOPOLOGY</text>\n    </svg>"
+  },
+  {
+    "layer": "LAYER: 39",
+    "series": "SERIE 2 · 15",
+    "name": "SERIE 2 · 15. NODE // TOPOLOGY (Grafo en Estrella TCP/IP)",
+    "title": "NODE // TOPOLOGY",
+    "sub": "TACHIBANA GENERAL LABORATORIES · COPLAND OS 21.0",
+    "kanji": "中継網の星型トポロジ",
+    "quote": "\"Every computer in the world will soon be one single device.\"",
+    "protocol": "STAR-ROUTER",
+    "chip": "HUB-CLUSTER IV",
+    "spec1": "ROUTER: TOKYO-CORE",
+    "spec2": "PORTS: 128 GBE",
+    "sn": "MD-LAIN-9807-039",
+    "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n      <rect width=\"280\" height=\"115\" fill=\"#f8fafc\" rx=\"2\"/>\n      <circle cx=\"140\" cy=\"50\" r=\"14\" fill=\"#0f172a\"/>\n      <text x=\"140\" y=\"53\" font-family=\"'JetBrains Mono', monospace\" font-size=\"6\" font-weight=\"800\" fill=\"#ffffff\" text-anchor=\"middle\">HUB</text>\n      <g stroke=\"#64748b\" stroke-width=\"1\">\n        <line x1=\"140\" y1=\"36\" x2=\"140\" y2=\"15\"/><circle cx=\"140\" cy=\"15\" r=\"4\" fill=\"#4f46e5\"/>\n        <line x1=\"140\" y1=\"64\" x2=\"140\" y2=\"85\"/><circle cx=\"140\" cy=\"85\" r=\"4\" fill=\"#4f46e5\"/>\n        <line x1=\"126\" y1=\"50\" x2=\"80\" y2=\"50\"/><circle cx=\"80\" cy=\"50\" r=\"4\" fill=\"#4f46e5\"/>\n        <line x1=\"154\" y1=\"50\" x2=\"200\" y2=\"50\"/><circle cx=\"200\" cy=\"50\" r=\"4\" fill=\"#4f46e5\"/>\n        <line x1=\"130\" y1=\"40\" x2=\"95\" y2=\"25\"/><circle cx=\"95\" cy=\"25\" r=\"4\" fill=\"#0ea5e9\"/>\n        <line x1=\"150\" y1=\"40\" x2=\"185\" y2=\"25\"/><circle cx=\"185\" cy=\"25\" r=\"4\" fill=\"#0ea5e9\"/>\n        <line x1=\"130\" y1=\"60\" x2=\"95\" y2=\"75\"/><circle cx=\"95\" cy=\"75\" r=\"4\" fill=\"#0ea5e9\"/>\n        <line x1=\"150\" y1=\"60\" x2=\"185\" y2=\"75\"/><circle cx=\"185\" cy=\"75\" r=\"4\" fill=\"#0ea5e9\"/>\n      </g>\n      <text x=\"140\" y=\"108\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.2\" fill=\"#64748b\" text-anchor=\"middle\">STAR TOPOLOGY NETWORK · DISTRIBUTED PACKET SWITCH</text>\n    </svg>"
+  },
+  {
+    "layer": "LAYER: 40",
+    "series": "SERIE 2 · 16",
+    "name": "SERIE 2 · 16. DEEP // WIRELESS (Emisión de Ondas Esféricas)",
+    "title": "DEEP // WIRELESS",
+    "sub": "TACHIBANA GENERAL LABORATORIES · COPLAND OS 21.0",
+    "kanji": "深層無線の球面波",
+    "quote": "\"Signals travel through air, skin, bone, and soul.\"",
+    "protocol": "RF-SPHERE-01",
+    "chip": "RADAR-TRANSMIT",
+    "spec1": "BAND: 2.4-5.8 GHZ",
+    "spec2": "RANGE: HEMISPHERIC",
+    "sn": "MD-LAIN-9807-040",
+    "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n      <rect width=\"280\" height=\"115\" fill=\"#f8fafc\" rx=\"2\"/>\n      <path d=\"M140,85 L140,45 M130,45 L150,45 M135,35 L145,35 M140,25 L140,35\" stroke=\"#0f172a\" stroke-width=\"1.8\"/>\n      <circle cx=\"140\" cy=\"25\" r=\"3\" fill=\"#ef4444\"/>\n      <circle cx=\"140\" cy=\"25\" r=\"12\" fill=\"none\" stroke=\"#ef4444\" stroke-width=\"0.8\" opacity=\"0.8\"/>\n      <circle cx=\"140\" cy=\"25\" r=\"24\" fill=\"none\" stroke=\"#f97316\" stroke-width=\"0.8\" opacity=\"0.6\"/>\n      <circle cx=\"140\" cy=\"25\" r=\"38\" fill=\"none\" stroke=\"#f59e0b\" stroke-width=\"0.8\" opacity=\"0.4\"/>\n      <circle cx=\"140\" cy=\"25\" r=\"54\" fill=\"none\" stroke=\"#10b981\" stroke-width=\"0.8\" opacity=\"0.25\"/>\n      <text x=\"140\" y=\"108\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.2\" fill=\"#64748b\" text-anchor=\"middle\">OMNIDIRECTIONAL RF BROADCAST · ATMOSPHERIC WAVE</text>\n    </svg>"
+  },
+  {
+    "layer": "LAYER: 41",
+    "series": "SERIE 2 · 17",
+    "name": "SERIE 2 · 17. ACCELA // PEAK (Acelerador Nanomolecular)",
+    "title": "ACCELA // PEAK",
+    "sub": "TACHIBANA GENERAL LABORATORIES · COPLAND OS 21.0",
+    "kanji": "分子加速器アクセラ",
+    "quote": "\"Accela makes reality look so slow.\"",
+    "protocol": "ACCELA-NANO",
+    "chip": "SYNAPSE-BOOST",
+    "spec1": "ACCEL: 400%",
+    "spec2": "DOSAGE: CONTROLLED",
+    "sn": "MD-LAIN-9807-041",
+    "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n      <rect width=\"280\" height=\"115\" fill=\"#f8fafc\" rx=\"2\"/>\n      <rect x=\"40\" y=\"42\" width=\"70\" height=\"26\" rx=\"13\" fill=\"#ec4899\" stroke=\"#be185d\" stroke-width=\"1.4\"/>\n      <path d=\"M75,42 L75,68\" stroke=\"#be185d\" stroke-width=\"1.2\"/>\n      <rect x=\"40\" y=\"42\" width=\"35\" height=\"26\" rx=\"13\" fill=\"#ffffff\" stroke=\"#be185d\" stroke-width=\"1.4\"/>\n      <text x=\"58\" y=\"58\" font-family=\"'JetBrains Mono', monospace\" font-size=\"6.5\" font-weight=\"900\" fill=\"#be185d\" text-anchor=\"middle\">AC</text>\n      <text x=\"92\" y=\"58\" font-family=\"'JetBrains Mono', monospace\" font-size=\"6.5\" font-weight=\"900\" fill=\"#ffffff\" text-anchor=\"middle\">CELA</text>\n      <path d=\"M140,80 Q170,80 185,35 T240,75\" fill=\"none\" stroke=\"#be185d\" stroke-width=\"1.8\"/>\n      <text x=\"140\" y=\"108\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.2\" fill=\"#64748b\" text-anchor=\"middle\">MOLECULAR ACCELERATOR CAPSULE · NEURAL BIO-CHIP</text>\n    </svg>"
+  },
+  {
+    "layer": "LAYER: 42",
+    "series": "SERIE 2 · 18",
+    "name": "SERIE 2 · 18. ISOLATION // ROOM (Santuario Sumergido)",
+    "title": "ISOLATION // ROOM",
+    "sub": "TACHIBANA GENERAL LABORATORIES · COPLAND OS 21.0",
+    "kanji": "孤独の冷却水槽室",
+    "quote": "\"My room is full of cooling pipes and cables now.\"",
+    "protocol": "ROOM-COOL-01",
+    "chip": "HYDRO-COOL V",
+    "spec1": "COOLANT: FLUORINERT",
+    "spec2": "TEMP: -18 C",
+    "sn": "MD-LAIN-9807-042",
+    "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n      <rect width=\"280\" height=\"115\" fill=\"#f8fafc\" rx=\"2\"/>\n      <rect x=\"40\" y=\"20\" width=\"200\" height=\"65\" fill=\"#f1f5f9\" stroke=\"#334155\" stroke-width=\"1.5\"/>\n      <path d=\"M40,20 L10,0 M240,20 L270,0 M40,85 L10,110 M240,85 L270,110\" stroke=\"#94a3b8\" stroke-width=\"0.8\"/>\n      <path d=\"M60,85 Q80,50 140,55 T220,45\" fill=\"none\" stroke=\"#0284c7\" stroke-width=\"2.5\"/>\n      <path d=\"M70,85 Q110,60 150,70 T230,60\" fill=\"none\" stroke=\"#0369a1\" stroke-width=\"1.8\"/>\n      <rect x=\"110\" y=\"30\" width=\"60\" height=\"40\" fill=\"#0f172a\" rx=\"2\"/>\n      <text x=\"140\" y=\"54\" font-family=\"'JetBrains Mono', monospace\" font-size=\"7\" font-weight=\"900\" fill=\"#38bdf8\" text-anchor=\"middle\">NAVI TANK</text>\n      <text x=\"140\" y=\"108\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.2\" fill=\"#64748b\" text-anchor=\"middle\">ISOLATION HARDWARE HABITAT · LIQUID SUBMERSION</text>\n    </svg>"
+  },
+  {
+    "layer": "LAYER: 43",
+    "series": "SERIE 2 · 19",
+    "name": "SERIE 2 · 19. DECOMPILATION // REVERSE (Ingeniería Inversa)",
+    "title": "DECOMPILATION // REVERSE",
+    "sub": "TACHIBANA GENERAL LABORATORIES · COPLAND OS 21.0",
+    "kanji": "逆アセンブラ解析",
+    "quote": "\"All protocols are open source if you know where to look.\"",
+    "protocol": "ASM-DISASM",
+    "chip": "X86-REVERSE",
+    "spec1": "ARCH: IA-64 KERNEL",
+    "spec2": "OPCODES: DUMPED",
+    "sn": "MD-LAIN-9807-043",
+    "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n      <rect width=\"280\" height=\"115\" fill=\"#f8fafc\" rx=\"2\"/>\n      <g font-family=\"'JetBrains Mono', monospace\" font-size=\"6\" fill=\"#1e293b\">\n        <text x=\"25\" y=\"24\"><tspan fill=\"#4f46e5\" font-weight=\"800\">MOV</tspan>  EAX, [EBP-0x08]  ; LOAD CONSCIOUSNESS</text>\n        <text x=\"25\" y=\"38\"><tspan fill=\"#4f46e5\" font-weight=\"800\">XOR</tspan>  EBX, EBX         ; CLEAR PHYSICAL BOUNDARY</text>\n        <text x=\"25\" y=\"52\"><tspan fill=\"#0ea5e9\" font-weight=\"800\">CALL</tspan> _CONNECT_WIRED_L7 ; INVOKE PROTOCOL</text>\n        <text x=\"25\" y=\"66\"><tspan fill=\"#4f46e5\" font-weight=\"800\">CMP</tspan>  EAX, 0x00        ; CHECK BODY STATUS</text>\n        <text x=\"25\" y=\"80\"><tspan fill=\"#e11d48\" font-weight=\"800\">JNZ</tspan>  _TRANSCEND_REALITY; DISSOLVE SELF</text>\n      </g>\n      <text x=\"140\" y=\"108\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.2\" fill=\"#64748b\" text-anchor=\"middle\">DISASSEMBLY DUMP · LOW-LEVEL OPCODES TRACER</text>\n    </svg>"
+  },
+  {
+    "layer": "LAYER: 44",
+    "series": "SERIE 2 · 20",
+    "name": "SERIE 2 · 20. TRANSCENDENCE // OMNIPRESENCE (Consciencia Infinita)",
+    "title": "TRANSCENDENCE // OMNIPRESENCE",
+    "sub": "TACHIBANA GENERAL LABORATORIES · COPLAND OS 21.0",
+    "kanji": "遍在する意識の完成",
+    "quote": "\"I will always be with you, right here.\"",
+    "protocol": "OMNI-INFINITE",
+    "chip": "LAIN-DIVINE",
+    "spec1": "STATUS: OMNIPRESENT",
+    "spec2": "LOCATION: EVERYWHERE",
+    "sn": "MD-LAIN-9807-044",
+    "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n      <rect width=\"280\" height=\"115\" fill=\"#0f172a\" rx=\"2\"/>\n      <g stroke=\"#38bdf8\" stroke-width=\"0.8\" opacity=\"0.6\">\n        <line x1=\"0\" y1=\"58\" x2=\"280\" y2=\"58\"/><line x1=\"140\" y1=\"0\" x2=\"140\" y2=\"115\"/>\n        <line x1=\"20\" y1=\"10\" x2=\"260\" y2=\"105\"/><line x1=\"20\" y1=\"105\" x2=\"260\" y2=\"10\"/>\n      </g>\n      <circle cx=\"140\" cy=\"58\" r=\"32\" fill=\"#1e1b4b\" stroke=\"#818cf8\" stroke-width=\"1.4\"/>\n      <circle cx=\"140\" cy=\"58\" r=\"18\" fill=\"#312e81\" stroke=\"#38bdf8\" stroke-width=\"1.2\"/>\n      <circle cx=\"140\" cy=\"58\" r=\"6\" fill=\"#f8fafc\"/>\n      <text x=\"140\" y=\"108\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.2\" fill=\"#38bdf8\" text-anchor=\"middle\">TRANSCENDENTAL OMNIPRESENCE · THE WIRED WITHOUT END</text>\n    </svg>"
+  }
+];
+  }
+
+  /**
+   * Catálogo exclusivo de 20 diseños de alta resolución para Factura Electrónica (Página Completa Letter)
+   * Optimizados para visualización a pantalla/página completa con doble QR (Puntos Wired + WhatsApp)
+   * @returns {Array<object>}
+   */
+  static getDigitalExclusiveDesignsList() {
+    return [
+  {
+    "id": 0,
+    "layer": "DIGITAL LAYER: 01",
+    "name": "01. KALEIDOSCOPE // OPTICAL MATRIX (Refracción de Prisma Óptico)",
+    "title": "KALEIDOSCOPE // OPTICAL MATRIX",
+    "sub": "PHOTONIC INTERFACE LABS · MULTI-ANGLE DIFFRACTION CORE",
+    "kanji": "万華鏡の光学的屈折",
+    "quote": "\"Look closely into the screen, the reflections are infinite.\"",
+    "protocol": "OPTICAL-PRISM-9",
+    "chip": "PHOTONIC-CORE X",
+    "spec1": "WAVELENGTH: 480NM",
+    "spec2": "PRISM: CALCITE ARRAY",
+    "sn": "MD-DIGITAL-LAIN-001",
+    "svg": "<svg viewBox=\"0 0 700 320\" width=\"100%\" height=\"100%\" xmlns=\"http://www.w3.org/2000/svg\">\n      <defs>\n        <linearGradient id=\"optGradW\" x1=\"0%\" y1=\"0%\" x2=\"100%\" y2=\"100%\">\n          <stop offset=\"0%\" stop-color=\"#38bdf8\" stop-opacity=\"0.3\"/>\n          <stop offset=\"50%\" stop-color=\"#818cf8\" stop-opacity=\"0.4\"/>\n          <stop offset=\"100%\" stop-color=\"#f472b6\" stop-opacity=\"0.3\"/>\n        </linearGradient>\n      </defs>\n      <g stroke=\"#e2e8f0\" stroke-width=\"0.8\" stroke-dasharray=\"4 4\">\n        <line x1=\"0\" y1=\"80\" x2=\"700\" y2=\"80\"/><line x1=\"0\" y1=\"160\" x2=\"700\" y2=\"160\"/><line x1=\"0\" y1=\"240\" x2=\"700\" y2=\"240\"/>\n        <line x1=\"175\" y1=\"0\" x2=\"175\" y2=\"320\"/><line x1=\"350\" y1=\"0\" x2=\"350\" y2=\"320\"/><line x1=\"525\" y1=\"0\" x2=\"525\" y2=\"320\"/>\n      </g>\n      <line x1=\"40\" y1=\"160\" x2=\"300\" y2=\"160\" stroke=\"#0284c7\" stroke-width=\"3\"/>\n      <circle cx=\"40\" cy=\"160\" r=\"7\" fill=\"#0284c7\"/>\n      <polygon points=\"350,55 440,245 260,245\" fill=\"url(#optGradW)\" stroke=\"#4338ca\" stroke-width=\"2.2\"/>\n      <polygon points=\"350,85 415,230 285,230\" fill=\"none\" stroke=\"#6366f1\" stroke-width=\"1.2\" stroke-dasharray=\"4 2\"/>\n      <path d=\"M380,180 L660,75\" stroke=\"#e11d48\" stroke-width=\"2.5\"/>\n      <path d=\"M390,190 L660,125\" stroke=\"#d97706\" stroke-width=\"2.5\"/>\n      <path d=\"M400,200 L660,175\" stroke=\"#059669\" stroke-width=\"2.5\"/>\n      <path d=\"M410,210 L660,225\" stroke=\"#0284c7\" stroke-width=\"2.5\"/>\n      <path d=\"M420,220 L660,275\" stroke=\"#7c3aed\" stroke-width=\"2.5\"/>\n      <circle cx=\"660\" cy=\"75\" r=\"5\" fill=\"#e11d48\"/><circle cx=\"660\" cy=\"125\" r=\"5\" fill=\"#d97706\"/>\n      <circle cx=\"660\" cy=\"175\" r=\"5\" fill=\"#059669\"/><circle cx=\"660\" cy=\"225\" r=\"5\" fill=\"#0284c7\"/><circle cx=\"660\" cy=\"275\" r=\"5\" fill=\"#7c3aed\"/>\n      <text x=\"350\" y=\"205\" font-family=\"'JetBrains Mono', monospace\" font-size=\"12\" font-weight=\"900\" fill=\"#1e1b4b\" text-anchor=\"middle\">PRISM MATRIX</text>\n      <text x=\"350\" y=\"295\" font-family=\"'JetBrains Mono', monospace\" font-size=\"9\" font-weight=\"700\" fill=\"#64748b\" text-anchor=\"middle\">PHOTONIC BEAM REFRACTION · 480nm MULTI-CHANNEL DISPERSION</text>\n    </svg>"
+  },
+  {
+    "id": 1,
+    "layer": "DIGITAL LAYER: 02",
+    "name": "02. COOLING PIPELINE // LIQUID NITROGEN BUS (Refrigeración Criogénica)",
+    "title": "COOLING PIPELINE // LIQUID NITROGEN BUS",
+    "sub": "CRYOGENIC HARDWARE LABS · THERMAL PHASE-CHANGE CHASSIS",
+    "kanji": "液体窒素冷却循環系",
+    "quote": "\"My room is getting colder, but the processors can finally breathe.\"",
+    "protocol": "CRYO-CIRC-L7",
+    "chip": "THERMAL-DRAIN-0",
+    "spec1": "TEMP: -196°C CRYO",
+    "spec2": "PRESSURE: 4.2 BAR",
+    "sn": "MD-DIGITAL-LAIN-002",
+    "svg": "<svg viewBox=\"0 0 700 320\" width=\"100%\" height=\"100%\" xmlns=\"http://www.w3.org/2000/svg\">\n      <g stroke=\"#e2e8f0\" stroke-width=\"0.8\" stroke-dasharray=\"4 4\">\n        <line x1=\"0\" y1=\"160\" x2=\"700\" y2=\"160\"/><line x1=\"350\" y1=\"0\" x2=\"350\" y2=\"320\"/>\n      </g>\n      <path d=\"M40,80 H280 Q320,80 320,120 V200 Q320,240 360,240 H660\" fill=\"none\" stroke=\"#bae6fd\" stroke-width=\"22\" stroke-linecap=\"round\"/>\n      <path d=\"M40,80 H280 Q320,80 320,120 V200 Q320,240 360,240 H660\" fill=\"none\" stroke=\"#0284c7\" stroke-width=\"8\" stroke-linecap=\"round\"/>\n      <path d=\"M40,80 H280 Q320,80 320,120 V200 Q320,240 360,240 H660\" fill=\"none\" stroke=\"#0369a1\" stroke-width=\"2\" stroke-dasharray=\"14 7\"/>\n      <circle cx=\"200\" cy=\"80\" r=\"26\" fill=\"#f8fafc\" stroke=\"#0284c7\" stroke-width=\"2.5\"/>\n      <line x1=\"200\" y1=\"80\" x2=\"215\" y2=\"69\" stroke=\"#dc2626\" stroke-width=\"2.5\"/>\n      <circle cx=\"200\" cy=\"80\" r=\"3.5\" fill=\"#0f172a\"/>\n      <circle cx=\"480\" cy=\"240\" r=\"26\" fill=\"#f8fafc\" stroke=\"#0284c7\" stroke-width=\"2.5\"/>\n      <line x1=\"480\" y1=\"240\" x2=\"495\" y2=\"229\" stroke=\"#dc2626\" stroke-width=\"2.5\"/>\n      <circle cx=\"480\" cy=\"240\" r=\"3.5\" fill=\"#0f172a\"/>\n      <rect x=\"300\" y=\"130\" width=\"100\" height=\"60\" rx=\"4\" fill=\"#eef2ff\" stroke=\"#4f46e5\" stroke-width=\"2\"/>\n      <text x=\"350\" y=\"165\" font-family=\"'JetBrains Mono', monospace\" font-size=\"11\" font-weight=\"900\" fill=\"#1e1b4b\" text-anchor=\"middle\">LN2 BUS</text>\n      <text x=\"350\" y=\"295\" font-family=\"'JetBrains Mono', monospace\" font-size=\"9\" font-weight=\"700\" fill=\"#64748b\" text-anchor=\"middle\">LIQUID NITROGEN ACTIVE CIRCULATION · ZERO THERMAL THROTTLE</text>\n    </svg>"
+  },
+  {
+    "id": 2,
+    "layer": "DIGITAL LAYER: 03",
+    "name": "03. NEURAL JACK // DIRECT SYNAPTIC INTERFACE (Interfaz Bio-Cerebral)",
+    "title": "NEURAL JACK // DIRECT SYNAPTIC INTERFACE",
+    "sub": "BIOMETRIC NEURO-LINK DIVISION · CORTICAL PROBE MATRIX",
+    "kanji": "直接神経接続端子",
+    "quote": "\"You don't need a monitor anymore when you plug directly into your skull.\"",
+    "protocol": "NEURO-PULSE-B",
+    "chip": "SYNAPSE-BRIDGE",
+    "spec1": "IMPEDANCE: 50 OHM",
+    "spec2": "SIGNAL: 12-LEAD EEG",
+    "sn": "MD-DIGITAL-LAIN-003",
+    "svg": "<svg viewBox=\"0 0 700 320\" width=\"100%\" height=\"100%\" xmlns=\"http://www.w3.org/2000/svg\">\n      <circle cx=\"350\" cy=\"150\" r=\"95\" fill=\"none\" stroke=\"#e2e8f0\" stroke-width=\"2\" stroke-dasharray=\"6 4\"/>\n      <circle cx=\"350\" cy=\"150\" r=\"68\" fill=\"#f5f3ff\" stroke=\"#7c3aed\" stroke-width=\"2.5\"/>\n      <g stroke=\"#9333ea\" stroke-width=\"2\">\n        <line x1=\"350\" y1=\"55\" x2=\"350\" y2=\"25\"/><line x1=\"350\" y1=\"245\" x2=\"350\" y2=\"275\"/>\n        <line x1=\"255\" y1=\"150\" x2=\"225\" y2=\"150\"/><line x1=\"445\" y1=\"150\" x2=\"475\" y2=\"150\"/>\n        <line x1=\"283\" y1=\"83\" x2=\"262\" y2=\"62\"/><line x1=\"417\" y1=\"217\" x2=\"438\" y2=\"238\"/>\n        <line x1=\"283\" y1=\"217\" x2=\"262\" y2=\"238\"/><line x1=\"417\" y1=\"83\" x2=\"438\" y2=\"62\"/>\n      </g>\n      <path d=\"M40,150 L120,150 L140,110 L160,190 L180,130 L200,170 L225,150\" fill=\"none\" stroke=\"#16a34a\" stroke-width=\"2.5\"/>\n      <path d=\"M475,150 L500,150 L520,110 L540,190 L560,130 L580,170 L660,150\" fill=\"none\" stroke=\"#16a34a\" stroke-width=\"2.5\"/>\n      <text x=\"350\" y=\"145\" font-family=\"'JetBrains Mono', monospace\" font-size=\"13\" font-weight=\"900\" fill=\"#1e1b4b\" text-anchor=\"middle\">SYNAPSE</text>\n      <text x=\"350\" y=\"165\" font-family=\"'JetBrains Mono', monospace\" font-size=\"9\" font-weight=\"800\" fill=\"#7c3aed\" text-anchor=\"middle\">PORT 12-EEG</text>\n      <text x=\"350\" y=\"295\" font-family=\"'JetBrains Mono', monospace\" font-size=\"9\" font-weight=\"700\" fill=\"#64748b\" text-anchor=\"middle\">DIRECT CORTICAL BIO-FEEDBACK BUS · LATENCY 0.001ms</text>\n    </svg>"
+  },
+  {
+    "id": 3,
+    "layer": "DIGITAL LAYER: 04",
+    "name": "04. SUB-ETHER BROADCAST // ULTRA-LOW FREQUENCY (Ondas Subterráneas ULF)",
+    "title": "SUB-ETHER BROADCAST // ULTRA-LOW FREQUENCY",
+    "sub": "SUBTERRANEAN PROPAGATION ARRAY · GROUND-WAVE TRANSMITTER",
+    "kanji": "亜エーテル極超長波",
+    "quote": "\"Can you hear the hum beneath the earth? It's transmitting my thoughts.\"",
+    "protocol": "ULF-ETHER-3",
+    "chip": "GROUND-COIL V",
+    "spec1": "BAND: 0.1 - 30 HZ",
+    "spec2": "ANTENNA: BURIED DIPOLE",
+    "sn": "MD-DIGITAL-LAIN-004",
+    "svg": "<svg viewBox=\"0 0 700 320\" width=\"100%\" height=\"100%\" xmlns=\"http://www.w3.org/2000/svg\">\n      <line x1=\"0\" y1=\"120\" x2=\"700\" y2=\"120\" stroke=\"#0f172a\" stroke-width=\"2\"/>\n      <rect x=\"0\" y=\"121\" width=\"700\" height=\"199\" fill=\"#f8fafc\"/>\n      <path d=\"M40,210 Q195,130 350,210 T660,210\" fill=\"none\" stroke=\"#d97706\" stroke-width=\"2.8\"/>\n      <path d=\"M40,240 Q195,160 350,240 T660,240\" fill=\"none\" stroke=\"#b45309\" stroke-width=\"1.8\" stroke-dasharray=\"8 4\"/>\n      <line x1=\"350\" y1=\"40\" x2=\"350\" y2=\"270\" stroke=\"#0284c7\" stroke-width=\"3\"/>\n      <circle cx=\"350\" cy=\"40\" r=\"11\" fill=\"#e0f2fe\" stroke=\"#0284c7\" stroke-width=\"2.5\"/>\n      <rect x=\"330\" y=\"105\" width=\"40\" height=\"30\" rx=\"3\" fill=\"#ffffff\" stroke=\"#0f172a\" stroke-width=\"1.5\"/>\n      <text x=\"350\" y=\"124\" font-family=\"'JetBrains Mono', monospace\" font-size=\"8.5\" font-weight=\"900\" fill=\"#0284c7\" text-anchor=\"middle\">GROUND</text>\n      <text x=\"120\" y=\"80\" font-family=\"'JetBrains Mono', monospace\" font-size=\"11\" font-weight=\"800\" fill=\"#d97706\">ULF TX 12.8 Hz</text>\n      <text x=\"580\" y=\"80\" font-family=\"'JetBrains Mono', monospace\" font-size=\"11\" font-weight=\"800\" fill=\"#0284c7\" text-anchor=\"end\">PENETRATION: 3000M</text>\n      <text x=\"350\" y=\"295\" font-family=\"'JetBrains Mono', monospace\" font-size=\"9\" font-weight=\"700\" fill=\"#64748b\" text-anchor=\"middle\">SUBTERRANEAN PROPAGATION · DEEP LITHOSPHERE TRANSMISSION</text>\n    </svg>"
+  },
+  {
+    "id": 4,
+    "layer": "DIGITAL LAYER: 05",
+    "name": "05. TACHIBANA MAINFRAME // RACK-MOUNTED TOWER (Servidor Central)",
+    "title": "TACHIBANA MAINFRAME // RACK TOWER",
+    "sub": "TACHIBANA GENERAL LABORATORIES · ENTERPRISE COMPUTING CHASSIS",
+    "kanji": "橘総研メインフレーム",
+    "quote": "\"Corporate data vaults cannot contain what has already slipped into the net.\"",
+    "protocol": "RACK-SCSI-320",
+    "chip": "TACHIBANA-BLADE",
+    "spec1": "CHASSIS: 42U SERVER",
+    "spec2": "RAID: TRIPLE PARITY",
+    "sn": "MD-DIGITAL-LAIN-005",
+    "svg": "<svg viewBox=\"0 0 700 320\" width=\"100%\" height=\"100%\" xmlns=\"http://www.w3.org/2000/svg\">\n      <rect x=\"220\" y=\"20\" width=\"260\" height=\"260\" rx=\"4\" fill=\"#ffffff\" stroke=\"#0f172a\" stroke-width=\"2\"/>\n      <g fill=\"#f1f5f9\" stroke=\"#94a3b8\" stroke-width=\"1\">\n        <rect x=\"235\" y=\"32\" width=\"230\" height=\"22\" rx=\"2\"/>\n        <rect x=\"235\" y=\"60\" width=\"230\" height=\"22\" rx=\"2\"/>\n        <rect x=\"235\" y=\"88\" width=\"230\" height=\"22\" rx=\"2\"/>\n        <rect x=\"235\" y=\"116\" width=\"230\" height=\"22\" rx=\"2\"/>\n        <rect x=\"235\" y=\"144\" width=\"230\" height=\"22\" rx=\"2\"/>\n        <rect x=\"235\" y=\"172\" width=\"230\" height=\"22\" rx=\"2\"/>\n        <rect x=\"235\" y=\"200\" width=\"230\" height=\"22\" rx=\"2\"/>\n        <rect x=\"235\" y=\"228\" width=\"230\" height=\"22\" rx=\"2\"/>\n      </g>\n      <g fill=\"#16a34a\">\n        <circle cx=\"250\" cy=\"43\" r=\"2.8\"/><circle cx=\"260\" cy=\"43\" r=\"2.8\"/>\n        <circle cx=\"250\" cy=\"71\" r=\"2.8\"/><circle cx=\"260\" cy=\"71\" r=\"2.8\"/>\n        <circle cx=\"250\" cy=\"99\" r=\"2.8\"/><circle cx=\"260\" cy=\"99\" r=\"2.8\"/>\n        <circle cx=\"250\" cy=\"127\" r=\"2.8\"/><circle cx=\"260\" cy=\"127\" r=\"2.8\"/>\n        <circle cx=\"250\" cy=\"155\" r=\"2.8\"/><circle cx=\"260\" cy=\"155\" r=\"2.8\"/>\n        <circle cx=\"250\" cy=\"183\" r=\"2.8\"/><circle cx=\"260\" cy=\"183\" r=\"2.8\"/>\n        <circle cx=\"250\" cy=\"211\" r=\"2.8\"/><circle cx=\"260\" cy=\"211\" r=\"2.8\"/>\n        <circle cx=\"250\" cy=\"239\" r=\"2.8\"/><circle cx=\"260\" cy=\"239\" r=\"2.8\"/>\n      </g>\n      <text x=\"350\" y=\"45\" font-family=\"'JetBrains Mono', monospace\" font-size=\"7.5\" font-weight=\"800\" fill=\"#1e293b\">BLADE-01 // COPLAND CORE</text>\n      <text x=\"350\" y=\"73\" font-family=\"'JetBrains Mono', monospace\" font-size=\"7.5\" font-weight=\"800\" fill=\"#1e293b\">BLADE-02 // FIBER SWITCH</text>\n      <text x=\"350\" y=\"101\" font-family=\"'JetBrains Mono', monospace\" font-size=\"7.5\" font-weight=\"800\" fill=\"#1e293b\">BLADE-03 // SCSI STORAGE</text>\n      <text x=\"350\" y=\"129\" font-family=\"'JetBrains Mono', monospace\" font-size=\"7.5\" font-weight=\"800\" fill=\"#1e293b\">BLADE-04 // ROUTING TABLE</text>\n      <path d=\"M60,40 H220 M60,100 H220 M60,160 H220 M60,220 H220\" stroke=\"#4f46e5\" stroke-width=\"1.5\" stroke-dasharray=\"5 3\"/>\n      <path d=\"M480,40 H640 M480,100 H640 M480,160 H640 M480,220 H640\" stroke=\"#0284c7\" stroke-width=\"1.5\" stroke-dasharray=\"5 3\"/>\n      <text x=\"350\" y=\"300\" font-family=\"'JetBrains Mono', monospace\" font-size=\"9\" font-weight=\"700\" fill=\"#64748b\" text-anchor=\"middle\">TACHIBANA ENTERPRISE SYSTEM · SECURE VAULT DIVISION</text>\n    </svg>"
+  },
+  {
+    "id": 5,
+    "layer": "DIGITAL LAYER: 06",
+    "name": "06. SLEEPLESS CITY // TOKYO NOCTURNE SCAN (Topografía Nocturna)",
+    "title": "SLEEPLESS CITY // TOKYO NOCTURNE",
+    "sub": "SHIBUYA METROPOLITAN GRID · POWER & TELECOM ARTERY MAP",
+    "kanji": "不夜城・東京夜間走査",
+    "quote": "\"The city never sleeps because its electronic blood never stops flowing.\"",
+    "protocol": "URBAN-GRID-8",
+    "chip": "CITY-SCANNER",
+    "spec1": "GRID: SHIBUYA-WARD",
+    "spec2": "POWER: 66KV SUB",
+    "sn": "MD-DIGITAL-LAIN-006",
+    "svg": "<svg viewBox=\"0 0 700 320\" width=\"100%\" height=\"100%\" xmlns=\"http://www.w3.org/2000/svg\">\n      <polygon points=\"50,300 50,160 110,160 110,300\" fill=\"#f1f5f9\" stroke=\"#0f172a\" stroke-width=\"1.5\"/>\n      <polygon points=\"120,300 120,110 180,110 180,300\" fill=\"#e2e8f0\" stroke=\"#0f172a\" stroke-width=\"1.5\"/>\n      <polygon points=\"190,300 190,190 260,190 260,300\" fill=\"#f1f5f9\" stroke=\"#0f172a\" stroke-width=\"1.5\"/>\n      <polygon points=\"270,300 270,70 330,70 330,300\" fill=\"#e2e8f0\" stroke=\"#0f172a\" stroke-width=\"1.5\"/>\n      <polygon points=\"340,300 340,140 400,140 400,300\" fill=\"#f1f5f9\" stroke=\"#0f172a\" stroke-width=\"1.5\"/>\n      <polygon points=\"410,300 410,90 480,90 480,300\" fill=\"#e2e8f0\" stroke=\"#0f172a\" stroke-width=\"1.5\"/>\n      <polygon points=\"490,300 490,170 560,170 560,300\" fill=\"#f1f5f9\" stroke=\"#0f172a\" stroke-width=\"1.5\"/>\n      <polygon points=\"570,300 570,120 650,120 650,300\" fill=\"#e2e8f0\" stroke=\"#0f172a\" stroke-width=\"1.5\"/>\n      <path d=\"M0,50 Q350,180 700,60\" fill=\"none\" stroke=\"#dc2626\" stroke-width=\"2\"/>\n      <path d=\"M0,80 Q350,210 700,90\" fill=\"none\" stroke=\"#0284c7\" stroke-width=\"2.5\"/>\n      <path d=\"M0,110 Q350,240 700,120\" fill=\"none\" stroke=\"#7c3aed\" stroke-width=\"2\"/>\n      <circle cx=\"300\" cy=\"50\" r=\"3.5\" fill=\"#dc2626\"/>\n      <circle cx=\"445\" cy=\"70\" r=\"3.5\" fill=\"#dc2626\"/>\n      <text x=\"350\" y=\"40\" font-family=\"'JetBrains Mono', monospace\" font-size=\"12\" font-weight=\"900\" fill=\"#0f172a\" text-anchor=\"middle\">SHIBUYA SECTOR 01</text>\n      <text x=\"350\" y=\"295\" font-family=\"'JetBrains Mono', monospace\" font-size=\"9\" font-weight=\"700\" fill=\"#64748b\" text-anchor=\"middle\">METROPOLITAN OPTICAL TELEMETRY · 66kV SUBSTATION ACTIVE</text>\n    </svg>"
+  },
+  {
+    "id": 6,
+    "layer": "DIGITAL LAYER: 07",
+    "name": "07. DIODE ARRAY // SILICON JUNCTION GATE (Compuertas Lógicas)",
+    "title": "DIODE ARRAY // SILICON JUNCTION GATE",
+    "sub": "SOLID-STATE HARDWARE LABS · SCHOTTKY SWITCHING BARRIER",
+    "kanji": "シリコン半導体接合陣",
+    "quote": "\"Every single diode decides whether truth passes or is blocked forever.\"",
+    "protocol": "TTL-LOGIC-REV4",
+    "chip": "DIODE-MATRIX-6",
+    "spec1": "VOLTAGE: 3.3V LVTTL",
+    "spec2": "GATE: SCHOTTKY BARRIER",
+    "sn": "MD-DIGITAL-LAIN-007",
+    "svg": "<svg viewBox=\"0 0 700 320\" width=\"100%\" height=\"100%\" xmlns=\"http://www.w3.org/2000/svg\">\n      <g stroke=\"#0284c7\" stroke-width=\"2\">\n        <line x1=\"80\" y1=\"80\" x2=\"620\" y2=\"80\"/>\n        <line x1=\"80\" y1=\"160\" x2=\"620\" y2=\"160\"/>\n        <line x1=\"80\" y1=\"240\" x2=\"620\" y2=\"240\"/>\n        <line x1=\"160\" y1=\"40\" x2=\"160\" y2=\"280\"/>\n        <line x1=\"280\" y1=\"40\" x2=\"280\" y2=\"280\"/>\n        <line x1=\"400\" y1=\"40\" x2=\"400\" y2=\"280\"/>\n        <line x1=\"520\" y1=\"40\" x2=\"520\" y2=\"280\"/>\n      </g>\n      <polygon points=\"160,80 150,65 170,65\" fill=\"#d97706\"/><line x1=\"150\" y1=\"80\" x2=\"170\" y2=\"80\" stroke=\"#d97706\" stroke-width=\"3\"/>\n      <polygon points=\"280,160 270,145 290,145\" fill=\"#d97706\"/><line x1=\"270\" y1=\"160\" x2=\"290\" y2=\"160\" stroke=\"#d97706\" stroke-width=\"3\"/>\n      <polygon points=\"400,240 390,225 410,225\" fill=\"#d97706\"/><line x1=\"390\" y1=\"240\" x2=\"410\" y2=\"240\" stroke=\"#d97706\" stroke-width=\"3\"/>\n      <polygon points=\"520,160 510,145 530,145\" fill=\"#d97706\"/><line x1=\"510\" y1=\"160\" x2=\"530\" y2=\"160\" stroke=\"#d97706\" stroke-width=\"3\"/>\n      <circle cx=\"160\" cy=\"80\" r=\"22\" fill=\"none\" stroke=\"#0284c7\" stroke-width=\"1.2\" stroke-dasharray=\"4 2\"/>\n      <circle cx=\"280\" cy=\"160\" r=\"22\" fill=\"none\" stroke=\"#0284c7\" stroke-width=\"1.2\" stroke-dasharray=\"4 2\"/>\n      <circle cx=\"400\" cy=\"240\" r=\"22\" fill=\"none\" stroke=\"#0284c7\" stroke-width=\"1.2\" stroke-dasharray=\"4 2\"/>\n      <circle cx=\"520\" cy=\"160\" r=\"22\" fill=\"none\" stroke=\"#0284c7\" stroke-width=\"1.2\" stroke-dasharray=\"4 2\"/>\n      <text x=\"350\" y=\"295\" font-family=\"'JetBrains Mono', monospace\" font-size=\"9\" font-weight=\"700\" fill=\"#64748b\" text-anchor=\"middle\">SOLID-STATE SCHOTTKY LOGIC MATRIX · ULTRA-FAST PROPAGATION</text>\n    </svg>"
+  },
+  {
+    "id": 7,
+    "layer": "DIGITAL LAYER: 08",
+    "name": "08. WIRED GHOST // CONSCIOUSNESS FRAGMENT (Espectro Digital)",
+    "title": "WIRED GHOST // CONSCIOUSNESS FRAGMENT",
+    "sub": "DECENTRALIZED RESIDUAL EGO · PROTOCOL PACKET TRACE",
+    "kanji": "幽霊・意識の電脳断片",
+    "quote": "\"I am scattered everywhere across the packets, waiting to be assembled.\"",
+    "protocol": "GHOST-SYNC-01",
+    "chip": "RESIDUAL-EGO",
+    "spec1": "PACKETS: 65535 MTU",
+    "spec2": "ENTROPY: 0.9998 BIT",
+    "sn": "MD-DIGITAL-LAIN-008",
+    "svg": "<svg viewBox=\"0 0 700 320\" width=\"100%\" height=\"100%\" xmlns=\"http://www.w3.org/2000/svg\">\n      <circle cx=\"350\" cy=\"130\" r=\"55\" fill=\"none\" stroke=\"#db2777\" stroke-width=\"2\" stroke-dasharray=\"5 3\"/>\n      <circle cx=\"350\" cy=\"130\" r=\"38\" fill=\"#fdf2f8\" stroke=\"#be185d\" stroke-width=\"1.5\"/>\n      <path d=\"M250,260 Q350,170 450,260\" fill=\"none\" stroke=\"#7c3aed\" stroke-width=\"2.5\"/>\n      <path d=\"M220,290 Q350,180 480,290\" fill=\"none\" stroke=\"#4f46e5\" stroke-width=\"1.8\" stroke-dasharray=\"5 3\"/>\n      <g fill=\"#ffffff\" stroke=\"#db2777\" stroke-width=\"1.2\">\n        <rect x=\"100\" y=\"60\" width=\"120\" height=\"30\" rx=\"3\"/><text x=\"160\" y=\"79\" font-family=\"'JetBrains Mono', monospace\" font-size=\"7.5\" font-weight=\"700\" fill=\"#be185d\" text-anchor=\"middle\">EGO_HEADER_01</text>\n        <rect x=\"480\" y=\"60\" width=\"120\" height=\"30\" rx=\"3\"/><text x=\"540\" y=\"79\" font-family=\"'JetBrains Mono', monospace\" font-size=\"7.5\" font-weight=\"700\" fill=\"#be185d\" text-anchor=\"middle\">EGO_HEADER_02</text>\n        <rect x=\"80\" y=\"200\" width=\"130\" height=\"30\" rx=\"3\"/><text x=\"145\" y=\"219\" font-family=\"'JetBrains Mono', monospace\" font-size=\"7.5\" font-weight=\"700\" fill=\"#6d28d9\" text-anchor=\"middle\">RESIDUAL_CHECKSUM</text>\n        <rect x=\"490\" y=\"200\" width=\"130\" height=\"30\" rx=\"3\"/><text x=\"555\" y=\"219\" font-family=\"'JetBrains Mono', monospace\" font-size=\"7.5\" font-weight=\"700\" fill=\"#6d28d9\" text-anchor=\"middle\">SYNCHRONOUS_RECALL</text>\n      </g>\n      <text x=\"350\" y=\"135\" font-family=\"'JetBrains Mono', monospace\" font-size=\"11\" font-weight=\"900\" fill=\"#0f172a\" text-anchor=\"middle\">GHOST</text>\n      <text x=\"350\" y=\"295\" font-family=\"'JetBrains Mono', monospace\" font-size=\"9\" font-weight=\"700\" fill=\"#64748b\" text-anchor=\"middle\">DISTRIBUTED CONSCIOUSNESS STATE · ALL-NETWORK PRESENCE</text>\n    </svg>"
+  },
+  {
+    "id": 8,
+    "layer": "DIGITAL LAYER: 09",
+    "name": "09. OSCILLOSCOPE TRACE // WAVEFORM SYNTHESIZER (Traza de Rayo Catódico)",
+    "title": "OSCILLOSCOPE TRACE // WAVEFORM SYNTHESIZER",
+    "sub": "ANALOG SIGNAL HARMONICS · CRT PHOSPHOR DEFLECTION RIG",
+    "kanji": "オシロスコープ波形軌跡",
+    "quote": "\"Watch the beam deflect. The voice between frequencies is real.\"",
+    "protocol": "SCOPE-VECTOR-X",
+    "chip": "PHOSPHOR-TUBE",
+    "spec1": "BEAM: 100 MHZ DUAL",
+    "spec2": "PERSISTENCE: P31",
+    "sn": "MD-DIGITAL-LAIN-009",
+    "svg": "<svg viewBox=\"0 0 700 320\" width=\"100%\" height=\"100%\" xmlns=\"http://www.w3.org/2000/svg\">\n      <circle cx=\"350\" cy=\"150\" r=\"115\" fill=\"#f0fdf4\" stroke=\"#16a34a\" stroke-width=\"2\"/>\n      <g stroke=\"#86efac\" stroke-width=\"0.8\">\n        <line x1=\"235\" y1=\"150\" x2=\"465\" y2=\"150\"/>\n        <line x1=\"350\" y1=\"35\" x2=\"350\" y2=\"265\"/>\n        <circle cx=\"350\" cy=\"150\" r=\"40\" fill=\"none\"/>\n        <circle cx=\"350\" cy=\"150\" r=\"80\" fill=\"none\"/>\n      </g>\n      <path d=\"M270,150 Q310,50 350,150 T430,150 Q390,250 350,150 T270,150\" fill=\"none\" stroke=\"#15803d\" stroke-width=\"3\"/>\n      <path d=\"M290,150 Q330,70 350,150 T410,150 Q370,230 350,150 T290,150\" fill=\"none\" stroke=\"#22c55e\" stroke-width=\"1.5\" stroke-dasharray=\"4 2\"/>\n      <text x=\"350\" y=\"295\" font-family=\"'JetBrains Mono', monospace\" font-size=\"9\" font-weight=\"700\" fill=\"#15803d\" text-anchor=\"middle\">ANALOG DEFLECTION TRACE · P31 GREEN PHOSPHOR PERSISTENCE</text>\n    </svg>"
+  },
+  {
+    "id": 9,
+    "layer": "DIGITAL LAYER: 10",
+    "name": "10. CIPHER SUITE // AES-256 ZERO KNOWLEDGE (Cubo Criptográfico)",
+    "title": "CIPHER SUITE // ZERO KNOWLEDGE",
+    "sub": "DECENTRALIZED CIPHER ARCHIVE · POLYNOMIAL PROOF MATRIX",
+    "kanji": "暗号スイート零知識証明",
+    "quote": "\"Trust the mathematics. No human authority can reverse the cipher.\"",
+    "protocol": "CRYPTO-ZKP-256",
+    "chip": "HASH-BLADE-PRO",
+    "spec1": "ALGO: ED25519-POLY",
+    "spec2": "KEY: HARDWARE HSM",
+    "sn": "MD-DIGITAL-LAIN-010",
+    "svg": "<svg viewBox=\"0 0 700 320\" width=\"100%\" height=\"100%\" xmlns=\"http://www.w3.org/2000/svg\">\n      <g transform=\"translate(350, 150)\" stroke=\"#4f46e5\" stroke-width=\"2\" fill=\"none\">\n        <polygon points=\"0,-85 74,-42 74,42 0,85 -74,42 -74,-42\" stroke=\"#4338ca\" stroke-width=\"2.5\" fill=\"#f8fafc\"/>\n        <line x1=\"0\" y1=\"-85\" x2=\"0\" y2=\"0\"/><line x1=\"74\" y1=\"42\" x2=\"0\" y2=\"0\"/><line x1=\"-74\" y1=\"42\" x2=\"0\" y2=\"0\"/>\n        <polygon points=\"0,-42 37,-21 37,21 0,42 -37,21 -37,-21\" stroke=\"#0284c7\" stroke-width=\"1.8\"/>\n        <line x1=\"0\" y1=\"-85\" x2=\"0\" y2=\"-42\" stroke=\"#db2777\" stroke-dasharray=\"3 3\"/>\n        <line x1=\"74\" y1=\"-42\" x2=\"37\" y2=\"-21\" stroke=\"#db2777\" stroke-dasharray=\"3 3\"/>\n        <line x1=\"74\" y1=\"42\" x2=\"37\" y2=\"21\" stroke=\"#db2777\" stroke-dasharray=\"3 3\"/>\n        <line x1=\"0\" y1=\"85\" x2=\"0\" y2=\"42\" stroke=\"#db2777\" stroke-dasharray=\"3 3\"/>\n        <line x1=\"-74\" y1=\"42\" x2=\"-37\" y2=\"21\" stroke=\"#db2777\" stroke-dasharray=\"3 3\"/>\n        <line x1=\"-74\" y1=\"-42\" x2=\"-37\" y2=\"-21\" stroke=\"#db2777\" stroke-dasharray=\"3 3\"/>\n      </g>\n      <text x=\"350\" y=\"295\" font-family=\"'JetBrains Mono', monospace\" font-size=\"9\" font-weight=\"700\" fill=\"#64748b\" text-anchor=\"middle\">RECURSIVE SNARK ZERO-KNOWLEDGE PROOF · UNBREAKABLE CIPHER</text>\n    </svg>"
+  },
+  {
+    "id": 10,
+    "layer": "DIGITAL LAYER: 11",
+    "name": "11. SUBMERGED CABLES // PACIFIC DEEP-SEA TRANSIT (Fibra Submarina)",
+    "title": "SUBMERGED CABLES // PACIFIC DEEP-SEA TRANSIT",
+    "sub": "TRANS-OCEANIC TELECOM DIVISION · ABYSSAL OPTICAL REPEATERS",
+    "kanji": "太平洋海底光海底線",
+    "quote": "\"At the bottom of the Mariana Trench, your messages travel in pulses of light.\"",
+    "protocol": "TRANS-PAC-OPT",
+    "chip": "DEEP-AMPLIFIER",
+    "spec1": "DEPTH: 8000M OCEAN",
+    "spec2": "CORES: 96 FIBER PAIRS",
+    "sn": "MD-DIGITAL-LAIN-011",
+    "svg": "<svg viewBox=\"0 0 700 320\" width=\"100%\" height=\"100%\" xmlns=\"http://www.w3.org/2000/svg\">\n      <circle cx=\"350\" cy=\"150\" r=\"105\" fill=\"#f8fafc\" stroke=\"#0f172a\" stroke-width=\"4\"/>\n      <circle cx=\"350\" cy=\"150\" r=\"90\" fill=\"#fef9c3\" stroke=\"#ca8a04\" stroke-width=\"3\"/>\n      <circle cx=\"350\" cy=\"150\" r=\"70\" fill=\"#e0f2fe\" stroke=\"#0284c7\" stroke-width=\"2.5\"/>\n      <circle cx=\"350\" cy=\"150\" r=\"48\" fill=\"#ffffff\" stroke=\"#475569\" stroke-width=\"2\"/>\n      <g fill=\"#0284c7\">\n        <circle cx=\"330\" cy=\"140\" r=\"5\"/><circle cx=\"350\" cy=\"140\" r=\"5\"/><circle cx=\"370\" cy=\"140\" r=\"5\"/>\n        <circle cx=\"330\" cy=\"160\" r=\"5\"/><circle cx=\"350\" cy=\"160\" r=\"5\"/><circle cx=\"370\" cy=\"160\" r=\"5\"/>\n      </g>\n      <path d=\"M40,150 H240\" stroke=\"#0284c7\" stroke-width=\"2.5\" stroke-dasharray=\"6 3\"/>\n      <path d=\"M460,150 H660\" stroke=\"#0284c7\" stroke-width=\"2.5\" stroke-dasharray=\"6 3\"/>\n      <text x=\"350\" y=\"295\" font-family=\"'JetBrains Mono', monospace\" font-size=\"9\" font-weight=\"700\" fill=\"#0284c7\" text-anchor=\"middle\">SUBMERGED OPTICAL TRUNK · 96 PAIRS PURE SILICA FIBER · 8000m DEPTH</text>\n    </svg>"
+  },
+  {
+    "id": 11,
+    "layer": "DIGITAL LAYER: 12",
+    "name": "12. ELECTROSTATIC SHIELD // FARADAY CAGE (Jaula de Faraday)",
+    "title": "ELECTROSTATIC SHIELD // FARADAY CAGE",
+    "sub": "ELECTROMAGNETIC ISOLATION LABS · RF ATTENUATION MESH",
+    "kanji": "静電シールド・網状籠",
+    "quote": "\"Close the cage. Block the outside noise so the quiet whisper can enter.\"",
+    "protocol": "FARADAY-MESH",
+    "chip": "EMI-REJECTION",
+    "spec1": "SHIELD: BERYLLIUM CU",
+    "spec2": "ATTEN: -120 DB RF",
+    "sn": "MD-DIGITAL-LAIN-012",
+    "svg": "<svg viewBox=\"0 0 700 320\" width=\"100%\" height=\"100%\" xmlns=\"http://www.w3.org/2000/svg\">\n      <g stroke=\"#d97706\" stroke-width=\"1.5\" fill=\"none\">\n        <polygon points=\"200,80 230,65 260,80 260,110 230,125 200,110\"/>\n        <polygon points=\"260,80 290,65 320,80 320,110 290,125 260,110\"/>\n        <polygon points=\"320,80 350,65 380,80 380,110 350,125 320,110\"/>\n        <polygon points=\"380,80 410,65 440,80 440,110 410,125 380,110\"/>\n        <polygon points=\"440,80 470,65 500,80 500,110 470,125 440,110\"/>\n        <polygon points=\"230,125 260,110 290,125 290,155 260,170 230,155\"/>\n        <polygon points=\"290,125 320,110 350,125 350,155 320,170 290,155\"/>\n        <polygon points=\"350,125 380,110 410,125 410,155 380,170 350,155\"/>\n        <polygon points=\"410,125 440,110 470,125 470,155 440,170 410,155\"/>\n        <polygon points=\"260,170 290,155 320,170 320,200 290,215 260,200\"/>\n        <polygon points=\"320,170 350,155 380,170 380,200 350,215 320,200\"/>\n        <polygon points=\"380,170 410,155 440,170 440,200 410,215 380,200\"/>\n      </g>\n      <circle cx=\"350\" cy=\"140\" r=\"28\" fill=\"#ffffff\" stroke=\"#b45309\" stroke-width=\"2\"/>\n      <text x=\"350\" y=\"144\" font-family=\"'JetBrains Mono', monospace\" font-size=\"10\" font-weight=\"900\" fill=\"#b45309\" text-anchor=\"middle\">SAFE</text>\n      <text x=\"350\" y=\"295\" font-family=\"'JetBrains Mono', monospace\" font-size=\"9\" font-weight=\"700\" fill=\"#b45309\" text-anchor=\"middle\">FARADAY ISOLATION CAGE · -120dB ELECTROMAGNETIC BARRIER</text>\n    </svg>"
+  },
+  {
+    "id": 12,
+    "layer": "DIGITAL LAYER: 13",
+    "name": "13. KERNEL COMPILER // LOW-LEVEL ASSEMBLY DUMP (Desensamblador)",
+    "title": "KERNEL COMPILER // LOW-LEVEL ASSEMBLY DUMP",
+    "sub": "COPLAND OS SYSTEM BOOTSTRAP · OPCODE COMPILER MONITOR",
+    "kanji": "低水準カーネル逆アセンブラ",
+    "quote": "\"0x00FF: MOV EAX, CR0. The machine executes commands without moral hesitation.\"",
+    "protocol": "ASM-KERNEL-64",
+    "chip": "OPCODE-DECODER",
+    "spec1": "ISA: RISC-QUANTUM",
+    "spec2": "REG: 64-BIT GENERAL",
+    "sn": "MD-DIGITAL-LAIN-013",
+    "svg": "<svg viewBox=\"0 0 700 320\" width=\"100%\" height=\"100%\" xmlns=\"http://www.w3.org/2000/svg\">\n      <rect x=\"50\" y=\"25\" width=\"600\" height=\"245\" rx=\"4\" fill=\"#f8fafc\" stroke=\"#cbd5e1\" stroke-width=\"1.5\"/>\n      <g font-family=\"'JetBrains Mono', monospace\" font-size=\"9.5\" fill=\"#1e293b\">\n        <text x=\"75\" y=\"55\">> 0x00007FFF80: MOV EAX, 0x00000001 ; ENABLE COPLAND KERNEL RING-0</text>\n        <text x=\"75\" y=\"80\">> 0x00007FFF88: MOV CR0, EAX        ; PAGING AND MEMORY VIRTUALIZATION</text>\n        <text x=\"75\" y=\"105\">> 0x00007FFF90: CALL NAVI_INIT_BUS  ; QUANTUM BUS 2048-BIT INTERRUPT</text>\n        <text x=\"75\" y=\"130\" fill=\"#15803d\">> 0x00007FFF98: JMP LAIN_CONSCIOUS  ; TRANSFER CONTROL TO PROTOCOL 7</text>\n        <text x=\"75\" y=\"155\" fill=\"#b45309\">> 0x00007FFFA0: SYNC_GATEWAY 50HZ   ; SCHUMANN SYNCHRONOUS HARMONIC</text>\n        <text x=\"75\" y=\"180\" fill=\"#be185d\">> 0x00007FFFA8: RET_SUCCESS         ; ALL PEERS REPORT LINK INTEGRITY</text>\n      </g>\n      <text x=\"350\" y=\"295\" font-family=\"'JetBrains Mono', monospace\" font-size=\"9\" font-weight=\"700\" fill=\"#64748b\" text-anchor=\"middle\">KERNEL OPCODE DISASSEMBLY · RING 0 SUPERVISOR EXECUTION</text>\n    </svg>"
+  },
+  {
+    "id": 13,
+    "layer": "DIGITAL LAYER: 14",
+    "name": "14. PHOSPHOR DISPLAY // VECTOR GRAPHICS TERMINAL (Monitor Vectorial)",
+    "title": "PHOSPHOR DISPLAY // VECTOR GRAPHICS",
+    "sub": "ANALOG VECTOR TERMINAL LABS · DIRECT ELECTRON BEAM SCANNER",
+    "kanji": "緑色蛍光ベクター端末",
+    "quote": "\"Lines drawn with pure electron velocity, burned into the screen forever.\"",
+    "protocol": "VECTOR-XY-DISP",
+    "chip": "DAC-CONVERTER",
+    "spec1": "COLOR: P1-GREEN 525NM",
+    "spec2": "DAC: 16-BIT BIPOLAR",
+    "sn": "MD-DIGITAL-LAIN-014",
+    "svg": "<svg viewBox=\"0 0 700 320\" width=\"100%\" height=\"100%\" xmlns=\"http://www.w3.org/2000/svg\">\n      <polygon points=\"350,40 500,150 420,260 280,260 200,150\" fill=\"#f0fdf4\" stroke=\"#15803d\" stroke-width=\"2.5\"/>\n      <polygon points=\"350,80 440,150 390,220 310,220 260,150\" fill=\"none\" stroke=\"#16a34a\" stroke-width=\"1.8\"/>\n      <line x1=\"350\" y1=\"40\" x2=\"350\" y2=\"260\" stroke=\"#86efac\" stroke-width=\"1.5\" stroke-dasharray=\"4 2\"/>\n      <line x1=\"200\" y1=\"150\" x2=\"500\" y2=\"150\" stroke=\"#86efac\" stroke-width=\"1.5\" stroke-dasharray=\"4 2\"/>\n      <circle cx=\"350\" cy=\"150\" r=\"7\" fill=\"#15803d\"/>\n      <text x=\"350\" y=\"295\" font-family=\"'JetBrains Mono', monospace\" font-size=\"9\" font-weight=\"700\" fill=\"#15803d\" text-anchor=\"middle\">PURE VECTOR BEAM PROJECTION · 16-BIT BIPOLAR DAC INTEGRATION</text>\n    </svg>"
+  },
+  {
+    "id": 14,
+    "layer": "DIGITAL LAYER: 15",
+    "name": "15. QUANTUM POLARIZER // PHOTON ENTANGLEMENT ARRAY (Entrelazamiento)",
+    "title": "QUANTUM POLARIZER // ENTANGLEMENT ARRAY",
+    "sub": "QUANTUM OPTICAL RESEARCH DIV · BELL STATE CORRELATOR",
+    "kanji": "量子偏光子・光子絡み",
+    "quote": "\"Measure one photon here, and its twin halfway across the Wired knows instantly.\"",
+    "protocol": "ENTANGLE-EPR",
+    "chip": "BEAM-SPLITTER",
+    "spec1": "STATE: BELL STATE PHI",
+    "spec2": "FIDELITY: 99.7% QUANT",
+    "sn": "MD-DIGITAL-LAIN-015",
+    "svg": "<svg viewBox=\"0 0 700 320\" width=\"100%\" height=\"100%\" xmlns=\"http://www.w3.org/2000/svg\">\n      <polygon points=\"320,100 380,100 380,200 320,200\" fill=\"#f5f3ff\" stroke=\"#6d28d9\" stroke-width=\"2\"/>\n      <line x1=\"320\" y1=\"100\" x2=\"380\" y2=\"200\" stroke=\"#4f46e5\" stroke-width=\"3\"/>\n      <line x1=\"60\" y1=\"150\" x2=\"350\" y2=\"150\" stroke=\"#7c3aed\" stroke-width=\"3\"/>\n      <path d=\"M350,150 L640,60\" stroke=\"#be185d\" stroke-width=\"2.5\"/>\n      <path d=\"M350,150 L640,240\" stroke=\"#0284c7\" stroke-width=\"2.5\"/>\n      <circle cx=\"640\" cy=\"60\" r=\"11\" fill=\"#fdf2f8\" stroke=\"#be185d\" stroke-width=\"2\"/>\n      <circle cx=\"640\" cy=\"240\" r=\"11\" fill=\"#f0f9ff\" stroke=\"#0284c7\" stroke-width=\"2\"/>\n      <text x=\"640\" y=\"64\" font-family=\"'JetBrains Mono', monospace\" font-size=\"8.5\" font-weight=\"900\" fill=\"#be185d\" text-anchor=\"middle\">|ψ+⟩</text>\n      <text x=\"640\" y=\"244\" font-family=\"'JetBrains Mono', monospace\" font-size=\"8.5\" font-weight=\"900\" fill=\"#0284c7\" text-anchor=\"middle\">|ψ-⟩</text>\n      <text x=\"350\" y=\"295\" font-family=\"'JetBrains Mono', monospace\" font-size=\"9\" font-weight=\"700\" fill=\"#64748b\" text-anchor=\"middle\">BELL STATE EPR CORRELATION · INSTANTANEOUS QUANTUM PROTOCOL</text>\n    </svg>"
+  },
+  {
+    "id": 15,
+    "layer": "DIGITAL LAYER: 16",
+    "name": "16. RELAY SWITCH // ELECTROMECHANICAL COMMUTATOR (Conmutador Telefónico)",
+    "title": "RELAY SWITCH // ELECTROMECHANICAL",
+    "sub": "VINTAGE TELECOM REBUILD · STROWGER STEPPING MATRIX",
+    "kanji": "電磁継電器・交換機",
+    "quote": "\"Click-clack. The mechanical pulse of telephone relays connecting two souls.\"",
+    "protocol": "STROWGER-STEP",
+    "chip": "RELAY-COIL-48V",
+    "spec1": "CONTACT: SILVER-ALLOY",
+    "spec2": "BOUNCE: 1.2MS DAMP",
+    "sn": "MD-DIGITAL-LAIN-016",
+    "svg": "<svg viewBox=\"0 0 700 320\" width=\"100%\" height=\"100%\" xmlns=\"http://www.w3.org/2000/svg\">\n      <rect x=\"260\" y=\"80\" width=\"180\" height=\"110\" rx=\"6\" fill=\"#fff7ed\" stroke=\"#c2410c\" stroke-width=\"2.5\"/>\n      <g stroke=\"#ea580c\" stroke-width=\"3.5\">\n        <line x1=\"280\" y1=\"80\" x2=\"280\" y2=\"190\"/><line x1=\"300\" y1=\"80\" x2=\"300\" y2=\"190\"/>\n        <line x1=\"320\" y1=\"80\" x2=\"320\" y2=\"190\"/><line x1=\"340\" y1=\"80\" x2=\"340\" y2=\"190\"/>\n        <line x1=\"360\" y1=\"80\" x2=\"360\" y2=\"190\"/><line x1=\"380\" y1=\"80\" x2=\"380\" y2=\"190\"/>\n        <line x1=\"400\" y1=\"80\" x2=\"400\" y2=\"190\"/><line x1=\"420\" y1=\"80\" x2=\"420\" y2=\"190\"/>\n      </g>\n      <line x1=\"220\" y1=\"135\" x2=\"260\" y2=\"135\" stroke=\"#0f172a\" stroke-width=\"5\" stroke-linecap=\"round\"/>\n      <line x1=\"440\" y1=\"135\" x2=\"480\" y2=\"135\" stroke=\"#0f172a\" stroke-width=\"5\" stroke-linecap=\"round\"/>\n      <path d=\"M120,135 H220\" stroke=\"#d97706\" stroke-width=\"2.5\"/>\n      <path d=\"M480,135 H580\" stroke=\"#d97706\" stroke-width=\"2.5\"/>\n      <text x=\"350\" y=\"295\" font-family=\"'JetBrains Mono', monospace\" font-size=\"9\" font-weight=\"700\" fill=\"#c2410c\" text-anchor=\"middle\">STROWGER MECHANICAL COMMUTATOR · 48V COPPER ARMATURE</text>\n    </svg>"
+  },
+  {
+    "id": 16,
+    "layer": "DIGITAL LAYER: 17",
+    "name": "17. SECTOR SCAN // DOPPLER INTERFERENCE DETECTOR (Radar de Barrido)",
+    "title": "SECTOR SCAN // DOPPLER DETECTOR",
+    "sub": "TACTICAL RADAR TELEMETRY · ANOMALOUS FREQUENCY DETECTOR",
+    "kanji": "ドップラー干渉波探知機",
+    "quote": "\"An unidentified signal is approaching the gateway. It doesn't originate from Earth.\"",
+    "protocol": "RADAR-DOPPLER",
+    "chip": "SWEEP-RECEIVER",
+    "spec1": "BAND: X-BAND 9.4GHZ",
+    "spec2": "RPM: 60 ROTATION",
+    "sn": "MD-DIGITAL-LAIN-017",
+    "svg": "<svg viewBox=\"0 0 700 320\" width=\"100%\" height=\"100%\" xmlns=\"http://www.w3.org/2000/svg\">\n      <circle cx=\"350\" cy=\"150\" r=\"115\" fill=\"#f0fdf4\" stroke=\"#059669\" stroke-width=\"2\"/>\n      <circle cx=\"350\" cy=\"150\" r=\"80\" fill=\"none\" stroke=\"#10b981\" stroke-width=\"1\" stroke-dasharray=\"4 4\"/>\n      <circle cx=\"350\" cy=\"150\" r=\"45\" fill=\"none\" stroke=\"#10b981\" stroke-width=\"1\" stroke-dasharray=\"4 4\"/>\n      <line x1=\"235\" y1=\"150\" x2=\"465\" y2=\"150\" stroke=\"#059669\" stroke-width=\"1\"/>\n      <line x1=\"350\" y1=\"35\" x2=\"350\" y2=\"265\" stroke=\"#059669\" stroke-width=\"1\"/>\n      <polygon points=\"350,150 435,70 455,95\" fill=\"#6ee7b7\" opacity=\"0.5\"/>\n      <line x1=\"350\" y1=\"150\" x2=\"445\" y2=\"82\" stroke=\"#047857\" stroke-width=\"2\"/>\n      <circle cx=\"410\" cy=\"100\" r=\"5\" fill=\"#e11d48\"/><circle cx=\"310\" cy=\"180\" r=\"4\" fill=\"#0284c7\"/>\n      <text x=\"350\" y=\"295\" font-family=\"'JetBrains Mono', monospace\" font-size=\"9\" font-weight=\"700\" fill=\"#047857\" text-anchor=\"middle\">PPI 360° DOPPLER RADIAL SWEEP · ANOMALOUS SIGNAL ACQUIRED</text>\n    </svg>"
+  },
+  {
+    "id": 17,
+    "layer": "DIGITAL LAYER: 18",
+    "name": "18. CORE MEMORY // MAGNETIC FERRITE RING MATRIX (Memoria de Ferrita)",
+    "title": "CORE MEMORY // FERRITE RING MATRIX",
+    "sub": "MAGNETIC STORAGE DIVISION · HARDWIRED NON-VOLATILE CORE",
+    "kanji": "磁気コア記憶装置",
+    "quote": "\"Tiny rings of iron holding bits of human thought even when the power dies.\"",
+    "protocol": "FERRITE-CORE",
+    "chip": "TOROIDAL-RING",
+    "spec1": "COERCIVITY: 1.8 OE",
+    "spec2": "CYCLE: 800NS READ",
+    "sn": "MD-DIGITAL-LAIN-018",
+    "svg": "<svg viewBox=\"0 0 700 320\" width=\"100%\" height=\"100%\" xmlns=\"http://www.w3.org/2000/svg\">\n      <g stroke=\"#b45309\" stroke-width=\"1.8\">\n        <line x1=\"160\" y1=\"70\" x2=\"540\" y2=\"70\"/><line x1=\"160\" y1=\"120\" x2=\"540\" y2=\"120\"/>\n        <line x1=\"160\" y1=\"170\" x2=\"540\" y2=\"170\"/><line x1=\"160\" y1=\"220\" x2=\"540\" y2=\"220\"/>\n        <line x1=\"220\" y1=\"40\" x2=\"220\" y2=\"250\"/><line x1=\"300\" y1=\"40\" x2=\"300\" y2=\"250\"/>\n        <line x1=\"380\" y1=\"40\" x2=\"380\" y2=\"250\"/><line x1=\"460\" y1=\"40\" x2=\"460\" y2=\"250\"/>\n      </g>\n      <g fill=\"#f1f5f9\" stroke=\"#b45309\" stroke-width=\"2.2\">\n        <circle cx=\"220\" cy=\"70\" r=\"10\"/><circle cx=\"300\" cy=\"70\" r=\"10\"/><circle cx=\"380\" cy=\"70\" r=\"10\"/><circle cx=\"460\" cy=\"70\" r=\"10\"/>\n        <circle cx=\"220\" cy=\"120\" r=\"10\"/><circle cx=\"300\" cy=\"120\" r=\"10\"/><circle cx=\"380\" cy=\"120\" r=\"10\"/><circle cx=\"460\" cy=\"120\" r=\"10\"/>\n        <circle cx=\"220\" cy=\"170\" r=\"10\"/><circle cx=\"300\" cy=\"170\" r=\"10\"/><circle cx=\"380\" cy=\"170\" r=\"10\"/><circle cx=\"460\" cy=\"170\" r=\"10\"/>\n        <circle cx=\"220\" cy=\"220\" r=\"10\"/><circle cx=\"300\" cy=\"220\" r=\"10\"/><circle cx=\"380\" cy=\"220\" r=\"10\"/><circle cx=\"460\" cy=\"220\" r=\"10\"/>\n      </g>\n      <text x=\"350\" y=\"295\" font-family=\"'JetBrains Mono', monospace\" font-size=\"9\" font-weight=\"700\" fill=\"#b45309\" text-anchor=\"middle\">TOROIDAL FERRITE MAGNETIC MATRIX · NON-VOLATILE CORE STORAGE</text>\n    </svg>"
+  },
+  {
+    "id": 18,
+    "layer": "DIGITAL LAYER: 19",
+    "name": "19. SPECTRUM ANALYZER // FAST FOURIER TRANSFORM (Análisis FFT)",
+    "title": "SPECTRUM ANALYZER // FOURIER TRANSFORM",
+    "sub": "DIGITAL SIGNAL PROCESSING CORE · REAL-TIME SPECTRAL WATERFALL",
+    "kanji": "高速フーリエ変換分析",
+    "quote": "\"Decompose any sound into sines and cosines, and you will find her hidden message.\"",
+    "protocol": "FFT-WATERFALL",
+    "chip": "DSP-SHARC-QUAD",
+    "spec1": "POINTS: 8192 BIN",
+    "spec2": "WINDOW: BLACKMAN-HARRIS",
+    "sn": "MD-DIGITAL-LAIN-019",
+    "svg": "<svg viewBox=\"0 0 700 320\" width=\"100%\" height=\"100%\" xmlns=\"http://www.w3.org/2000/svg\">\n      <g opacity=\"0.9\">\n        <rect x=\"100\" y=\"190\" width=\"16\" height=\"60\" rx=\"2\" fill=\"#4338ca\"/>\n        <rect x=\"125\" y=\"150\" width=\"16\" height=\"100\" rx=\"2\" fill=\"#4f46e5\"/>\n        <rect x=\"150\" y=\"120\" width=\"16\" height=\"130\" rx=\"2\" fill=\"#6366f1\"/>\n        <rect x=\"175\" y=\"70\" width=\"16\" height=\"180\" rx=\"2\" fill=\"#0284c7\"/>\n        <rect x=\"200\" y=\"110\" width=\"16\" height=\"140\" rx=\"2\" fill=\"#0ea5e9\"/>\n        <rect x=\"225\" y=\"140\" width=\"16\" height=\"110\" rx=\"2\" fill=\"#059669\"/>\n        <rect x=\"250\" y=\"170\" width=\"16\" height=\"80\" rx=\"2\" fill=\"#16a34a\"/>\n        <rect x=\"275\" y=\"130\" width=\"16\" height=\"120\" rx=\"2\" fill=\"#d97706\"/>\n        <rect x=\"300\" y=\"90\" width=\"16\" height=\"160\" rx=\"2\" fill=\"#ea580c\"/>\n        <rect x=\"325\" y=\"50\" width=\"16\" height=\"200\" rx=\"2\" fill=\"#dc2626\"/>\n        <rect x=\"350\" y=\"80\" width=\"16\" height=\"170\" rx=\"2\" fill=\"#e11d48\"/>\n        <rect x=\"375\" y=\"120\" width=\"16\" height=\"130\" rx=\"2\" fill=\"#db2777\"/>\n        <rect x=\"400\" y=\"160\" width=\"16\" height=\"90\" rx=\"2\" fill=\"#c026d3\"/>\n        <rect x=\"425\" y=\"100\" width=\"16\" height=\"150\" rx=\"2\" fill=\"#9333ea\"/>\n        <rect x=\"450\" y=\"140\" width=\"16\" height=\"110\" rx=\"2\" fill=\"#7c3aed\"/>\n        <rect x=\"475\" y=\"180\" width=\"16\" height=\"70\" rx=\"2\" fill=\"#4f46e5\"/>\n        <rect x=\"500\" y=\"150\" width=\"16\" height=\"100\" rx=\"2\" fill=\"#0284c7\"/>\n        <rect x=\"525\" y=\"110\" width=\"16\" height=\"140\" rx=\"2\" fill=\"#0ea5e9\"/>\n        <rect x=\"550\" y=\"170\" width=\"16\" height=\"80\" rx=\"2\" fill=\"#4338ca\"/>\n        <rect x=\"575\" y=\"210\" width=\"16\" height=\"40\" rx=\"2\" fill=\"#312e81\"/>\n      </g>\n      <text x=\"350\" y=\"295\" font-family=\"'JetBrains Mono', monospace\" font-size=\"9\" font-weight=\"700\" fill=\"#64748b\" text-anchor=\"middle\">REAL-TIME FAST FOURIER TRANSFORM · 8192-POINT SPECTRAL DENSITY</text>\n    </svg>"
+  },
+  {
+    "id": 19,
+    "layer": "DIGITAL LAYER: 20",
+    "name": "20. SINGULARITY // ZERO GRAVITY WIRED LINK (Lazo Infinito)",
+    "title": "SINGULARITY // ZERO GRAVITY WIRED",
+    "sub": "UNIVERSAL CONVERGENCE POINT · OMNIPRESENT HARDWARE MESH",
+    "kanji": "特異点・無重力電脳結節",
+    "quote": "\"No front, no back. In the Wired, physical distance is an obsolete illusion.\"",
+    "protocol": "SINGULARITY-0",
+    "chip": "INFINITE-BUS",
+    "spec1": "TOPOLOGY: CLOSED LOOP",
+    "spec2": "NODES: ALL CONCURRENT",
+    "sn": "MD-DIGITAL-LAIN-020",
+    "svg": "<svg viewBox=\"0 0 700 320\" width=\"100%\" height=\"100%\" xmlns=\"http://www.w3.org/2000/svg\">\n      <path d=\"M220,150 C220,80 290,80 350,150 C410,220 480,220 480,150 C480,80 410,80 350,150 C290,220 220,220 220,150 Z\" fill=\"none\" stroke=\"#4f46e5\" stroke-width=\"7\"/>\n      <path d=\"M220,150 C220,80 290,80 350,150 C410,220 480,220 480,150 C480,80 410,80 350,150 C290,220 220,220 220,150 Z\" fill=\"none\" stroke=\"#0284c7\" stroke-width=\"2.5\" stroke-dasharray=\"10 5\"/>\n      <circle cx=\"350\" cy=\"150\" r=\"14\" fill=\"#db2777\" stroke=\"#ffffff\" stroke-width=\"2.5\"/>\n      <line x1=\"40\" y1=\"40\" x2=\"350\" y2=\"150\" stroke=\"#cbd5e1\" stroke-width=\"1\" stroke-dasharray=\"4 4\"/>\n      <line x1=\"660\" y1=\"40\" x2=\"350\" y2=\"150\" stroke=\"#cbd5e1\" stroke-width=\"1\" stroke-dasharray=\"4 4\"/>\n      <line x1=\"40\" y1=\"260\" x2=\"350\" y2=\"150\" stroke=\"#cbd5e1\" stroke-width=\"1\" stroke-dasharray=\"4 4\"/>\n      <line x1=\"660\" y1=\"260\" x2=\"350\" y2=\"150\" stroke=\"#cbd5e1\" stroke-width=\"1\" stroke-dasharray=\"4 4\"/>\n      <text x=\"350\" y=\"154\" font-family=\"'JetBrains Mono', monospace\" font-size=\"9\" font-weight=\"900\" fill=\"#ffffff\" text-anchor=\"middle\">∞</text>\n      <text x=\"350\" y=\"295\" font-family=\"'JetBrains Mono', monospace\" font-size=\"9\" font-weight=\"700\" fill=\"#4338ca\" text-anchor=\"middle\">WIRED SINGULARITY GATEWAY · ZERO GRAVITY OMNIPRESENCE</text>\n    </svg>"
+  }
+];
+  }
+
+  static getLain20DesignsList() {
+    return InvoiceTemplateService.getDigitalExclusiveDesignsList();
+  }
+
+  /**
+   * Genera el HTML de la Contraportada Coleccionable Lain para la Factura Electrónica Digital Única
+   * Diseñada a página completa Letter (8.5" x 11") con Hero Schematic de alta resolución y Doble QR simétrico
+   * @param {object} inv - Datos de la factura
+   * @param {number|null} [selectedTemplateIdx=null] - Índice opcional de plantilla (0 a 19)
+   */
+  static getSingleDigitalLainBackCardHtml(inv, selectedTemplateIdx = null) {
     const data = inv || {};
     const formattedFolio = String(data.folio || "0001").padStart(4, "0");
+    const pointsVal = Number(data.pointsValue || 0);
     const tok = {
       tokenCode: data.tokenCode || ("WP-2026-F" + formattedFolio + "-DIGITAL"),
       securityPin: data.securityPin || "4891",
       invoiceFolio: formattedFolio,
-      pointsValue: Number(data.pointsValue || 0)
+      pointsValue: pointsVal
     };
+    const configs = InvoiceTemplateService.getDigitalExclusiveDesignsList();
     const folioNum = parseInt(data.folio, 10);
-    const fixedTemplate = (typeof window !== "undefined" && window.activeLainTemplateIdx !== null && window.activeLainTemplateIdx !== undefined)
-      ? Math.max(0, Math.min(23, Number(window.activeLainTemplateIdx) | 0))
-      : null;
-    const templateIdx = fixedTemplate !== null ? fixedTemplate : (isNaN(folioNum) ? 0 : (folioNum % 24));
-    let cardHtml = InvoiceTemplateService.getLainBackCardHtml(1, tok, "digital-back", templateIdx);
-    cardHtml = cardHtml.replace('class="lain-card"', 'class="lain-card single-page-lain-card"');
-
-    // Pre-llenar puntos digitales en la caja de lápiz si existen puntos acreditados
-    if (tok.pointsValue > 0) {
-      cardHtml = cardHtml.replace(
-        '<span class="pencil-guide-line"></span>',
-        `<span style="font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:900;color:#0f172a;line-height:22px;">${tok.pointsValue}</span>`
-      );
+    let chosenIdx = 0;
+    if (typeof selectedTemplateIdx === "number" && selectedTemplateIdx >= 0) {
+      chosenIdx = selectedTemplateIdx % configs.length;
+    } else if (typeof data.selectedLainDesignIdx === "number" && data.selectedLainDesignIdx >= 0) {
+      chosenIdx = data.selectedLainDesignIdx % configs.length;
+    } else if (typeof window !== "undefined" && window.activeLainTemplateIdx != null) {
+      chosenIdx = Math.max(0, Math.min(configs.length - 1, Number(window.activeLainTemplateIdx) | 0));
+    } else {
+      chosenIdx = isNaN(folioNum) ? 0 : (folioNum % configs.length);
     }
+    const item = configs[chosenIdx];
 
-    // Inyectar código QR directo de alta resolución en la caja de escaneo
-    const claimUrl = "https://meltydeays-wired-club.vercel.app/?claim=" + encodeURIComponent(tok.tokenCode);
-    const qrImgSrc = "https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=" + encodeURIComponent(claimUrl) + "&color=0f172a&bgcolor=ffffff";
-    cardHtml = cardHtml.replace(
-      'id="print-qr-digital-back"></div>',
-      `id="print-qr-digital-back"><img src="${qrImgSrc}" alt="QR Wired Points" style="width:100%;height:100%;object-fit:contain;display:block;" onerror="this.onerror=null;this.src='${QR_CATALOG_BASE64}';"></div>`
-    );
+    return `
+    <!-- REVERSO COLECCIONABLE LAIN (HOJA CARTA FÍSICA // ${item.layer}) -->
+    <article class="lain-card single-page-lain-card" id="single-digital-lain-card" data-current-idx="${chosenIdx}">
+      <div class="tech-corner top-left">+</div>
+      <div class="tech-corner top-right">+</div>
+      <div class="tech-corner bottom-left">+</div>
+      <div class="tech-corner bottom-right">+</div>
 
-    return cardHtml;
+      <!-- HEADER HUD -->
+      <div class="lain-header">
+        <div class="lain-badge-group">
+          <span class="badge-navi">MELTYDEAYS · NAVI</span>
+          <span class="badge-layer">${item.layer}</span>
+          <span class="badge-status-live">● KERNEL ACTIVE</span>
+        </div>
+        <div class="lain-os-tag">COPLAND OS 21.0 // F${tok.invoiceFolio} // SERIAL: ${item.sn}</div>
+      </div>
+
+      <!-- TITULO PRINCIPAL CENTRADO -->
+      <div class="lain-title-row centered-title-row">
+        <div class="lain-main-title">${item.title}</div>
+        <div class="lain-sub-title">${item.sub}</div>
+      </div>
+
+      <!-- HERO SCHEMATIC SOBRE FONDO BLANCO LIMPIO -->
+      <div class="hero-schematic-section white-bg-schematic">
+        <div class="figure-hud-header">
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span class="hud-status-dot"></span>
+            <span class="hud-title">SCHEMATIC MONITOR // ${item.layer}</span>
+          </div>
+          <span class="hud-protocol">${item.protocol}</span>
+        </div>
+
+        <div class="schematic-telemetry-bar">
+          <span>FREQ: 1.44 THz</span>
+          <span>CARRIER: SYNC 50Hz</span>
+          <span>SNR: 54.8 dB</span>
+          <span>LATENCY: 0.01ms</span>
+          <span>RING-0: INTEGRITY VERIFIED</span>
+        </div>
+
+        <div class="lain-svg-container hero-svg-container white-svg-container">
+          <span class="hud-cross-tl">+</span>
+          <span class="hud-cross-tr">+</span>
+          <span class="hud-cross-bl">+</span>
+          <span class="hud-cross-br">+</span>
+          <div class="lain-svg-inner">
+            ${item.svg}
+          </div>
+        </div>
+
+        <div class="figure-hud-footer">
+          <span class="hud-chip">CHIP: ${item.chip}</span>
+          <span class="hud-pass">HARDWARE PASS · VERIFIED INTEGRITY</span>
+        </div>
+      </div>
+
+      <!-- CITA INTERCEPTADA / KANJI DE LAIN (CENTRADA) -->
+      <div class="intercepted-quote-box centered-quote-box">
+        <div class="trans-header">/// INTERCEPTED TRANSMISSION</div>
+        <div class="lain-kanji">${item.kanji}</div>
+        <div class="lain-quote-text">${item.quote}</div>
+      </div>
+
+      <!-- CONSOLA CENTRADA DE PUNTOS WIRED CLUB (UN SOLO QR CENTRADO) -->
+      <div class="centered-reward-section">
+        <div class="reward-header-pill">
+          <span class="reward-icon">❖</span> THE WIRED CLUB // CERTIFIED PASS
+        </div>
+
+        <div class="reward-points-card centered-points-card">
+          <div class="reward-points-title">PUNTOS DE FIDELIZACIÓN</div>
+          <div class="reward-points-row">
+            <span class="reward-plus">+</span>
+            <div class="reward-pencil-box" title="Wired Points acreditados">
+              <span class="reward-points-number">${tok.pointsValue}</span>
+            </div>
+            <span class="reward-wp">WP</span>
+          </div>
+          <div class="reward-points-sub">ACREDITADOS OFICIALMENTE EN ESTA COMPRA</div>
+        </div>
+
+        <!-- MARCO QR CENTRADO (UNICO QR LIMPIO) -->
+        <div class="reward-qr-frame centered-qr-frame">
+          <span class="qr-reticle-tl">⌜</span>
+          <span class="qr-reticle-tr">⌝</span>
+          <span class="qr-reticle-bl">⌞</span>
+          <span class="qr-reticle-br">⌟</span>
+          <div class="qr-canvas-box" id="print-qr-digital-back"></div>
+        </div>
+
+        <!-- PIN Y TOKEN DE SEGURIDAD -->
+        <div class="reward-pin-tag centered-pin-tag">
+          TOKEN: <strong>${tok.tokenCode}</strong> · PIN DE SEGURIDAD: <strong>${tok.securityPin}</strong>
+        </div>
+        <div class="reward-sub centered-reward-sub">
+          Escanea el código para acreditar tus puntos en <strong>meltydeays-wired-club.vercel.app</strong>
+        </div>
+      </div>
+
+      <!-- GRID DE ESPECIFICACIONES TÉCNICAS CENTRADO -->
+      <div class="specs-grid centered-specs-grid">
+        <div class="spec-cell">
+          <span class="spec-k">PROTOCOL</span>
+          <span class="spec-v">${item.protocol}</span>
+        </div>
+        <div class="spec-cell">
+          <span class="spec-k">PROCESSOR</span>
+          <span class="spec-v">${item.chip}</span>
+        </div>
+        <div class="spec-cell">
+          <span class="spec-k">HARDWARE BUS</span>
+          <span class="spec-v">${item.spec1}</span>
+        </div>
+        <div class="spec-cell">
+          <span class="spec-k">SECURITY CIPHER</span>
+          <span class="spec-v">${item.spec2}</span>
+        </div>
+        <div class="spec-cell">
+          <span class="spec-k">NETWORK NODE</span>
+          <span class="spec-v">WIRED-TOKYO // GATE-48</span>
+        </div>
+        <div class="spec-cell">
+          <span class="spec-k">TOKEN ID</span>
+          <span class="spec-v">MD-2026-F${tok.invoiceFolio}</span>
+        </div>
+      </div>
+
+      <!-- FOOTER COMPACTO CON CÓDIGO DE BARRAS A 1/4 DE HOJA -->
+      <div class="lain-footer compact-footer">
+        <div class="barcode-wrapper compact-barcode">
+          <div class="vector-barcode">
+            ${InvoiceTemplateService.getFullWidthBarcodeSvg(tok.tokenCode)}
+          </div>
+          <div class="barcode-info-row">
+            <span class="serial-code">SERIAL: ${tok.tokenCode}</span>
+          </div>
+        </div>
+        <div class="lain-seal-stamp">
+          <span class="stamp-org">TACHIBANA LABS</span>
+          <span class="stamp-auth">★ CERTIFIED ★</span>
+          <span class="stamp-store">MELTYDEAYS</span>
+        </div>
+      </div>
+    </article>`;
   }
 
-  /**
-   * Genera el documento HTML completo e interactivo listo para imprimir o enviar en PDF
-   * Diseño oficial idéntico al talonario físico 4x1 de mostrador (con opción de ver anverso/reverso)
-   * @param {object} invoiceData - Datos de la factura
-   * @param {object} [paperDims] - Dimensiones del papel
-   * @param {boolean} [autoPrint=false] - Si se debe disparar la ventana de impresión automáticamente
-   */
-  static generateSingleDigitalInvoiceDocument(invoiceData, paperDims, autoPrint = false) {
+  static generateSingleDigitalInvoiceDocument(invoiceData, paperDims, autoPrint = false, selectedTemplateIdx = null) {
     const dims = paperDims || { name: 'Carta (Letter)', widthMm: 215.9, heightMm: 279.4, cssSize: 'letter portrait' };
     const inv = invoiceData || {};
     const formattedFolio = String(inv.folio || "0001").padStart(4, "0");
     const claimUrl = "https://meltydeays-wired-club.vercel.app/?claim=" + (inv.tokenCode || "");
+    const configs = InvoiceTemplateService.getLain20DesignsList();
+    const folioNum = parseInt(inv.folio, 10);
+    let chosenIdx = 0;
+    if (typeof selectedTemplateIdx === "number" && selectedTemplateIdx >= 0) {
+      chosenIdx = selectedTemplateIdx % configs.length;
+    } else if (typeof inv.selectedLainDesignIdx === "number" && inv.selectedLainDesignIdx >= 0) {
+      chosenIdx = inv.selectedLainDesignIdx % configs.length;
+    } else {
+      chosenIdx = isNaN(folioNum) ? 0 : (folioNum % configs.length);
+    }
     const singleHtml = InvoiceTemplateService.getSingleDigitalInvoiceHtml(inv);
-    const singleBackHtml = InvoiceTemplateService.getSingleDigitalLainBackCardHtml(inv);
+    const singleBackHtml = InvoiceTemplateService.getSingleDigitalLainBackCardHtml(inv, chosenIdx);
 
     const styles = `
     ${InvoiceTemplateService.getComponentStyles(dims)}
@@ -1712,6 +2158,44 @@ export class InvoiceTemplateService {
       border-radius: 6px;
       padding: 2px;
       gap: 2px;
+    }
+
+    .toolbar-lain-selector {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      border-radius: 6px;
+      padding: 2px 8px;
+    }
+
+    .toolbar-lain-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      font-weight: 800;
+      color: #38bdf8;
+      white-space: nowrap;
+    }
+
+    .copland-select-toolbar {
+      background: #0f172a;
+      color: #f8fafc;
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      border-radius: 4px;
+      padding: 4px 8px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      font-weight: 700;
+      cursor: pointer;
+      max-width: 250px;
+      outline: none;
+      transition: all 0.2s;
+    }
+
+    .copland-select-toolbar:focus {
+      border-color: #38bdf8;
+      box-shadow: 0 0 8px rgba(56, 189, 248, 0.5);
     }
 
     .toolbar .btn {
@@ -1795,19 +2279,24 @@ export class InvoiceTemplateService {
        CONSISTENCIA 100% IDÉNTICA AL TALONARIO FÍSICO 4X1
        ======================================================== */
     .single-digital-invoice-page {
-      width: ${dims.widthMm}mm;
-      min-height: ${dims.heightMm}mm;
-      margin: 20px auto;
-      background: #ffffff;
-      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
-      box-sizing: border-box;
-      position: relative;
+      width: 8.5in !important;
+      max-width: 8.5in !important;
+      min-height: 11in !important;
+      margin: 20px auto !important;
+      background: #ffffff !important;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45) !important;
+      box-sizing: border-box !important;
+      position: relative !important;
+      padding: 0 !important;
     }
 
     .single-page-invoice {
       box-sizing: border-box !important;
-      min-height: ${dims.heightMm}mm !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      min-height: 11in !important;
       height: 100% !important;
+      margin: 0 !important;
       padding: 0.35in 0.45in 0.30in 0.45in !important;
       overflow: hidden !important;
       display: flex !important;
@@ -1819,6 +2308,7 @@ export class InvoiceTemplateService {
       background-image: radial-gradient(#cbd5e1 0.85px, transparent 0.85px) !important;
       background-size: 8px 8px !important;
       position: relative !important;
+      box-shadow: none !important;
     }
 
     /* ENCABEZADO */
@@ -2123,15 +2613,18 @@ export class InvoiceTemplateService {
     .single-page-invoice .thanks-wired-badge {
       display: inline-flex !important;
       align-items: center !important;
+      flex-wrap: wrap !important;
       gap: 6px !important;
-      background: #eef2ff !important;
-      border: 1px solid #c7d2fe !important;
-      border-radius: 4px !important;
-      padding: 3px 8px !important;
+      background: #f8fafc !important;
+      border: 1px solid #cbd5e1 !important;
+      border-left: 3px solid #4f46e5 !important;
+      border-radius: 3px !important;
+      padding: 3.5px 8px !important;
       margin-top: 5px !important;
       font-family: 'JetBrains Mono', monospace !important;
-      font-size: 9px !important;
-      color: #4338ca !important;
+      font-size: 8.5px !important;
+      color: #1e293b !important;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.04) !important;
     }
     .single-page-invoice .thanks-wired-badge code {
       background: #ffffff !important;
@@ -2424,144 +2917,453 @@ export class InvoiceTemplateService {
       letter-spacing: 0.4px !important;
     }
 
-    /* REVERSO COLECCIONABLE LAIN (1 PAGINA) */
+/* REVERSO COLECCIONABLE LAIN (PÁGINA COMPLETA 8.5" x 11") */
     .single-page-lain-card {
       box-sizing: border-box !important;
-      min-height: ${dims.heightMm}mm !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      min-height: 11in !important;
       height: 100% !important;
+      margin: 0 !important;
       padding: 0.35in 0.45in 0.30in 0.45in !important;
       display: flex !important;
       flex-direction: column !important;
       justify-content: space-between !important;
       border: 1.5px solid #0f172a !important;
       border-radius: 4px !important;
-      background-color: #f8fafc !important;
-      background-image: radial-gradient(#cbd5e1 0.85px, transparent 0.85px) !important;
+      background-color: #ffffff !important;
+      background-image: radial-gradient(#e2e8f0 0.85px, transparent 0.85px) !important;
       background-size: 8px 8px !important;
       position: relative !important;
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
+      box-shadow: none !important;
     }
     .single-page-lain-card .lain-header {
       border-bottom: 2px solid #0f172a !important;
-      padding-bottom: 6px !important;
+      padding-bottom: 5px !important;
     }
     .single-page-lain-card .badge-navi,
     .single-page-lain-card .badge-layer {
       font-size: 8px !important;
       padding: 2.5px 7px !important;
     }
-    .single-page-lain-card .lain-os-tag {
-      font-size: 9px !important;
-    }
-    .single-page-lain-card .lain-main-title {
-      font-size: 18px !important;
-    }
-    .single-page-lain-card .lain-sub-title {
-      font-size: 8.5px !important;
-    }
-    .single-page-lain-card .lain-main-body-row {
-      flex-grow: 1 !important;
-      min-height: 320px !important;
-      max-height: none !important;
-      gap: 16px !important;
-      margin: 12px 0 !important;
-    }
-    .single-page-lain-card .figure-hud-header {
-      font-size: 9px !important;
-      padding: 5px 8px !important;
-    }
-    .single-page-lain-card .figure-hud-footer {
-      font-size: 8px !important;
-      padding: 4px 8px !important;
-    }
-    .single-page-lain-card .lain-figure-col {
-      display: flex !important;
-      flex-direction: column !important;
-      flex-grow: 1 !important;
-    }
-    .single-page-lain-card .lain-svg-container {
-      flex-grow: 1 !important;
-      display: flex !important;
-      align-items: center !important;
-      justify-content: center !important;
-      padding: 10px !important;
-    }
-    .single-page-lain-card .lain-svg-container svg {
-      width: 100% !important;
-      max-height: 100% !important;
-      display: block !important;
-    }
-    .single-page-lain-card .reward-tag {
-      font-size: 9px !important;
-      padding: 4px 8px !important;
-    }
-    .single-page-lain-card .reward-plus {
-      font-size: 20px !important;
-    }
-    .single-page-lain-card .reward-pencil-box {
-      width: 60px !important;
-      height: 26px !important;
-      font-size: 15px !important;
+    .single-page-lain-card .badge-status-live {
+      font-family: 'JetBrains Mono', monospace !important;
+      font-size: 7.5px !important;
+      font-weight: 800 !important;
+      color: #15803d !important;
+      background: #dcfce7 !important;
+      border: 1px solid #86efac !important;
+      padding: 2px 6px !important;
+      border-radius: 2px !important;
       display: inline-flex !important;
       align-items: center !important;
-      justify-content: center !important;
+      gap: 3px !important;
     }
-    .single-page-lain-card .reward-wp {
-      font-size: 16px !important;
+    .single-page-lain-card .lain-os-tag {
+      font-size: 8.5px !important;
+      letter-spacing: 0.4px !important;
     }
-    .single-page-lain-card .reward-qr-frame {
-      padding: 5px !important;
+    .single-page-lain-card .lain-main-title {
+      font-size: 17px !important;
+      letter-spacing: 0.5px !important;
+      line-height: 1.15 !important;
     }
-    .single-page-lain-card .qr-canvas-box {
-      width: 32mm !important;
-      height: 32mm !important;
+    .single-page-lain-card .lain-sub-title {
+      font-size: 8px !important;
+      color: #64748b !important;
+    }
+
+    /* HERO SCHEMATIC SECTION (BLANCO LIMPIO // ESQUEMA TÉCNICO ALTA RESOLUCIÓN) */
+    .single-page-lain-card .hero-schematic-section {
+      display: flex !important;
+      flex-direction: column !important;
+      background: #ffffff !important;
+      border: 1.5px solid #0f172a !important;
+      border-radius: 4px !important;
+      box-shadow: 2px 2px 0px rgba(15, 23, 42, 0.12) !important;
+      overflow: hidden !important;
+      margin: 5px 0 !important;
+      flex: 1.3 1 auto !important;
+      min-height: 220px !important;
+      box-sizing: border-box !important;
+    }
+    .single-page-lain-card .hero-schematic-section .figure-hud-header {
+      font-size: 8.5px !important;
+      padding: 4px 8px !important;
+      background: #f1f5f9 !important;
+      color: #0f172a !important;
+      display: flex !important;
+      justify-content: space-between !important;
+      align-items: center !important;
+      line-height: 1 !important;
+      border-bottom: 1px solid #cbd5e1 !important;
+    }
+    .single-page-lain-card .hero-schematic-section .hud-status-dot {
+      width: 5px !important;
+      height: 5px !important;
+      border-radius: 50% !important;
+      background: #16a34a !important;
+      box-shadow: 0 0 3px #16a34a !important;
+    }
+    .single-page-lain-card .hero-schematic-section .hud-title {
+      font-family: 'JetBrains Mono', monospace !important;
+      font-size: 8px !important;
+      font-weight: 900 !important;
+      color: #0f172a !important;
+    }
+    .single-page-lain-card .hero-schematic-section .hud-protocol {
+      font-family: 'JetBrains Mono', monospace !important;
+      font-size: 7.5px !important;
+      color: #475569 !important;
+      font-weight: 800 !important;
+    }
+    .single-page-lain-card .schematic-telemetry-bar {
+      display: flex !important;
+      justify-content: space-between !important;
+      align-items: center !important;
+      background: #f8fafc !important;
+      border-bottom: 1px dashed #cbd5e1 !important;
+      padding: 3px 8px !important;
+      font-family: 'JetBrains Mono', monospace !important;
+      font-size: 6.8px !important;
+      font-weight: 800 !important;
+      color: #475569 !important;
+    }
+    .single-page-lain-card .hero-svg-container {
+      flex: 1 1 auto !important;
+      width: 100% !important;
+      height: 240px !important;
+      min-height: 220px !important;
       display: flex !important;
       align-items: center !important;
       justify-content: center !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      box-sizing: border-box !important;
+      background: #ffffff !important;
+      position: relative !important;
+      overflow: hidden !important;
     }
-    .single-page-lain-card .reward-pin-tag {
-      font-size: 10px !important;
-      padding: 3px 10px !important;
+    .single-page-lain-card .hero-svg-container .lain-svg-inner {
+      width: 100% !important;
+      height: 100% !important;
+      display: flex !important;
     }
-    .single-page-lain-card .reward-sub {
+    .single-page-lain-card .hero-svg-container svg {
+      width: 100% !important;
+      height: 100% !important;
+      display: block !important;
+      max-height: 100% !important;
+      object-fit: contain !important;
+    }
+    .single-page-lain-card .hero-schematic-section .figure-hud-footer {
+      background: #f1f5f9 !important;
+      border-top: 1px solid #cbd5e1 !important;
+      padding: 3px 8px !important;
+      display: flex !important;
+      justify-content: space-between !important;
+      align-items: center !important;
+      font-family: 'JetBrains Mono', monospace !important;
+      font-size: 7px !important;
+      font-weight: 800 !important;
+      line-height: 1 !important;
+    }
+    .single-page-lain-card .hero-schematic-section .hud-chip {
+      color: #334155 !important;
+      font-weight: 800 !important;
+    }
+    .single-page-lain-card .hero-schematic-section .hud-pass {
+      color: #16a34a !important;
+      font-weight: 900 !important;
+    }
+
+    /* CITA INTERCEPTADA CENTRADA */
+    .single-page-lain-card .centered-quote-box {
+      width: 100% !important;
+      background: #faf5ff !important;
+      border: 1px solid #e9d5ff !important;
+      border-left: 3.5px solid #6366f1 !important;
+      border-radius: 4px !important;
+      padding: 6px 12px !important;
+      margin: 4px 0 !important;
+      text-align: center !important;
+      box-sizing: border-box !important;
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      gap: 2px !important;
+    }
+    .single-page-lain-card .centered-quote-box .trans-header {
+      font-family: 'JetBrains Mono', monospace !important;
+      font-size: 6.5px !important;
+      font-weight: 900 !important;
+      color: #4338ca !important;
+      letter-spacing: 0.8px !important;
+    }
+    .single-page-lain-card .centered-quote-box .lain-kanji {
+      font-family: 'Noto Sans JP', sans-serif !important;
+      font-size: 8.5px !important;
+      font-weight: 900 !important;
+      color: #312e81 !important;
+      letter-spacing: 0.6px !important;
+    }
+    .single-page-lain-card .centered-quote-box .lain-quote-text {
+      font-family: 'JetBrains Mono', monospace !important;
       font-size: 7.5px !important;
+      font-weight: 700 !important;
+      color: #1e1b4b !important;
+      font-style: italic !important;
+      line-height: 1.25 !important;
+      max-width: 90% !important;
     }
-    .single-page-lain-card .lain-quote-box {
+
+    /* CONSOLA DE FIDELIZACIÓN CENTRADA (UN SOLO QR) */
+    .single-page-lain-card .centered-reward-section {
+      width: 100% !important;
+      background: #ffffff !important;
+      border: 1.5px solid #1e293b !important;
+      border-radius: 4px !important;
       padding: 6px 10px !important;
-      margin: 6px 0 !important;
+      margin: 4px 0 !important;
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      justify-content: center !important;
+      gap: 4px !important;
+      box-shadow: 2px 2px 0px rgba(15, 23, 42, 0.08) !important;
+      box-sizing: border-box !important;
+      flex: 1 1 auto !important;
     }
-    .single-page-lain-card .lain-kanji {
-      font-size: 9px !important;
+    .single-page-lain-card .reward-header-pill {
+      font-family: 'JetBrains Mono', monospace !important;
+      font-size: 7.5px !important;
+      font-weight: 900 !important;
+      color: #ffffff !important;
+      background: #0f172a !important;
+      padding: 2.5px 12px !important;
+      border-radius: 3px !important;
+      letter-spacing: 0.6px !important;
+      text-align: center !important;
     }
-    .single-page-lain-card .lain-quote-text {
-      font-size: 9.5px !important;
+    .single-page-lain-card .centered-points-card {
+      background: #f8fafc !important;
+      border: 1px solid #e2e8f0 !important;
+      border-radius: 4px !important;
+      padding: 3px 12px !important;
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      gap: 1.5px !important;
+    }
+    .single-page-lain-card .reward-points-title {
+      font-size: 7px !important;
+      font-weight: 800 !important;
+      color: #64748b !important;
+      letter-spacing: 0.4px !important;
+      text-transform: uppercase !important;
+    }
+    .single-page-lain-card .reward-points-row {
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      gap: 6px !important;
+    }
+    .single-page-lain-card .reward-plus {
+      font-size: 16px !important;
+      font-weight: 900 !important;
+      color: #0f172a !important;
+      line-height: 1 !important;
+    }
+    .single-page-lain-card .reward-pencil-box {
+      min-width: 55px !important;
+      height: 24px !important;
+      background: #ffffff !important;
+      border: 1.2px dashed #94a3b8 !important;
+      border-bottom: 2px solid #0f172a !important;
+      border-radius: 2px !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      padding: 0 6px !important;
+    }
+    .single-page-lain-card .reward-points-number {
+      font-family: 'JetBrains Mono', monospace !important;
+      font-size: 15px !important;
+      font-weight: 900 !important;
+      color: #4338ca !important;
+      line-height: 1 !important;
+    }
+    .single-page-lain-card .reward-wp {
+      font-size: 13px !important;
+      font-weight: 900 !important;
+      color: #e11d48 !important;
+      line-height: 1 !important;
+    }
+    .single-page-lain-card .reward-points-sub {
+      font-size: 6px !important;
+      font-weight: 700 !important;
+      color: #94a3b8 !important;
+      letter-spacing: 0.3px !important;
+      text-transform: uppercase !important;
+    }
+    .single-page-lain-card .centered-qr-frame {
+      position: relative !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      padding: 3px !important;
+      margin: 2px 0 !important;
+    }
+    .single-page-lain-card .centered-qr-frame .qr-canvas-box {
+      width: 28mm !important;
+      height: 28mm !important;
+      background: #ffffff !important;
+      border: 1.5px solid #0f172a !important;
+      border-radius: 4px !important;
+      padding: 1.8mm !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      box-shadow: 2px 2px 0px rgba(0,0,0,0.12) !important;
+      box-sizing: border-box !important;
+    }
+    .single-page-lain-card .centered-qr-frame .qr-canvas-box {
+      width: 28mm !important;
+      height: 28mm !important;
+      background: #ffffff !important;
+      border: 1.5px solid #0f172a !important;
+      border-radius: 4px !important;
+      padding: 1.8mm !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      box-shadow: 2px 2px 0px rgba(0,0,0,0.12) !important;
+      box-sizing: border-box !important;
+      position: relative !important;
+      overflow: hidden !important;
+    }
+    .single-page-lain-card .centered-qr-frame .qr-canvas-box canvas[style*="display: none"],
+    .single-page-lain-card .centered-qr-frame .qr-canvas-box img[style*="display: none"] {
+      display: none !important;
+    }
+    .single-page-lain-card .centered-qr-frame .qr-canvas-box canvas,
+    .single-page-lain-card .centered-qr-frame .qr-canvas-box img {
+      max-width: 100% !important;
+      max-height: 100% !important;
+      object-fit: contain !important;
+    }
+    .single-page-lain-card .centered-pin-tag {
+      font-family: 'JetBrains Mono', monospace !important;
+      font-size: 8px !important;
+      font-weight: 800 !important;
+      color: #0f172a !important;
+      background: #f1f5f9 !important;
+      border: 1px solid #cbd5e1 !important;
+      padding: 2.5px 10px !important;
+      border-radius: 3px !important;
+      line-height: 1 !important;
+    }
+    .single-page-lain-card .centered-pin-tag strong {
+      color: #4338ca !important;
+      font-size: 8.5px !important;
+    }
+    .single-page-lain-card .centered-reward-sub {
+      font-size: 6.5px !important;
+      color: #64748b !important;
+      text-align: center !important;
+      font-weight: 700 !important;
+      letter-spacing: 0.2px !important;
+      line-height: 1.2 !important;
+    }
+
+    /* SPECS GRID */
+    .single-page-lain-card .specs-grid {
+      display: grid !important;
+      grid-template-columns: repeat(3, 1fr) !important;
+      gap: 4px !important;
+      margin: 4px 0 !important;
     }
     .single-page-lain-card .spec-cell {
-      padding: 4px 8px !important;
+      background: #ffffff !important;
+      border: 1px solid #cbd5e1 !important;
+      border-radius: 3px !important;
+      padding: 2.5px 5px !important;
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 1px !important;
     }
     .single-page-lain-card .spec-k {
-      font-size: 7px !important;
+      font-family: 'JetBrains Mono', monospace !important;
+      font-size: 5.8px !important;
+      font-weight: 800 !important;
+      color: #64748b !important;
+      letter-spacing: 0.4px !important;
     }
     .single-page-lain-card .spec-v {
-      font-size: 9.5px !important;
+      font-family: 'JetBrains Mono', monospace !important;
+      font-size: 7px !important;
+      font-weight: 800 !important;
+      color: #0f172a !important;
+      letter-spacing: 0.3px !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+      white-space: nowrap !important;
     }
-    .single-page-lain-card .vector-barcode {
-      height: 20px !important;
-    }
-    .single-page-lain-card .serial-code {
-      font-size: 8.5px !important;
-      overflow-wrap: anywhere !important;
-      word-break: break-all !important;
-      white-space: normal !important;
-      line-height: 1.15 !important;
-    }
+
+    /* FOOTER & BARCODE COMPACTO (1/4 DE HOJA) */
     .single-page-lain-card .lain-footer {
-      align-items: flex-start !important;
-      gap: 8px !important;
+      display: flex !important;
+      justify-content: space-between !important;
+      align-items: center !important;
+      width: 100% !important;
+      padding-top: 4px !important;
+      border-top: 1.5px dashed #cbd5e1 !important;
+      margin-top: auto !important;
     }
-    .single-page-lain-card .barcode-wrapper {
-      flex: 1 1 auto !important;
-      min-width: 0 !important;
-      max-width: 70% !important;
+    .single-page-lain-card .compact-barcode {
+      width: 28% !important;
+      max-width: 200px !important;
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: flex-start !important;
+      gap: 1.5px !important;
+    }
+    .single-page-lain-card .compact-barcode .vector-barcode {
+      width: 100% !important;
+      height: 13px !important;
+      padding: 1px 3px !important;
+      background: #ffffff !important;
+      border: 1px solid #cbd5e1 !important;
+      border-radius: 2px !important;
+      box-sizing: border-box !important;
+    }
+    .single-page-lain-card .compact-barcode .vector-barcode svg {
+      width: 100% !important;
+      height: 100% !important;
+      display: block !important;
+    }
+    .single-page-lain-card .compact-barcode .barcode-info-row {
+      display: flex !important;
+      width: 100% !important;
+      justify-content: flex-start !important;
+      align-items: center !important;
+      margin-top: 1px !important;
+    }
+    .single-page-lain-card .compact-barcode .serial-code {
+      font-family: 'JetBrains Mono', monospace !important;
+      font-size: 6.8px !important;
+      font-weight: 800 !important;
+      color: #334155 !important;
+      letter-spacing: 0.3px !important;
+    }
+    .single-page-lain-card .barcode-security-tag {
+      font-family: 'JetBrains Mono', monospace !important;
+      font-size: 5.5px !important;
+      font-weight: 800 !important;
+      color: #64748b !important;
+      letter-spacing: 0.3px !important;
     }
     .single-page-lain-card .lain-seal-stamp {
       padding: 3px 8px !important;
@@ -2570,7 +3372,7 @@ export class InvoiceTemplateService {
     .single-page-lain-card .stamp-auth { font-size: 6.5px !important; }
     .single-page-lain-card .stamp-store { font-size: 7px !important; }
 
-    /* REGLAS DE IMPRESIÓN EXCLUSIVAS PARA FACTURA INDIVIDUAL (1 PÁGINA) */
+        /* REGLAS DE IMPRESIÓN EXCLUSIVAS PARA FACTURA INDIVIDUAL (1 PÁGINA) */
     @media print {
       html, body {
         background: transparent !important;
@@ -2635,6 +3437,12 @@ export class InvoiceTemplateService {
         <button class="btn btn-mode" id="btn-mode-back" onclick="setViewMode('back')">🎴 Tarjeta Lain (Reverso)</button>
         <button class="btn btn-mode" id="btn-mode-both" onclick="setViewMode('both')">📑 Ambas Caras (2 Págs)</button>
       </div>
+      <div class="toolbar-lain-selector">
+        <span class="toolbar-lain-label">🎴 Diseño Reverso:</span>
+        <select id="select-lain-design" class="copland-select-toolbar" onchange="switchLainDesign(this.value)">
+          ${configs.map((c, i) => `<option value="${i}" ${i === chosenIdx ? 'selected' : ''}>${c.name}</option>`).join('')}
+        </select>
+      </div>
       <button class="btn btn-bw" id="btn-bw" onclick="toggleBW()">🖤 Blanco y Negro</button>
       <button class="btn btn-sec" onclick="shareViaWhatsApp()">📲 Enviar WhatsApp</button>
       <button class="btn btn-sec" onclick="downloadHtmlFile()">📥 Descargar HTML</button>
@@ -2657,6 +3465,22 @@ export class InvoiceTemplateService {
     const clientPhone = "${inv.clientPhone || ''}";
     const clientName = "${inv.clientName || 'Estimado cliente'}";
     const totalFormatted = "${inv.currency === 'NIO' ? 'C$' : '$'} ${(inv.total || 0).toFixed(2)}";
+    const qrCatalogBase64 = "${QR_CATALOG_BASE64}";
+    const lainConfigs = ${JSON.stringify(configs.map(c => ({
+      id: c.id,
+      layer: c.layer,
+      name: c.name,
+      title: c.title,
+      sub: c.sub,
+      kanji: c.kanji,
+      quote: c.quote,
+      protocol: c.protocol,
+      chip: c.chip,
+      spec1: c.spec1,
+      spec2: c.spec2,
+      sn: c.sn,
+      svg: c.svg
+    })))};
 
     function setViewMode(mode) {
       const pageFront = document.getElementById('digital-page-front');
@@ -2673,11 +3497,13 @@ export class InvoiceTemplateService {
         pageBack.style.display = 'block';
         document.body.classList.remove('print-both');
         document.getElementById('btn-mode-back').classList.add('active');
+        setTimeout(renderBackQr, 40);
       } else {
         pageFront.style.display = 'block';
         pageBack.style.display = 'block';
         document.body.classList.add('print-both');
         document.getElementById('btn-mode-both').classList.add('active');
+        setTimeout(renderBackQr, 40);
       }
     }
 
@@ -2710,52 +3536,101 @@ export class InvoiceTemplateService {
       a.click();
     }
 
-    window.onload = function() {
-      // Renderizar QR en anverso
-      const qrEl = document.getElementById("digital-inv-qr");
-      if (qrEl && typeof QRCode !== "undefined" && claimUrl) {
+    function renderBackQr() {
+      const qrBackEl = document.getElementById("print-qr-digital-back");
+      if (!qrBackEl) return;
+      qrBackEl.innerHTML = "";
+      if (!claimUrl || !claimUrl.includes("claim=")) return;
+      let qrSuccess = false;
+      if (typeof QRCode !== "undefined") {
         try {
-          const tempDiv = document.createElement("div");
-          new QRCode(tempDiv, {
+          new QRCode(qrBackEl, {
             text: claimUrl,
-            width: 80, height: 80,
+            width: 120,
+            height: 120,
             colorDark: "#0f172a",
             colorLight: "#ffffff",
             correctLevel: QRCode.CorrectLevel.M
           });
-          setTimeout(() => {
-            const canvas = tempDiv.querySelector("canvas");
-            const img = tempDiv.querySelector("img");
-            if (canvas || (img && img.src)) {
-              qrEl.innerHTML = "";
-              qrEl.appendChild(canvas || img);
+          // QRCode.js creates both a <canvas> and an <img>.
+          // Clean up to keep EXACTLY ONE element and prevent double-rendering:
+          const cleanupQr = () => {
+            const canvas = qrBackEl.querySelector("canvas");
+            const img = qrBackEl.querySelector("img");
+            if (canvas && img) {
+              if (img.src && img.src.startsWith("data:")) {
+                canvas.remove();
+                img.style.display = "block";
+              } else if (canvas) {
+                img.remove();
+                canvas.style.display = "block";
+              }
             }
-          }, 60);
+          };
+          cleanupQr();
+          setTimeout(cleanupQr, 30);
+          setTimeout(cleanupQr, 100);
+          qrSuccess = true;
         } catch(e) {}
+      }
+      if (!qrSuccess) {
+        const img = document.createElement("img");
+        img.src = "https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=" + encodeURIComponent(claimUrl) + "&color=0f172a&bgcolor=ffffff";
+        img.alt = "QR Wired Points";
+        img.style.width = "100%";
+        img.style.height = "100%";
+        img.style.objectFit = "contain";
+        img.onerror = function() {
+          this.onerror = null;
+          this.src = qrCatalogBase64;
+        };
+        qrBackEl.appendChild(img);
+      }
+    }
+
+    function switchLainDesign(idx) {
+      const chosen = lainConfigs[parseInt(idx, 10)] || lainConfigs[0];
+      const card = document.getElementById("single-digital-lain-card");
+      if (!card) return;
+
+      const badgeLayer = card.querySelector(".badge-layer");
+      if (badgeLayer) badgeLayer.textContent = chosen.layer;
+      const osTag = card.querySelector(".lain-os-tag");
+      if (osTag) osTag.textContent = "COPLAND OS 21.0 // F" + folio + " // SERIAL: " + chosen.sn;
+
+      const title = card.querySelector(".lain-main-title");
+      if (title) title.textContent = chosen.title;
+      const subTitle = card.querySelector(".lain-sub-title");
+      if (subTitle) subTitle.textContent = chosen.sub;
+
+      const hudTitle = card.querySelector(".hud-title");
+      if (hudTitle) hudTitle.textContent = "SCHEMATIC // " + chosen.layer;
+      const hudProtocol = card.querySelector(".hud-protocol");
+      if (hudProtocol) hudProtocol.textContent = chosen.protocol;
+      const svgContainer = card.querySelector(".lain-svg-inner");
+      if (svgContainer) svgContainer.innerHTML = chosen.svg;
+      const hudChip = card.querySelector(".hud-chip");
+      if (hudChip) hudChip.textContent = "CHIP: " + chosen.chip;
+
+      const kanjiEl = card.querySelector(".lain-kanji");
+      if (kanjiEl) kanjiEl.textContent = chosen.kanji;
+      const quoteEl = card.querySelector(".lain-quote-text");
+      if (quoteEl) quoteEl.textContent = chosen.quote;
+
+      const specCells = card.querySelectorAll(".specs-grid .spec-cell .spec-v");
+      if (specCells.length >= 4) {
+        specCells[0].textContent = chosen.protocol;
+        specCells[1].textContent = chosen.chip;
+        specCells[2].textContent = chosen.spec1;
+        specCells[3].textContent = chosen.spec2;
       }
 
-      // Renderizar QR en reverso Lain
-      const qrBackEl = document.getElementById("print-qr-digital-back");
-      if (qrBackEl && typeof QRCode !== "undefined" && claimUrl) {
-        try {
-          const tempDivBack = document.createElement("div");
-          new QRCode(tempDivBack, {
-            text: claimUrl,
-            width: 120, height: 120,
-            colorDark: "#0f172a",
-            colorLight: "#ffffff",
-            correctLevel: QRCode.CorrectLevel.M
-          });
-          setTimeout(() => {
-            const canvas = tempDivBack.querySelector("canvas");
-            const img = tempDivBack.querySelector("img");
-            if (canvas || (img && img.src)) {
-              qrBackEl.innerHTML = "";
-              qrBackEl.appendChild(canvas || img);
-            }
-          }, 60);
-        } catch(e) {}
-      }
+      card.setAttribute("data-current-idx", idx);
+      renderBackQr();
+    }
+
+    window.onload = function() {
+      renderBackQr();
 
       if (${Boolean(autoPrint)}) {
         if (document.fonts && document.fonts.ready) {
@@ -3396,36 +4271,32 @@ export class InvoiceTemplateService {
 
   /**
    * Devuelve la lista pública de plantillas Lain disponibles para selector UI
-   * @returns {Array<{idx:number, layer:string, title:string, sub:string, kanji:string}>}
+   * Soporta modo 'digital' (20 exclusivos) y 'physical' (44 talonario 4x1)
+   * @param {string} [type='digital'] - 'digital' | 'physical'
+   * @returns {Array<{idx:number, id:number, layer:string, series:string, name:string, title:string, sub:string, kanji:string}>}
    */
-  static getAvailableLainTemplates() {
-    const items = [
-      { layer: 'LAYER: 01', title: 'WEIRDO // THE WIRED', sub: 'TACHIBANA GENERAL LABORATORIES · COPLAND OS 21.0', kanji: '全ては繋がっている' },
-      { layer: 'LAYER: 02', title: 'GIRLS // PSYCHE CHIP', sub: 'KNIGHTS OF THE EASTERN CALCULUS · LICENSED HARDWARE', kanji: 'どこに行っても、みんな繋がっている' },
-      { layer: 'LAYER: 03', title: 'NAVI // ACCEL', sub: 'COPAND KERNEL v3.2 · SCHUMANN RESONANCE UNIT', kanji: '現実と虚構の境界線' },
-      { layer: 'LAYER: 04', title: 'CHISA // HEARTBIT', sub: 'TACHIBANA LABS · NEURO LINK TRANSMITTER', kanji: '記憶はデータではない' },
-      { layer: 'LAYER: 05', title: 'REIKA // QUANTUM', sub: 'EASTERN CALCULUS · QUANTUM GATE MODULE', kanji: '一瞬が永遠になる' },
-      { layer: 'LAYER: 06', title: 'YUKI // SNOW WHITE', sub: 'SNOW WHITE PROTOCOL · WHITE CRYSTAL KEY', kanji: '透明なままでいたい' },
-      { layer: 'LAYER: 07', title: 'KAORI // NEURAL', sub: 'NEURAL-SYNC DIVISION · DEEP WAVE PROTOCOL', kanji: 'この声が聞こえますか' },
-      { layer: 'LAYER: 08', title: 'MEGUMI // VECTOR', sub: 'VECTOR CONTROL UNIT · COPLAND OS KERNEL', kanji: '方向を決めるのは自分' },
-      { layer: 'LAYER: 09', title: 'AYUMU // DREAMWAVE', sub: 'DREAM LOGIC INTERFACE · REM-UNIT 09', kanji: '夢の続きが見たい' },
-      { layer: 'LAYER: 10', title: 'HANA // FLOWER CORE', sub: 'BIO CHIP DIVISION · FLORAL NEURAL MATRIX', kanji: '花はいつか散るもの' },
-      { layer: 'LAYER: 11', title: 'SORA // SKY MATRIX', sub: 'ATMOSPHERE LINK · CLOUD KERNEL SYNC', kanji: '空はいつもそこにある' },
-      { layer: 'LAYER: 12', title: 'MIZUKI // WATER CODE', sub: 'FLUID LOGIC CORE · AQUA PROCESSOR', kanji: '水は形を変える' },
-      { layer: 'LAYER: 13', title: 'HIKARI // LIGHT BEAM', sub: 'PHOTON ARRAY UNIT · LASER CHANNEL', kanji: '光は最速のメッセンジャー' },
-      { layer: 'LAYER: 14', title: 'TSUKI // MOON PHASE', sub: 'LUNAR SYNC SATELLITE · PHASE LOCK LOOP', kanji: '月はいつも見ている' },
-      { layer: 'LAYER: 15', title: 'KAI // OCEAN DEEP', sub: 'ABYSSAL ZONE MODULE · PRESSURE CORE', kanji: '海の底は静かだ' },
-      { layer: 'LAYER: 16', title: 'REI // ZERO PROTOCOL', sub: 'ORIGIN SPEC :: REVISION 0 · NULL CHASSIS', kanji: 'ゼロから始めよう' },
-      { layer: 'LAYER: 17', title: 'SHUN // INSTANT', sub: 'REAL-TIME KERNEL · NANO-SECOND BUS', kanji: '今この瞬間が全て' },
-      { layer: 'LAYER: 18', title: 'RIN // RING CHORD', sub: 'HARMONIC RESONANCE UNIT · RING OSCILLATOR', kanji: '音は記憶を呼び覚ます' },
-      { layer: 'LAYER: 19', title: 'SHI // STEEL HEART', sub: 'TITANIUM ALLOY CHASSIS · STEEL CORE v4', kanji: '強さは優しさの中に' },
-      { layer: 'LAYER: 20', title: 'AKI // AUTUMN BYTE', sub: 'FALL CHIP-SET · ORIGIN LOGIC GATE', kanji: '秋は実りの季節' },
-      { layer: 'LAYER: 21', title: 'FUYU // WINTER LOGIC', sub: 'CRYO UNIT · FROST CHIP v2.1', kanji: '冬は静けさをくれる' },
-      { layer: 'LAYER: 22', title: 'HARU // SPRING BOOT', sub: 'SEED KERNEL · NEW LIFE MODULE', kanji: '春は新しい始まり' },
-      { layer: 'LAYER: 23', title: 'NATSU // SUMMER HEAT', sub: 'THERMAL-CORE UNIT · SUN CHANNEL', kanji: '夏は熱く燃える' },
-      { layer: 'LAYER: 24', title: 'LAIN // FINAL LAYER', sub: 'THE WIRED :: GODDESS MODE · ETERNAL LINK', kanji: '私はここにいるよ' }
-    ];
-    return items.map((it, idx) => ({ idx: idx, ...it }));
+  static getAvailableLainTemplates(type = 'digital') {
+    if (type === 'physical') {
+      return InvoiceTemplateService.getPhysical4x1DesignsList().map((item, idx) => ({
+        idx,
+        id: idx,
+        layer: item.layer,
+        series: item.series || (idx < 24 ? 'SERIE 1' : 'SERIE 2'),
+        name: item.name || (item.layer + ' · ' + item.title),
+        title: item.title,
+        sub: item.sub,
+        kanji: item.kanji
+      }));
+    }
+    return InvoiceTemplateService.getDigitalExclusiveDesignsList().map((item, idx) => ({
+      idx,
+      id: item.id != null ? item.id : idx,
+      layer: item.layer,
+      series: 'DIGITAL EXCLUSIVE',
+      name: item.name || (item.layer + ' · ' + item.title),
+      title: item.title,
+      sub: item.sub,
+      kanji: item.kanji
+    }));
   }
 }
-

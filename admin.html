@@ -647,13 +647,13 @@
         </div>
       </div>
 
-      <!-- SELECCIÓN EXCLUSIVA DE DISEÑOS PERSONALIZADOS LAIN (24 PLANTILLAS) -->
+      <!-- SELECCIÓN EXCLUSIVA DE DISEÑOS PERSONALIZADOS LAIN (44 PLANTILLAS) -->
       <div id="lain-template-selector-card" class="paper-setup-card" style="margin-top: 0.6rem;">
         <div class="paper-setup-header">
           <div>
             <span class="paper-auto-badge" style="background:#ecfeff; color:#0891b2; border-color:#67e8f9;">⚡ DISEÑOS SERIAL EXPERIMENTS LAIN</span>
             <h3 style="margin: 6px 0 0; font-size: 1rem; color: var(--dark); font-weight: 900; letter-spacing: 0.2px;">
-              Apartado Exclusivo: 24 Diseños Personalizados de Contraportada Coleccionable
+              Apartado Exclusivo: 44 Diseños Personalizados de Contraportada Coleccionable (24 Serie 1 + 20 Serie 2)
             </h3>
             <span style="font-size: 0.75rem; color: var(--gray-600); display:block; margin-top: 2px;">
               Todos los diseños conservan el código QR dot-matrix original con su estructura intacta y optimizan el 100% del espacio disponible.
@@ -990,6 +990,36 @@
                   🎲
                 </button>
               </div>
+            </div>
+
+            <!-- SELECTOR DE DISEÑO LAIN EXCLUSIVO FACTURA DIGITAL -->
+            <div class="copland-field-group" style="grid-column: 1 / -1; margin-top: 10px; border-top: 1px dashed #c7d2fe; padding-top: 10px;">
+              <label class="copland-field-label" style="display:flex; justify-content:space-between; align-items:center;">
+                <span>🎴 DISEÑO EXCLUSIVO DE CONTRAPORTADA DIGITAL (SERIAL EXPERIMENTS LAIN)</span>
+                <span style="font-size:10px; color:#6366f1; font-weight:700;">20 DISEÑOS EXCLUSIVOS PÁGINA COMPLETA</span>
+              </label>
+              <select id="s-inv-lain-design" class="form-input copland-input" style="font-family:'JetBrains Mono', monospace; font-size:12px; font-weight:700; background:#f8fafc; color:#1e1b4b; cursor:pointer;">
+                <option value="0">01. KALEIDOSCOPE // OPTICAL MATRIX (Refracción de Prisma Óptico)</option>
+                <option value="1">02. COOLING PIPELINE // LIQUID NITROGEN BUS (Refrigeración Criogénica)</option>
+                <option value="2">03. NEURAL JACK // DIRECT SYNAPTIC INTERFACE (Interfaz Bio-Cerebral)</option>
+                <option value="3">04. SUB-ETHER BROADCAST // ULTRA-LOW FREQUENCY (Ondas Subterráneas ULF)</option>
+                <option value="4">05. TACHIBANA MAINFRAME // RACK-MOUNTED TOWER (Servidor Central)</option>
+                <option value="5">06. SLEEPLESS CITY // TOKYO NOCTURNE SCAN (Topografía Nocturna)</option>
+                <option value="6">07. DIODE ARRAY // SILICON JUNCTION GATE (Compuertas Lógicas)</option>
+                <option value="7">08. WIRED GHOST // CONSCIOUSNESS FRAGMENT (Espectro Digital)</option>
+                <option value="8">09. OSCILLOSCOPE TRACE // WAVEFORM SYNTHESIZER (Traza de Rayo Catódico)</option>
+                <option value="9">10. CIPHER SUITE // AES-256 ZERO KNOWLEDGE (Cubo Criptográfico)</option>
+                <option value="10">11. SUBMERGED CABLES // PACIFIC DEEP-SEA TRANSIT (Fibra Submarina)</option>
+                <option value="11">12. ELECTROSTATIC SHIELD // FARADAY CAGE (Jaula de Faraday)</option>
+                <option value="12">13. KERNEL COMPILER // LOW-LEVEL ASSEMBLY DUMP (Desensamblador)</option>
+                <option value="13">14. PHOSPHOR DISPLAY // VECTOR GRAPHICS TERMINAL (Monitor Vectorial)</option>
+                <option value="14">15. QUANTUM POLARIZER // PHOTON ENTANGLEMENT ARRAY (Entrelazamiento)</option>
+                <option value="15">16. RELAY SWITCH // ELECTROMECHANICAL COMMUTATOR (Conmutador Telefónico)</option>
+                <option value="16">17. SECTOR SCAN // DOPPLER INTERFERENCE DETECTOR (Radar de Barrido)</option>
+                <option value="17">18. CORE MEMORY // MAGNETIC FERRITE RING MATRIX (Memoria de Ferrita)</option>
+                <option value="18">19. SPECTRUM ANALYZER // FAST FOURIER TRANSFORM (Análisis FFT)</option>
+                <option value="19">20. SINGULARITY // ZERO GRAVITY WIRED LINK (Lazo Infinito)</option>
+              </select>
             </div>
           </div>
         </div>
@@ -2258,12 +2288,12 @@
         // Fallback por si InvoiceTemplateService aún no carga
         window._lainTemplatesCache = (window.InvoiceTemplateService &&
           typeof window.InvoiceTemplateService.getAvailableLainTemplates === "function")
-          ? window.InvoiceTemplateService.getAvailableLainTemplates()
-          : Array.from({ length: 24 }, (_, i) => ({
+          ? window.InvoiceTemplateService.getAvailableLainTemplates('physical')
+          : Array.from({ length: 44 }, (_, i) => ({
               idx: i,
               layer: "LAYER: " + String(i + 1).padStart(2, "0"),
               title: "PLANTILLA " + (i + 1),
-              sub: "Diseño coleccionable Lain",
+              sub: "Diseño coleccionable Lain 4x1",
               kanji: "デザイン"
             }));
         return window._lainTemplatesCache;

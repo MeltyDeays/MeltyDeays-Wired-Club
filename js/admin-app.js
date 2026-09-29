@@ -2306,6 +2306,7 @@ async function submitSingleDigitalInvoice(action = 'print') {
   const pin = document.getElementById("s-inv-pin-val")?.value.trim() || Math.floor(1000 + Math.random() * 9000).toString();
   const warrantyText = document.getElementById("s-inv-warranty-text")?.value.trim() || "30 DÍAS CALENDARIO (DEFECTOS DE FÁBRICA)";
   const notesText = document.getElementById("s-inv-notes-text")?.value.trim() || "";
+  const selectedLainDesignIdx = parseInt(document.getElementById("s-inv-lain-design")?.value, 10) || 0;
 
   // ========================================================
   // PREVISUALIZACIÓN AISLADA: NO TOCA BD, NO GUARDA, NO CONSUME FOLIO
@@ -2328,11 +2329,12 @@ async function submitSingleDigitalInvoice(action = 'print') {
       securityPin: pin,
       warrantyText,
       notes: notesText,
+      selectedLainDesignIdx,
       tokenCode: pointsVal > 0 ? ("WP-2026-F" + folio + "-PREVIEW") : null
     };
 
     const printDims = getSelectedPaperDimensions("preview");
-    const docHtml = InvoiceTemplateService.generateSingleDigitalInvoiceDocument(mockPayload, printDims);
+    const docHtml = InvoiceTemplateService.generateSingleDigitalInvoiceDocument(mockPayload, printDims, false, selectedLainDesignIdx);
 
     const printWin = window.open("", "_blank");
     if (printWin) {
@@ -2372,8 +2374,12 @@ async function submitSingleDigitalInvoice(action = 'print') {
 
     closeModal("modal-single-digital-invoice");
 
+    if (result && result.invoicePayload) {
+      result.invoicePayload.selectedLainDesignIdx = selectedLainDesignIdx;
+    }
+
     const printDims = getSelectedPaperDimensions("preview");
-    const docHtml = InvoiceTemplateService.generateSingleDigitalInvoiceDocument(result.invoicePayload, printDims);
+    const docHtml = InvoiceTemplateService.generateSingleDigitalInvoiceDocument(result.invoicePayload, printDims, action === 'print', selectedLainDesignIdx);
 
     if (action === "download") {
       const blob = new Blob([docHtml], { type: "text/html;charset=utf-8" });
