@@ -4053,6 +4053,17 @@ body {
 .lain-nav-invoice-btn:active {
   transform: translate(1px, 1px);
   box-shadow: 1px 1px 0px var(--dark);
+.sale-calc-inputs-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+  margin-bottom: 0.4rem;
+}
+
+.modal-actions-responsive {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
 }
 
 /* ======================================================== */
@@ -4916,6 +4927,9 @@ body {
   .pos-input-group {
     flex-direction: column !important;
     align-items: stretch !important;
+    height: auto !important;
+    min-height: 52px !important;
+    overflow: visible !important;
     gap: 0.5rem !important;
   }
 
@@ -4930,6 +4944,132 @@ body {
     width: 100% !important;
     justify-content: center !important;
     min-height: 44px !important;
+  }
+
+  /* RESPONSIVIDAD CALCULADORA WP Y MÁRGENES */
+  .sale-calc-inputs-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.5rem !important;
+  }
+  .sale-calc-presets-row {
+    justify-content: flex-start !important;
+    margin-top: 0.4rem !important;
+  }
+
+  /* MODAL ACTIONS RESPONSIVE Y BOTONES */
+  .modal-actions-responsive {
+    flex-direction: column !important;
+    width: 100% !important;
+    gap: 0.5rem !important;
+  }
+  .modal-actions-responsive button,
+  .modal-actions-responsive .btn-primary,
+  .modal-actions-responsive .btn-secondary {
+    width: 100% !important;
+    min-height: 44px !important;
+    justify-content: center !important;
+    text-align: center !important;
+    box-sizing: border-box !important;
+  }
+
+  /* LAIN TOGGLE GROUP (CARGAR / DEDUCIR PUNTOS) */
+  .lain-toggle-group {
+    grid-template-columns: 1fr !important;
+    gap: 0.45rem !important;
+  }
+  .lain-toggle-btn {
+    padding: 0.65rem 0.85rem !important;
+    font-size: 0.78rem !important;
+    justify-content: center !important;
+  }
+
+  /* MODAL COMPACT MOBILE Y LAIN CARDS */
+  .modal-content.lain-card,
+  .modal-compact-mobile {
+    padding: 1.15rem 0.85rem !important;
+    max-width: 95vw !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  /* HERO CARD FACTURA DIGITAL INDIVIDUAL */
+  .lain-invoice-hero-card {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.85rem !important;
+    padding: 1rem 0.85rem !important;
+  }
+  .lain-hero-left,
+  .lain-hero-right {
+    width: 100% !important;
+    flex: none !important;
+  }
+  .lain-hero-right {
+    flex-direction: column !important;
+  }
+  .lain-btn-digital-invoice,
+  .lain-btn-calc-shortcut {
+    width: 100% !important;
+    white-space: normal !important;
+    justify-content: center !important;
+    text-align: center !important;
+    min-height: 44px !important;
+    box-sizing: border-box !important;
+  }
+
+  /* SELECTOR DE PLANTILLAS LAIN (44 DISEÑOS) */
+  .lain-template-btn-group {
+    width: 100% !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 0.4rem !important;
+  }
+  .lain-template-btn-group .copland-bar-btn {
+    flex: 1 1 calc(50% - 0.4rem) !important;
+    justify-content: center !important;
+    text-align: center !important;
+  }
+
+  /* BOTONES CABECERA SOCIOS */
+  .admin-header-actions {
+    width: 100% !important;
+    margin-top: 0.5rem !important;
+  }
+  .admin-header-actions button {
+    flex: 1 1 calc(50% - 0.4rem) !important;
+    justify-content: center !important;
+  }
+
+  /* AJUSTE DE PUNTOS FILA INPUT Y PRESETS */
+  .adjust-points-input-row {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.6rem !important;
+  }
+  .adjust-points-input-row input {
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+  .adjust-points-input-row div {
+    width: 100% !important;
+    justify-content: space-between !important;
+  }
+  .adjust-points-input-row div button {
+    flex: 1 1 auto !important;
+    text-align: center !important;
+    padding: 6px 4px !important;
+  }
+
+  /* BREAK-WORD EN TEXTOS CRÍTICOS */
+  #token-actions-title,
+  #ledger-user-name,
+  #ban-user-title,
+  #single-qr-folio {
+    word-break: break-word !important;
+  }
+  #single-qr-code,
+  #token-actions-code {
+    word-break: break-all !important;
   }
 
   /* BANNER DE RECLAMO FLUIDO (CLIENTE) */
@@ -5026,6 +5166,18 @@ body {
   .copland-bar-btn {
     width: 100% !important;
     justify-content: center !important;
+  }
+}
+
+@media (max-width: 420px) {
+  .sale-calc-inputs-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .lain-template-btn-group .copland-bar-btn {
+    flex: 1 1 100% !important;
+  }
+  .admin-header-actions button {
+    flex: 1 1 100% !important;
   }
 }
 

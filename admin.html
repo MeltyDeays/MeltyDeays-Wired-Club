@@ -461,7 +461,7 @@
               BASE DE CLIENTES · ASIGNACIÓN DIRECTA DE PUNTOS · AUDITORÍA DE LEDGER
             </div>
           </div>
-          <div style="display: flex; gap: 0.6rem; align-items: center; flex-shrink: 0;">
+          <div class="admin-header-actions" style="display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap;">
             <button class="btn-secondary" onclick="refreshAdminUsers()" style="height: 38px; min-height: 38px; padding: 0 1.15rem; font-size: 0.8rem; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; gap: 0.45rem; white-space: nowrap; box-sizing: border-box;" title="Consultar base de datos y actualizar tabla">
               🔄 Actualizar Lista
             </button>
@@ -624,8 +624,8 @@
 
       <!-- ESPECIFICACIÓN DEL TAMAÑO DE HOJA Y MEDIDAS (DESACOPLADO) -->
       <div class="paper-setup-card">
-        <div class="paper-setup-header">
-          <div style="display: flex; align-items: center; gap: 0.5rem;">
+        <div class="paper-setup-header" style="flex-wrap: wrap; gap: 0.6rem;">
+          <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
             <span class="badge-navi">CALIBRACIÓN DE IMPRESIÓN</span>
             <strong style="font-size: 0.85rem; color: var(--dark);">Formato de Hoja para Impresora</strong>
           </div>
@@ -664,7 +664,7 @@
 
       <!-- SELECCIÓN EXCLUSIVA DE DISEÑOS PERSONALIZADOS LAIN (44 PLANTILLAS) -->
       <div id="lain-template-selector-card" class="paper-setup-card" style="margin-top: 0.6rem;">
-        <div class="paper-setup-header">
+        <div class="paper-setup-header" style="flex-wrap: wrap; gap: 0.6rem;">
           <div>
             <span class="paper-auto-badge" style="background:#ecfeff; color:#0891b2; border-color:#67e8f9;">⚡ DISEÑOS SERIAL EXPERIMENTS LAIN</span>
             <h3 style="margin: 6px 0 0; font-size: 1rem; color: var(--dark); font-weight: 900; letter-spacing: 0.2px;">
@@ -674,7 +674,7 @@
               Todos los diseños conservan el código QR dot-matrix original con su estructura intacta y optimizan el 100% del espacio disponible.
             </span>
           </div>
-          <div style="display:flex; gap:0.5rem; align-items:center;">
+          <div class="lain-template-btn-group" style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
             <button type="button" class="copland-bar-btn copland-bar-btn-slate" onclick="cycleLainTemplate(-1)" title="Diseño anterior">◀ ANTERIOR</button>
             <button type="button" class="copland-bar-btn copland-bar-btn-primary" onclick="cycleLainTemplate(1)" title="Diseño siguiente">SIGUIENTE ▶</button>
             <button type="button" class="copland-bar-btn copland-bar-btn-indigo" onclick="randomizeLainTemplate()" title="Plantilla aleatoria">🎲 ALEATORIO</button>
@@ -1161,11 +1161,11 @@
 
       <div id="single-qr-canvas" style="display: flex; justify-content: center; margin: 1rem 0;"></div>
       
-      <div id="single-qr-code" style="font-family: var(--font-mono); font-size: 1rem; font-weight: 900; color: var(--dark); margin-bottom: 0.5rem;">
+      <div id="single-qr-code" style="font-family: var(--font-mono); font-size: 1rem; font-weight: 900; color: var(--dark); margin-bottom: 0.5rem; word-break: break-all;">
         WP-2026-F0104-XXXX
       </div>
 
-      <div style="margin-top: 1rem; display: flex; gap: 0.5rem;">
+      <div class="modal-actions-responsive" style="margin-top: 1rem; display: flex; gap: 0.5rem;">
         <button class="btn-secondary" style="flex: 1;" onclick="copySingleQrUrl()">Copiar Enlace</button>
         <button class="btn-primary" style="flex: 1;" onclick="testSingleQrUrl()">Probar Auto-Reclamo</button>
       </div>
@@ -1174,7 +1174,7 @@
 
   <!-- MODAL: MENÚ DE OPCIONES DE FACTURA / TOKEN (BOTÓN ...) -->
   <div id="modal-token-actions" class="modal-overlay" style="display: none;">
-    <div class="modal-content lain-card" style="max-width: 450px; text-align: left; padding: 1.5rem;">
+    <div class="modal-content lain-card modal-compact-mobile" style="max-width: 450px; text-align: left; padding: 1.5rem;">
       <div class="modal-scanline-holder"><div class="modal-scanline-bar"></div></div>
       <div class="tech-corner top-left">+</div>
       <div class="tech-corner top-right">+</div>
@@ -1183,45 +1183,45 @@
       <button class="modal-close-btn" onclick="closeModal('modal-token-actions')" aria-label="Cerrar">&times;</button>
 
       <div class="lain-modal-header">
-        <div style="display: flex; align-items: center; gap: 0.5rem;">
+        <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
           <span class="badge-navi" style="background:#0f172a; color:#38bdf8;">COPLAND OS 21.0 // FACTURA</span>
           <span class="badge-layer">OPCIONES RÁPIDAS</span>
         </div>
       </div>
 
       <div style="margin: 0.8rem 0 1rem 0;">
-        <h3 id="token-actions-title" style="font-size: 1.2rem; font-weight: 900; color: var(--dark); margin: 0 0 0.35rem 0; font-family: var(--font-mono);">
+        <h3 id="token-actions-title" style="font-size: 1.2rem; font-weight: 900; color: var(--dark); margin: 0 0 0.35rem 0; font-family: var(--font-mono); word-break: break-word;">
           Factura #MD-2026-0000
         </h3>
         <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 0.5rem;">
-          <code id="token-actions-code" class="token-code-pill">WP-2026-F0000-XXXX</code>
+          <code id="token-actions-code" class="token-code-pill" style="word-break: break-all;">WP-2026-F0000-XXXX</code>
           <span id="token-actions-pin-badge" class="pin-badge">PIN: 0000</span>
         </div>
         <div id="token-actions-status-row" style="margin-top: 0.35rem;"></div>
       </div>
 
       <div style="display: flex; flex-direction: column; gap: 0.55rem;">
-        <button type="button" class="btn-primary" id="btn-token-opt-view-invoice" style="justify-content: flex-start; gap: 8px; padding: 0.65rem 0.9rem; font-size: 0.82rem; background: linear-gradient(135deg, #059669, #047857); border-color: #065f46;" onclick="executeTokenOptViewInvoice()">
+        <button type="button" class="btn-primary" id="btn-token-opt-view-invoice" style="justify-content: flex-start; gap: 8px; padding: 0.65rem 0.9rem; font-size: 0.82rem; background: linear-gradient(135deg, #059669, #047857); border-color: #065f46; white-space: normal; text-align: left;" onclick="executeTokenOptViewInvoice()">
           <span>📄</span> <strong id="btn-token-opt-view-invoice-label">Generar / Ver Factura Digital (1 Página Completa)</strong>
         </button>
-        <button type="button" class="btn-secondary" id="btn-token-opt-edit-invoice" style="display: none; justify-content: flex-start; gap: 8px; padding: 0.65rem 0.9rem; font-size: 0.82rem; border-color: #059669; color: #047857; font-weight: 800;" onclick="executeTokenOptEditInvoice()">
+        <button type="button" class="btn-secondary" id="btn-token-opt-edit-invoice" style="display: none; justify-content: flex-start; gap: 8px; padding: 0.65rem 0.9rem; font-size: 0.82rem; border-color: #059669; color: #047857; font-weight: 800; white-space: normal; text-align: left;" onclick="executeTokenOptEditInvoice()">
           <span>✏️</span> <strong>Modificar / Editar Datos de Factura</strong>
         </button>
-        <button type="button" class="btn-primary" id="btn-token-opt-assign" style="justify-content: flex-start; gap: 8px; padding: 0.65rem 0.9rem; font-size: 0.82rem;" onclick="executeTokenOptAssign()">
+        <button type="button" class="btn-primary" id="btn-token-opt-assign" style="justify-content: flex-start; gap: 8px; padding: 0.65rem 0.9rem; font-size: 0.82rem; white-space: normal; text-align: left;" onclick="executeTokenOptAssign()">
           <span>⚡</span> <strong>Cargar / Asignar Puntos WP</strong>
         </button>
-        <button type="button" class="btn-secondary" style="justify-content: flex-start; gap: 8px; padding: 0.65rem 0.9rem; font-size: 0.82rem;" onclick="executeTokenOptQr()">
+        <button type="button" class="btn-secondary" style="justify-content: flex-start; gap: 8px; padding: 0.65rem 0.9rem; font-size: 0.82rem; white-space: normal; text-align: left;" onclick="executeTokenOptQr()">
           <span>🔍</span> <strong>Inspeccionar Código QR Oficial</strong>
         </button>
-        <button type="button" class="btn-secondary" style="justify-content: flex-start; gap: 8px; padding: 0.65rem 0.9rem; font-size: 0.82rem;" onclick="executeTokenOptCopyLink()">
+        <button type="button" class="btn-secondary" style="justify-content: flex-start; gap: 8px; padding: 0.65rem 0.9rem; font-size: 0.82rem; white-space: normal; text-align: left;" onclick="executeTokenOptCopyLink()">
           <span>📋</span> <strong>Copiar Enlace de Auto-Reclamo</strong>
         </button>
-        <button type="button" class="btn-secondary" style="justify-content: flex-start; gap: 8px; padding: 0.65rem 0.9rem; font-size: 0.82rem;" onclick="executeTokenOptTestUrl()">
+        <button type="button" class="btn-secondary" style="justify-content: flex-start; gap: 8px; padding: 0.65rem 0.9rem; font-size: 0.82rem; white-space: normal; text-align: left;" onclick="executeTokenOptTestUrl()">
           <span>🔗</span> <strong>Probar Enlace en Nueva Pestaña</strong>
         </button>
       </div>
 
-      <div style="display: flex; justify-content: flex-end; margin-top: 1.25rem;">
+      <div class="modal-actions-responsive" style="margin-top: 1.25rem;">
         <button type="button" class="btn-secondary" onclick="closeModal('modal-token-actions')">Cerrar</button>
       </div>
     </div>
@@ -1620,7 +1620,7 @@
 
       <div class="form-group" style="margin-bottom: 1rem;">
         <label class="form-label" style="letter-spacing: 0.5px;">CANTIDAD DE WIRED POINTS (WP)</label>
-        <div style="display: flex; gap: 0.5rem; align-items: center;">
+        <div class="adjust-points-input-row" style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
           <input type="number" id="adjust-points-amount" class="form-input lain-number-input" placeholder="100" min="1" max="100000"
                  style="font-size: 1.45rem; padding: 0.45rem 0.75rem; max-width: 170px;"
                  onkeydown="if(event.key==='Enter') submitAdjustPoints()">
@@ -1641,7 +1641,7 @@
         </div>
       </div>
 
-      <div style="display: flex; gap: 0.75rem; justify-content: flex-end;">
+      <div class="modal-actions-responsive" style="display: flex; gap: 0.75rem; justify-content: flex-end;">
         <button class="btn-secondary" onclick="closeModal('modal-adjust-points')">CANCELAR</button>
         <button id="btn-submit-adjust" class="btn-primary" onclick="submitAdjustPoints()" style="padding: 0.55rem 1.25rem;">
           ⚡ EJECUTAR OPERACIÓN
@@ -1666,10 +1666,10 @@
         </div>
       </div>
 
-      <h3 id="ledger-user-name" style="font-size: 1.3rem; font-weight: 900; color: var(--dark); margin: 0 0 0.2rem 0; font-family: var(--font-mono);">Historial del Socio</h3>
-      <div id="ledger-user-uid" style="font-size: 0.78rem; font-family: var(--font-mono); color: var(--gray-500); margin-bottom: 1rem;">UID: -</div>
+      <h3 id="ledger-user-name" style="font-size: 1.3rem; font-weight: 900; color: var(--dark); margin: 0 0 0.2rem 0; font-family: var(--font-mono); word-break: break-word;">Historial del Socio</h3>
+      <div id="ledger-user-uid" style="font-size: 0.78rem; font-family: var(--font-mono); color: var(--gray-500); margin-bottom: 1rem; word-break: break-all;">UID: -</div>
 
-      <div class="table-responsive" style="max-height: 420px; overflow-y: auto; border: 1.5px solid var(--dark); border-radius: 4px;">
+      <div class="table-responsive" style="max-height: 420px; overflow-y: auto; overflow-x: auto; -webkit-overflow-scrolling: touch; border: 1.5px solid var(--dark); border-radius: 4px;">
         <table class="ledger-table">
           <thead>
             <tr>
@@ -1684,7 +1684,7 @@
         </table>
       </div>
 
-      <div style="margin-top: 1.25rem; display: flex; justify-content: flex-end;">
+      <div class="modal-actions-responsive" style="margin-top: 1.25rem; display: flex; justify-content: flex-end;">
         <button class="btn-secondary" onclick="closeModal('modal-user-ledger')">CERRAR HISTORIAL</button>
       </div>
     </div>
@@ -1828,7 +1828,7 @@
         </div>
       </div>
 
-      <div style="display: flex; gap: 0.6rem; justify-content: flex-end;">
+      <div class="modal-actions-responsive" style="display: flex; gap: 0.6rem; justify-content: flex-end;">
         <button class="btn-secondary" onclick="closeModal('modal-edit-user-pin')">CANCELAR</button>
         <button class="btn-primary" onclick="submitEditUserPin()" style="padding: 0.55rem 1.15rem;">
           ⚡ GUARDAR NUEVO PIN
@@ -1837,9 +1837,51 @@
     </div>
   </div>
 
+  <!-- MODAL: SUSPENDER / REACTIVAR SOCIO [ESTILO COPLAND OS 21.0] -->
+  <div id="modal-ban-user" class="modal-overlay" style="display: none;">
+    <div class="modal-content lain-card modal-compact-mobile" style="max-width: 460px; text-align: left; padding: 1.6rem;">
+      <div class="tech-corner top-left">+</div>
+      <div class="tech-corner top-right">+</div>
+      <div class="tech-corner bottom-left">+</div>
+      <div class="tech-corner bottom-right">+</div>
+      <button class="modal-close-btn" onclick="closeModal('modal-ban-user')" aria-label="Cerrar">&times;</button>
+
+      <div class="lain-modal-header" id="ban-user-modal-header" style="border-bottom-color: #d97706;">
+        <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+          <span class="badge-navi" id="ban-user-badge" style="background: #fef3c7; color: #b45309; border-color: #f59e0b;">COPLAND OS 21.0 // SEGURIDAD</span>
+          <span class="badge-layer" id="ban-user-layer-badge">ESTADO DE CUENTA</span>
+        </div>
+      </div>
+
+      <h3 id="ban-user-title" style="font-size: 1.15rem; font-weight: 900; color: #b45309; margin: 0 0 0.5rem 0; font-family: var(--font-mono); word-break: break-word;">
+        🚫 ¿SUSPENDER CUENTA DE SOCIO?
+      </h3>
+      <p id="ban-user-desc" style="font-size: 0.85rem; color: var(--gray-700); line-height: 1.4; margin-bottom: 0.75rem;">
+        Esta acción cambiará el estado del socio en la plataforma e impedirá el canje de puntos:
+      </p>
+
+      <div id="ban-user-info-box" style="background: #fffbeb; border: 1.5px solid #fde68a; padding: 0.75rem; border-radius: 4px; margin-bottom: 1.15rem;">
+        <div id="ban-user-info-name" style="font-weight: 900; color: #92400e; font-size: 0.95rem;">-</div>
+        <div id="ban-user-info-phone" style="font-family: var(--font-mono); font-size: 0.78rem; color: #b45309;">Teléfono: -</div>
+        <div id="ban-user-info-status" style="font-family: var(--font-mono); font-size: 0.75rem; color: #78350f; font-weight: 800; margin-top: 2px;">Estado actual: ACTIVO</div>
+        <div id="ban-user-info-uid" style="font-family: var(--font-mono); font-size: 0.7rem; color: var(--gray-500); margin-top: 2px; word-break: break-all;">UID: -</div>
+      </div>
+
+      <input type="hidden" id="ban-user-target-uid">
+      <input type="hidden" id="ban-user-target-status">
+
+      <div class="modal-actions-responsive" style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+        <button class="btn-secondary" onclick="closeModal('modal-ban-user')">CANCELAR</button>
+        <button id="btn-confirm-ban-user" class="btn-primary" style="background: #d97706; border-color: #b45309;" onclick="executeBanUserAdmin()">
+          🚫 SUSPENDER SOCIO
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL: ELIMINAR SOCIO PERMANENTEMENTE [ESTILO LAIN-LIKE] -->
   <div id="modal-delete-user" class="modal-overlay" style="display: none;">
-    <div class="modal-content lain-card" style="max-width: 460px; text-align: left; padding: 1.6rem;">
+    <div class="modal-content lain-card modal-compact-mobile" style="max-width: 460px; text-align: left; padding: 1.6rem;">
       <div class="tech-corner top-left">+</div>
       <div class="tech-corner top-right">+</div>
       <div class="tech-corner bottom-left">+</div>
@@ -1847,12 +1889,12 @@
       <button class="modal-close-btn" onclick="closeModal('modal-delete-user')" aria-label="Cerrar">&times;</button>
 
       <div class="lain-modal-header" style="border-bottom-color: #ef4444;">
-        <div style="display: flex; align-items: center; gap: 0.5rem;">
+        <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
           <span class="badge-navi" style="background: #fee2e2; color: #b91c1c; border-color: #f87171;">SEGURIDAD // PURGA DE CUENTA</span>
         </div>
       </div>
 
-      <h3 style="font-size: 1.15rem; font-weight: 900; color: #b91c1c; margin: 0 0 0.5rem 0; font-family: var(--font-mono);">
+      <h3 style="font-size: 1.15rem; font-weight: 900; color: #b91c1c; margin: 0 0 0.5rem 0; font-family: var(--font-mono); word-break: break-word;">
         ⚠️ ¿ELIMINAR SOCIO PERMANENTEMENTE?
       </h3>
       <p style="font-size: 0.85rem; color: var(--gray-700); line-height: 1.4; margin-bottom: 0.75rem;">
@@ -1862,12 +1904,12 @@
       <div style="background: #fff1f2; border: 1.5px solid #fecdd3; padding: 0.75rem; border-radius: 4px; margin-bottom: 1.15rem;">
         <div id="delete-user-info-name" style="font-weight: 900; color: #9f1239; font-size: 0.95rem;">-</div>
         <div id="delete-user-info-phone" style="font-family: var(--font-mono); font-size: 0.78rem; color: #be123c;">Teléfono: -</div>
-        <div id="delete-user-info-uid" style="font-family: var(--font-mono); font-size: 0.7rem; color: var(--gray-500);">UID: -</div>
+        <div id="delete-user-info-uid" style="font-family: var(--font-mono); font-size: 0.7rem; color: var(--gray-500); word-break: break-all;">UID: -</div>
       </div>
 
       <input type="hidden" id="delete-user-target-uid">
 
-      <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+      <div class="modal-actions-responsive" style="display: flex; gap: 0.5rem; justify-content: flex-end;">
         <button class="btn-secondary" onclick="closeModal('modal-delete-user')">CANCELAR</button>
         <button class="btn-primary" style="background: #dc2626; border-color: #991b1b;" onclick="executeDeleteUserAdmin()">
           🗑️ SÍ, ELIMINAR SOCIO
@@ -2131,7 +2173,7 @@
           <span class="noc-pulse-chip" style="font-size: 0.65rem; padding: 1px 6px;">COSTOS DIRECTOS</span>
         </div>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 0.5rem; margin-bottom: 0.4rem;">
+        <div class="sale-calc-inputs-grid">
           <div class="form-group" style="margin-bottom: 0;">
             <label class="form-label" style="height: 18px; line-height: 18px; font-size: 0.66rem; margin-bottom: 3px;">💵 PRECIO TIENDA ($)</label>
             <input type="number" id="sale-calc-cost-usd" class="form-input" placeholder="40.00" step="1" value="40.00" min="0"
@@ -2158,7 +2200,7 @@
           </div>
         </div>
 
-        <div style="display: flex; gap: 0.35rem; justify-content: flex-end; align-items: center; flex-wrap: wrap;">
+        <div class="sale-calc-presets-row" style="display: flex; gap: 0.35rem; justify-content: flex-end; align-items: center; flex-wrap: wrap;">
           <span style="font-family: var(--font-mono); font-size: 0.65rem; color: var(--gray-600); font-weight: 800;">PRESETS FLETE:</span>
           <button type="button" class="btn-secondary" style="padding: 2px 6px; font-size: 0.65rem; font-weight: 800;" onclick="setSaleFreightPreset(2.50)">🚢 Marítimo $2.50</button>
           <button type="button" class="btn-secondary active" id="btn-sale-freight-300" style="padding: 2px 6px; font-size: 0.65rem; font-weight: 800;" onclick="setSaleFreightPreset(3.00)">🚢 Marítimo $3.00</button>

@@ -235,6 +235,8 @@ document.addEventListener("DOMContentLoaded", () => {
   window.submitEditUserPin = submitEditUserPin;
   window.openDeleteUserModal = openDeleteUserModal;
   window.executeDeleteUserAdmin = executeDeleteUserAdmin;
+  window.openBanUserModal = openBanUserModal;
+  window.executeBanUserAdmin = executeBanUserAdmin;
   window.toggleBanUserAdmin = toggleBanUserAdmin;
 
   // POS Socio Actions
@@ -2937,19 +2939,94 @@ async function executeDeleteUserAdmin() {
   }
 }
 
-async function toggleBanUserAdmin(uid, name, currentStatus) {
-  const willBan = currentStatus !== "BANNED";
-  const actionText = willBan ? "suspender/banear" : "reactivar";
-  if (confirm(`¿Estás seguro de ${actionText} la cuenta del socio [${name}]?`)) {
-    try {
-      const updated = await vm.toggleUserBan(uid);
-      const isNowBanned = updated.status === "BANNED";
-      showToast(isNowBanned ? `🚫 Socio [${name}] suspendido.` : `✓ Socio [${name}] reactivado.`, "info");
-      renderUsersTable(vm.users);
-    } catch (err) {
-      showToast("❌ Error: " + err.message, "error");
-    }
+function openBanUserModal(uid, name, currentStatus) {
+  const modal = document.getElementById("modal-ban-user");
+  if (!modal) return;
+  const user = (vm.users || []).find(u => u.uid === uid) || {};
+  const isBanned = (currentStatus || user.status) === "BANNED";
+  const willBan = !isBanned;
+
+  document.getElementById("ban-user-target-uid").value = uid;
+  document.getElementById("ban-user-target-status").value = isBanned ? "BANNED" : "ACTIVE";
+  document.getElementById("ban-user-info-name").textContent = name || user.displayName || "-";
+
+  const phone = user.phone || "";
+  document.getElementById("ban-user-info-phone").textContent = "Teléfono: " + (phone ? ("+505 " + (FirestoreService.formatPhoneDisplay ? FirestoreService.formatPhoneDisplay(phone) : phone)) : "-");
+  
+  const statusEl = document.getElementById("ban-user-info-status");
+  if (statusEl) {
+    statusEl.textContent = "Estado actual: " + (isBanned ? "SUSPENDIDO / BANEADO" : "ACTIVO");
+    statusEl.style.color = isBanned ? "#dc2626" : "#059669";
   }
+  document.getElementById("ban-user-info-uid").textContent = "UID: " + uid;
+
+  const titleEl = document.getElementById("ban-user-title");
+  const descEl = document.getElementById("ban-user-desc");
+  const confirmBtn = document.getElementById("btn-confirm-ban-user");
+  const modalHeader = document.getElementById("ban-user-modal-header");
+  const badgeEl = document.getElementById("ban-user-badge");
+  const layerBadgeEl = document.getElementById("ban-user-layer-badge");
+
+  if (willBan) {
+    if (titleEl) {
+      titleEl.textContent = "🚫 ¿SUSPENDER CUENTA DE SOCIO?";
+      titleEl.style.color = "#b45309";
+    }
+    if (descEl) descEl.textContent = "Esta acción suspenderá temporalmente la cuenta del socio e impedirá el canje y acumulación de puntos:";
+    if (confirmBtn) {
+      confirmBtn.innerHTML = "🚫 SUSPENDER SOCIO";
+      confirmBtn.style.background = "#d97706";
+      confirmBtn.style.borderColor = "#b45309";
+    }
+    if (modalHeader) modalHeader.style.borderBottomColor = "#d97706";
+    if (badgeEl) {
+      badgeEl.style.background = "#fef3c7";
+      badgeEl.style.color = "#b45309";
+      badgeEl.style.borderColor = "#f59e0b";
+      badgeEl.textContent = "COPLAND OS 21.0 // SEGURIDAD";
+    }
+    if (layerBadgeEl) layerBadgeEl.textContent = "SUSPENSIÓN DE CUENTA";
+  } else {
+    if (titleEl) {
+      titleEl.textContent = "✓ ¿REACTIVAR CUENTA DE SOCIO?";
+      titleEl.style.color = "#059669";
+    }
+    if (descEl) descEl.textContent = "Esta acción restaurará el estado activo del socio y habilitará nuevamente el uso de sus Wired Points:";
+    if (confirmBtn) {
+      confirmBtn.innerHTML = "✓ REACTIVAR SOCIO";
+      confirmBtn.style.background = "#059669";
+      confirmBtn.style.borderColor = "#047857";
+    }
+    if (modalHeader) modalHeader.style.borderBottomColor = "#059669";
+    if (badgeEl) {
+      badgeEl.style.background = "#ecfdf5";
+      badgeEl.style.color = "#065f46";
+      badgeEl.style.borderColor = "#10b981";
+      badgeEl.textContent = "COPLAND OS 21.0 // REACTIVACIÓN";
+    }
+    if (layerBadgeEl) layerBadgeEl.textContent = "DESBLOQUEO DE CUENTA";
+  }
+
+  modal.style.display = "flex";
+}
+
+async function executeBanUserAdmin() {
+  const uid = document.getElementById("ban-user-target-uid").value;
+  if (!uid) return;
+  const name = document.getElementById("ban-user-info-name").textContent;
+  closeModal("modal-ban-user");
+  try {
+    const updated = await vm.toggleUserBan(uid);
+    const isNowBanned = updated.status === "BANNED";
+    showToast(isNowBanned ? `🚫 Socio [${name}] suspendido.` : `✓ Socio [${name}] reactivado.`, "info");
+    renderUsersTable(vm.users);
+  } catch (err) {
+    showToast("❌ Error: " + err.message, "error");
+  }
+}
+
+function toggleBanUserAdmin(uid, name, currentStatus) {
+  openBanUserModal(uid, name, currentStatus);
 }
 
 // ========================================================
