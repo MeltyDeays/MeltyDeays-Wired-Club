@@ -2,7 +2,7 @@
 import { db } from "../config/firebase.js";
 import { INITIAL_TOKENS } from "../data/initialTokens.js";
 
-const LOCAL_STORAGE_KEY = "wired_club_mvvm_db_v1";
+const LOCAL_STORAGE_KEY = "wired_club_mvvm_db_v2";
 
 class StorageEngine {
   constructor() {
@@ -10,17 +10,21 @@ class StorageEngine {
   }
 
   init() {
+    // Purgar agresivamente cualquier residuo de versiones anteriores para que NUNCA queden datos fantasma
+    try {
+      const keysToPurge = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && (k.startsWith("wired_club_mvvm_db_") || k.startsWith("wired_club_catalog_")) && k !== LOCAL_STORAGE_KEY) {
+          keysToPurge.push(k);
+        }
+      }
+      keysToPurge.forEach(k => localStorage.removeItem(k));
+    } catch (e) {}
+
     const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
     if (!raw) {
-      const blankDb = {
-        users: {},
-        rewards: {},
-        vouchers: {},
-        tokens: {},
-        batches: [],
-        ledger: {}
-      };
-      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(blankDb));
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(this.getBlank()));
     } else {
       try {
         const snap = JSON.parse(raw);
@@ -31,7 +35,9 @@ class StorageEngine {
         if (!snap.batches) snap.batches = [];
         if (!snap.ledger) snap.ledger = {};
         localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(snap));
-      } catch (e) {}
+      } catch (e) {
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(this.getBlank()));
+      }
     }
   }
 
@@ -48,22 +54,51 @@ class StorageEngine {
   }
 
   saveSnapshot(data) {
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(data));
+    try {
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(data));
+    } catch (e) {}
   }
 }
 
 const engine = new StorageEngine();
 
 export class FirestoreService {
+  // Sincronización en tiempo real del Catálogo (Cloud Firestore)
+  static subscribeRewards(callback) {
+    if (!db || typeof callback !== "function") return () => {};
+    try {
+      return db.collection("rewards_catalog").onSnapshot(snap => {
+        const local = engine.getSnapshot();
+        local.rewards = {};
+        if (snap && !snap.empty) {
+          snap.forEach(doc => {
+            local.rewards[doc.id] = doc.data();
+          });
+        }
+        engine.saveSnapshot(local);
+        callback(Object.values(local.rewards));
+      }, err => {
+        console.warn("Firestore subscribeRewards error:", err.message);
+      });
+    } catch (e) {
+      console.warn("Firestore subscribeRewards exception:", e.message);
+      return () => {};
+    }
+  }
+
   // Sincronización de Catálogo desde Firestore
   static async fetchRewards() {
     if (db) {
       try {
         const snap = await db.collection("rewards_catalog").get();
         const local = engine.getSnapshot();
-        snap.forEach(doc => {
-          local.rewards[doc.id] = doc.data();
-        });
+        // Reemplazar COMPLETAMENTE el catálogo local — evita productos "fantasma"
+        local.rewards = {};
+        if (snap && !snap.empty) {
+          snap.forEach(doc => {
+            local.rewards[doc.id] = doc.data();
+          });
+        }
         engine.saveSnapshot(local);
         return Object.values(local.rewards);
       } catch (e) {
@@ -71,24 +106,36 @@ export class FirestoreService {
       }
     }
     const snap = engine.getSnapshot();
-    return Object.values(snap.rewards);
+    return Object.values(snap.rewards || {});
   }
 
   static async getReward(rewardId) {
     if (!rewardId) return null;
-    const snap = engine.getSnapshot();
-    if (snap.rewards && snap.rewards[rewardId]) {
-      return snap.rewards[rewardId];
-    }
     if (db) {
       try {
         const doc = await db.collection("rewards_catalog").doc(rewardId).get();
-        if (doc.exists) return doc.data();
+        if (doc.exists) {
+          const r = doc.data();
+          const snap = engine.getSnapshot();
+          if (!snap.rewards) snap.rewards = {};
+          snap.rewards[rewardId] = r;
+          engine.saveSnapshot(snap);
+          return r;
+        } else {
+          // Si ya no existe en Firestore, purgarlo del snapshot local
+          const snap = engine.getSnapshot();
+          if (snap.rewards && snap.rewards[rewardId]) {
+            delete snap.rewards[rewardId];
+            engine.saveSnapshot(snap);
+          }
+          return null;
+        }
       } catch (e) {
         console.warn("Firestore getReward fallback:", e.message);
       }
     }
-    return null;
+    const snap = engine.getSnapshot();
+    return (snap.rewards && snap.rewards[rewardId]) ? snap.rewards[rewardId] : null;
   }
 
   static async saveReward(reward) {
@@ -149,6 +196,8 @@ export class FirestoreService {
       try {
         const snap = await db.collection("users").get();
         const local = engine.getSnapshot();
+        // Overwrite completo — elimina usuarios fantasma que ya no existen en Firestore
+        local.users = {};
         snap.forEach(doc => {
           local.users[doc.id] = doc.data();
         });
@@ -250,6 +299,8 @@ export class FirestoreService {
       try {
         const snap = await db.collection("qr_tokens").get();
         const local = engine.getSnapshot();
+        // Overwrite completo — elimina tokens fantasma
+        local.tokens = {};
         snap.forEach(doc => {
           local.tokens[doc.id] = doc.data();
         });
@@ -307,6 +358,8 @@ export class FirestoreService {
       try {
         const snap = await db.collection("redemptions").get();
         const local = engine.getSnapshot();
+        // Overwrite completo — elimina vales fantasma
+        local.vouchers = {};
         snap.forEach(doc => {
           local.vouchers[doc.id] = doc.data();
         });

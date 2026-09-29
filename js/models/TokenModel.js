@@ -12,6 +12,7 @@ export class TokenModel {
     this.claimedBy = data.claimedBy || data.claimed_by || null;
     this.claimedAt = data.claimedAt || data.claimed_at || null;
     this.createdAt = data.createdAt || data.created_at || new Date().toISOString();
+    this.invoiceData = data.invoiceData || data.invoice_data || null;
   }
 
   isPendingAssignment() {
@@ -62,7 +63,8 @@ export class TokenModel {
       assigned_at: this.assignedAt,
       claimed_by: this.claimedBy,
       claimed_at: this.claimedAt,
-      created_at: this.createdAt
+      created_at: this.createdAt,
+      invoice_data: this.invoiceData
     };
   }
 }

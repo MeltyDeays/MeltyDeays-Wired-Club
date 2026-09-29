@@ -60,8 +60,12 @@ export class CustomerViewModel {
   }
 
   async init() {
-    // 1. Cargar catálogo desde Firestore/Cache
+    // 1. Cargar catálogo desde Firestore/Cache y activar sync en tiempo real
     await this.refreshCatalog();
+    FirestoreService.subscribeRewards(rawRewards => {
+      this.catalog = (rawRewards || []).map(r => new RewardModel(r));
+      this.notify();
+    });
 
     // 2. Cargar sesión de usuario si existe
     const savedUid = localStorage.getItem("melty_client_uid");
@@ -89,7 +93,7 @@ export class CustomerViewModel {
 
   async refreshCatalog() {
     const rawRewards = await FirestoreService.fetchRewards();
-    this.catalog = rawRewards.map(r => new RewardModel(r));
+    this.catalog = (rawRewards || []).map(r => new RewardModel(r));
     this.notify();
   }
 
@@ -214,6 +218,7 @@ export class CustomerViewModel {
       localStorage.setItem("melty_preferred_currency", this.preferredCurrency);
     }
     localStorage.setItem("melty_client_uid", u.uid || uid);
+    await this.refreshCatalog();
     await this.refreshUserData();
     this.notify();
     return this.currentUser;

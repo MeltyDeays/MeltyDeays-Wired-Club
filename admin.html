@@ -4,7 +4,22 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Terminal · MeltyDeays NOC</title>
-  <link rel="stylesheet" href="./styles.css?v=2.5.5">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <link rel="stylesheet" href="./styles.css?v=2.6.0">
+  
+  <!-- Limpieza inmediata de cachés viejos residuales antes de cargar módulos -->
+  <script>
+    try {
+      for (let i = localStorage.length - 1; i >= 0; i--) {
+        const k = localStorage.key(i);
+        if (k && (k.startsWith("wired_club_mvvm_db_") || k.startsWith("wired_club_catalog_")) && k !== "wired_club_mvvm_db_v2") {
+          localStorage.removeItem(k);
+        }
+      }
+    } catch (e) {}
+  </script>
   
   <!-- Firebase SDK Oficial Compat -->
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
