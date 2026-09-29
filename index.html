@@ -109,7 +109,8 @@
   <main class="main-container">
     
     <!-- BANNER DE RECLAMO POR ESCANEO DE FACTURA -->
-    <div id="claim-banner" class="claim-banner" style="display: none;">
+    <div id="claim-banner" class="claim-banner" style="display: none; position: relative;">
+      <button type="button" class="claim-banner-close" onclick="dismissClaimBanner()" aria-label="Cerrar notificación" style="position: absolute; top: 8px; right: 12px; background: none; border: none; font-size: 1.4rem; line-height: 1; cursor: pointer; color: var(--accent); font-weight: 900; z-index: 5;" title="Cerrar notificación">&times;</button>
       <div class="claim-info">
         <h3>⚡ ¡Factura MeltyDeays Detectada!</h3>
         <p id="claim-banner-text">Código: <strong id="detected-token">WP-XXXX</strong> · Listo para acreditar tus Wired Points a tu cuenta.</p>

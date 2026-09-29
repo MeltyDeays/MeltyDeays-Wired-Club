@@ -88,6 +88,7 @@ document.addEventListener("DOMContentLoaded", () => {
   window.stopClientCameraScanner = stopClientCameraScanner;
   window.submitManualClaim = submitManualClaim;
   window.claimFromBanner = claimFromBanner;
+  window.dismissClaimBanner = dismissClaimBanner;
   window.openAdminAssignModal = openAdminAssignModal;
   window.closeAdminAssignModal = closeAdminAssignModal;
   window.submitAdminAssignFromScan = submitAdminAssignFromScan;
@@ -262,7 +263,14 @@ function render(model) {
             }
           } else if (tok.status === "CLAIMED") {
             if (bannerText) bannerText.innerHTML = `Factura #MD-2026-<strong>${tok.invoiceFolio || "0000"}</strong> · <span style="color:#e11d48; font-weight:800;">Esta factura ya fue reclamada</span>`;
-            if (btnClaim) btnClaim.style.display = "none";
+            if (btnClaim) {
+              btnClaim.textContent = "✓ Entendido";
+              btnClaim.className = "btn-secondary";
+              btnClaim.style.display = "inline-block";
+              btnClaim.onclick = dismissClaimBanner;
+            }
+            // Auto-descartar después de 4.5 segundos
+            setTimeout(dismissClaimBanner, 4500);
           }
         }
       });
@@ -899,11 +907,32 @@ async function handleClientQrScanned(decodedText) {
     showToast("Acreditando puntos de tu factura...", "info");
     const res = await vm.claimToken(tokenCode, null, true);
     showToast(`¡Puntos acreditados con éxito! +${res.pointsAdded} WP. Saldo: ${res.newBalance} WP`, "success");
+    dismissClaimBanner();
     render(vm);
   } catch (err) {
     showToast(err.message || "No se pudo acreditar la factura", "error");
+    dismissClaimBanner();
     render(vm);
   }
+}
+
+export function dismissClaimBanner() {
+  if (vm && vm.pendingClaimToken) {
+    try {
+      const processed = JSON.parse(sessionStorage.getItem("melty_processed_tokens") || "[]");
+      if (!processed.includes(vm.pendingClaimToken)) {
+        processed.push(vm.pendingClaimToken);
+        sessionStorage.setItem("melty_processed_tokens", JSON.stringify(processed));
+      }
+    } catch (e) {}
+    vm.pendingClaimToken = null;
+  }
+  const claimBanner = document.getElementById("claim-banner");
+  if (claimBanner) claimBanner.style.display = "none";
+  try {
+    const cleanUrl = window.location.pathname + window.location.hash;
+    window.history.replaceState({}, document.title, cleanUrl);
+  } catch (e) {}
 }
 
 async function claimFromBanner() {
@@ -915,9 +944,11 @@ async function claimFromBanner() {
   try {
     const res = await vm.claimPendingToken();
     showToast("¡Puntos acreditados con éxito! +" + res.pointsAdded + " WP (Saldo: " + res.newBalance + " WP)", "success");
+    dismissClaimBanner();
     render(vm);
   } catch (err) {
     showToast(err.message || "No se pudo acreditar el código", "error");
+    dismissClaimBanner();
     render(vm);
   }
 }

@@ -85,7 +85,21 @@ export class CustomerViewModel {
     const urlParams = new URLSearchParams(window.location.search);
     const claimCode = urlParams.get("claim");
     if (claimCode) {
-      this.pendingClaimToken = claimCode.toUpperCase();
+      const cleanClaim = claimCode.trim().toUpperCase();
+      try {
+        const cleanUrl = window.location.pathname + window.location.hash;
+        window.history.replaceState({}, document.title, cleanUrl);
+      } catch (e) {}
+
+      let alreadyProcessed = false;
+      try {
+        const processed = JSON.parse(sessionStorage.getItem("melty_processed_tokens") || "[]");
+        if (processed.includes(cleanClaim)) alreadyProcessed = true;
+      } catch (e) {}
+
+      if (!alreadyProcessed) {
+        this.pendingClaimToken = cleanClaim;
+      }
     }
 
     this.notify();
