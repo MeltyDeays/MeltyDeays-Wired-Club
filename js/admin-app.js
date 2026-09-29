@@ -2743,18 +2743,23 @@ function openUserLedgerModal(uid, name) {
   }
 
   tbody.innerHTML = ledger.map(entry => {
-    const isCredit = (entry.amount || 0) >= 0;
+    const rawDelta = entry.delta !== undefined ? entry.delta : (entry.type === "ADMIN_DEBIT" ? -(entry.amount || 0) : (entry.amount || 0));
+    const isCredit = rawDelta >= 0;
     const diffClass = isCredit ? "ledger-credit" : "ledger-debit";
     const sign = isCredit ? "+" : "-";
-    const dateStr = entry.timestamp ? new Date(entry.timestamp).toLocaleString("es-ES") : "-";
+    const dateVal = entry.created_at || entry.timestamp || entry.date;
+    const dateStr = dateVal ? new Date(dateVal).toLocaleString("es-ES") : "-";
+    const amountVal = Math.abs(rawDelta);
+    const balanceVal = entry.balance_after !== undefined ? entry.balance_after : (entry.balanceAfter !== undefined ? entry.balanceAfter : (entry.balance || 0));
+    const reasonVal = entry.note || entry.reason || entry.glosa || "-";
 
     return `
       <tr>
         <td style="font-size:0.75rem; color:var(--gray-600); font-family:var(--font-mono);">${dateStr}</td>
         <td><span class="badge-navi" style="font-size:0.65rem;">${entry.type || "AJUSTE"}</span></td>
-        <td style="color:var(--dark); font-weight:600;">${entry.reason || "-"}</td>
-        <td class="${diffClass}" style="text-align:right;">${sign}${Math.abs(entry.amount || 0).toLocaleString()} WP</td>
-        <td style="text-align:right; font-family:var(--font-mono); font-weight:800; color:var(--dark);">${(entry.balanceAfter || 0).toLocaleString()} WP</td>
+        <td style="color:var(--dark); font-weight:600;">${reasonVal}</td>
+        <td class="${diffClass}" style="text-align:right;">${sign}${amountVal.toLocaleString()} WP</td>
+        <td style="text-align:right; font-family:var(--font-mono); font-weight:800; color:var(--dark);">${balanceVal.toLocaleString()} WP</td>
       </tr>
     `;
   }).join("");
