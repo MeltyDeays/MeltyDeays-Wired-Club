@@ -61,7 +61,31 @@ export class AdminViewModel {
     const rawRewards = await FirestoreService.fetchRewards();
     this.catalog = rawRewards.map(r => new RewardModel(r));
     const rawTokens = await FirestoreService.fetchTokens();
-    this.tokens = rawTokens.map(t => new TokenModel(t));
+    // Deduplicación inteligente por invoiceFolio: conservar el token con invoiceData o activo/reclamado
+    const tokenMap = new Map();
+    for (const raw of rawTokens) {
+      const t = new TokenModel(raw);
+      const fol = t.invoiceFolio ? String(t.invoiceFolio).padStart(4, "0") : null;
+      if (!fol) {
+        tokenMap.set(t.tokenCode, t);
+        continue;
+      }
+      if (!tokenMap.has(fol)) {
+        tokenMap.set(fol, t);
+      } else {
+        const prev = tokenMap.get(fol);
+        const prevHasInv = !!(prev.invoiceData && prev.invoiceData.items && prev.invoiceData.items.length > 0);
+        const currHasInv = !!(t.invoiceData && t.invoiceData.items && t.invoiceData.items.length > 0);
+        if (!prevHasInv && currHasInv) {
+          tokenMap.set(fol, t);
+        } else if (prev.isPendingAssignment() && !t.isPendingAssignment()) {
+          tokenMap.set(fol, t);
+        } else if (t.isClaimed() && !prev.isClaimed()) {
+          tokenMap.set(fol, t);
+        }
+      }
+    }
+    this.tokens = Array.from(tokenMap.values());
     const rawVouchers = await FirestoreService.fetchVouchers();
     this.vouchers = rawVouchers.map(v => new VoucherModel(v));
     const rawUsers = await FirestoreService.fetchUsers();
@@ -371,29 +395,50 @@ export class AdminViewModel {
 
   async generateSingleDigitalInvoice(data = {}) {
     let sFolio = Number(data.folio);
-    if (!sFolio || isNaN(sFolio) || sFolio <= 0) {
-      sFolio = this.getNextAvailableFolio();
-    }
-    const folioStr = String(sFolio).padStart(4, "0");
+    const folioStr = (sFolio && !isNaN(sFolio) && sFolio > 0)
+      ? String(sFolio).padStart(4, "0")
+      : String(this.getNextAvailableFolio()).padStart(4, "0");
     const points = Number(data.pointsValue) || 0;
-    
-    const hash = Math.random().toString(36).substring(2, 6).toUpperCase() + 
-                 Math.random().toString(36).substring(2, 6).toUpperCase() +
-                 Date.now().toString(36).substring(4, 7).toUpperCase();
-    const code = "WP-2026-F" + folioStr + "-" + hash;
-    const pin = data.securityPin || Math.floor(1000 + Math.random() * 9000).toString();
 
-    const token = new TokenModel({
-      tokenCode: code,
-      batchId: "SINGLE-INV-" + Date.now(),
-      invoiceFolio: folioStr,
-      pointsValue: points,
-      securityPin: pin,
-      status: points > 0 ? "ACTIVE" : "PENDING_ASSIGNMENT"
-    });
+    // Buscar si ya existe el token para actualizarlo en vez de duplicarlo
+    let existingToken = null;
+    if (data.targetTokenCode) {
+      existingToken = (this.tokens || []).find(t => t.tokenCode === data.targetTokenCode);
+    }
+    if (!existingToken && data.folio) {
+      existingToken = (this.tokens || []).find(t => t.invoiceFolio === folioStr);
+    }
 
-    await FirestoreService.saveToken(token.toJSON());
-    await this.refreshData();
+    let token;
+    let code;
+    let pin;
+
+    if (existingToken) {
+      token = existingToken;
+      code = token.tokenCode;
+      pin = data.securityPin || token.securityPin || Math.floor(1000 + Math.random() * 9000).toString();
+      token.invoiceFolio = folioStr;
+      token.pointsValue = points;
+      token.securityPin = pin;
+      if (points > 0 && token.isPendingAssignment()) {
+        token.status = "ACTIVE";
+      }
+    } else {
+      const hash = Math.random().toString(36).substring(2, 6).toUpperCase() + 
+                   Math.random().toString(36).substring(2, 6).toUpperCase() +
+                   Date.now().toString(36).substring(4, 7).toUpperCase();
+      code = "WP-2026-F" + folioStr + "-" + hash;
+      pin = data.securityPin || Math.floor(1000 + Math.random() * 9000).toString();
+
+      token = new TokenModel({
+        tokenCode: code,
+        batchId: "SINGLE-INV-" + Date.now(),
+        invoiceFolio: folioStr,
+        pointsValue: points,
+        securityPin: pin,
+        status: points > 0 ? "ACTIVE" : "PENDING_ASSIGNMENT"
+      });
+    }
 
     const invoicePayload = {
       ...data,
@@ -403,7 +448,12 @@ export class AdminViewModel {
       securityPin: pin
     };
 
-    return { token, invoicePayload };
+    token.invoiceData = invoicePayload;
+
+    await FirestoreService.saveToken(token.toJSON());
+    await this.refreshData();
+
+    return { token, invoicePayload, isUpdate: !!existingToken };
   }
 
   async purgeAllInvoiceTokens() {

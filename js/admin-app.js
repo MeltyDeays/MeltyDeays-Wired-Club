@@ -281,6 +281,9 @@ document.addEventListener("DOMContentLoaded", () => {
   window.executeTokenOptCopyLink = executeTokenOptCopyLink;
   window.executeTokenOptTestUrl = executeTokenOptTestUrl;
   window.executeTokenOptDigitalInvoice = executeTokenOptDigitalInvoice;
+  window.executeTokenOptViewInvoice = executeTokenOptViewInvoice;
+  window.executeTokenOptEditInvoice = executeTokenOptEditInvoice;
+  window.handleInvoiceBtnClick = handleInvoiceBtnClick;
 
   // Factura Digital Individual (Venta Casual)
   window.openSingleDigitalInvoiceModal = openSingleDigitalInvoiceModal;
@@ -486,7 +489,7 @@ function renderTokensTable(tokens) {
             <button class="btn-secondary btn-compact" onclick="viewSingleTokenQr('${t.tokenCode}', '${t.invoiceFolio}', ${t.pointsValue}, '${t.securityPin}')" title="Ver código QR oficial">
               🔍 QR
             </button>
-            <button class="btn-secondary btn-compact" style="color:#059669; border-color:#059669; font-weight:800;" onclick="openSingleDigitalInvoiceModal('${t.tokenCode}')" title="Ver o Imprimir Factura Digital Completa">
+            <button class="btn-secondary btn-compact" style="color:#059669; border-color:#059669; font-weight:800;" onclick="handleInvoiceBtnClick('${t.tokenCode}')" title="Ver o Imprimir Factura Digital Completa">
               🧾 Factura
             </button>
             <button class="btn-secondary btn-dots" onclick="openTokenActionsModal('${t.tokenCode}')" title="Más opciones">
@@ -1984,6 +1987,18 @@ function openTokenActionsModal(tokenCode) {
     }
   }
 
+  const btnViewInvoice = document.getElementById("btn-token-opt-view-invoice");
+  const btnViewLabel = document.getElementById("btn-token-opt-view-invoice-label");
+  const btnEditInvoice = document.getElementById("btn-token-opt-edit-invoice");
+  const hasInvData = !!(token.invoiceData && token.invoiceData.items && token.invoiceData.items.length > 0);
+  if (btnViewInvoice) {
+    btnViewInvoice.style.display = "inline-flex";
+    if (btnViewLabel) btnViewLabel.textContent = hasInvData ? "Ver Factura Digital (Datos Guardados)" : "Generar / Ver Factura Digital (1 Página Completa)";
+  }
+  if (btnEditInvoice) {
+    btnEditInvoice.style.display = hasInvData ? "inline-flex" : "none";
+  }
+
   modal.style.display = "flex";
 }
 
@@ -2026,24 +2041,71 @@ function executeTokenOptDigitalInvoice() {
   }
 }
 
+function executeTokenOptViewInvoice() {
+  if (!selectedTokenForActions) return;
+  const token = selectedTokenForActions;
+  const hasInvData = !!(token.invoiceData && token.invoiceData.items && token.invoiceData.items.length > 0);
+  closeModal("modal-token-actions");
+  if (hasInvData) {
+    const printDims = getSelectedPaperDimensions ? getSelectedPaperDimensions("preview") : null;
+    const docHtml = InvoiceTemplateService.generateSingleDigitalInvoiceDocument(
+      token.invoiceData,
+      printDims,
+      false,
+      token.invoiceData.selectedLainDesignIdx
+    );
+    const w = window.open("", "_blank");
+    if (w) { w.document.open(); w.document.write(docHtml); w.document.close(); }
+    else showToast("⚠️ Habilita ventanas emergentes para ver la factura.", "error");
+  } else {
+    openSingleDigitalInvoiceModal(token.tokenCode);
+  }
+}
+
+function executeTokenOptEditInvoice() {
+  closeModal("modal-token-actions");
+  if (selectedTokenForActions) {
+    openSingleDigitalInvoiceModal(selectedTokenForActions.tokenCode, true);
+  }
+}
+
+function handleInvoiceBtnClick(tokenCode) {
+  const token = (vm.tokens || []).find(t => t.tokenCode === tokenCode);
+  if (!token) { openSingleDigitalInvoiceModal(tokenCode); return; }
+  const hasInvData = !!(token.invoiceData && token.invoiceData.items && token.invoiceData.items.length > 0);
+  if (hasInvData) {
+    const printDims = getSelectedPaperDimensions ? getSelectedPaperDimensions("preview") : null;
+    const docHtml = InvoiceTemplateService.generateSingleDigitalInvoiceDocument(
+      token.invoiceData,
+      printDims,
+      false,
+      token.invoiceData.selectedLainDesignIdx
+    );
+    const w = window.open("", "_blank");
+    if (w) { w.document.open(); w.document.write(docHtml); w.document.close(); }
+    else showToast("⚠️ Habilita ventanas emergentes.", "error");
+  } else {
+    openSingleDigitalInvoiceModal(tokenCode);
+  }
+}
+
 // ========================================================
 // CONTROLADOR DE FACTURA DIGITAL INDIVIDUAL (VENTA CASUAL)
 // ========================================================
 let currentSingleInvoiceTokenCode = null;
 
-function openSingleDigitalInvoiceModal(targetTokenCode = null) {
+function openSingleDigitalInvoiceModal(targetTokenCode = null, forceEdit = false) {
   const modal = document.getElementById("modal-single-digital-invoice");
   if (!modal) return;
 
   currentSingleInvoiceTokenCode = targetTokenCode;
 
-  // Llenar selector de catálogo con recompensas y productos disponibles
   const catalogSelect = document.getElementById("s-inv-catalog-preset-select");
   if (catalogSelect && vm && vm.catalog) {
     catalogSelect.innerHTML = '<option value="">⚡ + Cargar desde Catálogo...</option>';
     vm.catalog.forEach(p => {
-      const priceText = p.rewardType === "PARTIAL_DISCOUNT" 
-        ? `$${(p.priceUsd || 0).toFixed(2)} USD` 
+      const priceText = p.rewardType === "PARTIAL_DISCOUNT"
+        ? `$${(p.priceUsd || 0).toFixed(2)} USD`
         : `${p.pointsCost || 0} WP`;
       catalogSelect.innerHTML += `<option value="${p.id}">${p.title} (${priceText})</option>`;
     });
@@ -2051,26 +2113,56 @@ function openSingleDigitalInvoiceModal(targetTokenCode = null) {
 
   const today = new Date();
   const dateInput = document.getElementById("s-inv-date");
-  if (dateInput) {
-    dateInput.value = today.toISOString().split("T")[0];
-  }
+  if (dateInput) dateInput.value = today.toISOString().split("T")[0];
   const timeInput = document.getElementById("s-inv-time");
-  if (timeInput) {
-    timeInput.value = today.toLocaleTimeString("es-NI", { hour: "2-digit", minute: "2-digit" });
-  }
+  if (timeInput) timeInput.value = today.toLocaleTimeString("es-NI", { hour: "2-digit", minute: "2-digit" });
 
-  if (targetTokenCode) {
-    const token = (vm.tokens || []).find(t => t.tokenCode === targetTokenCode);
-    if (token) {
-      const folioEl = document.getElementById("s-inv-folio");
-      if (folioEl) folioEl.value = token.invoiceFolio;
-      const ptsEl = document.getElementById("s-inv-points-val");
-      if (ptsEl) ptsEl.value = token.pointsValue || 0;
-      const pinEl = document.getElementById("s-inv-pin-val");
-      if (pinEl) pinEl.value = token.securityPin || Math.floor(1000 + Math.random() * 9000).toString();
-      const chk = document.getElementById("s-inv-enable-points");
-      if (chk) chk.checked = token.pointsValue > 0;
-      toggleSingleInvoicePointsFields(token.pointsValue > 0);
+  const token = targetTokenCode ? (vm.tokens || []).find(t => t.tokenCode === targetTokenCode) : null;
+  const inv = token && token.invoiceData ? token.invoiceData : null;
+
+  if (token) {
+    const folioEl = document.getElementById("s-inv-folio");
+    if (folioEl) folioEl.value = token.invoiceFolio;
+    const pinEl = document.getElementById("s-inv-pin-val");
+    if (pinEl) pinEl.value = token.securityPin || Math.floor(1000 + Math.random() * 9000).toString();
+    const ptsEl = document.getElementById("s-inv-points-val");
+    if (ptsEl) ptsEl.value = token.pointsValue || 0;
+    const chk = document.getElementById("s-inv-enable-points");
+    if (chk) chk.checked = token.pointsValue > 0;
+    toggleSingleInvoicePointsFields(token.pointsValue > 0);
+
+    if (inv) {
+      const nameEl = document.getElementById("s-inv-client-name");
+      if (nameEl) nameEl.value = inv.clientName || "";
+      const phoneEl = document.getElementById("s-inv-client-phone");
+      if (phoneEl) phoneEl.value = inv.clientPhone || "";
+      const currEl = document.getElementById("s-inv-currency");
+      if (currEl) { currEl.value = inv.currency || "USD"; updateSingleInvoiceCurrency(); }
+      const pmEl = document.getElementById("s-inv-payment-method");
+      if (pmEl) pmEl.value = inv.paymentMethod || "Efectivo";
+      if (inv.date && dateInput) dateInput.value = inv.date;
+      if (inv.time && timeInput) timeInput.value = inv.time;
+      const discEl = document.getElementById("s-inv-discount-input");
+      if (discEl) discEl.value = (inv.discount || 0).toFixed(2);
+      const wEl = document.getElementById("s-inv-warranty-text");
+      if (wEl) wEl.value = inv.warrantyText || "30 DÍAS CALENDARIO (DEFECTOS DE FÁBRICA)";
+      const nEl = document.getElementById("s-inv-notes-text");
+      if (nEl) nEl.value = inv.notes || "";
+      const ldEl = document.getElementById("s-inv-lain-design");
+      if (ldEl && inv.selectedLainDesignIdx !== undefined) ldEl.value = String(inv.selectedLainDesignIdx);
+
+      const tbody = document.getElementById("s-inv-items-table-body");
+      if (tbody) {
+        tbody.innerHTML = "";
+        if (inv.items && inv.items.length > 0) {
+          inv.items.forEach(it => addSingleInvoiceItemRow(it.cant || 1, it.desc || "", it.price || 0));
+        } else {
+          addSingleInvoiceItemRow(1, "", 0);
+        }
+      }
+    } else {
+      const tbody = document.getElementById("s-inv-items-table-body");
+      if (tbody) { tbody.innerHTML = ""; addSingleInvoiceItemRow(1, "", 0); }
     }
   } else {
     refreshSingleInvoiceFolio();
@@ -2086,13 +2178,8 @@ function openSingleDigitalInvoiceModal(targetTokenCode = null) {
     const chk = document.getElementById("s-inv-enable-points");
     if (chk) chk.checked = true;
     toggleSingleInvoicePointsFields(true);
-  }
-
-  // Inicializar filas de items con 1 fila limpia
-  const tbody = document.getElementById("s-inv-items-table-body");
-  if (tbody) {
-    tbody.innerHTML = "";
-    addSingleInvoiceItemRow(1, "", 0);
+    const tbody = document.getElementById("s-inv-items-table-body");
+    if (tbody) { tbody.innerHTML = ""; addSingleInvoiceItemRow(1, "", 0); }
   }
 
   calcSingleInvoiceTotals();
@@ -2369,7 +2456,8 @@ async function submitSingleDigitalInvoice(action = 'print') {
       pointsValue: pointsVal,
       securityPin: pin,
       warrantyText,
-      notes: notesText
+      notes: notesText,
+      targetTokenCode: currentSingleInvoiceTokenCode
     });
 
     closeModal("modal-single-digital-invoice");

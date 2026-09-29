@@ -1186,8 +1186,11 @@
       </div>
 
       <div style="display: flex; flex-direction: column; gap: 0.55rem;">
-        <button type="button" class="btn-primary" style="justify-content: flex-start; gap: 8px; padding: 0.65rem 0.9rem; font-size: 0.82rem; background: linear-gradient(135deg, #059669, #047857); border-color: #065f46;" onclick="executeTokenOptDigitalInvoice()">
-          <span>🧾</span> <strong>Generar / Ver Factura Digital (1 Página Completa)</strong>
+        <button type="button" class="btn-primary" id="btn-token-opt-view-invoice" style="justify-content: flex-start; gap: 8px; padding: 0.65rem 0.9rem; font-size: 0.82rem; background: linear-gradient(135deg, #059669, #047857); border-color: #065f46;" onclick="executeTokenOptViewInvoice()">
+          <span>📄</span> <strong id="btn-token-opt-view-invoice-label">Generar / Ver Factura Digital (1 Página Completa)</strong>
+        </button>
+        <button type="button" class="btn-secondary" id="btn-token-opt-edit-invoice" style="display: none; justify-content: flex-start; gap: 8px; padding: 0.65rem 0.9rem; font-size: 0.82rem; border-color: #059669; color: #047857; font-weight: 800;" onclick="executeTokenOptEditInvoice()">
+          <span>✏️</span> <strong>Modificar / Editar Datos de Factura</strong>
         </button>
         <button type="button" class="btn-primary" id="btn-token-opt-assign" style="justify-content: flex-start; gap: 8px; padding: 0.65rem 0.9rem; font-size: 0.82rem;" onclick="executeTokenOptAssign()">
           <span>⚡</span> <strong>Cargar / Asignar Puntos WP</strong>
