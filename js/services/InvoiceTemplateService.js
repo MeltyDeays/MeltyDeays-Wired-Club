@@ -313,11 +313,12 @@ export class InvoiceTemplateService {
       '          </div>',
       '          <div class="reward-pin-tag">PIN: <strong>' + pin + '</strong></div>',
       '          <div class="reward-sub">ESCANEA CON TU SMARTPHONE PARA ACREDITAR TUS PUNTOS</div>',
-      '          <div class="lain-quote-box">',
-      '            <div class="lain-kanji">' + item.kanji + '</div>',
-      '            <div class="lain-quote-text">' + item.quote + '</div>',
-      '          </div>',
       '        </div>',
+      '      </div>',
+      '',
+      '      <div class="lain-quote-box">',
+      '        <div class="lain-kanji">' + item.kanji + '</div>',
+      '        <div class="lain-quote-text">' + item.quote + '</div>',
       '      </div>',
       '',
       '      <div class="specs-grid">',
@@ -1645,11 +1646,11 @@ export class InvoiceTemplateService {
   "kanji": "繭 · 落下する夢",
   "quote": "\"I was falling from the sky... wrapped in warm, silent wings.\"",
   "protocol": "COCOON-v1.0",
-  "chip": "PLANT-POD-CORE",
-  "spec1": "ALT: 3,000M DESCENT",
-  "spec2": "SHELL: FIBROUS ORGANIC",
+  "chip": "DREAM-EGG",
+  "spec1": "VESSEL: SILK COCOON",
+  "spec2": "FALL: VELOCITY ZERO",
   "sn": "MD-HAIBANE-0210-045",
-  "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n      <defs>\n        <radialGradient id=\"hbg1\" cx=\"50%\" cy=\"50%\" r=\"50%\">\n          <stop offset=\"0%\" stop-color=\"#312e81\" stop-opacity=\"0.4\"/>\n          <stop offset=\"100%\" stop-color=\"#0f172a\" stop-opacity=\"0.95\"/>\n        </radialGradient>\n        <linearGradient id=\"cocoonGrad\" x1=\"0%\" y1=\"0%\" x2=\"100%\" y2=\"100%\">\n          <stop offset=\"0%\" stop-color=\"#d97706\"/>\n          <stop offset=\"50%\" stop-color=\"#92400e\"/>\n          <stop offset=\"100%\" stop-color=\"#451a03\"/>\n        </linearGradient>\n      </defs>\n      <rect width=\"280\" height=\"115\" fill=\"url(#hbg1)\" rx=\"2\"/>\n      <g stroke=\"#64748b\" stroke-width=\"0.7\" opacity=\"0.4\" stroke-dasharray=\"2 3\">\n        <line x1=\"20\" y1=\"20\" x2=\"260\" y2=\"20\"/><line x1=\"20\" y1=\"95\" x2=\"260\" y2=\"95\"/>\n        <line x1=\"140\" y1=\"5\" x2=\"140\" y2=\"110\"/>\n      </g>\n      <!-- Tendrils & Vines -->\n      <path d=\"M140,5 C130,25 110,35 118,60 C125,82 135,95 140,110\" fill=\"none\" stroke=\"#b45309\" stroke-width=\"1.2\"/>\n      <path d=\"M140,5 C150,25 170,35 162,60 C155,82 145,95 140,110\" fill=\"none\" stroke=\"#b45309\" stroke-width=\"1.2\"/>\n      <!-- The Cocoon Vessel -->\n      <ellipse cx=\"140\" cy=\"58\" rx=\"26\" ry=\"42\" fill=\"url(#cocoonGrad)\" stroke=\"#f59e0b\" stroke-width=\"1.4\"/>\n      <!-- Fibers wrapping -->\n      <path d=\"M120,40 Q140,55 160,40\" fill=\"none\" stroke=\"#fcd34d\" stroke-width=\"0.9\" opacity=\"0.8\"/>\n      <path d=\"M116,52 Q140,68 164,52\" fill=\"none\" stroke=\"#fcd34d\" stroke-width=\"1.1\" opacity=\"0.9\"/>\n      <path d=\"M118,65 Q140,80 162,65\" fill=\"none\" stroke=\"#fcd34d\" stroke-width=\"0.9\" opacity=\"0.8\"/>\n      <path d=\"M125,78 Q140,90 155,78\" fill=\"none\" stroke=\"#fcd34d\" stroke-width=\"0.8\" opacity=\"0.7\"/>\n      <!-- Falling silhouette inside/above -->\n      <circle cx=\"140\" cy=\"52\" r=\"5\" fill=\"#fef3c7\" opacity=\"0.9\"/>\n      <path d=\"M136,57 Q140,68 144,57\" fill=\"none\" stroke=\"#fef3c7\" stroke-width=\"1.2\"/>\n      <!-- Floating Spores -->\n      <circle cx=\"75\" cy=\"35\" r=\"2.2\" fill=\"#f59e0b\" opacity=\"0.7\"/>\n      <circle cx=\"60\" cy=\"65\" r=\"1.5\" fill=\"#d97706\" opacity=\"0.6\"/>\n      <circle cx=\"205\" cy=\"40\" r=\"2\" fill=\"#f59e0b\" opacity=\"0.7\"/>\n      <circle cx=\"220\" cy=\"75\" r=\"2.5\" fill=\"#b45309\" opacity=\"0.8\"/>\n      <text x=\"140\" y=\"108\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.2\" fill=\"#fbbf24\" text-anchor=\"middle\" letter-spacing=\"1\">GLIE SEED CHAMBER · AWAKENING WITHIN EARTH</text>\n    </svg>"
+  "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n      <!-- Radiating falling trajectory lines -->\n      <line x1=\"40\" y1=\"10\" x2=\"110\" y2=\"45\" stroke=\"#cbd5e1\" stroke-width=\"0.8\" stroke-dasharray=\"3 3\"/>\n      <line x1=\"240\" y1=\"10\" x2=\"170\" y2=\"45\" stroke=\"#cbd5e1\" stroke-width=\"0.8\" stroke-dasharray=\"3 3\"/>\n      <line x1=\"30\" y1=\"105\" x2=\"105\" y2=\"70\" stroke=\"#cbd5e1\" stroke-width=\"0.8\" stroke-dasharray=\"3 3\"/>\n      <line x1=\"250\" y1=\"105\" x2=\"175\" y2=\"70\" stroke=\"#cbd5e1\" stroke-width=\"0.8\" stroke-dasharray=\"3 3\"/>\n      <!-- Soft Sunlight Glow behind Cocoon -->\n      <circle cx=\"140\" cy=\"58\" r=\"42\" fill=\"#fef3c7\" opacity=\"0.6\"/>\n      <!-- Cocoon Body -->\n      <ellipse cx=\"140\" cy=\"58\" rx=\"26\" ry=\"40\" fill=\"#fffbeb\" stroke=\"#b45309\" stroke-width=\"1.8\"/>\n      <!-- Silk Woven Strands -->\n      <path d=\"M120,40 Q140,58 160,40\" fill=\"none\" stroke=\"#d97706\" stroke-width=\"1.2\"/>\n      <path d=\"M118,52 Q140,70 162,52\" fill=\"none\" stroke=\"#d97706\" stroke-width=\"1.2\"/>\n      <path d=\"M120,64 Q140,82 160,64\" fill=\"none\" stroke=\"#d97706\" stroke-width=\"1.2\"/>\n      <path d=\"M124,30 Q140,46 156,30\" fill=\"none\" stroke=\"#f59e0b\" stroke-width=\"0.9\"/>\n      <path d=\"M124,76 Q140,92 156,76\" fill=\"none\" stroke=\"#f59e0b\" stroke-width=\"0.9\"/>\n      <!-- Drifting Feather Silhouettes -->\n      <path d=\"M80,35 Q90,28 85,42 Q78,45 80,35 Z\" fill=\"#94a3b8\" stroke=\"#64748b\" stroke-width=\"0.7\"/>\n      <path d=\"M195,45 Q205,38 200,52 Q193,55 195,45 Z\" fill=\"#94a3b8\" stroke=\"#64748b\" stroke-width=\"0.7\"/>\n      <path d=\"M70,80 Q80,75 74,88 Q68,89 70,80 Z\" fill=\"#cbd5e1\" stroke=\"#94a3b8\" stroke-width=\"0.6\"/>\n      <path d=\"M210,82 Q220,77 214,90 Q208,91 210,82 Z\" fill=\"#cbd5e1\" stroke=\"#94a3b8\" stroke-width=\"0.6\"/>\n      <!-- Axis measurement labels -->\n      <text x=\"140\" y=\"108\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.2\" fill=\"#b45309\" text-anchor=\"middle\" font-weight=\"700\">DREAM OF FALLING · EMBRYO OF THE SACRED FLIGHT</text>\n    </svg>"
 },
 {
   "layer": "LAYER: 46",
@@ -1660,101 +1661,101 @@ export class InvoiceTemplateService {
   "kanji": "灰羽 · 背中の疼き",
   "quote": "\"Pain and warmth at once... the ash feathers begin to grow.\"",
   "protocol": "SPROUT-v2.1",
-  "chip": "FEATHER-EMBRYO",
-  "spec1": "TEMP: 39.8°C SCAPULAR",
-  "spec2": "PIGMENT: ASH GREY 80%",
+  "chip": "FEATHER-CORE",
+  "spec1": "SPAN: 1.4 METERS",
+  "spec2": "PIGMENT: NATURAL ASH",
   "sn": "MD-HAIBANE-0210-046",
-  "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n      <rect width=\"280\" height=\"115\" fill=\"#0b0f19\" rx=\"2\"/>\n      <!-- Spinal line -->\n      <line x1=\"140\" y1=\"10\" x2=\"140\" y2=\"105\" stroke=\"#94a3b8\" stroke-width=\"1\" stroke-dasharray=\"3 2\"/>\n      <!-- Left Ash Wing -->\n      <path d=\"M138,55 C120,40 85,25 45,35 C35,38 32,50 48,58 C70,68 110,65 138,70\" fill=\"#334155\" stroke=\"#94a3b8\" stroke-width=\"1.3\" opacity=\"0.9\"/>\n      <path d=\"M138,62 C115,55 75,50 40,65 C60,78 100,75 138,78\" fill=\"#1e293b\" stroke=\"#cbd5e1\" stroke-width=\"0.9\"/>\n      <!-- Right Ash Wing -->\n      <path d=\"M142,55 C160,40 195,25 235,35 C245,38 248,50 232,58 C210,68 170,65 142,70\" fill=\"#334155\" stroke=\"#94a3b8\" stroke-width=\"1.3\" opacity=\"0.9\"/>\n      <path d=\"M142,62 C165,55 205,50 240,65 C220,78 180,75 142,78\" fill=\"#1e293b\" stroke=\"#cbd5e1\" stroke-width=\"0.9\"/>\n      <!-- Feather barbs detail -->\n      <g stroke=\"#cbd5e1\" stroke-width=\"0.8\" opacity=\"0.7\">\n        <line x1=\"60\" y1=\"42\" x2=\"80\" y2=\"52\"/><line x1=\"75\" y1=\"45\" x2=\"95\" y2=\"55\"/>\n        <line x1=\"220\" y1=\"42\" x2=\"200\" y2=\"52\"/><line x1=\"205\" y1=\"45\" x2=\"185\" y2=\"55\"/>\n      </g>\n      <!-- Blood/Warmth aura -->\n      <circle cx=\"140\" cy=\"62\" r=\"14\" fill=\"#dc2626\" opacity=\"0.25\"/>\n      <circle cx=\"140\" cy=\"62\" r=\"6\" fill=\"#ef4444\" opacity=\"0.6\"/>\n      <text x=\"140\" y=\"106\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.2\" fill=\"#94a3b8\" text-anchor=\"middle\">FIRST FEATHER BURST · ASH COLOR PURIFICATION</text>\n    </svg>"
+  "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n      <!-- Spine Axis -->\n      <line x1=\"140\" y1=\"12\" x2=\"140\" y2=\"102\" stroke=\"#cbd5e1\" stroke-width=\"1.2\" stroke-dasharray=\"4 2\"/>\n      <!-- Emergence Nodes on Spine -->\n      <circle cx=\"140\" cy=\"45\" r=\"4.5\" fill=\"#fef3c7\" stroke=\"#b45309\" stroke-width=\"1.5\"/>\n      <circle cx=\"140\" cy=\"65\" r=\"4.5\" fill=\"#fef3c7\" stroke=\"#b45309\" stroke-width=\"1.5\"/>\n      <!-- Left Ash Wing Sprout -->\n      <path d=\"M140,45 C110,25 75,32 50,55 C70,62 100,58 140,65\" fill=\"#f1f5f9\" stroke=\"#334155\" stroke-width=\"1.6\"/>\n      <path d=\"M60,52 C80,45 110,48 135,53\" stroke=\"#64748b\" stroke-width=\"1\" fill=\"none\"/>\n      <path d=\"M72,60 C90,56 115,58 138,62\" stroke=\"#64748b\" stroke-width=\"0.9\" fill=\"none\"/>\n      <!-- Right Ash Wing Sprout -->\n      <path d=\"M140,45 C170,25 205,32 230,55 C210,62 180,58 140,65\" fill=\"#f1f5f9\" stroke=\"#334155\" stroke-width=\"1.6\"/>\n      <path d=\"M220,52 C200,45 170,48 145,53\" stroke=\"#64748b\" stroke-width=\"1\" fill=\"none\"/>\n      <path d=\"M208,60 C190,56 165,58 142,62\" stroke=\"#64748b\" stroke-width=\"0.9\" fill=\"none\"/>\n      <!-- Blood & Warmth Droplets -->\n      <circle cx=\"132\" cy=\"72\" r=\"1.8\" fill=\"#dc2626\"/>\n      <circle cx=\"148\" cy=\"72\" r=\"1.8\" fill=\"#dc2626\"/>\n      <circle cx=\"140\" cy=\"80\" r=\"1.8\" fill=\"#dc2626\"/>\n      <text x=\"140\" y=\"108\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.2\" fill=\"#334155\" text-anchor=\"middle\" font-weight=\"700\">WING ERUPTION HARMONIC · PURIFICATION OF THE FLESH</text>\n    </svg>"
 },
 {
   "layer": "LAYER: 47",
   "series": "SERIE 3 · 03",
-  "name": "SERIE 3 · 03. BRASS HALO // WARMTH (El Halo Forjado)",
+  "name": "SERIE 3 · 03. BRASS HALO // WARMTH (Forja del Halo)",
   "title": "BRASS HALO // WARMTH",
   "sub": "HAIBANE GUILD · FORGED COVENANT",
   "kanji": "光輪 · 金色の温もり",
-  "quote": "\"Place it above your head... it will stay in the air once it cools.\"",
-  "protocol": "HALO-v3.0",
-  "chip": "RESONANT-BRASS",
-  "spec1": "ALLOY: BRASS 88% GOLD 12%",
-  "spec2": "LEVITATION: MAGNETIC ZERO",
+  "quote": "\"It does not shine right away. You must hold it until it takes your warmth.\"",
+  "protocol": "HALO-MOLD-03",
+  "chip": "AURA-RING",
+  "spec1": "ALLOY: DORMANT BRASS",
+  "spec2": "CHARGE: BODY THERMAL",
   "sn": "MD-HAIBANE-0210-047",
-  "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n      <defs>\n        <linearGradient id=\"haloGrad\" x1=\"0%\" y1=\"0%\" x2=\"100%\" y2=\"0%\">\n          <stop offset=\"0%\" stop-color=\"#b45309\"/>\n          <stop offset=\"50%\" stop-color=\"#fef08a\"/>\n          <stop offset=\"100%\" stop-color=\"#d97706\"/>\n        </linearGradient>\n      </defs>\n      <rect width=\"280\" height=\"115\" fill=\"#090d16\" rx=\"2\"/>\n      <!-- Radiating Glow lines -->\n      <g stroke=\"#f59e0b\" stroke-width=\"0.6\" opacity=\"0.4\">\n        <line x1=\"140\" y1=\"46\" x2=\"60\" y2=\"10\"/><line x1=\"140\" y1=\"46\" x2=\"220\" y2=\"10\"/>\n        <line x1=\"140\" y1=\"46\" x2=\"30\" y2=\"46\"/><line x1=\"140\" y1=\"46\" x2=\"250\" y2=\"46\"/>\n        <line x1=\"140\" y1=\"46\" x2=\"80\" y2=\"85\"/><line x1=\"140\" y1=\"46\" x2=\"200\" y2=\"85\"/>\n      </g>\n      <!-- The Halo Ring -->\n      <ellipse cx=\"140\" cy=\"46\" rx=\"72\" ry=\"18\" fill=\"none\" stroke=\"url(#haloGrad)\" stroke-width=\"5\" opacity=\"0.95\"/>\n      <ellipse cx=\"140\" cy=\"46\" rx=\"72\" ry=\"18\" fill=\"none\" stroke=\"#fffbeb\" stroke-width=\"1.2\" opacity=\"0.9\"/>\n      <!-- Halo Mold Clamp Support Wire -->\n      <path d=\"M68,46 C68,75 140,88 140,88 C140,88 212,75 212,46\" fill=\"none\" stroke=\"#94a3b8\" stroke-width=\"1.2\" stroke-dasharray=\"4 2\"/>\n      <circle cx=\"68\" cy=\"46\" r=\"3\" fill=\"#ca8a04\"/>\n      <circle cx=\"212\" cy=\"46\" r=\"3\" fill=\"#ca8a04\"/>\n      <!-- Small spark stars -->\n      <polygon points=\"140,20 142,26 148,28 142,30 140,36 138,30 132,28 138,26\" fill=\"#fef08a\"/>\n      <text x=\"140\" y=\"106\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.2\" fill=\"#fbbf24\" text-anchor=\"middle\">LEVITATION EQUILIBRIUM · SACRED CIRCLE OF GLIE</text>\n    </svg>"
+  "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n      <!-- Radiating Thermal Glow Rings -->\n      <circle cx=\"140\" cy=\"55\" r=\"48\" fill=\"none\" stroke=\"#fde68a\" stroke-width=\"1\" stroke-dasharray=\"3 3\"/>\n      <circle cx=\"140\" cy=\"55\" r=\"38\" fill=\"none\" stroke=\"#fcd34d\" stroke-width=\"1.2\" stroke-dasharray=\"5 3\"/>\n      <!-- The Halo Oval in Perspective -->\n      <ellipse cx=\"140\" cy=\"55\" rx=\"55\" ry=\"18\" fill=\"#fffbeb\" stroke=\"#b45309\" stroke-width=\"2.6\"/>\n      <ellipse cx=\"140\" cy=\"55\" rx=\"50\" ry=\"14\" fill=\"#ffffff\" stroke=\"#d97706\" stroke-width=\"1.2\"/>\n      <!-- Mold Clamps & Tongs Silhouette -->\n      <path d=\"M55,55 L85,55\" stroke=\"#78350f\" stroke-width=\"2\" stroke-linecap=\"round\"/>\n      <path d=\"M195,55 L225,55\" stroke=\"#78350f\" stroke-width=\"2\" stroke-linecap=\"round\"/>\n      <!-- Heat Particles -->\n      <circle cx=\"130\" cy=\"45\" r=\"1.5\" fill=\"#f59e0b\"/>\n      <circle cx=\"150\" cy=\"44\" r=\"1.5\" fill=\"#f59e0b\"/>\n      <circle cx=\"140\" cy=\"38\" r=\"2\" fill=\"#d97706\"/>\n      <circle cx=\"120\" cy=\"62\" r=\"1.5\" fill=\"#f59e0b\"/>\n      <circle cx=\"160\" cy=\"62\" r=\"1.5\" fill=\"#f59e0b\"/>\n      <text x=\"140\" y=\"108\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.2\" fill=\"#b45309\" text-anchor=\"middle\" font-weight=\"700\">ANNEALED BRASS RING · TOUCH OF AWAKENED GRACE</text>\n    </svg>"
 },
 {
   "layer": "LAYER: 48",
   "series": "SERIE 3 · 04",
-  "name": "SERIE 3 · 04. OLD HOME // GUEST ROOM (El Viejo Hogar)",
+  "name": "SERIE 3 · 04. OLD HOME // GUEST ROOM (Viejo Hogar)",
   "title": "OLD HOME // GUEST ROOM",
   "sub": "HAIBANE FEDERATION · COMMUNE",
   "kanji": "オールドホーム · 孤児院の朝",
-  "quote": "\"An old school for young wings, full of sunlight and quiet dust.\"",
-  "protocol": "SHELTER-48",
-  "chip": "CLOISTER-OAK",
-  "spec1": "FOUNDED: ANCIENT ERA",
-  "spec2": "ROOMS: 32 DORMITORIES",
+  "quote": "\"Dust motes dancing in the sunbeams of a quiet wooden room.\"",
+  "protocol": "DORM-ROOM-14",
+  "chip": "ARCH-FRAME",
+  "spec1": "STRUCTURE: TIMBER OAK",
+  "spec2": "LOCATION: WEST WING",
   "sn": "MD-HAIBANE-0210-048",
-  "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n      <rect width=\"280\" height=\"115\" fill=\"#0f172a\" rx=\"2\"/>\n      <!-- Old Home Mansion Silhouette -->\n      <polygon points=\"40,90 40,55 70,30 100,55 100,90\" fill=\"#1e293b\" stroke=\"#475569\" stroke-width=\"1\"/>\n      <polygon points=\"98,90 98,45 140,15 182,45 182,90\" fill=\"#1e293b\" stroke=\"#64748b\" stroke-width=\"1.3\"/>\n      <polygon points=\"180,90 180,55 210,30 240,55 240,90\" fill=\"#1e293b\" stroke=\"#475569\" stroke-width=\"1\"/>\n      <!-- Dormitory Arched Windows -->\n      <path d=\"M125,50 A15,15 0 0,1 155,50 V70 H125 Z\" fill=\"#fef08a\" opacity=\"0.75\" stroke=\"#b45309\" stroke-width=\"1\"/>\n      <line x1=\"140\" y1=\"35\" x2=\"140\" y2=\"70\" stroke=\"#78350f\" stroke-width=\"0.8\"/>\n      <line x1=\"125\" y1=\"52\" x2=\"155\" y2=\"52\" stroke=\"#78350f\" stroke-width=\"0.8\"/>\n      <!-- Side windows -->\n      <rect x=\"58\" y=\"55\" width=\"16\" height=\"20\" rx=\"1\" fill=\"#fef08a\" opacity=\"0.4\" stroke=\"#475569\"/>\n      <rect x=\"206\" y=\"55\" width=\"16\" height=\"20\" rx=\"1\" fill=\"#fef08a\" opacity=\"0.4\" stroke=\"#475569\"/>\n      <!-- Ivy & Grass ground -->\n      <line x1=\"15\" y1=\"90\" x2=\"265\" y2=\"90\" stroke=\"#334155\" stroke-width=\"1.5\"/>\n      <path d=\"M30,90 Q40,82 50,90 Q60,80 70,90\" fill=\"none\" stroke=\"#15803d\" stroke-width=\"1\"/>\n      <text x=\"140\" y=\"106\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.2\" fill=\"#94a3b8\" text-anchor=\"middle\">CENTRAL COMMUNE RESIDENCE · EAST WING DORM</text>\n    </svg>"
+  "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n      <!-- Sunlight Beam -->\n      <polygon points=\"100,10 160,10 210,105 50,105\" fill=\"#fef3c7\" opacity=\"0.5\"/>\n      <!-- Arched Window Frame -->\n      <path d=\"M95,100 V45 A45,45 0 0,1 185,45 V100 Z\" fill=\"#ffffff\" stroke=\"#78350f\" stroke-width=\"1.8\"/>\n      <!-- Window Panes -->\n      <line x1=\"140\" y1=\"20\" x2=\"140\" y2=\"100\" stroke=\"#78350f\" stroke-width=\"1.2\"/>\n      <line x1=\"95\" y1=\"58\" x2=\"185\" y2=\"58\" stroke=\"#78350f\" stroke-width=\"1.2\"/>\n      <line x1=\"95\" y1=\"78\" x2=\"185\" y2=\"78\" stroke=\"#78350f\" stroke-width=\"1.2\"/>\n      <!-- Window Sill & Wooden Floor -->\n      <rect x=\"85\" y=\"98\" width=\"110\" height=\"4\" fill=\"#92400e\" stroke=\"#78350f\" stroke-width=\"1\"/>\n      <!-- Small Hanging Plant Silhouette -->\n      <path d=\"M140,20 Q145,28 140,32\" stroke=\"#047857\" stroke-width=\"1.2\" fill=\"none\"/>\n      <circle cx=\"140\" cy=\"34\" r=\"3\" fill=\"#047857\"/>\n      <text x=\"140\" y=\"108\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.2\" fill=\"#78350f\" text-anchor=\"middle\" font-weight=\"700\">OLD HOME DORMITORY · SANCTUARY OF FORGOTTEN CHILDREN</text>\n    </svg>"
 },
 {
   "layer": "LAYER: 49",
   "series": "SERIE 3 · 05",
-  "name": "SERIE 3 · 05. WINDMILL // WESTERN HILL (El Molino de la Colina)",
+  "name": "SERIE 3 · 05. WINDMILL // WESTERN HILL (Molino de la Colina)",
   "title": "WINDMILL // WESTERN HILL",
   "sub": "OUTSKIRTS OF GLIE · WEST RIDGE",
   "kanji": "風車 · 西の丘の風",
-  "quote": "\"The wind from beyond the wall touches only the highest sails.\"",
-  "protocol": "AERO-WEST",
-  "chip": "MILLSTONE-PULLEY",
-  "spec1": "VELOCITY: 14 KNOTS WSW",
-  "spec2": "ALTITUDE: 180M RIDGE",
+  "quote": "\"The wooden sails turn slowly, counting days we do not remember.\"",
+  "protocol": "AERO-MILL-09",
+  "chip": "WIND-ROTOR",
+  "spec1": "BLADES: 4-PADDLE WOOD",
+  "spec2": "ELEVATION: +180M MSL",
   "sn": "MD-HAIBANE-0210-049",
-  "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n      <rect width=\"280\" height=\"115\" fill=\"#090d16\" rx=\"2\"/>\n      <!-- Rolling Hills -->\n      <path d=\"M-10,95 Q80,70 160,85 T290,80 L290,115 L-10,115 Z\" fill=\"#132338\" opacity=\"0.9\"/>\n      <!-- Windmill Tower -->\n      <polygon points=\"134,85 146,85 143,45 137,45\" fill=\"#1e293b\" stroke=\"#64748b\" stroke-width=\"1\"/>\n      <circle cx=\"140\" cy=\"45\" r=\"4\" fill=\"#f59e0b\"/>\n      <!-- 4 Windmill Blades -->\n      <g stroke=\"#94a3b8\" stroke-width=\"1\" fill=\"#334155\" opacity=\"0.9\">\n        <polygon points=\"140,45 137,12 143,12\"/>\n        <polygon points=\"140,45 173,42 173,48\"/>\n        <polygon points=\"140,45 143,78 137,78\"/>\n        <polygon points=\"140,45 107,48 107,42\"/>\n      </g>\n      <!-- Wind Vector Lines -->\n      <path d=\"M20,25 Q70,18 115,26\" fill=\"none\" stroke=\"#38bdf8\" stroke-width=\"0.8\" stroke-dasharray=\"5 3\" opacity=\"0.6\"/>\n      <path d=\"M35,40 Q90,32 125,42\" fill=\"none\" stroke=\"#38bdf8\" stroke-width=\"0.9\" opacity=\"0.5\"/>\n      <path d=\"M165,30 Q215,22 265,35\" fill=\"none\" stroke=\"#38bdf8\" stroke-width=\"0.8\" stroke-dasharray=\"4 2\" opacity=\"0.7\"/>\n      <text x=\"140\" y=\"106\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.2\" fill=\"#38bdf8\" text-anchor=\"middle\">WEST WIND PASSAGE · UNTOUCHED BREEZE FROM BEYOND</text>\n    </svg>"
+  "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n      <!-- Rolling Hill -->\n      <path d=\"M10,105 Q140,65 270,105 L270,110 L10,110 Z\" fill=\"#ecfdf5\" stroke=\"#059669\" stroke-width=\"1.4\"/>\n      <!-- Windmill Tower -->\n      <polygon points=\"132,45 148,45 152,90 128,90\" fill=\"#f8fafc\" stroke=\"#334155\" stroke-width=\"1.4\"/>\n      <polygon points=\"128,45 152,45 140,32\" fill=\"#92400e\" stroke=\"#78350f\" stroke-width=\"1.2\"/>\n      <!-- Center Rotor Hub -->\n      <circle cx=\"140\" cy=\"45\" r=\"3.5\" fill=\"#b45309\"/>\n      <!-- 4 Windmill Blades -->\n      <line x1=\"140\" y1=\"45\" x2=\"140\" y2=\"15\" stroke=\"#78350f\" stroke-width=\"1.8\"/>\n      <rect x=\"136\" y=\"16\" width=\"7\" height=\"22\" fill=\"#fef3c7\" stroke=\"#b45309\" stroke-width=\"0.8\"/>\n      <line x1=\"140\" y1=\"45\" x2=\"140\" y2=\"75\" stroke=\"#78350f\" stroke-width=\"1.8\"/>\n      <rect x=\"137\" y=\"52\" width=\"7\" height=\"22\" fill=\"#fef3c7\" stroke=\"#b45309\" stroke-width=\"0.8\"/>\n      <line x1=\"140\" y1=\"45\" x2=\"110\" y2=\"45\" stroke=\"#78350f\" stroke-width=\"1.8\"/>\n      <rect x=\"112\" y=\"41\" width=\"22\" height=\"7\" fill=\"#fef3c7\" stroke=\"#b45309\" stroke-width=\"0.8\"/>\n      <line x1=\"140\" y1=\"45\" x2=\"170\" y2=\"45\" stroke=\"#78350f\" stroke-width=\"1.8\"/>\n      <rect x=\"146\" y=\"42\" width=\"22\" height=\"7\" fill=\"#fef3c7\" stroke=\"#b45309\" stroke-width=\"0.8\"/>\n      <!-- Breeze Gust Lines -->\n      <path d=\"M45,28 Q75,20 105,28\" stroke=\"#059669\" stroke-width=\"1\" stroke-dasharray=\"4 3\" fill=\"none\"/>\n      <path d=\"M175,24 Q205,16 235,24\" stroke=\"#059669\" stroke-width=\"1\" stroke-dasharray=\"4 3\" fill=\"none\"/>\n      <text x=\"140\" y=\"108\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.2\" fill=\"#047857\" text-anchor=\"middle\" font-weight=\"700\">WEST RIDGE ROTOR · BREATH OF THE ISOLATED VALLEY</text>\n    </svg>"
 },
 {
   "layer": "LAYER: 50",
   "series": "SERIE 3 · 06",
-  "name": "SERIE 3 · 06. WALL OF GLIE // ETERNAL STONES (El Muro de Piedra)",
+  "name": "SERIE 3 · 06. WALL OF GLIE // ETERNAL STONES (La Muralla de Glie)",
   "title": "WALL OF GLIE // ETERNAL STONES",
   "sub": "ANCIENT PERIMETER · ABSOLUTE BARRIER",
   "kanji": "街の壁 · 触れられぬ境界",
-  "quote": "\"Do not touch the wall. No one may cross it except the birds.\"",
-  "protocol": "WALL-BARRIER",
-  "chip": "MONOLITH-SEAL",
-  "spec1": "HEIGHT: 45M VERTICAL",
-  "spec2": "PERMISSION: TOGA ONLY",
+  "quote": "\"No one may touch the Wall. Only birds can fly beyond it.\"",
+  "protocol": "WALL-SEAL-01",
+  "chip": "STONE-AEGIS",
+  "spec1": "HEIGHT: 28 METERS",
+  "spec2": "TOUCH: FORBIDDEN",
   "sn": "MD-HAIBANE-0210-050",
-  "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n      <rect width=\"280\" height=\"115\" fill=\"#0b0f19\" rx=\"2\"/>\n      <!-- Monumental Wall Masonry -->\n      <rect x=\"30\" y=\"15\" width=\"220\" height=\"80\" fill=\"#1e293b\" stroke=\"#475569\" stroke-width=\"1.4\"/>\n      <!-- Stone Brick Grid -->\n      <g stroke=\"#334155\" stroke-width=\"0.9\">\n        <line x1=\"30\" y1=\"35\" x2=\"250\" y2=\"35\"/><line x1=\"30\" y1=\"55\" x2=\"250\" y2=\"55\"/><line x1=\"30\" y1=\"75\" x2=\"250\" y2=\"75\"/>\n        <line x1=\"74\" y1=\"15\" x2=\"74\" y2=\"35\"/><line x1=\"118\" y1=\"15\" x2=\"118\" y2=\"35\"/><line x1=\"162\" y1=\"15\" x2=\"162\" y2=\"35\"/><line x1=\"206\" y1=\"15\" x2=\"206\" y2=\"35\"/>\n        <line x1=\"52\" y1=\"35\" x2=\"52\" y2=\"55\"/><line x1=\"96\" y1=\"35\" x2=\"96\" y2=\"55\"/><line x1=\"140\" y1=\"35\" x2=\"140\" y2=\"55\"/><line x1=\"184\" y1=\"35\" x2=\"184\" y2=\"55\"/><line x1=\"228\" y1=\"35\" x2=\"228\" y2=\"55\"/>\n        <line x1=\"74\" y1=\"55\" x2=\"74\" y2=\"75\"/><line x1=\"118\" y1=\"55\" x2=\"118\" y2=\"75\"/><line x1=\"162\" y1=\"55\" x2=\"162\" y2=\"75\"/><line x1=\"206\" y1=\"55\" x2=\"206\" y2=\"75\"/>\n        <line x1=\"52\" y1=\"75\" x2=\"52\" y2=\"95\"/><line x1=\"96\" y1=\"75\" x2=\"96\" y2=\"95\"/><line x1=\"140\" y1=\"75\" x2=\"140\" y2=\"95\"/><line x1=\"184\" y1=\"75\" x2=\"184\" y2=\"95\"/><line x1=\"228\" y1=\"75\" x2=\"228\" y2=\"95\"/>\n      </g>\n      <!-- Fog at the bottom -->\n      <path d=\"M20,95 Q80,82 140,92 T260,88 L260,105 L20,105 Z\" fill=\"#475569\" opacity=\"0.4\"/>\n      <!-- Single Bird Flying Over -->\n      <path d=\"M135,10 Q140,6 145,10 Q150,6 155,10\" fill=\"none\" stroke=\"#f8fafc\" stroke-width=\"1.2\"/>\n      <text x=\"140\" y=\"108\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.2\" fill=\"#ef4444\" text-anchor=\"middle\">TABOO: DIRECT TOUCH PROHIBITED · SILENT ENCLOSURE</text>\n    </svg>"
+  "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n      <!-- Monolithic Wall Blocks -->\n      <rect x=\"25\" y=\"20\" width=\"230\" height=\"75\" fill=\"#f1f5f9\" stroke=\"#334155\" stroke-width=\"1.8\"/>\n      <!-- Stone Ashlar Grid Pattern -->\n      <line x1=\"25\" y1=\"45\" x2=\"255\" y2=\"45\" stroke=\"#64748b\" stroke-width=\"1.2\"/>\n      <line x1=\"25\" y1=\"70\" x2=\"255\" y2=\"70\" stroke=\"#64748b\" stroke-width=\"1.2\"/>\n      <!-- Vertical Mortar Lines -->\n      <line x1=\"75\" y1=\"20\" x2=\"75\" y2=\"45\" stroke=\"#64748b\" stroke-width=\"1\"/>\n      <line x1=\"140\" y1=\"20\" x2=\"140\" y2=\"45\" stroke=\"#64748b\" stroke-width=\"1\"/>\n      <line x1=\"205\" y1=\"20\" x2=\"205\" y2=\"45\" stroke=\"#64748b\" stroke-width=\"1\"/>\n      <line x1=\"50\" y1=\"45\" x2=\"50\" y2=\"70\" stroke=\"#64748b\" stroke-width=\"1\"/>\n      <line x1=\"110\" y1=\"45\" x2=\"110\" y2=\"70\" stroke=\"#64748b\" stroke-width=\"1\"/>\n      <line x1=\"175\" y1=\"45\" x2=\"175\" y2=\"70\" stroke=\"#64748b\" stroke-width=\"1\"/>\n      <line x1=\"230\" y1=\"45\" x2=\"230\" y2=\"70\" stroke=\"#64748b\" stroke-width=\"1\"/>\n      <line x1=\"85\" y1=\"70\" x2=\"85\" y2=\"95\" stroke=\"#64748b\" stroke-width=\"1\"/>\n      <line x1=\"155\" y1=\"70\" x2=\"155\" y2=\"95\" stroke=\"#64748b\" stroke-width=\"1\"/>\n      <line x1=\"220\" y1=\"70\" x2=\"220\" y2=\"95\" stroke=\"#64748b\" stroke-width=\"1\"/>\n      <!-- Prohibited Aura Beacon on Top -->\n      <line x1=\"140\" y1=\"20\" x2=\"140\" y2=\"8\" stroke=\"#dc2626\" stroke-width=\"1.4\"/>\n      <circle cx=\"140\" cy=\"7\" r=\"3\" fill=\"#dc2626\"/>\n      <!-- Climbing Moss on lower stones -->\n      <path d=\"M45,95 Q55,85 65,95\" fill=\"#047857\"/>\n      <path d=\"M120,95 Q130,83 140,95\" fill=\"#047857\"/>\n      <path d=\"M190,95 Q200,82 210,95\" fill=\"#047857\"/>\n      <text x=\"140\" y=\"108\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.2\" fill=\"#334155\" text-anchor=\"middle\" font-weight=\"700\">ABSOLUTE PERIMETER · BOUNDARY OF FORGOTTEN SINS</text>\n    </svg>"
 },
 {
   "layer": "LAYER: 51",
   "series": "SERIE 3 · 07",
-  "name": "SERIE 3 · 07. COMMUNICATOR // SIGN TONGUE (El Comunicador y los Toga)",
+  "name": "SERIE 3 · 07. COMMUNICATOR // SIGN TONGUE (El Comunicador)",
   "title": "COMMUNICATOR // SIGN TONGUE",
   "sub": "HAIBANE RENMEI · TEMPLE MASTER",
   "kanji": "話師 · 沈黙の手話",
-  "quote": "\"True words are not spoken with the tongue, but with sacred gestures.\"",
-  "protocol": "SIGN-TOGA-7",
-  "chip": "WOOD-MASK-STAFF",
-  "spec1": "LANGUAGE: RING SIGN 64",
-  "spec2": "VOW: PERPETUAL SILENCE",
+  "quote": "\"The Master speaks no words; only hands moving like solemn wings.\"",
+  "protocol": "SIGN-CODE-00",
+  "chip": "TEMPLE-STAFF",
+  "spec1": "MASK: CEREMONIAL BRASS",
+  "spec2": "LANGUAGE: CIPHER GESTURE",
   "sn": "MD-HAIBANE-0210-051",
-  "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n      <rect width=\"280\" height=\"115\" fill=\"#0f172a\" rx=\"2\"/>\n      <!-- Communicator Staff -->\n      <line x1=\"80\" y1=\"10\" x2=\"80\" y2=\"105\" stroke=\"#b45309\" stroke-width=\"2.5\"/>\n      <circle cx=\"80\" cy=\"18\" r=\"9\" fill=\"none\" stroke=\"#f59e0b\" stroke-width=\"1.5\"/>\n      <circle cx=\"80\" cy=\"18\" r=\"4\" fill=\"#f59e0b\"/>\n      <!-- Wooden Mask Silhouette -->\n      <polygon points=\"140,20 124,40 126,75 140,92 154,75 156,40\" fill=\"#1e293b\" stroke=\"#f59e0b\" stroke-width=\"1.3\"/>\n      <!-- Mask Slits -->\n      <line x1=\"130\" y1=\"46\" x2=\"136\" y2=\"46\" stroke=\"#f8fafc\" stroke-width=\"1.2\"/>\n      <line x1=\"144\" y1=\"46\" x2=\"150\" y2=\"46\" stroke=\"#f8fafc\" stroke-width=\"1.2\"/>\n      <line x1=\"135\" y1=\"65\" x2=\"145\" y2=\"65\" stroke=\"#f59e0b\" stroke-width=\"1\"/>\n      <!-- Sign Language Hand Glyphs (right side) -->\n      <g stroke=\"#38bdf8\" stroke-width=\"1\" fill=\"none\" opacity=\"0.85\">\n        <rect x=\"180\" y=\"25\" width=\"22\" height=\"22\" rx=\"3\" stroke=\"#64748b\"/>\n        <path d=\"M185,40 L191,30 L197,35 L200,32\"/>\n        <rect x=\"210\" y=\"25\" width=\"22\" height=\"22\" rx=\"3\" stroke=\"#64748b\"/>\n        <circle cx=\"221\" cy=\"36\" r=\"5\"/>\n        <rect x=\"195\" y=\"55\" width=\"22\" height=\"22\" rx=\"3\" stroke=\"#64748b\"/>\n        <path d=\"M200,66 L206,72 L212,62\"/>\n      </g>\n      <text x=\"140\" y=\"108\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.2\" fill=\"#f59e0b\" text-anchor=\"middle\">TEMPLE DISPENSATION · COVENANT OF THE SILENT MASK</text>\n    </svg>"
+  "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n      <!-- Ceremonial Master Mask -->\n      <ellipse cx=\"140\" cy=\"46\" rx=\"28\" ry=\"34\" fill=\"#fffbeb\" stroke=\"#b45309\" stroke-width=\"2\"/>\n      <!-- Slit Eyes of the Mask -->\n      <line x1=\"124\" y1=\"42\" x2=\"134\" y2=\"42\" stroke=\"#78350f\" stroke-width=\"2\"/>\n      <line x1=\"146\" y1=\"42\" x2=\"156\" y2=\"42\" stroke=\"#78350f\" stroke-width=\"2\"/>\n      <!-- Nose & Mouth Plates -->\n      <line x1=\"140\" y1=\"42\" x2=\"140\" y2=\"54\" stroke=\"#78350f\" stroke-width=\"1.5\"/>\n      <ellipse cx=\"140\" cy=\"62\" rx=\"6\" ry=\"2\" fill=\"#b45309\"/>\n      <!-- Ringed Horns / Halo Crown on Mask -->\n      <ellipse cx=\"140\" cy=\"22\" rx=\"36\" ry=\"8\" fill=\"none\" stroke=\"#d97706\" stroke-width=\"1.8\"/>\n      <!-- Staff Silhouettes on Sides -->\n      <line x1=\"60\" y1=\"12\" x2=\"60\" y2=\"98\" stroke=\"#78350f\" stroke-width=\"2\"/>\n      <circle cx=\"60\" cy=\"18\" r=\"8\" fill=\"#fef3c7\" stroke=\"#b45309\" stroke-width=\"1.5\"/>\n      <line x1=\"220\" y1=\"12\" x2=\"220\" y2=\"98\" stroke=\"#78350f\" stroke-width=\"2\"/>\n      <circle cx=\"220\" cy=\"18\" r=\"8\" fill=\"#fef3c7\" stroke=\"#b45309\" stroke-width=\"1.5\"/>\n      <text x=\"140\" y=\"108\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.2\" fill=\"#78350f\" text-anchor=\"middle\" font-weight=\"700\">SILENT HIEROPHANT · HANDS SHAPING SACRED VOWS</text>\n    </svg>"
 },
 {
   "layer": "LAYER: 52",
   "series": "SERIE 3 · 08",
-  "name": "SERIE 3 · 08. RAKKA // THE FALLEN ONE (Rakka & El Significado)",
+  "name": "SERIE 3 · 08. RAKKA // THE FALLEN ONE (Rakka & La Caída)",
   "title": "RAKKA // THE FALLEN ONE",
   "sub": "NAMESAKE · FALLING TO REST",
   "kanji": "ラッカ · 落下と希望",
-  "quote": "\"Rakka means to fall... but perhaps it also means to be caught.\"",
-  "protocol": "RAKKA-01",
-  "chip": "LIGHT-ASH-WING",
-  "spec1": "DREAM: METEOR DESCENT",
-  "spec2": "REDEEMER: CROW-BOUND",
+  "quote": "\"Named for the dream of falling... yet caught by a ring of hands.\"",
+  "protocol": "RAKKA-CORE-01",
+  "chip": "ASH-DOWN",
+  "spec1": "NAME MEANING: TO FALL",
+  "spec2": "COMPANION: REKI'S CARE",
   "sn": "MD-HAIBANE-0210-052",
-  "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n      <rect width=\"280\" height=\"115\" fill=\"#090d16\" rx=\"2\"/>\n      <!-- Swirling feather vortex -->\n      <g stroke=\"#94a3b8\" stroke-width=\"1\" fill=\"#334155\" opacity=\"0.8\">\n        <!-- Feather 1 -->\n        <path d=\"M135,15 Q145,28 138,40 Q130,28 135,15\"/>\n        <!-- Feather 2 -->\n        <path d=\"M85,45 Q102,52 110,68 Q95,62 85,45\"/>\n        <!-- Feather 3 -->\n        <path d=\"M190,42 Q178,55 168,70 Q182,60 190,42\"/>\n        <!-- Feather 4 -->\n        <path d=\"M125,70 Q140,82 135,98 Q125,86 125,70\"/>\n      </g>\n      <!-- Girl falling pose silhouette -->\n      <circle cx=\"140\" cy=\"50\" r=\"4.5\" fill=\"#f8fafc\"/>\n      <path d=\"M136,55 Q132,68 128,78\" stroke=\"#f8fafc\" stroke-width=\"1.4\" fill=\"none\"/>\n      <path d=\"M144,55 Q148,68 152,78\" stroke=\"#f8fafc\" stroke-width=\"1.4\" fill=\"none\"/>\n      <!-- Soft Halo above head -->\n      <ellipse cx=\"140\" cy=\"42\" rx=\"9\" ry=\"2.5\" fill=\"none\" stroke=\"#fef08a\" stroke-width=\"1.2\"/>\n      <text x=\"140\" y=\"108\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.2\" fill=\"#cbd5e1\" text-anchor=\"middle\">RAKKA // 落下 · EMBRACE OF WEIGHTLESS DESCENT</text>\n    </svg>"
+  "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n      <!-- Soft Sky Flow -->\n      <path d=\"M20,20 C80,35 200,15 260,30\" fill=\"none\" stroke=\"#cbd5e1\" stroke-width=\"1\" stroke-dasharray=\"4 3\"/>\n      <path d=\"M20,90 C80,75 200,95 260,80\" fill=\"none\" stroke=\"#cbd5e1\" stroke-width=\"1\" stroke-dasharray=\"4 3\"/>\n      <!-- Silhouette of Rakka Falling with arms spread -->\n      <circle cx=\"140\" cy=\"38\" r=\"6\" fill=\"#334155\"/>\n      <!-- Torso & Dress -->\n      <polygon points=\"135,44 145,44 152,72 128,72\" fill=\"#475569\" stroke=\"#334155\" stroke-width=\"1\"/>\n      <!-- Red Scarf Floating Upward -->\n      <path d=\"M140,44 C155,38 165,30 170,22\" fill=\"none\" stroke=\"#dc2626\" stroke-width=\"2.2\" stroke-linecap=\"round\"/>\n      <path d=\"M140,44 C148,36 155,26 158,16\" fill=\"none\" stroke=\"#ef4444\" stroke-width=\"1.8\" stroke-linecap=\"round\"/>\n      <!-- Miniature Ash Feathers -->\n      <ellipse cx=\"115\" cy=\"50\" rx=\"14\" ry=\"4\" transform=\"rotate(-30 115 50)\" fill=\"#94a3b8\" stroke=\"#64748b\" stroke-width=\"0.8\"/>\n      <ellipse cx=\"165\" cy=\"50\" rx=\"14\" ry=\"4\" transform=\"rotate(30 165 50)\" fill=\"#94a3b8\" stroke=\"#64748b\" stroke-width=\"0.8\"/>\n      <!-- Catching Crow Silhouette -->\n      <polygon points=\"70,40 85,35 80,48\" fill=\"#1e293b\"/>\n      <polygon points=\"210,40 195,35 200,48\" fill=\"#1e293b\"/>\n      <text x=\"140\" y=\"108\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.2\" fill=\"#334155\" text-anchor=\"middle\" font-weight=\"700\">RAKKA // DESCENT OF GRACE · SURRENDER TO THE WIND</text>\n    </svg>"
 },
 {
   "layer": "LAYER: 53",
@@ -1769,7 +1770,7 @@ export class InvoiceTemplateService {
   "spec1": "ORIGIN: GRAVEL COBBLE",
   "spec2": "YEARS: SEVEN IN GLIE",
   "sn": "MD-HAIBANE-0210-053",
-  "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n      <rect width=\"280\" height=\"115\" fill=\"#0f172a\" rx=\"2\"/>\n      <!-- Stone Flute Body -->\n      <rect x=\"40\" y=\"52\" width=\"200\" height=\"14\" rx=\"7\" fill=\"#1e293b\" stroke=\"#10b981\" stroke-width=\"1.3\"/>\n      <!-- Tone Holes -->\n      <circle cx=\"90\" cy=\"59\" r=\"3.2\" fill=\"#047857\" stroke=\"#34d399\" stroke-width=\"0.8\"/>\n      <circle cx=\"120\" cy=\"59\" r=\"3.2\" fill=\"#047857\" stroke=\"#34d399\" stroke-width=\"0.8\"/>\n      <circle cx=\"150\" cy=\"59\" r=\"3.2\" fill=\"#047857\" stroke=\"#34d399\" stroke-width=\"0.8\"/>\n      <circle cx=\"180\" cy=\"59\" r=\"3.2\" fill=\"#047857\" stroke=\"#34d399\" stroke-width=\"0.8\"/>\n      <circle cx=\"210\" cy=\"59\" r=\"3.2\" fill=\"#047857\" stroke=\"#34d399\" stroke-width=\"0.8\"/>\n      <!-- Sound Ripples -->\n      <path d=\"M40,59 A25,25 0 0,0 20,40\" fill=\"none\" stroke=\"#34d399\" stroke-width=\"1\" opacity=\"0.6\"/>\n      <path d=\"M40,59 A45,45 0 0,0 10,25\" fill=\"none\" stroke=\"#10b981\" stroke-width=\"0.8\" opacity=\"0.4\"/>\n      <!-- Cigarette smoke wisps above -->\n      <path d=\"M220,45 C222,35 228,30 226,20 C224,12 232,8 234,2\" fill=\"none\" stroke=\"#94a3b8\" stroke-width=\"0.8\" opacity=\"0.5\"/>\n      <text x=\"140\" y=\"106\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.2\" fill=\"#34d399\" text-anchor=\"middle\">MELODY OF PEBBLES · SEVEN WINTERS OF PATIENCE</text>\n    </svg>"
+  "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n      <!-- Stone Flute Body -->\n      <rect x=\"35\" y=\"48\" width=\"210\" height=\"18\" rx=\"9\" fill=\"#f8fafc\" stroke=\"#047857\" stroke-width=\"2\"/>\n      <!-- Tone Holes -->\n      <circle cx=\"90\" cy=\"57\" r=\"4\" fill=\"#047857\" stroke=\"#10b981\" stroke-width=\"1\"/>\n      <circle cx=\"120\" cy=\"57\" r=\"4\" fill=\"#047857\" stroke=\"#10b981\" stroke-width=\"1\"/>\n      <circle cx=\"150\" cy=\"57\" r=\"4\" fill=\"#047857\" stroke=\"#10b981\" stroke-width=\"1\"/>\n      <circle cx=\"180\" cy=\"57\" r=\"4\" fill=\"#047857\" stroke=\"#10b981\" stroke-width=\"1\"/>\n      <circle cx=\"210\" cy=\"57\" r=\"4\" fill=\"#047857\" stroke=\"#10b981\" stroke-width=\"1\"/>\n      <!-- Sound Wave Ripple Radii -->\n      <path d=\"M35,57 A30,30 0 0,0 15,35\" fill=\"none\" stroke=\"#059669\" stroke-width=\"1.2\" opacity=\"0.8\"/>\n      <path d=\"M35,57 A50,50 0 0,0 5,20\" fill=\"none\" stroke=\"#10b981\" stroke-width=\"0.9\" opacity=\"0.5\"/>\n      <!-- Smoke / Melody Wisp curling above -->\n      <path d=\"M225,48 C230,35 240,30 235,18 C230,8 245,5 250,2\" fill=\"none\" stroke=\"#64748b\" stroke-width=\"1.1\"/>\n      <text x=\"140\" y=\"108\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.2\" fill=\"#047857\" text-anchor=\"middle\" font-weight=\"700\">MELODY OF PEBBLES · SEVEN WINTERS OF PATIENCE</text>\n    </svg>"
 },
 {
   "layer": "LAYER: 54",
@@ -1784,309 +1785,309 @@ export class InvoiceTemplateService {
   "spec1": "WORK: WAITER AT CAFE",
   "spec2": "STATUS: DAY OF FLIGHT PASS",
   "sn": "MD-HAIBANE-0210-054",
-  "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n      <rect width=\"280\" height=\"115\" fill=\"#090d16\" rx=\"2\"/>\n      <!-- Morning Sunlight Beam -->\n      <polygon points=\"120,5 180,5 240,110 80,110\" fill=\"#fef08a\" opacity=\"0.08\"/>\n      <!-- Coffee Cup & Saucer -->\n      <ellipse cx=\"140\" cy=\"72\" rx=\"24\" ry=\"7\" fill=\"#1e293b\" stroke=\"#cbd5e1\" stroke-width=\"1.1\"/>\n      <path d=\"M124,56 C124,70 156,70 156,56 Z\" fill=\"#334155\" stroke=\"#f59e0b\" stroke-width=\"1.2\"/>\n      <path d=\"M156,60 C162,60 162,66 156,66\" fill=\"none\" stroke=\"#f59e0b\" stroke-width=\"1.1\"/>\n      <!-- Steam Wisps forming a Cloud -->\n      <path d=\"M136,50 Q138,40 144,35 T142,20\" fill=\"none\" stroke=\"#94a3b8\" stroke-width=\"1\" opacity=\"0.7\"/>\n      <path d=\"M144,50 Q146,42 142,32 T148,18\" fill=\"none\" stroke=\"#94a3b8\" stroke-width=\"0.8\" opacity=\"0.6\"/>\n      <!-- Little Cloud (Kuu kanji) -->\n      <path d=\"M130,22 Q135,16 142,18 Q148,14 154,18 Q160,20 156,26 H130 Z\" fill=\"#64748b\" opacity=\"0.5\"/>\n      <text x=\"140\" y=\"106\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.2\" fill=\"#f59e0b\" text-anchor=\"middle\">MORNING BREEZE OVER CAFE · THE CLOUD FULFILLED</text>\n    </svg>"
+  "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n      <!-- Morning Sunlight Angle -->\n      <polygon points=\"110,8 170,8 230,105 70,105\" fill=\"#fef3c7\" opacity=\"0.45\"/>\n      <!-- Coffee Saucer -->\n      <ellipse cx=\"140\" cy=\"74\" rx=\"30\" ry=\"8\" fill=\"#f8fafc\" stroke=\"#b45309\" stroke-width=\"1.5\"/>\n      <!-- Coffee Cup -->\n      <path d=\"M120,54 C120,72 160,72 160,54 Z\" fill=\"#fffbeb\" stroke=\"#b45309\" stroke-width=\"1.8\"/>\n      <!-- Cup Handle -->\n      <path d=\"M160,58 C168,58 168,66 160,66\" fill=\"none\" stroke=\"#b45309\" stroke-width=\"1.6\"/>\n      <!-- Steam Clouds curling into Kuu symbol -->\n      <path d=\"M135,46 Q138,36 144,30 T142,16\" fill=\"none\" stroke=\"#94a3b8\" stroke-width=\"1.2\"/>\n      <path d=\"M145,46 Q148,38 143,28 T150,14\" fill=\"none\" stroke=\"#94a3b8\" stroke-width=\"1.2\"/>\n      <!-- Small Cloud Silhouette -->\n      <path d=\"M130,18 Q135,12 142,14 Q148,10 154,14 Q160,16 156,22 H130 Z\" fill=\"#cbd5e1\" stroke=\"#94a3b8\" stroke-width=\"0.8\"/>\n      <text x=\"140\" y=\"108\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.2\" fill=\"#b45309\" text-anchor=\"middle\" font-weight=\"700\">MORNING BREEZE OVER CAFE · THE CLOUD FULFILLED</text>\n    </svg>"
 },
 {
   "layer": "LAYER: 55",
   "series": "SERIE 3 · 11",
-  "name": "SERIE 3 · 11. NEMU // LIBRARY ARCHIVES (Nemu & Los Manuscritos)",
+  "name": "SERIE 3 · 11. NEMU // LIBRARY ARCHIVES (Nemu & Los Archivos)",
   "title": "NEMU // LIBRARY ARCHIVES",
   "sub": "GLIE SCRIPT EXCHANGE · CHRONICLER",
   "kanji": "ネム · 眠れる図書館",
-  "quote": "\"In old books we search for what was outside before the wall existed.\"",
-  "protocol": "ARCHIVE-GLIE",
-  "chip": "PARCHMENT-VELLUM",
-  "spec1": "VOLUMES: 14,200 TOMES",
-  "spec2": "ROLE: SENIOR LIBRARIAN",
+  "quote": "\"In dusty books of forgotten tongue, the history of Glie breathes.\"",
+  "protocol": "TOME-BOOK-42",
+  "chip": "VELLUM-CODEX",
+  "spec1": "SCRIPT: OLD GLIE RUNIC",
+  "spec2": "ROLE: ASSISTANT LIBRARIAN",
   "sn": "MD-HAIBANE-0210-055",
-  "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n      <rect width=\"280\" height=\"115\" fill=\"#0f172a\" rx=\"2\"/>\n      <!-- Bookshelf background rows -->\n      <g stroke=\"#334155\" stroke-width=\"1.2\">\n        <line x1=\"20\" y1=\"35\" x2=\"260\" y2=\"35\"/><line x1=\"20\" y1=\"85\" x2=\"260\" y2=\"85\"/>\n      </g>\n      <!-- Stack of antique books -->\n      <rect x=\"45\" y=\"68\" width=\"40\" height=\"17\" rx=\"1\" fill=\"#78350f\" stroke=\"#b45309\"/>\n      <rect x=\"48\" y=\"52\" width=\"34\" height=\"16\" rx=\"1\" fill=\"#1e3a8a\" stroke=\"#3b82f6\"/>\n      <rect x=\"52\" y=\"38\" width=\"28\" height=\"14\" rx=\"1\" fill=\"#065f46\" stroke=\"#10b981\"/>\n      <!-- Open Grimoire on Lectern (Center) -->\n      <polygon points=\"120,45 140,52 160,45 160,75 140,82 120,75\" fill=\"#fef3c7\" stroke=\"#b45309\" stroke-width=\"1.2\"/>\n      <line x1=\"140\" y1=\"52\" x2=\"140\" y2=\"82\" stroke=\"#78350f\" stroke-width=\"1.1\"/>\n      <!-- Manuscript text lines -->\n      <g stroke=\"#92400e\" stroke-width=\"0.8\" opacity=\"0.7\">\n        <line x1=\"124\" y1=\"53\" x2=\"136\" y2=\"55\"/><line x1=\"124\" y1=\"59\" x2=\"136\" y2=\"61\"/><line x1=\"124\" y1=\"65\" x2=\"136\" y2=\"67\"/>\n        <line x1=\"144\" y1=\"55\" x2=\"156\" y2=\"53\"/><line x1=\"144\" y1=\"61\" x2=\"156\" y2=\"59\"/><line x1=\"144\" y1=\"67\" x2=\"156\" y2=\"65\"/>\n      </g>\n      <!-- Candle stick -->\n      <rect x=\"200\" y=\"55\" width=\"4\" height=\"25\" fill=\"#f8fafc\"/>\n      <ellipse cx=\"202\" cy=\"50\" rx=\"3\" ry=\"5\" fill=\"#f59e0b\"/>\n      <text x=\"140\" y=\"106\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.2\" fill=\"#fbbf24\" text-anchor=\"middle\">ANCIENT TOMES PRESERVATION · RECORD OF SLEEP</text>\n    </svg>"
+  "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n      <!-- Stack of Ancient Leather Books -->\n      <!-- Book 1 Bottom -->\n      <rect x=\"80\" y=\"72\" width=\"120\" height=\"15\" rx=\"3\" fill=\"#f8fafc\" stroke=\"#78350f\" stroke-width=\"1.6\"/>\n      <line x1=\"88\" y1=\"72\" x2=\"88\" y2=\"87\" stroke=\"#b45309\" stroke-width=\"1.2\"/>\n      <!-- Book 2 Middle -->\n      <rect x=\"90\" y=\"55\" width=\"100\" height=\"14\" rx=\"3\" fill=\"#f8fafc\" stroke=\"#047857\" stroke-width=\"1.6\"/>\n      <line x1=\"98\" y1=\"55\" x2=\"98\" y2=\"69\" stroke=\"#10b981\" stroke-width=\"1.2\"/>\n      <!-- Book 3 Top Open -->\n      <path d=\"M100,50 Q140,40 140,52 Q140,40 180,50 L176,38 Q140,28 140,40 Q140,28 104,38 Z\" fill=\"#fffbeb\" stroke=\"#b45309\" stroke-width=\"1.4\"/>\n      <!-- Quill Pen Crossing -->\n      <path d=\"M190,20 Q160,40 140,65\" fill=\"none\" stroke=\"#334155\" stroke-width=\"1.6\"/>\n      <polygon points=\"190,20 185,25 188,27\" fill=\"#334155\"/>\n      <text x=\"140\" y=\"108\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.2\" fill=\"#78350f\" text-anchor=\"middle\" font-weight=\"700\">GLIE PUBLIC ARCHIVES · CHRONICLE OF DORMANT AGES</text>\n    </svg>"
 },
 {
   "layer": "LAYER: 56",
   "series": "SERIE 3 · 12",
-  "name": "SERIE 3 · 12. KANA // CLOCK TOWER (Kana & Los Engranajes)",
+  "name": "SERIE 3 · 12. KANA // CLOCK TOWER (Kana & La Torre del Reloj)",
   "title": "KANA // CLOCK TOWER",
   "sub": "CENTRAL SQUARE · HOROLOGY SHOP",
-  "kanji": "カナ · 巨塔の歯車",
-  "quote": "\"Time does not stop inside Glie, but it moves to a calmer rhythm.\"",
-  "protocol": "CHRONO-56",
-  "chip": "BRONZE-ESCAPEMENT",
-  "spec1": "GEAR: RATIO 60:1 BRASS",
-  "spec2": "ALTITUDE: 35M APEX",
+  "kanji": "カナ · 街角の時計塔",
+  "quote": "\"Listen to the escapement tick. Time here is gentle, not rushing.\"",
+  "protocol": "CHRONO-GEAR-12",
+  "chip": "HOROLOGY-PIN",
+  "spec1": "ESCAPEMENT: DEADBEAT",
+  "spec2": "APPRENTICE: CLOCK MECHANIC",
   "sn": "MD-HAIBANE-0210-056",
-  "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n      <rect width=\"280\" height=\"115\" fill=\"#090d16\" rx=\"2\"/>\n      <!-- Big Interlocking Gears -->\n      <g stroke=\"#f59e0b\" stroke-width=\"1.2\" fill=\"none\">\n        <!-- Main Central Gear -->\n        <circle cx=\"140\" cy=\"50\" r=\"28\" stroke-dasharray=\"8 4\"/>\n        <circle cx=\"140\" cy=\"50\" r=\"18\" fill=\"#1e293b\"/>\n        <circle cx=\"140\" cy=\"50\" r=\"6\" fill=\"#f59e0b\"/>\n        <!-- Top Left Small Gear -->\n        <circle cx=\"95\" cy=\"30\" r=\"16\" stroke=\"#94a3b8\" stroke-dasharray=\"6 3\"/>\n        <circle cx=\"95\" cy=\"30\" r=\"5\" fill=\"#64748b\"/>\n        <!-- Bottom Right Medium Gear -->\n        <circle cx=\"185\" cy=\"65\" r=\"20\" stroke=\"#d97706\" stroke-dasharray=\"7 3\"/>\n        <circle cx=\"185\" cy=\"65\" r=\"7\" fill=\"#b45309\"/>\n      </g>\n      <!-- Clock Face Hands -->\n      <line x1=\"140\" y1=\"50\" x2=\"140\" y2=\"36\" stroke=\"#f8fafc\" stroke-width=\"1.8\"/>\n      <line x1=\"140\" y1=\"50\" x2=\"152\" y2=\"50\" stroke=\"#f8fafc\" stroke-width=\"1.4\"/>\n      <!-- Pendulum swinging below -->\n      <line x1=\"140\" y1=\"78\" x2=\"134\" y2=\"100\" stroke=\"#cbd5e1\" stroke-width=\"1\"/>\n      <circle cx=\"134\" cy=\"100\" r=\"4\" fill=\"#f59e0b\"/>\n      <text x=\"140\" y=\"108\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.2\" fill=\"#f59e0b\" text-anchor=\"middle\">HOROLOGIST MECHANICAL DRIVE · BEAT OF GLIE TOWN</text>\n    </svg>"
+  "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n      <!-- Main Brass Clockwork Gear -->\n      <circle cx=\"140\" cy=\"52\" r=\"32\" fill=\"#fffbeb\" stroke=\"#b45309\" stroke-width=\"2\"/>\n      <!-- Gear Teeth -->\n      <circle cx=\"140\" cy=\"52\" r=\"28\" fill=\"none\" stroke=\"#d97706\" stroke-width=\"1\" stroke-dasharray=\"6 3\"/>\n      <!-- Inner Secondary Gear -->\n      <circle cx=\"140\" cy=\"52\" r=\"16\" fill=\"#f8fafc\" stroke=\"#78350f\" stroke-width=\"1.4\"/>\n      <!-- Clock Hands -->\n      <line x1=\"140\" y1=\"52\" x2=\"140\" y2=\"28\" stroke=\"#78350f\" stroke-width=\"2.2\" stroke-linecap=\"round\"/>\n      <line x1=\"140\" y1=\"52\" x2=\"158\" y2=\"44\" stroke=\"#78350f\" stroke-width=\"1.8\" stroke-linecap=\"round\"/>\n      <circle cx=\"140\" cy=\"52\" r=\"3\" fill=\"#b45309\"/>\n      <!-- Pendulum swinging below -->\n      <line x1=\"140\" y1=\"84\" x2=\"140\" y2=\"100\" stroke=\"#b45309\" stroke-width=\"1.5\"/>\n      <circle cx=\"140\" cy=\"100\" r=\"5\" fill=\"#fef3c7\" stroke=\"#b45309\" stroke-width=\"1.2\"/>\n      <!-- Side Gear Accent Left -->\n      <circle cx=\"70\" cy=\"52\" r=\"18\" fill=\"none\" stroke=\"#cbd5e1\" stroke-width=\"1.2\" stroke-dasharray=\"4 2\"/>\n      <!-- Side Gear Accent Right -->\n      <circle cx=\"210\" cy=\"52\" r=\"18\" fill=\"none\" stroke=\"#cbd5e1\" stroke-width=\"1.2\" stroke-dasharray=\"4 2\"/>\n      <text x=\"140\" y=\"108\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.2\" fill=\"#78350f\" text-anchor=\"middle\" font-weight=\"700\">CENTRAL CLOCK MECHANISM · BEAT OF THE TOWN SQUARE</text>\n    </svg>"
 },
 {
   "layer": "LAYER: 57",
   "series": "SERIE 3 · 13",
-  "name": "SERIE 3 · 13. HIKARI // BAKERY MOLD (Hikari & El Molde Dulce)",
+  "name": "SERIE 3 · 13. HIKARI // BAKERY MOLD (Hikari & El Molde de Halo)",
   "title": "HIKARI // BAKERY MOLD",
   "sub": "GLIE COMMERCIAL STRIP · CLOISTER",
-  "kanji": "ヒカリ · パン釜の光輪",
-  "quote": "\"Baking bread and shaping halos... both need gentle fire and faith.\"",
-  "protocol": "HEARTH-BREAD",
-  "chip": "YEAST-HALO-OVEN",
-  "spec1": "OVEN TEMP: 220°C OAK",
-  "spec2": "HALO BREAD: RING FORM",
+  "kanji": "ヒカリ · 黄金のパン工房",
+  "quote": "\"Ring-shaped loaves for the little ones, smelling of yeast and honey.\"",
+  "protocol": "BAKE-OVEN-08",
+  "chip": "FLOUR-RING",
+  "spec1": "CRAFT: MASTER BAKER",
+  "spec2": "PRODUCT: RING PASTRIES",
   "sn": "MD-HAIBANE-0210-057",
-  "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n      <rect width=\"280\" height=\"115\" fill=\"#0f172a\" rx=\"2\"/>\n      <!-- Brick Oven Arch -->\n      <path d=\"M90,88 V45 A50,45 0 0,1 190,45 V88 Z\" fill=\"#1e293b\" stroke=\"#b45309\" stroke-width=\"1.5\"/>\n      <path d=\"M105,88 V55 A35,35 0 0,1 175,55 V88 Z\" fill=\"#451a03\" stroke=\"#f59e0b\" stroke-width=\"1.2\"/>\n      <!-- Glowing Oven Fire Inside -->\n      <circle cx=\"140\" cy=\"74\" r=\"16\" fill=\"#dc2626\" opacity=\"0.6\"/>\n      <circle cx=\"140\" cy=\"76\" r=\"10\" fill=\"#f59e0b\" opacity=\"0.8\"/>\n      <!-- Halo-shaped Bread Loaf on Peel -->\n      <ellipse cx=\"140\" cy=\"70\" rx=\"14\" ry=\"6\" fill=\"#fef08a\" stroke=\"#d97706\" stroke-width=\"1.2\"/>\n      <ellipse cx=\"140\" cy=\"70\" rx=\"6\" ry=\"2.5\" fill=\"#451a03\"/>\n      <!-- Wheat stalks on sides -->\n      <g stroke=\"#fbbf24\" stroke-width=\"1\" fill=\"none\">\n        <path d=\"M50,88 C55,65 45,45 35,30\"/>\n        <path d=\"M230,88 C225,65 235,45 245,30\"/>\n      </g>\n      <text x=\"140\" y=\"106\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.2\" fill=\"#fbbf24\" text-anchor=\"middle\">BAKERY HEARTH OF GLIE · RING OF DAILY SUSTENANCE</text>\n    </svg>"
+  "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n      <!-- Bread Loaves Ring shaped like Halos -->\n      <circle cx=\"140\" cy=\"52\" r=\"28\" fill=\"#fffbeb\" stroke=\"#ea580c\" stroke-width=\"2\"/>\n      <circle cx=\"140\" cy=\"52\" r=\"14\" fill=\"#ffffff\" stroke=\"#ea580c\" stroke-width=\"1.5\"/>\n      <!-- Scoring cuts on bread ring -->\n      <line x1=\"140\" y1=\"24\" x2=\"140\" y2=\"38\" stroke=\"#c2410c\" stroke-width=\"1.5\"/>\n      <line x1=\"140\" y1=\"66\" x2=\"140\" y2=\"80\" stroke=\"#c2410c\" stroke-width=\"1.5\"/>\n      <line x1=\"112\" y1=\"52\" x2=\"126\" y2=\"52\" stroke=\"#c2410c\" stroke-width=\"1.5\"/>\n      <line x1=\"154\" y1=\"52\" x2=\"168\" y2=\"52\" stroke=\"#c2410c\" stroke-width=\"1.5\"/>\n      <!-- Wheat Stalks Crossed Beneath -->\n      <path d=\"M70,85 Q140,55 210,85\" fill=\"none\" stroke=\"#d97706\" stroke-width=\"1.5\"/>\n      <!-- Wheat Grains Left -->\n      <ellipse cx=\"90\" cy=\"74\" rx=\"4\" ry=\"2\" transform=\"rotate(-30 90 74)\" fill=\"#fef3c7\" stroke=\"#b45309\" stroke-width=\"0.8\"/>\n      <ellipse cx=\"105\" cy=\"69\" rx=\"4\" ry=\"2\" transform=\"rotate(-30 105 69)\" fill=\"#fef3c7\" stroke=\"#b45309\" stroke-width=\"0.8\"/>\n      <!-- Wheat Grains Right -->\n      <ellipse cx=\"190\" cy=\"74\" rx=\"4\" ry=\"2\" transform=\"rotate(30 190 74)\" fill=\"#fef3c7\" stroke=\"#b45309\" stroke-width=\"0.8\"/>\n      <ellipse cx=\"175\" cy=\"69\" rx=\"4\" ry=\"2\" transform=\"rotate(30 175 69)\" fill=\"#fef3c7\" stroke=\"#b45309\" stroke-width=\"0.8\"/>\n      <text x=\"140\" y=\"108\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.2\" fill=\"#c2410c\" text-anchor=\"middle\" font-weight=\"700\">GLIE BAKERY HEARTH · RING-BREAD OF FELLOWSHIP</text>\n    </svg>"
 },
 {
   "layer": "LAYER: 58",
   "series": "SERIE 3 · 14",
-  "name": "SERIE 3 · 14. MIDORI // FORGE & SCRAP (Midori & La Fundición)",
+  "name": "SERIE 3 · 14. MIDORI // FORGE & SCRAP (Midori & La Chatarra)",
   "title": "MIDORI // FORGE & SCRAP",
   "sub": "ABANDONED FACTORY · IRONWORKS",
   "kanji": "ミドリ · 廃工場の鉄工",
-  "quote": "\"Old iron from forgotten times gives strength to current hands.\"",
-  "protocol": "FORGE-IRON-58",
-  "chip": "ANVIL-CRUCIBLE",
-  "spec1": "FOUNDRY: SMELTER #4",
-  "spec2": "SCRAP: RECYCLED STEEL",
+  "quote": "\"Old iron from forgotten eras melted into hinges and pots.\"",
+  "protocol": "FORGE-ANVIL-05",
+  "chip": "SCRAP-INGOT",
+  "spec1": "TRADE: METAL FOUNDRY",
+  "spec2": "REUSE: ZERO REJECT",
   "sn": "MD-HAIBANE-0210-058",
-  "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n      <rect width=\"280\" height=\"115\" fill=\"#0b0f19\" rx=\"2\"/>\n      <!-- Factory Truss & Beams -->\n      <g stroke=\"#475569\" stroke-width=\"1.2\" opacity=\"0.6\">\n        <line x1=\"20\" y1=\"15\" x2=\"260\" y2=\"15\"/><line x1=\"20\" y1=\"35\" x2=\"260\" y2=\"35\"/>\n        <line x1=\"20\" y1=\"15\" x2=\"40\" y2=\"35\"/><line x1=\"40\" y1=\"35\" x2=\"60\" y2=\"15\"/>\n        <line x1=\"60\" y1=\"15\" x2=\"80\" y2=\"35\"/><line x1=\"80\" y1=\"35\" x2=\"100\" y2=\"15\"/>\n        <line x1=\"180\" y1=\"15\" x2=\"200\" y2=\"35\"/><line x1=\"200\" y1=\"35\" x2=\"220\" y2=\"15\"/>\n        <line x1=\"220\" y1=\"15\" x2=\"240\" y2=\"35\"/><line x1=\"240\" y1=\"35\" x2=\"260\" y2=\"15\"/>\n      </g>\n      <!-- Heavy Anvil -->\n      <path d=\"M110,88 H170 L165,72 H155 L162,60 H118 L125,72 H115 Z\" fill=\"#334155\" stroke=\"#94a3b8\" stroke-width=\"1.3\"/>\n      <!-- Hammer on Anvil -->\n      <line x1=\"145\" y1=\"52\" x2=\"175\" y2=\"40\" stroke=\"#b45309\" stroke-width=\"2\"/>\n      <rect x=\"172\" y=\"34\" width=\"10\" height=\"14\" rx=\"1\" fill=\"#64748b\" stroke=\"#cbd5e1\" stroke-width=\"1\"/>\n      <!-- Sparks -->\n      <g fill=\"#f59e0b\">\n        <circle cx=\"138\" cy=\"56\" r=\"1.5\"/><circle cx=\"148\" cy=\"52\" r=\"1.2\"/>\n        <circle cx=\"132\" cy=\"48\" r=\"1.4\"/><circle cx=\"155\" cy=\"46\" r=\"1.8\"/>\n      </g>\n      <text x=\"140\" y=\"106\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.2\" fill=\"#94a3b8\" text-anchor=\"middle\">SCRAP METAL FOUNDRY · RECONSTRUCTED COVENANT</text>\n    </svg>"
+  "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n      <!-- Blacksmith Anvil Silhouette -->\n      <path d=\"M100,75 L180,75 L175,60 L195,55 L165,55 L155,42 L125,42 L120,55 L85,55 L105,60 Z\" fill=\"#f1f5f9\" stroke=\"#334155\" stroke-width=\"1.8\"/>\n      <!-- Heavy Base Block -->\n      <rect x=\"95\" y=\"75\" width=\"90\" height=\"15\" fill=\"#f8fafc\" stroke=\"#475569\" stroke-width=\"1.4\"/>\n      <!-- Smithing Hammer -->\n      <line x1=\"165\" y1=\"20\" x2=\"135\" y2=\"42\" stroke=\"#78350f\" stroke-width=\"2\"/>\n      <rect x=\"158\" y=\"16\" width=\"16\" height=\"10\" rx=\"2\" fill=\"#334155\" stroke=\"#1e293b\" stroke-width=\"1.2\"/>\n      <!-- Forge Sparks Radiating -->\n      <polygon points=\"140,38 142,32 144,38 150,40 144,42 142,48 140,42 134,40\" fill=\"#f59e0b\"/>\n      <circle cx=\"120\" cy=\"30\" r=\"1.5\" fill=\"#ea580c\"/>\n      <circle cx=\"160\" cy=\"28\" r=\"1.5\" fill=\"#ea580c\"/>\n      <circle cx=\"148\" cy=\"22\" r=\"1.2\" fill=\"#f59e0b\"/>\n      <text x=\"140\" y=\"108\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.2\" fill=\"#334155\" text-anchor=\"middle\" font-weight=\"700\">SCRAP FOUNDRY ANVIL · SALVAGE OF ANCIENT CIVILIZATION</text>\n    </svg>"
 },
 {
   "layer": "LAYER: 59",
   "series": "SERIE 3 · 15",
-  "name": "SERIE 3 · 015. SUMIKA // TEMPLE RUINS (El Templo del Bosque)",
+  "name": "SERIE 3 · 15. SUMIKA // TEMPLE RUINS (Ruinas del Santuario)",
   "title": "SUMIKA // TEMPLE RUINS",
   "sub": "FOREST SANCTUARY · MOSS SHRINE",
-  "kanji": "森の廃墟 · トウガの神殿",
-  "quote": "\"Deep in the trees, quiet stones remember the first day.\"",
-  "protocol": "SANCT-FOREST",
-  "chip": "MOSS-COLONNADE",
-  "spec1": "VEGETATION: CEDAR 95%",
-  "spec2": "DISTANCE: 6KM SOUTH",
+  "kanji": "スミカ · 森の神殿跡",
+  "quote": "\"Columns fallen into moss where sunlight filters through ancient leaves.\"",
+  "protocol": "RUIN-SANCT-07",
+  "chip": "MOSS-PILLAR",
+  "spec1": "ORDER: FIRST COVENANT",
+  "spec2": "CANOPY: SACRED GROVE",
   "sn": "MD-HAIBANE-0210-059",
-  "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n      <rect width=\"280\" height=\"115\" fill=\"#091310\" rx=\"2\"/>\n      <!-- Pine Trees Silhouettes -->\n      <polygon points=\"50,90 35,90 42,45\" fill=\"#064e3b\" stroke=\"#047857\" stroke-width=\"0.8\"/>\n      <polygon points=\"75,90 62,90 68,35\" fill=\"#064e3b\" stroke=\"#047857\" stroke-width=\"0.8\"/>\n      <polygon points=\"215,90 202,90 208,35\" fill=\"#064e3b\" stroke=\"#047857\" stroke-width=\"0.8\"/>\n      <polygon points=\"240,90 225,90 232,45\" fill=\"#064e3b\" stroke=\"#047857\" stroke-width=\"0.8\"/>\n      <!-- Ruined Stone Columns -->\n      <rect x=\"100\" y=\"42\" width=\"12\" height=\"48\" fill=\"#1e293b\" stroke=\"#64748b\" stroke-width=\"1.1\"/>\n      <rect x=\"168\" y=\"35\" width=\"12\" height=\"55\" fill=\"#1e293b\" stroke=\"#64748b\" stroke-width=\"1.1\"/>\n      <!-- Broken lintel stone -->\n      <polygon points=\"95,42 185,32 185,38 95,48\" fill=\"#334155\" stroke=\"#94a3b8\" stroke-width=\"1\"/>\n      <!-- Stone Lantern (Toro) -->\n      <polygon points=\"135,88 145,88 143,65 137,65\" fill=\"#1e293b\"/>\n      <rect x=\"134\" y=\"60\" width=\"12\" height=\"6\" fill=\"#fef08a\" opacity=\"0.6\"/>\n      <polygon points=\"130,60 150,60 140,54\" fill=\"#334155\"/>\n      <text x=\"140\" y=\"106\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.2\" fill=\"#10b981\" text-anchor=\"middle\">ANCIENT TEMPLE COLUMNS · MOSS-COVERED SANCTUARY</text>\n    </svg>"
+  "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n      <!-- Classical Temple Pediment -->\n      <polygon points=\"140,20 80,40 200,40\" fill=\"#f8fafc\" stroke=\"#047857\" stroke-width=\"1.8\"/>\n      <!-- 4 Pillars -->\n      <rect x=\"90\" y=\"40\" width=\"14\" height=\"45\" fill=\"#f8fafc\" stroke=\"#047857\" stroke-width=\"1.4\"/>\n      <rect x=\"120\" y=\"40\" width=\"14\" height=\"45\" fill=\"#f8fafc\" stroke=\"#047857\" stroke-width=\"1.4\"/>\n      <rect x=\"150\" y=\"40\" width=\"14\" height=\"45\" fill=\"#f8fafc\" stroke=\"#047857\" stroke-width=\"1.4\"/>\n      <rect x=\"180\" y=\"40\" width=\"14\" height=\"45\" fill=\"#f8fafc\" stroke=\"#047857\" stroke-width=\"1.4\"/>\n      <!-- Base Steps -->\n      <rect x=\"70\" y=\"85\" width=\"140\" height=\"8\" fill=\"#f1f5f9\" stroke=\"#047857\" stroke-width=\"1.4\"/>\n      <!-- Ivy & Moss creeping up pillars -->\n      <path d=\"M90,85 Q85,65 92,55\" fill=\"none\" stroke=\"#059669\" stroke-width=\"1.8\"/>\n      <path d=\"M194,85 Q198,68 192,50\" fill=\"none\" stroke=\"#059669\" stroke-width=\"1.8\"/>\n      <!-- Fallen Leaves -->\n      <circle cx=\"105\" cy=\"88\" r=\"2\" fill=\"#d97706\"/>\n      <circle cx=\"170\" cy=\"88\" r=\"2\" fill=\"#d97706\"/>\n      <text x=\"140\" y=\"108\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.2\" fill=\"#047857\" text-anchor=\"middle\" font-weight=\"700\">MOSS-GROWN SANCTUARY · SILENT COLONNADE OF GLIE</text>\n    </svg>"
 },
 {
   "layer": "LAYER: 60",
   "series": "SERIE 3 · 16",
-  "name": "SERIE 3 · 16. WELL OF SHADOWS // CROW'S PEBBLE (El Pozo y el Cuervo)",
-  "title": "WELL OF SHADOWS // CROW'S PEBBLE",
-  "sub": "DEPTH OF THE FOREST · DRY ABYSS",
-  "kanji": "古井戸 · 烏の落とした石",
-  "quote": "\"At the bottom of the well, a crow brought the missing dream piece.\"",
-  "protocol": "ABYSS-WELL-60",
-  "chip": "RAVEN-TALON",
-  "spec1": "DEPTH: 18M LIMESTONE",
-  "spec2": "REDEEMER: CROW TOTEM",
+  "name": "SERIE 3 · 16. THE TOGA // SILENT CARAVAN (Los Toga & La Caravana)",
+  "title": "THE TOGA // SILENT CARAVAN",
+  "sub": "OUTER PASSAGE · CLOAKED PEDDLERS",
+  "kanji": "トーガ · 門をくぐる隊商",
+  "quote": "\"Only the Toga may pass the Gate. They bring words without tongues.\"",
+  "protocol": "CARAVAN-PASS",
+  "chip": "OUTER-CLOAK",
+  "spec1": "ACCESS: WEST GATE ONLY",
+  "spec2": "SPEECH: NON-VERBAL",
   "sn": "MD-HAIBANE-0210-060",
-  "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n      <rect width=\"280\" height=\"115\" fill=\"#05070e\" rx=\"2\"/>\n      <!-- Looking up from bottom of well: Circular opening -->\n      <circle cx=\"140\" cy=\"52\" r=\"38\" fill=\"#1e293b\" stroke=\"#475569\" stroke-width=\"4\"/>\n      <circle cx=\"140\" cy=\"52\" r=\"34\" fill=\"#38bdf8\" opacity=\"0.3\"/>\n      <!-- Sky above the well circle -->\n      <circle cx=\"140\" cy=\"52\" r=\"30\" fill=\"#93c5fd\" opacity=\"0.5\"/>\n      <!-- Crow silhouette on the rim -->\n      <path d=\"M125,24 Q132,18 140,22 Q144,16 148,22 Q145,28 135,28 Z\" fill=\"#0f172a\"/>\n      <!-- Falling glowing pebble -->\n      <ellipse cx=\"140\" cy=\"62\" rx=\"4\" ry=\"6\" fill=\"#fef08a\" stroke=\"#f59e0b\" stroke-width=\"1\"/>\n      <!-- Downward motion streaks -->\n      <line x1=\"140\" y1=\"36\" x2=\"140\" y2=\"52\" stroke=\"#fef08a\" stroke-width=\"1.2\" stroke-dasharray=\"2 3\"/>\n      <!-- Brick rings surrounding -->\n      <circle cx=\"140\" cy=\"52\" r=\"48\" fill=\"none\" stroke=\"#1e293b\" stroke-width=\"2\" stroke-dasharray=\"8 6\"/>\n      <text x=\"140\" y=\"106\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.2\" fill=\"#38bdf8\" text-anchor=\"middle\">FOREST WELL SHAFT · THE CROW WHO OFFERED SALVATION</text>\n    </svg>"
+  "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n      <!-- Caravan Wagon Silhouette -->\n      <rect x=\"90\" y=\"45\" width=\"90\" height=\"32\" rx=\"4\" fill=\"#f8fafc\" stroke=\"#78350f\" stroke-width=\"1.8\"/>\n      <!-- Wagon Canvas Cover -->\n      <path d=\"M90,45 Q135,22 180,45\" fill=\"#fffbeb\" stroke=\"#b45309\" stroke-width=\"1.6\"/>\n      <!-- Big Spoked Wagon Wheels -->\n      <circle cx=\"108\" cy=\"80\" r=\"14\" fill=\"#ffffff\" stroke=\"#78350f\" stroke-width=\"1.6\"/>\n      <circle cx=\"108\" cy=\"80\" r=\"3\" fill=\"#b45309\"/>\n      <line x1=\"108\" y1=\"66\" x2=\"108\" y2=\"94\" stroke=\"#78350f\" stroke-width=\"1\"/>\n      <line x1=\"94\" y1=\"80\" x2=\"122\" y2=\"80\" stroke=\"#78350f\" stroke-width=\"1\"/>\n      <circle cx=\"162\" cy=\"80\" r=\"14\" fill=\"#ffffff\" stroke=\"#78350f\" stroke-width=\"1.6\"/>\n      <circle cx=\"162\" cy=\"80\" r=\"3\" fill=\"#b45309\"/>\n      <line x1=\"162\" y1=\"66\" x2=\"162\" y2=\"94\" stroke=\"#78350f\" stroke-width=\"1\"/>\n      <line x1=\"148\" y1=\"80\" x2=\"176\" y2=\"80\" stroke=\"#78350f\" stroke-width=\"1\"/>\n      <!-- The Toga Leader Silhouette (Cloaked) -->\n      <path d=\"M50,88 C50,60 62,55 70,55 C78,55 90,60 90,88 Z\" fill=\"#334155\" stroke=\"#1e293b\" stroke-width=\"1.4\"/>\n      <circle cx=\"70\" cy=\"50\" r=\"6\" fill=\"#1e293b\"/>\n      <line x1=\"52\" y1=\"42\" x2=\"52\" y2=\"90\" stroke=\"#b45309\" stroke-width=\"1.5\"/>\n      <text x=\"140\" y=\"108\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.2\" fill=\"#78350f\" text-anchor=\"middle\" font-weight=\"700\">TOGA CARAVAN ROUTE · COMMERCE BEYOND THE SEALED WALL</text>\n    </svg>"
 },
 {
   "layer": "LAYER: 61",
   "series": "SERIE 3 · 17",
-  "name": "SERIE 3 · 17. SIN-BOUND // ASHEN STAIN (Las Alas Manchadas de Pecado)",
-  "title": "SIN-BOUND // ASHEN STAIN",
-  "sub": "LOST COCOON DREAM · DARKENED WINGS",
-  "kanji": "罪憑き · 黒染まる羽",
-  "quote": "\"Wings turned black by forgetfulness and the wall of the heart.\"",
-  "protocol": "SIN-BOUND-0",
-  "chip": "BLACK-PLUME",
-  "spec1": "PURITY: TAR-BLACKENED",
-  "spec2": "REMEDY: TRUTH & TOUCH",
+  "name": "SERIE 3 · 17. CROWS // GUIDING BLACK FEATHERS (Los Cuervos Mensajeros)",
+  "title": "CROWS // GUIDING BLACK FEATHERS",
+  "sub": "INTERIOR SKY · MEMORY MESSENGERS",
+  "kanji": "カラス · 壁を越える使者",
+  "quote": "\"They cross the high stones, carrying pieces of who we used to be.\"",
+  "protocol": "CORVID-FLY-07",
+  "chip": "RAVEN-WING",
+  "spec1": "CROSSING: WALL IMMUNE",
+  "spec2": "TOKEN: BEAK SOUVENIR",
   "sn": "MD-HAIBANE-0210-061",
-  "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n      <rect width=\"280\" height=\"115\" fill=\"#090a10\" rx=\"2\"/>\n      <!-- Splattered Darkness Gradient -->\n      <!-- Left Normal Feather -->\n      <path d=\"M140,65 C115,55 70,40 30,55 C45,70 95,80 140,75\" fill=\"#475569\" stroke=\"#94a3b8\" stroke-width=\"1\"/>\n      <!-- Right Blackened Stain Feather -->\n      <path d=\"M140,65 C165,55 210,40 250,55 C235,70 185,80 140,75\" fill=\"#020617\" stroke=\"#450a0a\" stroke-width=\"1.4\"/>\n      <!-- Black dripping drops -->\n      <circle cx=\"210\" cy=\"72\" r=\"3.5\" fill=\"#020617\"/>\n      <path d=\"M210,72 L210,88\" stroke=\"#0f172a\" stroke-width=\"1.5\"/>\n      <circle cx=\"180\" cy=\"76\" r=\"2.5\" fill=\"#020617\"/>\n      <path d=\"M180,76 L180,92\" stroke=\"#0f172a\" stroke-width=\"1.2\"/>\n      <!-- Thorns wrapping wing -->\n      <path d=\"M150,60 Q175,68 200,60 T240,65\" fill=\"none\" stroke=\"#7f1d1d\" stroke-width=\"1.2\"/>\n      <line x1=\"170\" y1=\"63\" x2=\"168\" y2=\"57\" stroke=\"#dc2626\" stroke-width=\"1.2\"/>\n      <line x1=\"205\" y1=\"61\" x2=\"208\" y2=\"55\" stroke=\"#dc2626\" stroke-width=\"1.2\"/>\n      <text x=\"140\" y=\"106\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.2\" fill=\"#ef4444\" text-anchor=\"middle\">SIN-BOUND TAINT · DARKENING OF THE SCAPULAR PLUME</text>\n    </svg>"
+  "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n      <!-- Crow in Full Majestic Flight -->\n      <path d=\"M140,55 C120,30 80,22 45,35 C75,55 105,58 135,60\" fill=\"#334155\" stroke=\"#1e293b\" stroke-width=\"1.6\"/>\n      <path d=\"M140,55 C160,30 200,22 235,35 C205,55 175,58 145,60\" fill=\"#334155\" stroke=\"#1e293b\" stroke-width=\"1.6\"/>\n      <!-- Body & Tail Feathers -->\n      <ellipse cx=\"140\" cy=\"58\" rx=\"7\" ry=\"16\" fill=\"#1e293b\"/>\n      <polygon points=\"136,74 144,74 140,88\" fill=\"#1e293b\"/>\n      <!-- Head & Beak holding small token -->\n      <circle cx=\"140\" cy=\"42\" r=\"5\" fill=\"#1e293b\"/>\n      <polygon points=\"138,40 142,40 140,32\" fill=\"#d97706\"/>\n      <circle cx=\"140\" cy=\"30\" r=\"2.5\" fill=\"#dc2626\"/>\n      <!-- Secondary flock in distant background -->\n      <path d=\"M70,22 Q75,18 80,22\" fill=\"none\" stroke=\"#64748b\" stroke-width=\"1\"/>\n      <path d=\"M90,16 Q95,12 100,16\" fill=\"none\" stroke=\"#64748b\" stroke-width=\"1\"/>\n      <path d=\"M190,18 Q195,14 200,18\" fill=\"none\" stroke=\"#64748b\" stroke-width=\"1\"/>\n      <text x=\"140\" y=\"108\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.2\" fill=\"#1e293b\" text-anchor=\"middle\" font-weight=\"700\">BLACK CORVID PATH · BEARER OF EXTRAMURAL MEMORIES</text>\n    </svg>"
 },
 {
   "layer": "LAYER: 62",
   "series": "SERIE 3 · 18",
-  "name": "SERIE 3 · 18. DAY OF FLIGHT // BEYOND THE WALL (El Día del Vuelo)",
-  "title": "DAY OF FLIGHT // BEYOND THE WALL",
-  "sub": "PASSING OF HAIBANE · ASCENSION",
-  "kanji": "旅立ちの日 · 壁の向こう",
-  "quote": "\"When the time comes, a golden light calls them beyond the wall.\"",
-  "protocol": "ASCEND-DAY",
-  "chip": "GOLDEN-PILLAR",
-  "spec1": "AZIMUTH: DUE WEST GATE",
-  "spec2": "DESTINATION: UNKNOWN",
+  "name": "SERIE 3 · 18. ASH COURIER // BRASS BELL (La Campana del Mensajero)",
+  "title": "ASH COURIER // BRASS BELL",
+  "sub": "HAIBANE POSTAL · CANOPY FLIGHT",
+  "kanji": "鈴 · 灰羽の郵便配達",
+  "quote": "\"A tiny chime announces letters between the Old Home and the City.\"",
+  "protocol": "BELL-CHIME-03",
+  "chip": "POSTAL-RING",
+  "spec1": "MAIL: GLIE DOMESTIC",
+  "spec2": "BELL: HAND-TUNED C#",
   "sn": "MD-HAIBANE-0210-062",
-  "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n      <rect width=\"280\" height=\"115\" fill=\"#090d16\" rx=\"2\"/>\n      <!-- Wall Silhouette Base -->\n      <rect x=\"0\" y=\"75\" width=\"280\" height=\"40\" fill=\"#1e293b\"/>\n      <line x1=\"0\" y1=\"75\" x2=\"280\" y2=\"75\" stroke=\"#475569\" stroke-width=\"1.5\"/>\n      <!-- Column of Pillar Light -->\n      <polygon points=\"120,75 160,75 185,5 95,5\" fill=\"#fef08a\" opacity=\"0.3\"/>\n      <polygon points=\"130,75 150,75 165,5 115,5\" fill=\"#fff\" opacity=\"0.5\"/>\n      <!-- Ascending Halo & Feathers in Pillar -->\n      <ellipse cx=\"140\" cy=\"30\" rx=\"18\" ry=\"5\" fill=\"none\" stroke=\"#f59e0b\" stroke-width=\"2\"/>\n      <!-- Ascending small feather particles -->\n      <g fill=\"#fef3c7\" opacity=\"0.8\">\n        <circle cx=\"135\" cy=\"45\" r=\"1.5\"/><circle cx=\"145\" cy=\"40\" r=\"1.2\"/>\n        <circle cx=\"138\" cy=\"20\" r=\"1.8\"/><circle cx=\"142\" cy=\"12\" r=\"1.4\"/>\n      </g>\n      <text x=\"140\" y=\"106\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.2\" fill=\"#fbbf24\" text-anchor=\"middle\">WEST GATE ASCENSION · PILLAR OF GOLDEN DEPARTURE</text>\n    </svg>"
+  "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n      <!-- The Brass Bell -->\n      <path d=\"M125,28 C125,48 110,65 105,74 L175,74 C170,65 155,48 155,28 Z\" fill=\"#fffbeb\" stroke=\"#b45309\" stroke-width=\"2\"/>\n      <!-- Bell Crown Ring -->\n      <ellipse cx=\"140\" cy=\"24\" rx=\"8\" ry=\"4\" fill=\"#ffffff\" stroke=\"#b45309\" stroke-width=\"1.8\"/>\n      <!-- Bell Lip -->\n      <ellipse cx=\"140\" cy=\"74\" rx=\"35\" ry=\"7\" fill=\"#fef3c7\" stroke=\"#b45309\" stroke-width=\"1.8\"/>\n      <!-- Clapper Ball -->\n      <circle cx=\"140\" cy=\"85\" r=\"5\" fill=\"#78350f\"/>\n      <!-- Sound Wave Radiations -->\n      <path d=\"M90,74 A45,45 0 0,0 70,55\" fill=\"none\" stroke=\"#d97706\" stroke-width=\"1.2\"/>\n      <path d=\"M190,74 A45,45 0 0,1 210,55\" fill=\"none\" stroke=\"#d97706\" stroke-width=\"1.2\"/>\n      <path d=\"M80,74 A60,60 0 0,0 55,48\" fill=\"none\" stroke=\"#d97706\" stroke-width=\"0.8\" opacity=\"0.6\"/>\n      <path d=\"M200,74 A60,60 0 0,1 225,48\" fill=\"none\" stroke=\"#d97706\" stroke-width=\"0.8\" opacity=\"0.6\"/>\n      <!-- Postal Envelope Silhouette Left -->\n      <rect x=\"50\" y=\"32\" width=\"22\" height=\"15\" rx=\"1\" fill=\"#f8fafc\" stroke=\"#78350f\" stroke-width=\"1\"/>\n      <path d=\"M50,32 L61,40 L72,32\" fill=\"none\" stroke=\"#78350f\" stroke-width=\"1\"/>\n      <text x=\"140\" y=\"108\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.2\" fill=\"#b45309\" text-anchor=\"middle\" font-weight=\"700\">COURIER CHIME · SIGNAL OF LETTERS ACROSS TOWN</text>\n    </svg>"
 },
 {
   "layer": "LAYER: 63",
   "series": "SERIE 3 · 19",
-  "name": "SERIE 3 · 19. THE TOUHA // VEILED CARAVAN (La Caravana de los Toga)",
-  "title": "THE TOUHA // VEILED CARAVAN",
-  "sub": "MERCHANTS OF SILENCE · GATEKEEPERS",
-  "kanji": "遠吠 · 仮面の商人",
-  "quote": "\"The Toga come and go in silence, the only ones who know outside.\"",
-  "protocol": "TOGA-CARAVAN",
-  "chip": "SPOKE-CART-WHEEL",
-  "spec1": "TRADE: DRIED HERBS & TOOLS",
-  "spec2": "GATE: NORTH PORTAL",
+  "name": "SERIE 3 · 19. WELL OF FORGIVENESS // FALLING LIGHT (El Pozo del Olvido)",
+  "title": "WELL OF FORGIVENESS // FALLING LIGHT",
+  "sub": "DEPTH OF THE FOREST · COLD STONES",
+  "kanji": "古井戸 · 暗闇と光の救済",
+  "quote": "\"At the bottom of the dry well, birds gather bones of childhood.\"",
+  "protocol": "DEEP-WELL-00",
+  "chip": "ABYSS-LANTERN",
+  "spec1": "DEPTH: 18 METERS DRY",
+  "spec2": "STATUS: PILGRIMAGE WELL",
   "sn": "MD-HAIBANE-0210-063",
-  "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n      <rect width=\"280\" height=\"115\" fill=\"#0f172a\" rx=\"2\"/>\n      <!-- Covered Wagon Silhouette -->\n      <path d=\"M70,72 C70,40 180,40 180,72 Z\" fill=\"#1e293b\" stroke=\"#b45309\" stroke-width=\"1.3\"/>\n      <rect x=\"60\" y=\"70\" width=\"130\" height=\"15\" fill=\"#334155\" stroke=\"#64748b\"/>\n      <!-- Giant Spoked Wheels -->\n      <circle cx=\"85\" cy=\"85\" r=\"14\" fill=\"#0f172a\" stroke=\"#f59e0b\" stroke-width=\"1.5\"/>\n      <circle cx=\"85\" cy=\"85\" r=\"4\" fill=\"#f59e0b\"/>\n      <circle cx=\"165\" cy=\"85\" r=\"14\" fill=\"#0f172a\" stroke=\"#f59e0b\" stroke-width=\"1.5\"/>\n      <circle cx=\"165\" cy=\"85\" r=\"4\" fill=\"#f59e0b\"/>\n      <!-- Toga Figure with Cloak -->\n      <polygon points=\"205,50 195,85 220,85 215,50\" fill=\"#1e1b4b\" stroke=\"#7c3aed\" stroke-width=\"1\"/>\n      <circle cx=\"210\" cy=\"45\" r=\"5\" fill=\"#312e81\"/>\n      <!-- Lantern swinging from wagon -->\n      <line x1=\"60\" y1=\"58\" x2=\"52\" y2=\"68\" stroke=\"#94a3b8\"/>\n      <ellipse cx=\"52\" cy=\"72\" rx=\"4\" ry=\"6\" fill=\"#f59e0b\"/>\n      <text x=\"140\" y=\"108\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.2\" fill=\"#c084fc\" text-anchor=\"middle\">SILENT MERCHANTS OF THE TOGA · GATE ENTRANCE TRANSIT</text>\n    </svg>"
+  "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n      <!-- Circular Stone Well Rim in Perspective -->\n      <ellipse cx=\"140\" cy=\"45\" rx=\"60\" ry=\"18\" fill=\"#f8fafc\" stroke=\"#334155\" stroke-width=\"2\"/>\n      <ellipse cx=\"140\" cy=\"45\" rx=\"46\" ry=\"12\" fill=\"#e2e8f0\" stroke=\"#475569\" stroke-width=\"1.4\"/>\n      <!-- Downward Depth Shaft -->\n      <polygon points=\"94,45 186,45 160,95 120,95\" fill=\"#f1f5f9\" stroke=\"#64748b\" stroke-width=\"1\"/>\n      <!-- Golden Light Pillar rising from the bottom -->\n      <polygon points=\"135,95 145,95 155,10 125,10\" fill=\"#fef3c7\" opacity=\"0.6\"/>\n      <!-- Well Wooden Roof A-Frame -->\n      <line x1=\"80\" y1=\"45\" x2=\"80\" y2=\"15\" stroke=\"#78350f\" stroke-width=\"2\"/>\n      <line x1=\"200\" y1=\"45\" x2=\"200\" y2=\"15\" stroke=\"#78350f\" stroke-width=\"2\"/>\n      <polygon points=\"75,15 205,15 140,5\" fill=\"#fffbeb\" stroke=\"#78350f\" stroke-width=\"1.6\"/>\n      <!-- Pulley and Rope dangling down -->\n      <circle cx=\"140\" cy=\"18\" r=\"4\" fill=\"#b45309\"/>\n      <line x1=\"140\" y1=\"22\" x2=\"140\" y2=\"70\" stroke=\"#b45309\" stroke-width=\"1.2\"/>\n      <text x=\"140\" y=\"108\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.2\" fill=\"#78350f\" text-anchor=\"middle\" font-weight=\"700\">SUBTERRANEAN SHAFT · REVELATION AT THE FOREST DEEP</text>\n    </svg>"
 },
 {
   "layer": "LAYER: 64",
   "series": "SERIE 3 · 20",
-  "name": "SERIE 3 · 20. PECAN BELL // AUTUMN TRAIL (La Campana de Nuez)",
-  "title": "PECAN BELL // AUTUMN TRAIL",
-  "sub": "AUTUMN HARVEST · RUSTIC CHIME",
-  "kanji": "木の実の鈴 · 秋の小道",
-  "quote": "\"Carved nuts tied with simple string ring like wind through pines.\"",
-  "protocol": "PECAN-CHIME",
-  "chip": "HOLLOW-NUT",
-  "spec1": "MATERIAL: DRIED PECAN",
-  "spec2": "RESONANCE: 3,200 HZ",
+  "name": "SERIE 3 · 20. SIN BOUND // DARK SMOKE (Las Alas Pecadoras)",
+  "title": "SIN BOUND // DARK SMOKE",
+  "sub": "REKI'S SECRET · BLACKENING PLUMAGE",
+  "kanji": "罪憑き · 黒い羽の呪縛",
+  "quote": "\"Touching forbidden doubts makes the ash turn into cold pitch.\"",
+  "protocol": "SIN-FEATHER-X",
+  "chip": "EBON-STAIN",
+  "spec1": "DIAGNOSIS: SIN-BOUND",
+  "spec2": "REMEDY: CIRCLE OF TRUST",
   "sn": "MD-HAIBANE-0210-064",
-  "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n      <rect width=\"280\" height=\"115\" fill=\"#0b0f19\" rx=\"2\"/>\n      <!-- Branch across top -->\n      <path d=\"M20,25 C90,40 180,20 260,35\" stroke=\"#78350f\" stroke-width=\"2.2\" fill=\"none\"/>\n      <!-- Suspended Strings with Pecan Bells -->\n      <!-- Bell 1 -->\n      <line x1=\"80\" y1=\"30\" x2=\"80\" y2=\"60\" stroke=\"#d97706\" stroke-width=\"0.9\"/>\n      <ellipse cx=\"80\" cy=\"68\" rx=\"8\" ry=\"11\" fill=\"#92400e\" stroke=\"#f59e0b\" stroke-width=\"1.2\"/>\n      <line x1=\"75\" y1=\"72\" x2=\"85\" y2=\"72\" stroke=\"#451a03\" stroke-width=\"1.2\"/>\n      <!-- Bell 2 (Center) -->\n      <line x1=\"140\" y1=\"26\" x2=\"140\" y2=\"55\" stroke=\"#d97706\" stroke-width=\"0.9\"/>\n      <ellipse cx=\"140\" cy=\"64\" rx=\"10\" ry=\"13\" fill=\"#b45309\" stroke=\"#fbbf24\" stroke-width=\"1.4\"/>\n      <line x1=\"134\" y1=\"69\" x2=\"146\" y2=\"69\" stroke=\"#451a03\" stroke-width=\"1.4\"/>\n      <!-- Bell 3 -->\n      <line x1=\"200\" y1=\"28\" x2=\"200\" y2=\"58\" stroke=\"#d97706\" stroke-width=\"0.9\"/>\n      <ellipse cx=\"200\" cy=\"66\" rx=\"8\" ry=\"11\" fill=\"#92400e\" stroke=\"#f59e0b\" stroke-width=\"1.2\"/>\n      <line x1=\"195\" y1=\"70\" x2=\"205\" y2=\"70\" stroke=\"#451a03\" stroke-width=\"1.2\"/>\n      <!-- Autumn Leaves falling -->\n      <polygon points=\"105,45 112,40 115,48 108,52\" fill=\"#ea580c\"/>\n      <polygon points=\"170,42 178,38 182,45 174,50\" fill=\"#d97706\"/>\n      <text x=\"140\" y=\"106\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.2\" fill=\"#fbbf24\" text-anchor=\"middle\">PECAN HARVEST BELL · AUTUMN TRAIL IN OLD HOME</text>\n    </svg>"
+  "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n      <!-- Transition Wing: Left side Pure Ash, Right side Blackening Sin -->\n      <!-- Left Normal Wing -->\n      <path d=\"M140,55 C115,30 80,38 45,55 C75,68 110,65 140,70\" fill=\"#f8fafc\" stroke=\"#64748b\" stroke-width=\"1.6\"/>\n      <!-- Right Sin-Bound Wing (Deep charcoal with red aura) -->\n      <path d=\"M140,55 C165,30 200,38 235,55 C205,68 170,65 140,70\" fill=\"#334155\" stroke=\"#991b1b\" stroke-width=\"1.8\"/>\n      <!-- Bleeding / Dark Smoke Wisps curling from right wing -->\n      <path d=\"M190,45 Q210,30 205,18\" fill=\"none\" stroke=\"#dc2626\" stroke-width=\"1.2\"/>\n      <path d=\"M215,50 Q235,35 230,22\" fill=\"none\" stroke=\"#dc2626\" stroke-width=\"1.2\"/>\n      <path d=\"M170,55 Q185,40 180,28\" fill=\"none\" stroke=\"#991b1b\" stroke-width=\"1\"/>\n      <!-- Medicine Jar & Scissors below (Reki trimming wings) -->\n      <rect x=\"132\" y=\"78\" width=\"16\" height=\"20\" rx=\"3\" fill=\"#ffffff\" stroke=\"#78350f\" stroke-width=\"1.4\"/>\n      <line x1=\"132\" y1=\"84\" x2=\"148\" y2=\"84\" stroke=\"#78350f\" stroke-width=\"1\"/>\n      <text x=\"140\" y=\"108\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.2\" fill=\"#991b1b\" text-anchor=\"middle\" font-weight=\"700\">SIN-STAINED PLUMAGE · CONCEALMENT UNDER THE BANDAGES</text>\n    </svg>"
 },
 {
   "layer": "LAYER: 65",
   "series": "SERIE 3 · 21",
-  "name": "SERIE 3 · 21. WINTER HEARTH // CHARCOAL EMBERS (La Chimenea Invernal)",
-  "title": "WINTER HEARTH // CHARCOAL EMBERS",
-  "sub": "OLD HOME COMMON ROOM · WINTER",
-  "kanji": "冬の暖炉 · 薪の灯火",
-  "quote": "\"Snow piles against the window, but around the hearth all wings are warm.\"",
-  "protocol": "HEARTH-SNOW",
-  "chip": "OAK-CHARCOAL",
-  "spec1": "TEMP: 540°C GLOW",
-  "spec2": "SEASON: MID-WINTER",
+  "name": "SERIE 3 · 21. SHADOW OF THE WALL // GATES OF GLIE (Las Puertas de Glie)",
+  "title": "SHADOW OF THE WALL // GATES OF GLIE",
+  "sub": "WEST GATE ARCH · CLOSED HORIZON",
+  "kanji": "西の門 · 閉じられた鉄扉",
+  "quote": "\"Beyond these iron hinges lies a world we may never know.\"",
+  "protocol": "IRON-GATE-01",
+  "chip": "PORTAL-LOCK",
+  "spec1": "PORTAL: REINFORCED IRON",
+  "spec2": "PERMIT: COMMUNICATOR SEAL",
   "sn": "MD-HAIBANE-0210-065",
-  "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n      <rect width=\"280\" height=\"115\" fill=\"#090c14\" rx=\"2\"/>\n      <!-- Fireplace Stone Surround -->\n      <path d=\"M80,95 V40 H200 V95 H175 V58 H105 V95 Z\" fill=\"#1e293b\" stroke=\"#475569\" stroke-width=\"1.3\"/>\n      <!-- Fire Logs & Flames -->\n      <line x1=\"110\" y1=\"88\" x2=\"170\" y2=\"80\" stroke=\"#78350f\" stroke-width=\"4\"/>\n      <line x1=\"115\" y1=\"78\" x2=\"165\" y2=\"88\" stroke=\"#451a03\" stroke-width=\"4\"/>\n      <!-- Flame shapes -->\n      <path d=\"M125,82 Q140,45 145,75 Q150,55 155,82 Z\" fill=\"#f59e0b\"/>\n      <path d=\"M132,82 Q140,55 144,78 Q146,65 148,82 Z\" fill=\"#fef08a\"/>\n      <!-- Cast Iron Kettle on trivet -->\n      <ellipse cx=\"140\" cy=\"52\" rx=\"14\" ry=\"8\" fill=\"#0f172a\" stroke=\"#64748b\" stroke-width=\"1\"/>\n      <path d=\"M130,48 C130,40 150,40 150,48\" fill=\"none\" stroke=\"#94a3b8\" stroke-width=\"1.2\"/>\n      <!-- Falling Snow outside panes -->\n      <g fill=\"#93c5fd\" opacity=\"0.6\">\n        <circle cx=\"35\" cy=\"30\" r=\"1.5\"/><circle cx=\"55\" cy=\"50\" r=\"1.2\"/><circle cx=\"45\" cy=\"70\" r=\"1.4\"/>\n        <circle cx=\"230\" cy=\"35\" r=\"1.4\"/><circle cx=\"245\" cy=\"60\" r=\"1.5\"/><circle cx=\"225\" cy=\"75\" r=\"1.1\"/>\n      </g>\n      <text x=\"140\" y=\"106\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.2\" fill=\"#f59e0b\" text-anchor=\"middle\">WINTER RETREAT · HEARTHFIRE SHARING IN COLD SEASON</text>\n    </svg>"
+  "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n      <!-- High Stone Arch of West Gate -->\n      <path d=\"M85,95 V45 A55,55 0 0,1 195,45 V95\" fill=\"none\" stroke=\"#334155\" stroke-width=\"4\"/>\n      <!-- Inner Heavy Iron Gates (Two leaves) -->\n      <rect x=\"90\" y=\"45\" width=\"48\" height=\"50\" fill=\"#f8fafc\" stroke=\"#78350f\" stroke-width=\"1.6\"/>\n      <rect x=\"142\" y=\"45\" width=\"48\" height=\"50\" fill=\"#f8fafc\" stroke=\"#78350f\" stroke-width=\"1.6\"/>\n      <!-- Diagonal Iron Cross Braces -->\n      <line x1=\"90\" y1=\"45\" x2=\"138\" y2=\"95\" stroke=\"#78350f\" stroke-width=\"1.2\"/>\n      <line x1=\"90\" y1=\"95\" x2=\"138\" y2=\"45\" stroke=\"#78350f\" stroke-width=\"1.2\"/>\n      <line x1=\"142\" y1=\"45\" x2=\"190\" y2=\"95\" stroke=\"#78350f\" stroke-width=\"1.2\"/>\n      <line x1=\"142\" y1=\"95\" x2=\"190\" y2=\"45\" stroke=\"#78350f\" stroke-width=\"1.2\"/>\n      <!-- Massive Hanging Master Key -->\n      <circle cx=\"140\" cy=\"30\" r=\"5\" fill=\"#fef3c7\" stroke=\"#b45309\" stroke-width=\"1.5\"/>\n      <line x1=\"140\" y1=\"35\" x2=\"140\" y2=\"48\" stroke=\"#b45309\" stroke-width=\"2\"/>\n      <line x1=\"140\" y1=\"42\" x2=\"145\" y2=\"42\" stroke=\"#b45309\" stroke-width=\"1.5\"/>\n      <line x1=\"140\" y1=\"46\" x2=\"146\" y2=\"46\" stroke=\"#b45309\" stroke-width=\"1.5\"/>\n      <text x=\"140\" y=\"108\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.2\" fill=\"#78350f\" text-anchor=\"middle\" font-weight=\"700\">WESTERN PORTAL VAULT · THRESHOLD OF FORBIDDEN HORIZONS</text>\n    </svg>"
 },
 {
   "layer": "LAYER: 66",
   "series": "SERIE 3 · 22",
-  "name": "SERIE 3 · 22. SPROUT & ROOT // LIFE VESSEL (La Semilla de la Tierra)",
-  "title": "SPROUT & ROOT // LIFE VESSEL",
-  "sub": "NURSERY VAULT · ORGANIC EMBRYO",
-  "kanji": "芽吹き · 大地の器",
-  "quote": "\"Before the cocoon opens, the roots drink deep from the secret soil.\"",
-  "protocol": "SEED-VESSEL",
-  "chip": "GERMINATION-CORE",
-  "spec1": "STAGE: COTYLEDON",
-  "spec2": "NUTRIENT: RAIN FILTER",
+  "name": "SERIE 3 · 22. HARVEST OF NUTS // SQUIRREL FOREST (Cosecha del Bosque)",
+  "title": "HARVEST OF NUTS // SQUIRREL FOREST",
+  "sub": "AUTUMN WOODS · BASKET WEAVER",
+  "kanji": "森の収穫 · 木の実と秋風",
+  "quote": "\"Walking through golden canopy gathering chestnuts for winter bread.\"",
+  "protocol": "ACORN-BAG-06",
+  "chip": "OAK-SEED",
+  "spec1": "SEASON: LATE AUTUMN",
+  "spec2": "CONTAINER: WILLOW BASKET",
   "sn": "MD-HAIBANE-0210-066",
-  "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n      <rect width=\"280\" height=\"115\" fill=\"#08100d\" rx=\"2\"/>\n      <!-- Seed Shell Half -->\n      <path d=\"M110,65 C110,88 170,88 170,65 Z\" fill=\"#78350f\" stroke=\"#b45309\" stroke-width=\"1.4\"/>\n      <!-- Sprout leaves emerging -->\n      <path d=\"M140,65 Q135,42 120,40 Q135,48 140,65\" fill=\"#22c55e\" stroke=\"#15803d\" stroke-width=\"1\"/>\n      <path d=\"M140,65 Q145,38 160,36 Q145,46 140,65\" fill=\"#4ade80\" stroke=\"#15803d\" stroke-width=\"1\"/>\n      <!-- Radiating Root system into soil -->\n      <g stroke=\"#92400e\" stroke-width=\"1\" fill=\"none\">\n        <path d=\"M130,85 C125,95 110,102 100,108\"/>\n        <path d=\"M140,88 C140,98 145,105 140,112\"/>\n        <path d=\"M150,85 C155,95 170,102 180,108\"/>\n      </g>\n      <!-- Subterranean moisture grid -->\n      <g stroke=\"#064e3b\" stroke-width=\"0.6\" stroke-dasharray=\"2 3\">\n        <line x1=\"30\" y1=\"70\" x2=\"100\" y2=\"70\"/><line x1=\"180\" y1=\"70\" x2=\"250\" y2=\"70\"/>\n        <line x1=\"40\" y1=\"90\" x2=\"90\" y2=\"90\"/><line x1=\"190\" y1=\"90\" x2=\"240\" y2=\"90\"/>\n      </g>\n      <text x=\"140\" y=\"106\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.2\" fill=\"#4ade80\" text-anchor=\"middle\">ORGANIC GERMINATION MATRIX · CRADLE UNDERGROUND</text>\n    </svg>"
+  "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n      <!-- Woven Willow Basket -->\n      <path d=\"M100,55 L110,88 L170,88 L180,55 Z\" fill=\"#fffbeb\" stroke=\"#b45309\" stroke-width=\"2\"/>\n      <!-- Basket Wicker Crosshatch -->\n      <line x1=\"110\" y1=\"65\" x2=\"170\" y2=\"65\" stroke=\"#d97706\" stroke-width=\"1\"/>\n      <line x1=\"112\" y1=\"76\" x2=\"168\" y2=\"76\" stroke=\"#d97706\" stroke-width=\"1\"/>\n      <line x1=\"125\" y1=\"55\" x2=\"125\" y2=\"88\" stroke=\"#d97706\" stroke-width=\"1\"/>\n      <line x1=\"140\" y1=\"55\" x2=\"140\" y2=\"88\" stroke=\"#d97706\" stroke-width=\"1\"/>\n      <line x1=\"155\" y1=\"55\" x2=\"155\" y2=\"88\" stroke=\"#d97706\" stroke-width=\"1\"/>\n      <!-- Basket Arch Handle -->\n      <path d=\"M100,55 C100,25 180,25 180,55\" fill=\"none\" stroke=\"#78350f\" stroke-width=\"2.2\"/>\n      <!-- Acorns Overflowing -->\n      <ellipse cx=\"130\" cy=\"50\" rx=\"8\" ry=\"6\" fill=\"#78350f\" stroke=\"#b45309\" stroke-width=\"1\"/>\n      <ellipse cx=\"145\" cy=\"48\" rx=\"8\" ry=\"6\" fill=\"#78350f\" stroke=\"#b45309\" stroke-width=\"1\"/>\n      <ellipse cx=\"138\" cy=\"42\" rx=\"7\" ry=\"5\" fill=\"#78350f\" stroke=\"#b45309\" stroke-width=\"1\"/>\n      <!-- Oak Leaves on Sides -->\n      <path d=\"M75,55 Q60,40 70,30 Q85,42 75,55 Z\" fill=\"#047857\" stroke=\"#065f46\" stroke-width=\"1\"/>\n      <path d=\"M205,55 Q220,40 210,30 Q195,42 205,55 Z\" fill=\"#047857\" stroke=\"#065f46\" stroke-width=\"1\"/>\n      <text x=\"140\" y=\"108\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.2\" fill=\"#047857\" text-anchor=\"middle\" font-weight=\"700\">AUTUMN FORAGING ROUTE · PROVISIONS FOR THE FROST MONTHS</text>\n    </svg>"
 },
 {
   "layer": "LAYER: 67",
   "series": "SERIE 3 · 23",
-  "name": "SERIE 3 · 23. RUSTY RAILS // COAL TRAM (Los Rieles Olvidados)",
-  "title": "RUSTY RAILS // COAL TRAM",
-  "sub": "PERIMETER TRACKS · GLIE INDUSTRIAL YARD",
-  "kanji": "錆びた鉄路 · トロッコ",
-  "quote": "\"Tracks that lead into the wall and go no further... only memory travels.\"",
-  "protocol": "RAIL-TRACK-67",
-  "chip": "CAST-IRON-AXLE",
-  "spec1": "GAUGE: NARROW 762MM",
-  "spec2": "TERMINUS: BASE OF WALL",
+  "name": "SERIE 3 · 23. SMOKE FLIGHT // DAY OF PASSAGE (El Día del Vuelo)",
+  "title": "SMOKE FLIGHT // DAY OF PASSAGE",
+  "sub": "EASTERN CREST · ASCENSION",
+  "kanji": "旅立ちの朝 · 煙と消える光輪",
+  "quote": "\"When the time comes, a Haibane walks past the Western Gate alone.\"",
+  "protocol": "DEPART-GATE-09",
+  "chip": "FLIGHT-PASS",
+  "spec1": "EVENT: DAY OF FLIGHT",
+  "spec2": "MEMORY: PERMANENT GLIE",
   "sn": "MD-HAIBANE-0210-067",
-  "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n      <rect width=\"280\" height=\"115\" fill=\"#0b0e17\" rx=\"2\"/>\n      <!-- Perspective Rails receding to center horizon -->\n      <polygon points=\"135,38 145,38 230,105 50,105\" fill=\"#1e293b\" opacity=\"0.4\"/>\n      <!-- Rail lines -->\n      <line x1=\"137\" y1=\"38\" x2=\"65\" y2=\"105\" stroke=\"#94a3b8\" stroke-width=\"2\"/>\n      <line x1=\"143\" y1=\"38\" x2=\"215\" y2=\"105\" stroke=\"#94a3b8\" stroke-width=\"2\"/>\n      <!-- Wooden Cross Ties (Sleepers) -->\n      <line x1=\"130\" y1=\"45\" x2=\"150\" y2=\"45\" stroke=\"#78350f\" stroke-width=\"1.2\"/>\n      <line x1=\"120\" y1=\"55\" x2=\"160\" y2=\"55\" stroke=\"#78350f\" stroke-width=\"1.4\"/>\n      <line x1=\"105\" y1=\"68\" x2=\"175\" y2=\"68\" stroke=\"#78350f\" stroke-width=\"1.8\"/>\n      <line x1=\"88\" y1=\"84\" x2=\"192\" y2=\"84\" stroke=\"#78350f\" stroke-width=\"2.2\"/>\n      <line x1=\"68\" y1=\"100\" x2=\"212\" y2=\"100\" stroke=\"#78350f\" stroke-width=\"2.5\"/>\n      <!-- Coal Cart in distance -->\n      <rect x=\"133\" y=\"30\" width=\"14\" height=\"10\" fill=\"#475569\" stroke=\"#cbd5e1\" stroke-width=\"0.8\"/>\n      <text x=\"140\" y=\"108\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.2\" fill=\"#94a3b8\" text-anchor=\"middle\">ABANDONED TRACK LINE · SLEEPERS AT THE DEAD END</text>\n    </svg>"
+  "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n      <!-- Rising Dawn Sun -->\n      <circle cx=\"140\" cy=\"85\" r=\"45\" fill=\"#fef3c7\" opacity=\"0.5\"/>\n      <circle cx=\"140\" cy=\"85\" r=\"28\" fill=\"#fef08a\" opacity=\"0.6\"/>\n      <!-- Stone Arch of the Passage -->\n      <path d=\"M105,95 V50 A35,35 0 0,1 175,50 V95\" fill=\"none\" stroke=\"#78350f\" stroke-width=\"2.4\"/>\n      <!-- Ascension Silhouette (Kuu walking into light) -->\n      <circle cx=\"140\" cy=\"50\" r=\"4\" fill=\"#b45309\"/>\n      <polygon points=\"137,54 143,54 146,75 134,75\" fill=\"#b45309\"/>\n      <!-- Dissolving Golden Halo above -->\n      <ellipse cx=\"140\" cy=\"30\" rx=\"20\" ry=\"6\" fill=\"none\" stroke=\"#f59e0b\" stroke-width=\"1.8\" stroke-dasharray=\"4 3\"/>\n      <!-- Dispersing Particle Sparks -->\n      <circle cx=\"125\" cy=\"24\" r=\"1.5\" fill=\"#d97706\"/>\n      <circle cx=\"155\" cy=\"24\" r=\"1.5\" fill=\"#d97706\"/>\n      <circle cx=\"140\" cy=\"18\" r=\"1.8\" fill=\"#f59e0b\"/>\n      <text x=\"140\" y=\"108\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.2\" fill=\"#b45309\" text-anchor=\"middle\" font-weight=\"700\">SACRED FLIGHT PASSAGE · TRANSCENDENCE ACROSS THE HORIZON</text>\n    </svg>"
 },
 {
   "layer": "LAYER: 68",
   "series": "SERIE 3 · 24",
-  "name": "SERIE 3 · 24. WOOLEN SCARF // WEAVEN MEMORY (La Bufanda de Lana)",
-  "title": "WOOLEN SCARF // WEAVEN MEMORY",
-  "sub": "TEXTILE WORKSHOP · BLUE THREAD",
-  "kanji": "羊毛のマフラー · 紡がれた絆",
-  "quote": "\"Woven with sheep's wool dyed the color of a winter sky.\"",
-  "protocol": "WEAVE-SCARF",
-  "chip": "BLUE-INDIGO-YARN",
-  "spec1": "PATTERN: DIAGONAL TWILL",
-  "spec2": "DONOR: KURAMORI MEMORY",
+  "name": "SERIE 3 · 24. WINTER SPRAY // FROZEN RIVER (El Río Helado)",
+  "title": "WINTER SPRAY // FROZEN RIVER",
+  "sub": "NORTH GLIE VALLEY · FROST EMBANKMENT",
+  "kanji": "氷河 · 冬の鉄橋と霜",
+  "quote": "\"Waterfalls turned to crystal glass under the quiet grey sky.\"",
+  "protocol": "ICE-RIVER-04",
+  "chip": "CRYSTAL-ICE",
+  "spec1": "TEMP: -12°C WINTER",
+  "spec2": "STREAM: GLIE FLUVIA",
   "sn": "MD-HAIBANE-0210-068",
-  "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n      <rect width=\"280\" height=\"115\" fill=\"#0c111d\" rx=\"2\"/>\n      <!-- Loom Warp & Weft Threads -->\n      <g stroke=\"#38bdf8\" stroke-width=\"0.7\" opacity=\"0.4\">\n        <line x1=\"40\" y1=\"20\" x2=\"40\" y2=\"90\"/><line x1=\"55\" y1=\"20\" x2=\"55\" y2=\"90\"/>\n        <line x1=\"70\" y1=\"20\" x2=\"70\" y2=\"90\"/><line x1=\"210\" y1=\"20\" x2=\"210\" y2=\"90\"/>\n        <line x1=\"225\" y1=\"20\" x2=\"225\" y2=\"90\"/><line x1=\"240\" y1=\"20\" x2=\"240\" y2=\"90\"/>\n      </g>\n      <!-- Folded Soft Woolen Scarf -->\n      <path d=\"M85,38 C115,25 165,25 195,38 C205,42 205,52 195,56 C165,68 115,68 85,56 C75,52 75,42 85,38 Z\" fill=\"#0284c7\" stroke=\"#38bdf8\" stroke-width=\"1.3\"/>\n      <!-- Hanging Fringes -->\n      <path d=\"M125,56 L120,85 M132,56 L128,87 M140,56 L138,89 M148,56 L148,87 M156,56 L158,85\" stroke=\"#bae6fd\" stroke-width=\"1.2\"/>\n      <!-- Knitting needle through scarf -->\n      <line x1=\"70\" y1=\"65\" x2=\"210\" y2=\"30\" stroke=\"#f59e0b\" stroke-width=\"1.4\"/>\n      <circle cx=\"70\" cy=\"65\" r=\"2.5\" fill=\"#f59e0b\"/>\n      <text x=\"140\" y=\"106\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.2\" fill=\"#38bdf8\" text-anchor=\"middle\">WOVEN MEMORIES OF OLD HOME · INDIGO WOOLEN TIE</text>\n    </svg>"
+  "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n      <!-- Frozen Ice River Sheet -->\n      <polygon points=\"20,95 260,95 230,65 50,65\" fill=\"#f0f9ff\" stroke=\"#0284c7\" stroke-width=\"1.6\"/>\n      <!-- Ice Cracks & Crystalline Fractures -->\n      <line x1=\"80\" y1=\"80\" x2=\"110\" y2=\"72\" stroke=\"#38bdf8\" stroke-width=\"1.2\"/>\n      <line x1=\"110\" y1=\"72\" x2=\"140\" y2=\"85\" stroke=\"#38bdf8\" stroke-width=\"1.2\"/>\n      <line x1=\"140\" y1=\"85\" x2=\"170\" y2=\"70\" stroke=\"#38bdf8\" stroke-width=\"1.2\"/>\n      <line x1=\"170\" y1=\"70\" x2=\"200\" y2=\"82\" stroke=\"#38bdf8\" stroke-width=\"1.2\"/>\n      <!-- Wooden Railway Bridge Trestle above -->\n      <line x1=\"40\" y1=\"42\" x2=\"240\" y2=\"42\" stroke=\"#78350f\" stroke-width=\"2.5\"/>\n      <line x1=\"40\" y1=\"48\" x2=\"240\" y2=\"48\" stroke=\"#78350f\" stroke-width=\"1.5\"/>\n      <!-- Vertical Trestle Legs -->\n      <line x1=\"90\" y1=\"48\" x2=\"85\" y2=\"70\" stroke=\"#78350f\" stroke-width=\"1.6\"/>\n      <line x1=\"140\" y1=\"48\" x2=\"140\" y2=\"70\" stroke=\"#78350f\" stroke-width=\"1.6\"/>\n      <line x1=\"190\" y1=\"48\" x2=\"195\" y2=\"70\" stroke=\"#78350f\" stroke-width=\"1.6\"/>\n      <!-- Hanging Icicles from Bridge -->\n      <polygon points=\"98,48 102,48 100,58\" fill=\"#38bdf8\"/>\n      <polygon points=\"120,48 124,48 122,62\" fill=\"#38bdf8\"/>\n      <polygon points=\"155,48 159,48 157,60\" fill=\"#38bdf8\"/>\n      <polygon points=\"180,48 184,48 182,56\" fill=\"#38bdf8\"/>\n      <text x=\"140\" y=\"108\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.2\" fill=\"#0284c7\" text-anchor=\"middle\" font-weight=\"700\">FROZEN FLUVIA TRESTLE · QUIET SLEEP OF WINTER WATERS</text>\n    </svg>"
 },
 {
   "layer": "LAYER: 69",
   "series": "SERIE 3 · 25",
-  "name": "SERIE 3 · 25. MIGRANT FLOCK // UNBOUND SKY (Las Aves Migratorias)",
-  "title": "MIGRANT FLOCK // UNBOUND SKY",
-  "sub": "FREE COURIERS · WALL TRANSCENDENCE",
-  "kanji": "渡り鳥 · 自由なる飛翔",
-  "quote": "\"Only the wild birds fly over the wall without permission or sorrow.\"",
-  "protocol": "FLIGHT-PASS-25",
-  "chip": "AVIAN-MIGRATION",
-  "spec1": "ALT: 800M OVER WALL",
-  "spec2": "SEASON: SPRING TRANSIT",
+  "name": "SERIE 3 · 25. BIRDS OVER WALL // FREE HORIZON (Pájaros sobre la Muralla)",
+  "title": "BIRDS OVER WALL // FREE HORIZON",
+  "sub": "EXTRAMURAL PATH · MIGRATION",
+  "kanji": "群青の鳥 · 壁を越える翼",
+  "quote": "\"Why can they fly away, while we remain protected in this valley?\"",
+  "protocol": "AVIAN-MIG-11",
+  "chip": "HORIZON-V",
+  "spec1": "ROUTE: BEYOND THE WALL",
+  "spec2": "ALTITUDE: +350M MSL",
   "sn": "MD-HAIBANE-0210-069",
-  "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n      <rect width=\"280\" height=\"115\" fill=\"#090e1a\" rx=\"2\"/>\n      <!-- Crescent Moon & Dawn Clouds -->\n      <path d=\"M225,20 A12,12 0 0,0 237,32 A15,15 0 1,1 225,20 Z\" fill=\"#fef08a\" opacity=\"0.8\"/>\n      <!-- Flock in V-Formation crossing diagonally -->\n      <g stroke=\"#f8fafc\" stroke-width=\"1.4\" fill=\"none\">\n        <!-- Lead Bird -->\n        <path d=\"M140,25 Q145,20 150,25 Q155,20 160,25\"/>\n        <!-- Flank Left -->\n        <path d=\"M115,35 Q120,30 125,35 Q130,30 135,35\"/>\n        <path d=\"M90,47 Q95,42 100,47 Q105,42 110,47\"/>\n        <path d=\"M65,60 Q70,55 75,60 Q80,55 85,60\"/>\n        <!-- Flank Right -->\n        <path d=\"M165,35 Q170,30 175,35 Q180,30 185,35\"/>\n        <path d=\"M190,47 Q195,42 200,47 Q205,42 210,47\"/>\n        <path d=\"M215,60 Q220,55 225,60 Q230,55 235,60\"/>\n      </g>\n      <!-- Base Wall below, miniature in scale -->\n      <rect x=\"0\" y=\"88\" width=\"280\" height=\"27\" fill=\"#1e293b\"/>\n      <line x1=\"0\" y1=\"88\" x2=\"280\" y2=\"88\" stroke=\"#475569\" stroke-width=\"1\"/>\n      <text x=\"140\" y=\"106\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.2\" fill=\"#cbd5e1\" text-anchor=\"middle\">V-FORMATION MIGRATION · TRANSCENDING THE BARRIER</text>\n    </svg>"
+  "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n      <!-- Massive Wall Silhouette at Bottom -->\n      <rect x=\"20\" y=\"78\" width=\"240\" height=\"22\" fill=\"#f1f5f9\" stroke=\"#334155\" stroke-width=\"1.8\"/>\n      <line x1=\"20\" y1=\"78\" x2=\"260\" y2=\"78\" stroke=\"#475569\" stroke-width=\"1.2\"/>\n      <!-- Stone crenels on top of wall -->\n      <line x1=\"70\" y1=\"78\" x2=\"70\" y2=\"100\" stroke=\"#64748b\" stroke-width=\"1\"/>\n      <line x1=\"120\" y1=\"78\" x2=\"120\" y2=\"100\" stroke=\"#64748b\" stroke-width=\"1\"/>\n      <line x1=\"170\" y1=\"78\" x2=\"170\" y2=\"100\" stroke=\"#64748b\" stroke-width=\"1\"/>\n      <line x1=\"220\" y1=\"78\" x2=\"220\" y2=\"100\" stroke=\"#64748b\" stroke-width=\"1\"/>\n      <!-- Crescent Moon high above -->\n      <path d=\"M225,18 A12,12 0 0,0 237,30 A15,15 0 1,1 225,18 Z\" fill=\"#fef08a\" stroke=\"#d97706\" stroke-width=\"0.8\"/>\n      <!-- Flock of Birds in V-Formation crossing diagonally above the Wall -->\n      <g stroke=\"#334155\" stroke-width=\"1.5\" fill=\"none\">\n        <!-- Lead Bird -->\n        <path d=\"M140,24 Q145,18 150,24 Q155,18 160,24\"/>\n        <!-- Flank Left -->\n        <path d=\"M115,34 Q120,28 125,34 Q130,28 135,34\"/>\n        <path d=\"M90,46 Q95,40 100,46 Q105,40 110,46\"/>\n        <path d=\"M65,58 Q70,52 75,58 Q80,52 85,58\"/>\n        <!-- Flank Right -->\n        <path d=\"M165,34 Q170,28 175,34 Q180,28 185,34\"/>\n        <path d=\"M190,46 Q195,40 200,46 Q205,40 210,46\"/>\n        <path d=\"M215,58 Q220,52 225,58 Q230,52 235,58\"/>\n      </g>\n      <text x=\"140\" y=\"108\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.2\" fill=\"#334155\" text-anchor=\"middle\" font-weight=\"700\">V-FORMATION MIGRATION · TRANSCENDING THE BARRIER</text>\n    </svg>"
 },
 {
   "layer": "LAYER: 70",
   "series": "SERIE 3 · 26",
-  "name": "SERIE 3 · 26. SECRET ATELIER // WALL PAINTING (El Taller Secreto de Reki)",
+  "name": "SERIE 3 · 26. SECRET ATELIER // WALL PAINTING (El Atelier Oculto)",
   "title": "SECRET ATELIER // WALL PAINTING",
-  "sub": "HIDDEN DORMITORY ROOM · INNER TRUTH",
-  "kanji": "秘密の部屋 · 壁画の真実",
-  "quote": "\"On this hidden plaster I painted my own nightmare to save my soul.\"",
-  "protocol": "MURAL-VAULT",
-  "chip": "PIGMENT-PALETTE",
+  "sub": "OLD HOME BASEMENT · CONFESSION",
+  "kanji": "隠しアトリエ · 壁画の告白",
+  "quote": "\"Reki painted her dark dream, covering it with gentle landscapes.\"",
+  "protocol": "MURAL-PAINT-07",
+  "chip": "OIL-CANVAS",
   "spec1": "MEDIUM: EGG TEMPERA",
-  "spec2": "SUBJECT: TRAIN & RAVEN",
+  "spec2": "SECRET: REKI'S TRUTH",
   "sn": "MD-HAIBANE-0210-070",
-  "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n      <rect width=\"280\" height=\"115\" fill=\"#0a0812\" rx=\"2\"/>\n      <!-- The Painter's Canvas Frame -->\n      <rect x=\"50\" y=\"18\" width=\"180\" height=\"70\" fill=\"#1e1b4b\" stroke=\"#6366f1\" stroke-width=\"1.3\"/>\n      <!-- Mural inside canvas: Bleak railway under dark sky -->\n      <polygon points=\"140,55 145,55 185,85 95,85\" fill=\"#0f172a\"/>\n      <line x1=\"140\" y1=\"55\" x2=\"105\" y2=\"85\" stroke=\"#ef4444\" stroke-width=\"1.1\"/>\n      <line x1=\"145\" y1=\"55\" x2=\"175\" y2=\"85\" stroke=\"#ef4444\" stroke-width=\"1.1\"/>\n      <!-- Silhouette of child on tracks -->\n      <circle cx=\"142\" cy=\"46\" r=\"3\" fill=\"#cbd5e1\"/>\n      <line x1=\"142\" y1=\"49\" x2=\"142\" y2=\"58\" stroke=\"#cbd5e1\" stroke-width=\"1.2\"/>\n      <!-- Artist palette in foreground -->\n      <ellipse cx=\"60\" cy=\"85\" rx=\"14\" ry=\"9\" fill=\"#78350f\" stroke=\"#b45309\"/>\n      <circle cx=\"54\" cy=\"83\" r=\"2\" fill=\"#ef4444\"/>\n      <circle cx=\"60\" cy=\"81\" r=\"2\" fill=\"#3b82f6\"/>\n      <circle cx=\"66\" cy=\"83\" r=\"2\" fill=\"#f59e0b\"/>\n      <text x=\"140\" y=\"106\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.2\" fill=\"#a5b4fc\" text-anchor=\"middle\">SECRET MURAL ARCHIVE · CONFESSION ON THE WALL</text>\n    </svg>"
+  "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n      <!-- Painter's Canvas Frame on Easel -->\n      <rect x=\"55\" y=\"18\" width=\"170\" height=\"66\" rx=\"2\" fill=\"#fffbeb\" stroke=\"#78350f\" stroke-width=\"1.8\"/>\n      <!-- Bleak Railway Track Mural inside Canvas -->\n      <polygon points=\"140,50 145,50 175,80 105,80\" fill=\"#f1f5f9\" stroke=\"#334155\" stroke-width=\"1.2\"/>\n      <line x1=\"140\" y1=\"50\" x2=\"112\" y2=\"80\" stroke=\"#dc2626\" stroke-width=\"1.4\"/>\n      <line x1=\"145\" y1=\"50\" x2=\"168\" y2=\"80\" stroke=\"#dc2626\" stroke-width=\"1.4\"/>\n      <!-- Silhouette of Lonely Child on tracks -->\n      <circle cx=\"142\" cy=\"42\" r=\"3.2\" fill=\"#1e293b\"/>\n      <line x1=\"142\" y1=\"45\" x2=\"142\" y2=\"54\" stroke=\"#1e293b\" stroke-width=\"1.6\"/>\n      <!-- Wooden Palette in Foreground -->\n      <ellipse cx=\"65\" cy=\"85\" rx=\"14\" ry=\"9\" fill=\"#fffbeb\" stroke=\"#b45309\" stroke-width=\"1.5\"/>\n      <circle cx=\"58\" cy=\"83\" r=\"2.2\" fill=\"#dc2626\"/>\n      <circle cx=\"65\" cy=\"81\" r=\"2.2\" fill=\"#2563eb\"/>\n      <circle cx=\"72\" cy=\"83\" r=\"2.2\" fill=\"#d97706\"/>\n      <text x=\"140\" y=\"108\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.2\" fill=\"#78350f\" text-anchor=\"middle\" font-weight=\"700\">SECRET MURAL ARCHIVE · CONFESSION ON THE WALL</text>\n    </svg>"
 },
 {
   "layer": "LAYER: 71",
   "series": "SERIE 3 · 27",
-  "name": "SERIE 3 · 27. PHANTOM TRAIN // NIGHT TRACKS (La Locomotora del Sueño)",
+  "name": "SERIE 3 · 27. PHANTOM TRAIN // NIGHT TRACKS (El Tren Fantasma)",
   "title": "PHANTOM TRAIN // NIGHT TRACKS",
-  "sub": "THE DREAM OF REKI · LOCOMOTIVE",
-  "kanji": "幻の列車 · 煙と夜霧",
-  "quote": "\"The headlights in the fog... an iron beast of unforgiven regret.\"",
-  "protocol": "LOCO-DREAM",
-  "chip": "STEAM-BOILER-71",
-  "spec1": "PRESSURE: 180 PSI COAL",
-  "spec2": "SPEED: RELENTLESS",
+  "sub": "REKI'S DREAM · RAILS OF GUILT",
+  "kanji": "幻の列車 · 踏切の追憶",
+  "quote": "\"The locomotive with its single glaring light came to crush my shell.\"",
+  "protocol": "LOCO-TRAIN-09",
+  "chip": "RAIL-HEADLIGHT",
+  "spec1": "GAUGE: NARROW 1067MM",
+  "spec2": "ORIGIN: REKI'S COCOON",
   "sn": "MD-HAIBANE-0210-071",
-  "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n      <rect width=\"280\" height=\"115\" fill=\"#08070d\" rx=\"2\"/>\n      <!-- Train Front Boiled Hull -->\n      <ellipse cx=\"140\" cy=\"55\" rx=\"32\" ry=\"32\" fill=\"#1e293b\" stroke=\"#475569\" stroke-width=\"2\"/>\n      <ellipse cx=\"140\" cy=\"55\" rx=\"24\" ry=\"24\" fill=\"#0f172a\" stroke=\"#dc2626\" stroke-width=\"1.2\"/>\n      <!-- Massive Center Headlight -->\n      <circle cx=\"140\" cy=\"35\" r=\"10\" fill=\"#fef08a\" stroke=\"#f59e0b\" stroke-width=\"2\"/>\n      <!-- Radiating headlight beams -->\n      <polygon points=\"140,35 15,10 15,95\" fill=\"#fef08a\" opacity=\"0.12\"/>\n      <polygon points=\"140,35 265,10 265,95\" fill=\"#fef08a\" opacity=\"0.12\"/>\n      <!-- Cowcatcher Grid at bottom -->\n      <polygon points=\"120,78 160,78 175,98 105,98\" fill=\"#1e293b\" stroke=\"#94a3b8\" stroke-width=\"1.2\"/>\n      <!-- Billowing Smoke Cloud above -->\n      <ellipse cx=\"140\" cy=\"12\" rx=\"30\" ry=\"8\" fill=\"#475569\" opacity=\"0.5\"/>\n      <text x=\"140\" y=\"108\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.2\" fill=\"#ef4444\" text-anchor=\"middle\">LOCOMOTIVE IN NIGHT FOG · ENGINE OF THE GUILT COCOON</text>\n    </svg>"
+  "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n      <!-- Front Boiler Hull of Steam Engine -->\n      <circle cx=\"140\" cy=\"52\" r=\"32\" fill=\"#f8fafc\" stroke=\"#334155\" stroke-width=\"2.2\"/>\n      <circle cx=\"140\" cy=\"52\" r=\"24\" fill=\"#ffffff\" stroke=\"#991b1b\" stroke-width=\"1.5\"/>\n      <!-- Center Locomotive Headlight -->\n      <circle cx=\"140\" cy=\"35\" r=\"10\" fill=\"#fef3c7\" stroke=\"#b45309\" stroke-width=\"2\"/>\n      <!-- Radiating Headlight Light Beams -->\n      <polygon points=\"140,35 25,12 25,95\" fill=\"#fef3c7\" opacity=\"0.4\"/>\n      <polygon points=\"140,35 255,12 255,95\" fill=\"#fef3c7\" opacity=\"0.4\"/>\n      <!-- Cowcatcher Grid at Bottom -->\n      <polygon points=\"120,76 160,76 175,96 105,96\" fill=\"#f1f5f9\" stroke=\"#475569\" stroke-width=\"1.6\"/>\n      <line x1=\"128\" y1=\"76\" x2=\"120\" y2=\"96\" stroke=\"#475569\" stroke-width=\"1.2\"/>\n      <line x1=\"140\" y1=\"76\" x2=\"140\" y2=\"96\" stroke=\"#475569\" stroke-width=\"1.2\"/>\n      <line x1=\"152\" y1=\"76\" x2=\"160\" y2=\"96\" stroke=\"#475569\" stroke-width=\"1.2\"/>\n      <!-- Smoke plume rising above -->\n      <ellipse cx=\"140\" cy=\"14\" rx=\"28\" ry=\"7\" fill=\"#cbd5e1\" opacity=\"0.6\"/>\n      <text x=\"140\" y=\"108\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.2\" fill=\"#991b1b\" text-anchor=\"middle\" font-weight=\"700\">LOCOMOTIVE IN NIGHT FOG · ENGINE OF THE GUILT COCOON</text>\n    </svg>"
 },
 {
   "layer": "LAYER: 72",
   "series": "SERIE 3 · 28",
-  "name": "SERIE 3 · 28. TOUCH OF PURITY // HALO REST (La Purificación del Halo)",
+  "name": "SERIE 3 · 28. TOUCH OF PURITY // HALO REST (Purificación del Halo)",
   "title": "TOUCH OF PURITY // HALO REST",
-  "sub": "NIGHT RECHARGING · BLESSED WATER",
-  "kanji": "光輪の休息 · 清らかな水",
-  "quote": "\"Resting in a bowl of clear water, the halo drinks back its morning sheen.\"",
-  "protocol": "PURITY-REST",
-  "chip": "WATER-PEDESTAL",
-  "spec1": "MEDIUM: MOUNTAIN SPRING",
-  "spec2": "CHARGE: 100% LUMINANCE",
+  "sub": "HOLY BASIN · TEMPLE BAPTISM",
+  "kanji": "泉の静寂 · 光輪を冷やす水",
+  "quote": "\"When the burning brass cools in clear water, peace returns.\"",
+  "protocol": "FONT-BAP-02",
+  "chip": "PURITY-FONT",
+  "spec1": "BASIN: WHITE ALABASTER",
+  "spec2": "WATER: GLIE SPRINGS",
   "sn": "MD-HAIBANE-0210-072",
-  "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n      <rect width=\"280\" height=\"115\" fill=\"#080e18\" rx=\"2\"/>\n      <!-- Ceramic Basin/Bowl -->\n      <ellipse cx=\"140\" cy=\"72\" rx=\"55\" ry=\"18\" fill=\"#1e293b\" stroke=\"#38bdf8\" stroke-width=\"1.4\"/>\n      <!-- Water Surface -->\n      <ellipse cx=\"140\" cy=\"68\" rx=\"48\" ry=\"14\" fill=\"#0284c7\" opacity=\"0.6\"/>\n      <!-- Concentric Water Ripples -->\n      <ellipse cx=\"140\" cy=\"68\" rx=\"32\" ry=\"9\" fill=\"none\" stroke=\"#bae6fd\" stroke-width=\"0.8\" opacity=\"0.7\"/>\n      <ellipse cx=\"140\" cy=\"68\" rx=\"16\" ry=\"4.5\" fill=\"none\" stroke=\"#bae6fd\" stroke-width=\"0.8\" opacity=\"0.9\"/>\n      <!-- Halo Resting partially submerged -->\n      <ellipse cx=\"140\" cy=\"55\" rx=\"38\" ry=\"10\" fill=\"none\" stroke=\"#fef08a\" stroke-width=\"3\"/>\n      <ellipse cx=\"140\" cy=\"55\" rx=\"38\" ry=\"10\" fill=\"none\" stroke=\"#f59e0b\" stroke-width=\"1.2\"/>\n      <!-- Floating light particles -->\n      <g fill=\"#fef08a\">\n        <circle cx=\"120\" cy=\"40\" r=\"1.5\"/><circle cx=\"160\" cy=\"42\" r=\"1.5\"/>\n        <circle cx=\"140\" cy=\"32\" r=\"2\"/><circle cx=\"132\" cy=\"22\" r=\"1.2\"/>\n      </g>\n      <text x=\"140\" y=\"106\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.2\" fill=\"#38bdf8\" text-anchor=\"middle\">CLEAR WATER NOCTURNE · RESTING THE BURNING RING</text>\n    </svg>"
+  "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n      <!-- Water Basin Bowl in Perspective -->\n      <ellipse cx=\"140\" cy=\"70\" rx=\"55\" ry=\"20\" fill=\"#f0f9ff\" stroke=\"#0284c7\" stroke-width=\"2\"/>\n      <!-- Water Surface -->\n      <ellipse cx=\"140\" cy=\"67\" rx=\"48\" ry=\"15\" fill=\"#e0f2fe\" stroke=\"#38bdf8\" stroke-width=\"1\"/>\n      <!-- Concentric Water Ripples -->\n      <ellipse cx=\"140\" cy=\"67\" rx=\"34\" ry=\"9\" fill=\"none\" stroke=\"#0284c7\" stroke-width=\"0.9\" opacity=\"0.8\"/>\n      <ellipse cx=\"140\" cy=\"67\" rx=\"18\" ry=\"4.5\" fill=\"none\" stroke=\"#0284c7\" stroke-width=\"0.9\" opacity=\"0.8\"/>\n      <!-- Halo Resting In Water -->\n      <ellipse cx=\"140\" cy=\"54\" rx=\"38\" ry=\"11\" fill=\"none\" stroke=\"#b45309\" stroke-width=\"2.6\"/>\n      <ellipse cx=\"140\" cy=\"54\" rx=\"38\" ry=\"11\" fill=\"none\" stroke=\"#f59e0b\" stroke-width=\"1.2\"/>\n      <!-- Floating Sacred Water Sparkles -->\n      <circle cx=\"120\" cy=\"42\" r=\"1.5\" fill=\"#0284c7\"/>\n      <circle cx=\"160\" cy=\"44\" r=\"1.5\" fill=\"#0284c7\"/>\n      <circle cx=\"140\" cy=\"34\" r=\"2\" fill=\"#0284c7\"/>\n      <text x=\"140\" y=\"108\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.2\" fill=\"#0284c7\" text-anchor=\"middle\" font-weight=\"700\">CLEAR WATER NOCTURNE · RESTING THE BURNING RING</text>\n    </svg>"
 },
 {
   "layer": "LAYER: 73",
   "series": "SERIE 3 · 29",
-  "name": "SERIE 3 · 29. COVENANT RING // THE RENMEI (El Anillo del Pacto)",
+  "name": "SERIE 3 · 29. COVENANT RING // THE RENMEI (El Blasón de la Federación)",
   "title": "COVENANT RING // THE RENMEI",
-  "sub": "HAIBANE FEDERATION SEAL · ORDER",
-  "kanji": "連盟の掟 · 灰羽の誓い",
-  "quote": "\"Those who have wings must protect one another until flight day.\"",
-  "protocol": "RENMEI-PACT",
-  "chip": "FEDERATION-CREST",
-  "spec1": "COVENANT: MUTUAL AID",
-  "spec2": "SEAL: DOUBLE WING CIRCLE",
+  "sub": "HAIBANE OFFICIAL EMBLEM · GLIE",
+  "kanji": "灰羽連盟 · 固き誓いの紋章",
+  "quote": "\"United under the wings of Glie, bound by silent compassion.\"",
+  "protocol": "FED-CREST-01",
+  "chip": "RENMEI-SEAL",
+  "spec1": "ORDER: HAIBANE GUILD",
+  "spec2": "INSIGNIA: GOLDEN WINGS",
   "sn": "MD-HAIBANE-0210-073",
-  "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n      <rect width=\"280\" height=\"115\" fill=\"#0a0d17\" rx=\"2\"/>\n      <!-- Circular Emblem Ring -->\n      <circle cx=\"140\" cy=\"52\" r=\"38\" fill=\"#1e293b\" stroke=\"#f59e0b\" stroke-width=\"1.8\"/>\n      <circle cx=\"140\" cy=\"52\" r=\"32\" fill=\"#0f172a\" stroke=\"#cbd5e1\" stroke-width=\"0.8\" stroke-dasharray=\"4 2\"/>\n      <!-- Two Wings Intertwined into a Circle -->\n      <path d=\"M110,52 C110,35 125,25 140,25 C148,35 140,50 128,52\" fill=\"#334155\" stroke=\"#f59e0b\" stroke-width=\"1.2\"/>\n      <path d=\"M170,52 C170,69 155,79 140,79 C132,69 140,54 152,52\" fill=\"#334155\" stroke=\"#f59e0b\" stroke-width=\"1.2\"/>\n      <!-- Central Bell / Clapper -->\n      <circle cx=\"140\" cy=\"52\" r=\"5\" fill=\"#fef08a\"/>\n      <!-- Small Kanji Renmei -->\n      <text x=\"140\" y=\"54\" font-family=\"'JetBrains Mono', monospace\" font-size=\"6\" font-weight=\"900\" fill=\"#0f172a\" text-anchor=\"middle\">羽</text>\n      <!-- Side laurel-like feather sprays -->\n      <path d=\"M75,52 Q85,38 95,52 Q85,66 75,52\" fill=\"none\" stroke=\"#64748b\" stroke-width=\"1\"/>\n      <path d=\"M205,52 Q195,38 185,52 Q195,66 205,52\" fill=\"none\" stroke=\"#64748b\" stroke-width=\"1\"/>\n      <text x=\"140\" y=\"106\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.2\" fill=\"#f59e0b\" text-anchor=\"middle\">HAIBANE RENMEI OFFICIAL CREST · CIRCLE OF SOLIDARITY</text>\n    </svg>"
+  "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n      <!-- Circular Outer Emblem Ring -->\n      <circle cx=\"140\" cy=\"50\" r=\"38\" fill=\"#fffbeb\" stroke=\"#b45309\" stroke-width=\"2.4\"/>\n      <circle cx=\"140\" cy=\"50\" r=\"33\" fill=\"#ffffff\" stroke=\"#047857\" stroke-width=\"1\" stroke-dasharray=\"4 2\"/>\n      <!-- Two Wings Intertwined into a Circle -->\n      <path d=\"M110,50 C110,32 125,22 140,22 C148,32 140,48 128,50\" fill=\"#f8fafc\" stroke=\"#b45309\" stroke-width=\"1.6\"/>\n      <path d=\"M170,50 C170,68 155,78 140,78 C132,68 140,52 152,50\" fill=\"#f8fafc\" stroke=\"#b45309\" stroke-width=\"1.6\"/>\n      <!-- Central Bell / Clapper -->\n      <circle cx=\"140\" cy=\"50\" r=\"5\" fill=\"#fef3c7\" stroke=\"#b45309\" stroke-width=\"1.2\"/>\n      <!-- Kanji Renmei centered -->\n      <text x=\"140\" y=\"53\" font-family=\"'JetBrains Mono', monospace\" font-size=\"7\" font-weight=\"900\" fill=\"#78350f\" text-anchor=\"middle\">羽</text>\n      <!-- Laurel / Feather Sprays on Sides -->\n      <path d=\"M75,50 Q85,36 95,50 Q85,64 75,50\" fill=\"none\" stroke=\"#047857\" stroke-width=\"1.4\"/>\n      <path d=\"M205,50 Q195,36 185,50 Q195,64 205,50\" fill=\"none\" stroke=\"#047857\" stroke-width=\"1.4\"/>\n      <text x=\"140\" y=\"108\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.2\" fill=\"#b45309\" text-anchor=\"middle\" font-weight=\"700\">HAIBANE RENMEI OFFICIAL CREST · CIRCLE OF SOLIDARITY</text>\n    </svg>"
 },
 {
   "layer": "LAYER: 74",
   "series": "SERIE 3 · 30",
-  "name": "SERIE 3 · 30. NEW MORNING // TWO SPROUTS (El Nuevo Amanecer & Dos Nidos)",
+  "name": "SERIE 3 · 30. NEW MORNING // TWO SPROUTS (El Nuevo Amanecer)",
   "title": "NEW MORNING // TWO SPROUTS",
-  "sub": "SPRING DAWN · TWIN COCOONS",
-  "kanji": "新しき朝 · ふたつの繭",
-  "quote": "\"The winter ends... and in the guest room two new cocoons are sleeping.\"",
-  "protocol": "NEW-CYCLE-30",
-  "chip": "REBIRTH-TWINS",
-  "spec1": "COCOONS: TWO DISCOVERED",
-  "spec2": "SEASON: SPRING EQUINOX",
+  "sub": "OLD HOME · ETERNAL RETURN",
+  "kanji": "新しい朝 · ふたつの繭",
+  "quote": "\"A new cycle begins. In the soil of the Old Home, wings await their waking.\"",
+  "protocol": "REBIRTH-TWIN",
+  "chip": "TWIN-COCOON",
+  "spec1": "STATUS: DORMANT SPROUTS",
+  "spec2": "PROPHECY: THE CYCLE TURNS",
   "sn": "MD-HAIBANE-0210-074",
-  "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n      <defs>\n        <linearGradient id=\"dawnSky\" x1=\"0%\" y1=\"100%\" x2=\"0%\" y2=\"0%\">\n          <stop offset=\"0%\" stop-color=\"#fdba74\"/>\n          <stop offset=\"60%\" stop-color=\"#f472b6\"/>\n          <stop offset=\"100%\" stop-color=\"#312e81\"/>\n        </linearGradient>\n      </defs>\n      <rect width=\"280\" height=\"115\" fill=\"url(#dawnSky)\" rx=\"2\"/>\n      <!-- Soft Sun Glow Rising -->\n      <circle cx=\"140\" cy=\"100\" r=\"45\" fill=\"#fef08a\" opacity=\"0.4\"/>\n      <!-- Room Floor Silhouette -->\n      <rect x=\"0\" y=\"82\" width=\"280\" height=\"33\" fill=\"#1e1b4b\"/>\n      <line x1=\"0\" y1=\"82\" x2=\"280\" y2=\"82\" stroke=\"#f472b6\" stroke-width=\"1.2\"/>\n      <!-- Left Twin Cocoon -->\n      <ellipse cx=\"105\" cy=\"62\" rx=\"16\" ry=\"26\" fill=\"#92400e\" stroke=\"#fde047\" stroke-width=\"1.3\"/>\n      <path d=\"M95,52 Q105,62 115,52\" fill=\"none\" stroke=\"#fde047\" stroke-width=\"0.9\"/>\n      <path d=\"M93,65 Q105,75 117,65\" fill=\"none\" stroke=\"#fde047\" stroke-width=\"0.9\"/>\n      <!-- Right Twin Cocoon -->\n      <ellipse cx=\"175\" cy=\"62\" rx=\"16\" ry=\"26\" fill=\"#92400e\" stroke=\"#fde047\" stroke-width=\"1.3\"/>\n      <path d=\"M165,52 Q175,62 185,52\" fill=\"none\" stroke=\"#fde047\" stroke-width=\"0.9\"/>\n      <path d=\"M163,65 Q175,75 187,65\" fill=\"none\" stroke=\"#fde047\" stroke-width=\"0.9\"/>\n      <!-- Little golden sparkles between them -->\n      <polygon points=\"140,45 142,50 147,52 142,54 140,59 138,54 133,52 138,50\" fill=\"#fef08a\"/>\n      <text x=\"140\" y=\"106\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.2\" fill=\"#fff\" text-anchor=\"middle\" font-weight=\"700\">THE CYCLE CONTINUES · TWO NEW WINGS AWAITING BIRTH</text>\n    </svg>"
+  "svg": "<svg viewBox=\"0 0 280 115\" class=\"lain-card-svg\" xmlns=\"http://www.w3.org/2000/svg\">\n      <!-- Soft Morning Glow -->\n      <circle cx=\"140\" cy=\"95\" r=\"45\" fill=\"#fef3c7\" opacity=\"0.6\"/>\n      <!-- Wooden Floor / Nest Bed -->\n      <rect x=\"30\" y=\"80\" width=\"220\" height=\"20\" rx=\"3\" fill=\"#f8fafc\" stroke=\"#78350f\" stroke-width=\"1.6\"/>\n      <line x1=\"30\" y1=\"80\" x2=\"250\" y2=\"80\" stroke=\"#b45309\" stroke-width=\"1.2\"/>\n      <!-- Left Twin Cocoon (Golden Thread) -->\n      <ellipse cx=\"105\" cy=\"62\" rx=\"16\" ry=\"26\" fill=\"#fffbeb\" stroke=\"#b45309\" stroke-width=\"1.8\"/>\n      <path d=\"M95,52 Q105,62 115,52\" fill=\"none\" stroke=\"#d97706\" stroke-width=\"1.2\"/>\n      <path d=\"M93,65 Q105,75 117,65\" fill=\"none\" stroke=\"#d97706\" stroke-width=\"1.2\"/>\n      <!-- Right Twin Cocoon (Golden Thread) -->\n      <ellipse cx=\"175\" cy=\"62\" rx=\"16\" ry=\"26\" fill=\"#fffbeb\" stroke=\"#b45309\" stroke-width=\"1.8\"/>\n      <path d=\"M165,52 Q175,62 185,52\" fill=\"none\" stroke=\"#d97706\" stroke-width=\"1.2\"/>\n      <path d=\"M163,65 Q175,75 187,65\" fill=\"none\" stroke=\"#d97706\" stroke-width=\"1.2\"/>\n      <!-- Little Golden Sparkles between the Cocoons -->\n      <polygon points=\"140,45 142,50 147,52 142,54 140,59 138,54 133,52 138,50\" fill=\"#f59e0b\"/>\n      <circle cx=\"132\" cy=\"40\" r=\"1.5\" fill=\"#d97706\"/>\n      <circle cx=\"148\" cy=\"40\" r=\"1.5\" fill=\"#d97706\"/>\n      <text x=\"140\" y=\"108\" font-family=\"'JetBrains Mono', monospace\" font-size=\"5.2\" fill=\"#b45309\" text-anchor=\"middle\" font-weight=\"700\">THE CYCLE CONTINUES · TWO NEW WINGS AWAITING BIRTH</text>\n    </svg>"
 }
-];
+    ];
   }
 
   /**
@@ -4232,7 +4233,7 @@ export class InvoiceTemplateService {
     .folio-write-zone {
       font-family: 'JetBrains Mono', monospace; font-size: 11.5px; font-weight: 800;
       color: var(--accent); min-width: 82px; height: 16px; line-height: 16px;
-      text-align: right; padding: 0 4px; border-bottom: 1.5px solid var(--dark); background: #faf5ff;
+      text-align: right; padding: 0 4px; border-bottom: none; background: transparent; letter-spacing: 0.5px;
     }
     .date-row { display: flex; align-items: center; gap: 3px; }
     .date-label { font-size: 7.5px; font-weight: 800; color: var(--gray-800); }
@@ -4302,7 +4303,7 @@ export class InvoiceTemplateService {
       box-shadow: 1px 1px 0px rgba(0,0,0,0.1);
     }
     .totals-row.final-total .t-label-text { color: var(--dark); font-size: 8.5px; font-weight: 900; letter-spacing: 0.3px; }
-    .totals-row.final-total .t-write-line { border-bottom: 1.5px solid var(--dark); width: 68px; }
+    .totals-row.final-total .t-write-line { border-bottom: none; width: 68px; }
     .totals-row.final-total .curr { color: var(--dark); font-size: 8px; font-weight: 900; }
     .totals-row.final-total .val-tot { color: var(--dark); font-size: 11px; font-weight: 900; }
     .warranty-card {
@@ -4398,9 +4399,16 @@ export class InvoiceTemplateService {
     .invoice.theme-haibane .folio-box {
       border-color: #78350f;
     }
-    .invoice.theme-haibane .folio-label {
+        .invoice.theme-haibane .folio-label {
       background: #78350f;
       color: #fef3c7;
+    }
+    .invoice.theme-haibane .folio-write-zone {
+      color: #b45309;
+      border-bottom: none !important;
+      background: transparent !important;
+      font-size: 13px !important;
+      font-weight: 900 !important;
     }
     .invoice.theme-haibane .items-table th {
       background: #1c1917;
@@ -4411,9 +4419,14 @@ export class InvoiceTemplateService {
       background: #78350f;
       color: #fef3c7;
     }
-    .invoice.theme-haibane .final-total .t-write-line {
-      border-color: #78350f;
+        .invoice.theme-haibane .final-total .t-write-line {
+      border-bottom: none !important;
       color: #78350f;
+    }
+    .invoice.theme-haibane .final-total .val-tot {
+      color: #78350f;
+      font-size: 11.5px !important;
+      font-weight: 900 !important;
     }
     .invoice.theme-haibane .thanks-note {
       color: #92400e;
@@ -4522,9 +4535,9 @@ export class InvoiceTemplateService {
       color: #047857;
     }
     .lain-card.theme-haibane .lain-quote-box {
-      border-left: 3px solid #b45309;
-      border-color: #e7e5e4;
       background: #fffdfa;
+      border-color: #fed7aa;
+      border-left: 3px solid #b45309;
     }
     .lain-card.theme-haibane .lain-kanji {
       color: #b45309;
