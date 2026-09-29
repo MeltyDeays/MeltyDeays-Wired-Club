@@ -102,6 +102,7 @@
       </p>
 
       <form id="form-admin-pin" onsubmit="event.preventDefault(); submitAdminPin();" autocomplete="on">
+        <input type="text" name="username" value="admin" autocomplete="username" style="display: none;" tabindex="-1" aria-hidden="true">
         <div class="form-group" style="margin-bottom: 1.25rem;">
           <input type="password" id="input-admin-pin" name="admin_pin" autocomplete="current-password" class="form-input" placeholder="••••••" maxlength="6" autofocus
                  style="text-align: center; font-size: 1.6rem; letter-spacing: 6px; font-family: var(--font-mono); font-weight: 800;">

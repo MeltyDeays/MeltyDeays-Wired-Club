@@ -223,7 +223,7 @@
           <label class="form-label">Teléfono / WhatsApp (8 dígitos)</label>
           <div class="phone-input-group">
             <span class="phone-prefix-addon">🇳🇮 +505</span>
-            <input type="tel" id="login-phone" name="login_phone" class="form-input" placeholder="5843-8412" maxlength="9" autocomplete="tel">
+            <input type="tel" id="login-phone" name="login_phone" class="form-input" placeholder="5843-8412" maxlength="9" autocomplete="username tel">
           </div>
         </div>
 
@@ -254,7 +254,7 @@
           <label class="form-label">Teléfono / WhatsApp (8 dígitos)</label>
           <div class="phone-input-group">
             <span class="phone-prefix-addon">🇳🇮 +505</span>
-            <input type="tel" id="reg-phone" name="reg_phone" class="form-input" placeholder="5843-8412" maxlength="9" autocomplete="tel">
+            <input type="tel" id="reg-phone" name="reg_phone" class="form-input" placeholder="5843-8412" maxlength="9" autocomplete="username tel">
           </div>
         </div>
 
@@ -531,6 +531,7 @@
       </div>
 
       <form id="form-manual-claim" onsubmit="event.preventDefault(); submitManualClaim();" autocomplete="on">
+        <input type="text" name="username" value="client-ticket" autocomplete="username" style="display: none;" tabindex="-1" aria-hidden="true">
         <div class="form-group" style="margin-bottom: 1rem;">
           <label class="form-label">Código de Puntos</label>
           <input type="text" id="manual-input-token" name="token_code" class="form-input" placeholder="WP-2026-F0104-X9" style="text-transform: uppercase; font-family: var(--font-mono);">
@@ -580,6 +581,7 @@
       </p>
 
       <form id="form-admin-assign-scan" onsubmit="event.preventDefault(); submitAdminAssignFromScan();" autocomplete="on">
+        <input type="text" name="username" value="admin" autocomplete="username" style="display: none;" tabindex="-1" aria-hidden="true">
         <div class="form-group" style="margin-bottom: 0.85rem;">
           <label class="form-label">Wired Points a Asignar</label>
           <input type="number" id="assign-scan-points" name="assign_points" class="form-input" placeholder="Ej: 30" style="font-size: 1.3rem; font-weight: 900; color: var(--dark);">
