@@ -3541,51 +3541,63 @@ export class InvoiceTemplateService {
       if (!qrBackEl) return;
       qrBackEl.innerHTML = "";
       if (!claimUrl || !claimUrl.includes("claim=")) return;
-      let qrSuccess = false;
+
       if (typeof QRCode !== "undefined") {
         try {
-          new QRCode(qrBackEl, {
+          // Render QRCode into a detached in-memory container to prevent QRCode.js dual elements in DOM
+          const tempDiv = document.createElement("div");
+          new QRCode(tempDiv, {
             text: claimUrl,
-            width: 120,
-            height: 120,
+            width: 130,
+            height: 130,
             colorDark: "#0f172a",
             colorLight: "#ffffff",
             correctLevel: QRCode.CorrectLevel.M
           });
-          // QRCode.js creates both a <canvas> and an <img>.
-          // Clean up to keep EXACTLY ONE element and prevent double-rendering:
-          const cleanupQr = () => {
-            const canvas = qrBackEl.querySelector("canvas");
-            const img = qrBackEl.querySelector("img");
-            if (canvas && img) {
-              if (img.src && img.src.startsWith("data:")) {
-                canvas.remove();
-                img.style.display = "block";
-              } else if (canvas) {
-                img.remove();
-                canvas.style.display = "block";
-              }
+
+          const extractSingleElement = () => {
+            const canvas = tempDiv.querySelector("canvas");
+            const img = tempDiv.querySelector("img");
+            if (canvas && canvas.width > 0) {
+              qrBackEl.innerHTML = "";
+              canvas.style.width = "100%";
+              canvas.style.height = "100%";
+              canvas.style.display = "block";
+              qrBackEl.appendChild(canvas);
+              return true;
+            } else if (img && img.src && img.src.length > 50) {
+              qrBackEl.innerHTML = "";
+              img.style.width = "100%";
+              img.style.height = "100%";
+              img.style.display = "block";
+              img.style.objectFit = "contain";
+              qrBackEl.appendChild(img);
+              return true;
             }
+            return false;
           };
-          cleanupQr();
-          setTimeout(cleanupQr, 30);
-          setTimeout(cleanupQr, 100);
-          qrSuccess = true;
+
+          if (!extractSingleElement()) {
+            setTimeout(extractSingleElement, 25);
+            setTimeout(extractSingleElement, 80);
+          }
+          return;
         } catch(e) {}
       }
-      if (!qrSuccess) {
-        const img = document.createElement("img");
-        img.src = "https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=" + encodeURIComponent(claimUrl) + "&color=0f172a&bgcolor=ffffff";
-        img.alt = "QR Wired Points";
-        img.style.width = "100%";
-        img.style.height = "100%";
-        img.style.objectFit = "contain";
-        img.onerror = function() {
-          this.onerror = null;
-          this.src = qrCatalogBase64;
-        };
-        qrBackEl.appendChild(img);
-      }
+
+      // Fallback único garantizado si QRCode no está presente
+      const fallbackImg = document.createElement("img");
+      fallbackImg.src = "https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=" + encodeURIComponent(claimUrl) + "&color=0f172a&bgcolor=ffffff";
+      fallbackImg.alt = "QR Wired Points";
+      fallbackImg.style.width = "100%";
+      fallbackImg.style.height = "100%";
+      fallbackImg.style.display = "block";
+      fallbackImg.style.objectFit = "contain";
+      fallbackImg.onerror = function() {
+        this.onerror = null;
+        this.src = qrCatalogBase64;
+      };
+      qrBackEl.appendChild(fallbackImg);
     }
 
     function switchLainDesign(idx) {

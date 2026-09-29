@@ -1,6 +1,6 @@
 /* Controller: Panel de Administración (The Wired Club) */
 import { AdminViewModel } from "./viewmodels/AdminViewModel.js";
-import { InvoiceTemplateService } from "./services/InvoiceTemplateService.js";
+import { InvoiceTemplateService } from "./services/InvoiceTemplateService.js?v=2.6.0";
 import { FirestoreService } from "./services/FirestoreService.js";
 
 const vm = new AdminViewModel();

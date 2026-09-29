@@ -2353,7 +2353,7 @@
       }
 
       window.setActiveLainTemplate = function setActiveLainTemplate(idx) {
-        window.activeLainTemplateIdx = (idx === null || idx === undefined) ? null : Math.max(0, Math.min(23, Number(idx) | 0));
+        window.activeLainTemplateIdx = (idx === null || idx === undefined) ? null : Math.max(0, Math.min((getTemplates().length || 44) - 1, Number(idx) | 0));
         if (typeof window.renderLainTemplateGrid === "function") {
           window.renderLainTemplateGrid();
         }
@@ -2389,6 +2389,6 @@
     })();
   </script>
 
-  <script type="module" src="./js/admin-app.js?v=2.4.1"></script>
+  <script type="module" src="./js/admin-app.js?v=2.6.0"></script>
 </body>
 </html>
