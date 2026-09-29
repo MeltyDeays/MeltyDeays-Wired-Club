@@ -26,8 +26,9 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   
-  <!-- QRCode.js para generación de QRs en cliente -->
+  <!-- QRCode.js para generación de QRs en cliente & Html5Qrcode para escáner de cámara -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
 </head>
 <body>
 
@@ -92,6 +93,11 @@
         <strong id="nav-user-name" style="font-size: 0.78rem; color: var(--dark);">Socio</strong>
         <span style="font-size: 0.7rem; color: var(--accent); margin-left: 2px;">[Salir]</span>
       </div>
+
+      <!-- Botón Escanear QR con Cámara (Móvil / Desktop) -->
+      <button type="button" class="btn-scan-qr" onclick="openClientCameraScanner()" title="Escanear Factura Física con la cámara del dispositivo" style="display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.78rem; padding: 0.4rem 0.75rem; background: #0f172a; color: #ffffff; border: 1.5px solid #0f172a; border-radius: 4px; font-weight: 800; cursor: pointer;">
+        <span style="font-size: 0.95rem;">📷</span> <span>Escanear QR</span>
+      </button>
 
       <button class="btn-primary" onclick="openClaimModal()" style="font-size:0.78rem; padding:0.4rem 0.85rem;">
         + Reclamar Factura
@@ -506,11 +512,22 @@
   <div id="modal-manual-claim" class="modal-overlay" style="display: none;">
     <div class="modal-content" style="max-width: 420px; text-align: left;">
       <button class="modal-close-btn" onclick="closeClaimModal()" aria-label="Cerrar">&times;</button>
-      <span class="badge-navi">ACREDITACIÓN MANUAL</span>
-      <h2 style="font-size: 1.15rem; color: var(--dark); margin: 0.5rem 0 0.5rem 0; font-weight: 900;">Ingresar Código de Factura</h2>
-      <p style="color: var(--gray-700); font-size: 0.82rem; margin-bottom: 1.25rem;">
-        Escribe aquí el código y PIN impresos en el talón de tu factura 4x1.
+      <span class="badge-navi">ACREDITACIÓN DE FACTURA</span>
+      <h2 style="font-size: 1.15rem; color: var(--dark); margin: 0.5rem 0 0.5rem 0; font-weight: 900;">Acreditar Wired Points</h2>
+      <p style="color: var(--gray-700); font-size: 0.82rem; margin-bottom: 1.1rem;">
+        Escanea el QR físico de tu factura o escribe el código manual.
       </p>
+
+      <!-- Botón de Escaneo Directo con Cámara -->
+      <button type="button" class="btn-primary" style="width: 100%; margin-bottom: 1rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem; font-size: 0.9rem; padding: 0.65rem; background: #0f172a; border-color: #0f172a;" onclick="closeClaimModal(); openClientCameraScanner();">
+        <span style="font-size: 1.15rem;">📷</span> <strong>Escanear con mi Cámara</strong>
+      </button>
+
+      <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem; color: var(--gray-700); font-size: 0.75rem;">
+        <div style="flex: 1; height: 1px; background: #e2e8f0;"></div>
+        <span>o ingresa el código manual</span>
+        <div style="flex: 1; height: 1px; background: #e2e8f0;"></div>
+      </div>
 
       <div class="form-group" style="margin-bottom: 1rem;">
         <label class="form-label">Código de Puntos</label>
@@ -518,13 +535,33 @@
       </div>
 
       <div class="form-group" style="margin-bottom: 1.5rem;">
-        <label class="form-label">PIN de Seguridad (4 dígitos)</label>
+        <label class="form-label">PIN de Seguridad (4 dígitos impreso en factura)</label>
         <input type="password" id="manual-input-pin" class="form-input" placeholder="••••" maxlength="4" style="text-align: center; letter-spacing: 8px; font-size: 1.3rem; font-weight: 900;">
       </div>
 
       <div style="display: flex; gap: 0.75rem;">
         <button class="btn-secondary" style="flex: 1;" onclick="closeClaimModal()">Cancelar</button>
         <button class="btn-primary" style="flex: 2;" onclick="submitManualClaim()">Acreditar Puntos</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: ESCÁNER QR DE CÁMARA PARA CLIENTES -->
+  <div id="modal-client-camera-scanner" class="modal-overlay" style="display: none; align-items: center; justify-content: center; z-index: 10000;">
+    <div class="modal-content" style="max-width: 440px; width: 92vw; text-align: center; padding: 1.25rem; border-radius: 12px; background: #ffffff; box-shadow: 0 20px 40px rgba(0,0,0,0.3); border: 2px solid var(--dark);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+        <span class="badge-navi" style="background: var(--dark); color: #fff; font-size: 0.68rem; padding: 0.2rem 0.5rem; border-radius: 3px; font-weight: 800; font-family: var(--font-mono);">
+          WIRED SCANNER // V2.6
+        </span>
+        <button class="modal-close-btn" onclick="stopClientCameraScanner()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--dark);">&times;</button>
+      </div>
+      <h3 style="font-size: 1.1rem; font-weight: 900; margin: 0 0 0.35rem 0; color: var(--dark);">Escanear Factura MeltyDeays</h3>
+      <p style="font-size: 0.8rem; color: var(--gray-700); margin: 0 0 1rem 0;">Apunta tu cámara al código QR impreso en el anverso o reverso de tu factura.</p>
+      
+      <div id="client-camera-reader" style="width: 100%; min-height: 260px; background: #0f172a; border-radius: 8px; overflow: hidden; position: relative; border: 2px dashed #38bdf8;"></div>
+
+      <div style="margin-top: 1rem; display: flex; gap: 0.5rem;">
+        <button class="btn-secondary" style="flex: 1;" onclick="stopClientCameraScanner()">Cerrar Cámara</button>
       </div>
     </div>
   </div>

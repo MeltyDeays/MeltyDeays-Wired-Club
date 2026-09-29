@@ -84,6 +84,8 @@ document.addEventListener("DOMContentLoaded", () => {
   window.switchTab = switchTab;
   window.openClaimModal = openClaimModal;
   window.closeClaimModal = closeClaimModal;
+  window.openClientCameraScanner = openClientCameraScanner;
+  window.stopClientCameraScanner = stopClientCameraScanner;
   window.submitManualClaim = submitManualClaim;
   window.claimFromBanner = claimFromBanner;
   window.openAdminAssignModal = openAdminAssignModal;
@@ -824,6 +826,86 @@ async function submitManualClaim() {
   }
 }
 
+// ESCÁNER DE CÁMARA PARA CLIENTES (HTML5-QRCODE)
+let clientQrCodeScanner = null;
+
+export async function openClientCameraScanner() {
+  const modal = document.getElementById("modal-client-camera-scanner");
+  if (modal) modal.style.display = "flex";
+
+  if (typeof Html5Qrcode !== "undefined") {
+    try {
+      if (clientQrCodeScanner) {
+        await clientQrCodeScanner.stop().catch(() => {});
+        clientQrCodeScanner = null;
+      }
+      clientQrCodeScanner = new Html5Qrcode("client-camera-reader");
+      await clientQrCodeScanner.start(
+        { facingMode: "environment" },
+        { fps: 12, qrbox: { width: 250, height: 250 } },
+        async (decodedText) => {
+          await handleClientQrScanned(decodedText);
+        },
+        () => {}
+      );
+    } catch (err) {
+      showToast("No se pudo iniciar la cámara: " + (err.message || err), "error");
+    }
+  } else {
+    showToast("Librería de escáner no disponible.", "error");
+  }
+}
+
+export function stopClientCameraScanner() {
+  if (clientQrCodeScanner) {
+    clientQrCodeScanner.stop().catch(() => {}).finally(() => {
+      clientQrCodeScanner = null;
+    });
+  }
+  const modal = document.getElementById("modal-client-camera-scanner");
+  if (modal) modal.style.display = "none";
+}
+
+async function handleClientQrScanned(decodedText) {
+  stopClientCameraScanner();
+  let raw = (decodedText || "").trim();
+  let tokenCode = "";
+  if (raw.includes("claim=")) {
+    tokenCode = raw.split("claim=")[1].split("&")[0];
+  } else if (raw.startsWith("WP-")) {
+    tokenCode = raw;
+  } else {
+    const match = raw.match(/WP-[A-Z0-9-]+/i);
+    if (match) tokenCode = match[0];
+  }
+
+  if (!tokenCode) {
+    showToast("El código escaneado no corresponde a una factura MeltyDeays.", "error");
+    return;
+  }
+
+  tokenCode = tokenCode.toUpperCase();
+  vm.pendingClaimToken = tokenCode;
+
+  if (!vm.currentUser) {
+    showToast(`⚡ Factura detectada [${tokenCode}]. Inicia sesión o regístrate para acreditar tus puntos.`, "info");
+    openAuthModal("login", "Inicia sesión con tu WhatsApp para acreditar los puntos de tu factura escaneada.");
+    render(vm);
+    return;
+  }
+
+  // Usuario autenticado: acreditar de inmediato sin pedir PIN
+  try {
+    showToast("Acreditando puntos de tu factura...", "info");
+    const res = await vm.claimToken(tokenCode, null, true);
+    showToast(`¡Puntos acreditados con éxito! +${res.pointsAdded} WP. Saldo: ${res.newBalance} WP`, "success");
+    render(vm);
+  } catch (err) {
+    showToast(err.message || "No se pudo acreditar la factura", "error");
+    render(vm);
+  }
+}
+
 async function claimFromBanner() {
   if (!vm.currentUser) {
     openAuthModal("login", "Inicia sesión o regístrate con tu WhatsApp para reclamar tus puntos de factura.");
@@ -832,9 +914,11 @@ async function claimFromBanner() {
 
   try {
     const res = await vm.claimPendingToken();
-    showToast("¡Puntos acreditados con éxito! +" + res.pointsAdded + " WP", "success");
+    showToast("¡Puntos acreditados con éxito! +" + res.pointsAdded + " WP (Saldo: " + res.newBalance + " WP)", "success");
+    render(vm);
   } catch (err) {
     showToast(err.message || "No se pudo acreditar el código", "error");
+    render(vm);
   }
 }
 

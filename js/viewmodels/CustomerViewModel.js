@@ -278,14 +278,29 @@ export class CustomerViewModel {
     this.notify();
   }
 
-  async claimToken(tokenCode, pin) {
+  async claimPendingToken() {
+    if (!this.pendingClaimToken) {
+      throw new Error("No hay ninguna factura pendiente para acreditar.");
+    }
+    const tokenToClaim = this.pendingClaimToken;
+    const res = await this.claimToken(tokenToClaim, null, true);
+    this.pendingClaimToken = null;
+    return res;
+  }
+
+  async claimToken(tokenCode, pin = null, isDirectScan = false) {
     if (!this.currentUser) {
       throw new Error("Debes iniciar sesión con tu WhatsApp para acreditar puntos.");
     }
 
-    const rawToken = await FirestoreService.getToken(tokenCode);
+    const cleanToken = (tokenCode || "").trim().toUpperCase();
+    if (!cleanToken) {
+      throw new Error("Código de factura no proporcionado.");
+    }
+
+    const rawToken = await FirestoreService.getToken(cleanToken);
     if (!rawToken) {
-      throw new Error("El código [" + tokenCode + "] no existe en el sistema.");
+      throw new Error("El código [" + cleanToken + "] no existe en el sistema.");
     }
 
     const token = new TokenModel(rawToken);
@@ -297,8 +312,11 @@ export class CustomerViewModel {
       throw new Error("Esta factura aún no ha sido activada en caja. Solicita en mostrador la asignación de tus puntos.");
     }
 
-    if (token.securityPin && pin && token.securityPin !== pin.trim()) {
-      throw new Error("El PIN de seguridad impreso en la factura es incorrecto.");
+    // Si NO proviene de escaneo directo (ingreso manual con teclado), se exige validación estricta de PIN
+    if (!isDirectScan && token.securityPin) {
+      if (!pin || token.securityPin !== pin.trim()) {
+        throw new Error("El PIN de seguridad impreso en la factura es incorrecto.");
+      }
     }
 
     // Acreditar

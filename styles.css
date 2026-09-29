@@ -4761,4 +4761,289 @@ body {
   box-shadow: 1px 1px 0px #041d33;
 }
 
+/* ========================================================= */
+/* ULTRA-RESPONSIVE ADAPTABILITY FOR ALL MOBILE SCREEN SIZES */
+/* (CLIENT PORTAL + ADMIN NOC TERMINAL)                     */
+/* ========================================================= */
+
+@media (max-width: 900px) {
+  .noc-stats-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 0.85rem !important;
+  }
+  .form-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .navbar {
+    padding: 0.75rem 0.85rem !important;
+  }
+  .brand-subitems {
+    display: none !important;
+  }
+  .balance-amount {
+    font-size: 2.1rem !important;
+  }
+  .admin-section {
+    padding: 1rem 0.85rem !important;
+    margin-bottom: 1.25rem !important;
+  }
+  .table-responsive {
+    width: 100% !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    display: block !important;
+    margin-bottom: 1rem !important;
+  }
+  .admin-table {
+    min-width: 560px !important;
+    font-size: 0.75rem !important;
+  }
+}
+
+@media (max-width: 640px) {
+  /* NAVBAR UNIVERSAL */
+  .navbar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.75rem !important;
+    padding: 0.75rem 0.85rem !important;
+  }
+
+  .brand-wrapper {
+    justify-content: center !important;
+  }
+
+  .nav-controls {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 0.45rem !important;
+    width: 100% !important;
+  }
+
+  .currency-toggle-wrapper {
+    order: 1;
+  }
+
+  #nav-user-pill, #nav-login-btn {
+    order: 2;
+  }
+
+  .btn-scan-qr {
+    order: 3;
+    flex: 1 1 auto;
+    justify-content: center;
+    min-height: 42px;
+  }
+
+  .nav-controls .btn-primary, .nav-controls .btn-secondary {
+    order: 4;
+    flex: 1 1 auto;
+    justify-content: center;
+    min-height: 42px;
+  }
+
+  /* PESTAÑAS DE NAVEGACIÓN TÁCTILES (CLIENTE & ADMIN) */
+  .admin-nav-tabs, .client-nav-tabs, .portal-tabs {
+    display: flex !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    gap: 0.35rem !important;
+    padding: 0.35rem 0.25rem 0.5rem 0.25rem !important;
+    scrollbar-width: none !important;
+  }
+  .admin-nav-tabs::-webkit-scrollbar, .client-nav-tabs::-webkit-scrollbar, .portal-tabs::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  .admin-tab-btn, .client-tab-btn {
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+    padding: 0.55rem 0.85rem !important;
+    font-size: 0.75rem !important;
+    min-height: 40px !important;
+  }
+
+  /* NOC DASHBOARD HUD (ADMIN) */
+  .noc-dashboard-card {
+    padding: 1rem 0.85rem !important;
+    margin-bottom: 1.25rem !important;
+  }
+
+  .noc-hud-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 0.65rem !important;
+  }
+
+  .noc-hud-right {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 0.5rem !important;
+    width: 100% !important;
+  }
+
+  .noc-telemetry-item {
+    font-size: 0.68rem !important;
+  }
+
+  .noc-stats-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.55rem !important;
+  }
+
+  .noc-stat-box {
+    padding: 0.75rem 0.65rem !important;
+  }
+
+  .noc-stat-val {
+    font-size: 1.45rem !important;
+  }
+
+  .noc-stat-label {
+    font-size: 0.62rem !important;
+  }
+
+  .noc-stat-sub {
+    font-size: 0.62rem !important;
+  }
+
+  /* MOSTRADOR POS 1-SCAN */
+  .pos-input-group {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.5rem !important;
+  }
+
+  .pos-scanner-input {
+    width: 100% !important;
+    box-sizing: border-box !important;
+    font-size: 1.05rem !important;
+    padding: 0.65rem 0.85rem !important;
+  }
+
+  .pos-btn-action {
+    width: 100% !important;
+    justify-content: center !important;
+    min-height: 44px !important;
+  }
+
+  /* BANNER DE RECLAMO FLUIDO (CLIENTE) */
+  .claim-banner {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    text-align: left !important;
+    padding: 1rem !important;
+    gap: 0.85rem !important;
+  }
+
+  .claim-banner .btn-primary, #btn-execute-claim {
+    width: 100% !important;
+    text-align: center !important;
+    padding: 0.75rem 1rem !important;
+    font-size: 0.95rem !important;
+    box-sizing: border-box !important;
+  }
+
+  /* CATÁLOGO RESPONSIVO EN PANTALLAS ANGOSTAS (360px - 480px) */
+  .rewards-grid, .catalog-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1.15rem !important;
+  }
+
+  .reward-card {
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  /* FORMULARIOS Y GRID DE DISPATCH */
+  .form-grid, .dispatch-grid, .filter-grid {
+    grid-template-columns: 1fr !important;
+    gap: 0.75rem !important;
+  }
+
+  /* MODALES Y LECTOR DE CÁMARA FLUIDOS */
+  .modal-overlay {
+    padding: 0.5rem !important;
+  }
+
+  .modal-content {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 1.15rem 0.95rem !important;
+    border-radius: 8px !important;
+    box-sizing: border-box !important;
+    max-height: 92vh !important;
+    overflow-y: auto !important;
+  }
+
+  #client-camera-reader, #camera-scanner-reader {
+    min-height: 220px !important;
+    max-height: 50vh !important;
+  }
+
+  #client-camera-reader video, #camera-scanner-reader video {
+    border-radius: 6px !important;
+    object-fit: cover !important;
+    max-height: 50vh !important;
+  }
+
+  /* PIE DE MODALES DE ACCIÓN */
+  .copland-modal-footer, .modal-footer {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.5rem !important;
+  }
+
+  .copland-footer-btn-cancel, .copland-footer-btn-group, .copland-footer-btn-primary, .copland-footer-btn {
+    width: 100% !important;
+    justify-content: center !important;
+    text-align: center !important;
+    box-sizing: border-box !important;
+  }
+
+  /* FACTURADOR DINÁMICO & TOTALES (ADMIN) */
+  .copland-items-table {
+    min-width: 520px !important;
+  }
+  .copland-totals-wrapper {
+    justify-content: stretch !important;
+    padding: 0.65rem 0.5rem !important;
+  }
+  .copland-totals-card {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .copland-bar-actions {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+  .copland-bar-btn {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+}
+
+@media (max-width: 380px) {
+  .noc-stats-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .balance-amount {
+    font-size: 1.85rem !important;
+  }
+  .brand-word-melty, .brand-word-deays {
+    font-size: 1.15rem !important;
+  }
+  .lain-card {
+    padding: 0.85rem 0.65rem !important;
+  }
+}
+
+
+
 
