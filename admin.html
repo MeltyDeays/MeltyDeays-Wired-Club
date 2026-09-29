@@ -2392,15 +2392,46 @@
           tile.ondblclick = () => window.setActiveLainTemplate(null);
           tiles.push(tile);
         });
-        // Añadir tile modo AUTOMÁTICO (null)
+        // Añadir tile modo AUTOMÁTICO (null) adaptativo por serie
         const autoTile = document.createElement("div");
         autoTile.className = "lain-template-tile" + (window.activeLainTemplateIdx === null ? " is-active" : "");
-        autoTile.title = "Haz click: modo AUTOMÁTICO. Cada factura usará (folio % 24) como índice de plantilla.";
+        const sf = window._currentSeriesFilter || 'ALL';
+        let autoBadge = "AUTO · TODAS (74)";
+        let autoTitle = "MODO DINÁMICO";
+        let autoSub = "Rotación completa entre los 74 diseños disponibles por folio.";
+        let autoKanji = "全74種 · 自動";
+        let autoColor = "#059669";
+
+        if (sf === 'SERIE 1') {
+          autoBadge = "AUTO · SERIE 1 (24)";
+          autoTitle = "MODO DINÁMICO (LAIN)";
+          autoSub = "Rotación exclusiva en los 24 diseños de Serial Experiments Lain.";
+          autoKanji = "連続実験 · 動的";
+          autoColor = "#0284c7";
+        } else if (sf === 'SERIE 2') {
+          autoBadge = "AUTO · SERIE 2 (20)";
+          autoTitle = "MODO DINÁMICO (COPLAND)";
+          autoSub = "Rotación exclusiva en los 20 diseños Copland OS.";
+          autoKanji = "OS端末 · 動的";
+          autoColor = "#6366f1";
+        } else if (sf === 'SERIE 3') {
+          autoBadge = "AUTO · SERIE 3 (30)";
+          autoTitle = "MODO DINÁMICO (HAIBANE)";
+          autoSub = "Rotación exclusiva en los 30 diseños Haibane Renmei.";
+          autoKanji = "灰羽連盟 · 動的";
+          autoColor = "#b45309";
+          if (window.activeLainTemplateIdx === null) {
+            autoTile.style.borderColor = "#b45309";
+            autoTile.style.background = "#fffbeb";
+          }
+        }
+
+        autoTile.title = "Haz click: " + autoTitle + ". Las facturas rotarán dentro de esta serie seleccionada.";
         autoTile.innerHTML =
-          '<div class="lain-template-layer" style="color:#059669;">AUTO · POR FOLIO</div>' +
-          '<div class="lain-template-title">MODO DINÁMICO</div>' +
-          '<div class="lain-template-sub">Asigna la plantilla según el número de factura.</div>' +
-          '<div class="lain-template-kanji" style="color:#059669;">自動割り当て</div>';
+          '<div class="lain-template-layer" style="color:' + autoColor + ';">' + autoBadge + '</div>' +
+          '<div class="lain-template-title" style="' + (sf === 'SERIE 3' ? 'color:#78350f;' : '') + '">' + autoTitle + '</div>' +
+          '<div class="lain-template-sub">' + autoSub + '</div>' +
+          '<div class="lain-template-kanji" style="color:' + autoColor + ';">' + autoKanji + '</div>';
         autoTile.onclick = () => window.setActiveLainTemplate(null);
         tiles.unshift(autoTile);
         grid.innerHTML = "";
@@ -2412,11 +2443,13 @@
         const label = document.getElementById("lain-template-active-label");
         if (!label) return;
         const t = getTemplates();
+        const sf = window._currentSeriesFilter || 'ALL';
         if (window.activeLainTemplateIdx === null || window.activeLainTemplateIdx === undefined) {
-          label.innerHTML = "▣ MODO AUTOMÁTICO: Plantilla según el folio de factura (recomendado)";
-          label.style.background = "#ecfdf5";
-          label.style.color = "#047857";
-          label.style.borderColor = "#6ee7b7";
+          const seriesName = sf === 'SERIE 3' ? 'SERIE 3 (30 Diseños Haibane Renmei)' : (sf === 'SERIE 2' ? 'SERIE 2 (20 Diseños Copland OS)' : (sf === 'SERIE 1' ? 'SERIE 1 (24 Diseños Lain)' : 'TODAS (74 Diseños)'));
+          label.innerHTML = "▣ MODO DINÁMICO ACTIVO: Rotación por lote en " + seriesName;
+          label.style.background = sf === 'SERIE 3' ? "#fef3c7" : "#ecfdf5";
+          label.style.color = sf === 'SERIE 3' ? "#92400e" : "#047857";
+          label.style.borderColor = sf === 'SERIE 3' ? "#f59e0b" : "#6ee7b7";
         } else {
           const sel = t[window.activeLainTemplateIdx] || t[0];
           label.innerHTML = "▣ DISEÑO FIJO ACTIVO: " + sel.layer + " — " + sel.title;
@@ -2427,23 +2460,36 @@
       }
 
       window.setActiveLainTemplate = function setActiveLainTemplate(idx) {
-        window.activeLainTemplateIdx = (idx === null || idx === undefined) ? null : Math.max(0, Math.min((getTemplates().length || 44) - 1, Number(idx) | 0));
+        window.activeLainTemplateIdx = (idx === null || idx === undefined) ? null : Math.max(0, Math.min((getTemplates().length || 74) - 1, Number(idx) | 0));
         if (typeof window.renderLainTemplateGrid === "function") {
           window.renderLainTemplateGrid();
         }
       };
 
+      function getAllowedIndices() {
+        const sf = window._currentSeriesFilter || 'ALL';
+        if (sf === 'SERIE 1') return Array.from({ length: 24 }, (_, i) => i);
+        if (sf === 'SERIE 2') return Array.from({ length: 20 }, (_, i) => i + 24);
+        if (sf === 'SERIE 3') return Array.from({ length: 30 }, (_, i) => i + 44);
+        return Array.from({ length: getTemplates().length || 74 }, (_, i) => i);
+      }
+
       window.cycleLainTemplate = function cycleLainTemplate(dir) {
-        const t = getTemplates();
+        const allowed = getAllowedIndices();
         const cur = (window.activeLainTemplateIdx === null || window.activeLainTemplateIdx === undefined) ? -1 : window.activeLainTemplateIdx;
-        let next = (cur + (dir > 0 ? 1 : -1) + t.length) % t.length;
-        if (cur === -1 && dir < 0) next = t.length - 1;
-        window.setActiveLainTemplate(next);
+        const curPos = allowed.indexOf(cur);
+        let nextPos = 0;
+        if (curPos === -1) {
+          nextPos = dir > 0 ? 0 : allowed.length - 1;
+        } else {
+          nextPos = (curPos + (dir > 0 ? 1 : -1) + allowed.length) % allowed.length;
+        }
+        window.setActiveLainTemplate(allowed[nextPos]);
       };
 
       window.randomizeLainTemplate = function randomizeLainTemplate() {
-        const t = getTemplates();
-        const rnd = Math.floor(Math.random() * t.length);
+        const allowed = getAllowedIndices();
+        const rnd = allowed[Math.floor(Math.random() * allowed.length)];
         window.setActiveLainTemplate(rnd);
       };
 

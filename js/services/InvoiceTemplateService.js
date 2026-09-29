@@ -369,43 +369,64 @@ export class InvoiceTemplateService {
 
       const sheetNum = s + 1;
 
+      const configs = InvoiceTemplateService.getPhysical4x1DesignsList();
+      const totalPhysical = configs.length;
+
+      // Filtrado por Serie activa (SERIE 1, SERIE 2, SERIE 3 o ALL)
+      const activeSeries = (typeof window !== "undefined" && window._currentSeriesFilter)
+        ? window._currentSeriesFilter
+        : "ALL";
+
+      let allowedIndices = [];
+      if (activeSeries === "SERIE 1") {
+        allowedIndices = Array.from({ length: 24 }, (_, i) => i);
+      } else if (activeSeries === "SERIE 2") {
+        allowedIndices = Array.from({ length: 20 }, (_, i) => i + 24);
+      } else if (activeSeries === "SERIE 3") {
+        allowedIndices = Array.from({ length: 30 }, (_, i) => i + 44);
+      } else {
+        allowedIndices = Array.from({ length: totalPhysical }, (_, i) => i);
+      }
+      if (!allowedIndices.length) allowedIndices = [0];
+
+      const fixedTemplate = (typeof window !== "undefined" && window.activeLainTemplateIdx !== null && window.activeLainTemplateIdx !== undefined)
+        ? Math.max(0, Math.min(totalPhysical - 1, Number(window.activeLainTemplateIdx) | 0))
+        : null;
+
+      const t0 = fixedTemplate !== null ? fixedTemplate : allowedIndices[(qrIndex + 0) % allowedIndices.length];
+      const t1 = fixedTemplate !== null ? fixedTemplate : allowedIndices[(qrIndex + 1) % allowedIndices.length];
+      const t2 = fixedTemplate !== null ? fixedTemplate : allowedIndices[(qrIndex + 2) % allowedIndices.length];
+      const t3 = fixedTemplate !== null ? fixedTemplate : allowedIndices[(qrIndex + 3) % allowedIndices.length];
+
       if (mode !== "back") {
         const frontHtml = [
-          InvoiceTemplateService.getInvoiceHtml(batch[0].invoiceFolio, 1),
-          InvoiceTemplateService.getInvoiceHtml(batch[1].invoiceFolio, 2),
-          InvoiceTemplateService.getInvoiceHtml(batch[2].invoiceFolio, 3),
-          InvoiceTemplateService.getInvoiceHtml(batch[3].invoiceFolio, 4)
-        ].join('\n\n');
+          InvoiceTemplateService.getInvoiceHtml(batch[0].invoiceFolio, 1, configs[t0]?.series),
+          InvoiceTemplateService.getInvoiceHtml(batch[1].invoiceFolio, 2, configs[t1]?.series),
+          InvoiceTemplateService.getInvoiceHtml(batch[2].invoiceFolio, 3, configs[t2]?.series),
+          InvoiceTemplateService.getInvoiceHtml(batch[3].invoiceFolio, 4, configs[t3]?.series)
+        ].join("\n\n");
 
         pagesHtml += `
   <main class="sheet-letter sheet-front">
-    <div class="cut-badge">\u2702 CORTE 4X1 P\u00e1g ${sheetNum}A (${dims.name})</div>
+    <div class="cut-badge">✂ CORTE 4X1 Pág ${sheetNum}A (${dims.name})</div>
     ${frontHtml}
   </main>\n`;
       }
 
       if (mode !== "front") {
-        const fixedTemplate = (typeof window !== "undefined" && window.activeLainTemplateIdx !== null && window.activeLainTemplateIdx !== undefined)
-          ? Math.max(0, Math.min(23, Number(window.activeLainTemplateIdx) | 0))
-          : null;
-        const t0 = fixedTemplate !== null ? fixedTemplate : ((qrIndex + 0) % 24);
-        const t1 = fixedTemplate !== null ? fixedTemplate : ((qrIndex + 1) % 24);
-        const t2 = fixedTemplate !== null ? fixedTemplate : ((qrIndex + 2) % 24);
-        const t3 = fixedTemplate !== null ? fixedTemplate : ((qrIndex + 3) % 24);
         const backHtml = [
           InvoiceTemplateService.getLainBackCardHtml(2, batch[1], qrIndex + 1, t1),
           InvoiceTemplateService.getLainBackCardHtml(1, batch[0], qrIndex + 0, t0),
           InvoiceTemplateService.getLainBackCardHtml(4, batch[3], qrIndex + 3, t3),
           InvoiceTemplateService.getLainBackCardHtml(3, batch[2], qrIndex + 2, t2)
-        ].join('\n\n');
+        ].join("\n\n");
 
         pagesHtml += `
   <main class="sheet-letter sheet-back">
-    <div class="cut-badge">\u2702 REVERSO P\u00e1g ${sheetNum}B (${dims.name})</div>
+    <div class="cut-badge">✂ REVERSO Pág ${sheetNum}B (${dims.name})</div>
     ${backHtml}
   </main>\n`;
       }
-
       qrIndex += 4;
     }
 
