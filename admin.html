@@ -101,14 +101,15 @@
         Ingresa tu PIN maestro para desbloquear el punto de venta, inventario y generador de lotes.
       </p>
 
-      <div class="form-group" style="margin-bottom: 1.25rem;">
-        <input type="password" id="input-admin-pin" class="form-input" placeholder="••••••" maxlength="6" autofocus
-               onkeydown="if(event.key==='Enter') submitAdminPin()"
-               style="text-align: center; font-size: 1.6rem; letter-spacing: 6px; font-family: var(--font-mono); font-weight: 800;">
-      </div>
+      <form id="form-admin-pin" onsubmit="event.preventDefault(); submitAdminPin();" autocomplete="on">
+        <div class="form-group" style="margin-bottom: 1.25rem;">
+          <input type="password" id="input-admin-pin" name="admin_pin" autocomplete="current-password" class="form-input" placeholder="••••••" maxlength="6" autofocus
+                 style="text-align: center; font-size: 1.6rem; letter-spacing: 6px; font-family: var(--font-mono); font-weight: 800;">
+        </div>
 
-      <div id="lock-feedback" class="pos-feedback-banner error" style="display: none; margin-bottom: 1rem;"></div>
-      <button class="btn-primary" style="width: 100%;" onclick="submitAdminPin()">Desbloquear Panel</button>
+        <div id="lock-feedback" class="pos-feedback-banner error" style="display: none; margin-bottom: 1rem;"></div>
+        <button type="submit" class="btn-primary" style="width: 100%;">Desbloquear Panel</button>
+      </form>
       
     </div>
   </div>
@@ -672,13 +673,19 @@
           <div>
             <span class="paper-auto-badge" style="background:#ecfeff; color:#0891b2; border-color:#67e8f9;">⚡ DISEÑOS SERIAL EXPERIMENTS LAIN</span>
             <h3 style="margin: 6px 0 0; font-size: 1rem; color: var(--dark); font-weight: 900; letter-spacing: 0.2px;">
-              Apartado Exclusivo: 44 Diseños Personalizados de Contraportada Coleccionable (24 Serie 1 + 20 Serie 2)
+              Colección Oficial: 74 Diseños Exclusivos (24 Serie 1: Lain + 20 Serie 2: Copland OS + 30 Serie 3: Haibane Renmei)
             </h3>
             <span style="font-size: 0.75rem; color: var(--gray-600); display:block; margin-top: 2px;">
               Todos los diseños conservan el código QR dot-matrix original con su estructura intacta y optimizan el 100% del espacio disponible.
             </span>
           </div>
-          <div class="lain-template-btn-group" style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+          <div class="lain-template-btn-group" style="display:flex; gap:0.4rem; align-items:center; flex-wrap:wrap;">
+            <div style="display:flex; gap:0.25rem; background:#f1f5f9; padding:2px; border-radius:6px; border:1px solid #cbd5e1;">
+              <button type="button" class="copland-bar-btn" id="btn-filter-all" style="padding:4px 8px; font-size:10px; background:#0f172a; color:#fff;" onclick="filterLainSeries('ALL')">TODAS (74)</button>
+              <button type="button" class="copland-bar-btn" id="btn-filter-s1" style="padding:4px 8px; font-size:10px; background:#fff; color:#334155;" onclick="filterLainSeries('SERIE 1')">SERIE 1 (24)</button>
+              <button type="button" class="copland-bar-btn" id="btn-filter-s2" style="padding:4px 8px; font-size:10px; background:#fff; color:#334155;" onclick="filterLainSeries('SERIE 2')">SERIE 2 (20)</button>
+              <button type="button" class="copland-bar-btn" id="btn-filter-s3" style="padding:4px 8px; font-size:10px; background:#fff; color:#b45309; font-weight:800;" onclick="filterLainSeries('SERIE 3')">🪶 SERIE 3 (30)</button>
+            </div>
             <button type="button" class="copland-bar-btn copland-bar-btn-slate" onclick="cycleLainTemplate(-1)" title="Diseño anterior">◀ ANTERIOR</button>
             <button type="button" class="copland-bar-btn copland-bar-btn-primary" onclick="cycleLainTemplate(1)" title="Diseño siguiente">SIGUIENTE ▶</button>
             <button type="button" class="copland-bar-btn copland-bar-btn-indigo" onclick="randomizeLainTemplate()" title="Plantilla aleatoria">🎲 ALEATORIO</button>
@@ -2325,17 +2332,35 @@
       window._lainTemplatesCache = null;
       const COLOR_WHEEL = ["#0891b2", "#4f46e5", "#db2777", "#059669", "#d97706", "#dc2626", "#475569", "#7c3aed"];
 
+      window._currentSeriesFilter = 'ALL';
+      window.filterLainSeries = function(series) {
+        window._currentSeriesFilter = series;
+        ['all', 's1', 's2', 's3'].forEach(k => {
+          const btn = document.getElementById('btn-filter-' + k);
+          if (btn) {
+            btn.style.background = '#fff';
+            btn.style.color = '#334155';
+          }
+        });
+        const activeBtn = document.getElementById('btn-filter-' + (series === 'ALL' ? 'all' : (series === 'SERIE 1' ? 's1' : (series === 'SERIE 2' ? 's2' : 's3'))));
+        if (activeBtn) {
+          activeBtn.style.background = series === 'SERIE 3' ? '#b45309' : '#0f172a';
+          activeBtn.style.color = '#fff';
+        }
+        window.renderLainTemplateGrid();
+      };
+
       function getTemplates() {
         if (window._lainTemplatesCache && window._lainTemplatesCache.length) return window._lainTemplatesCache;
-        // Fallback por si InvoiceTemplateService aún no carga
         window._lainTemplatesCache = (window.InvoiceTemplateService &&
           typeof window.InvoiceTemplateService.getAvailableLainTemplates === "function")
           ? window.InvoiceTemplateService.getAvailableLainTemplates('physical')
-          : Array.from({ length: 44 }, (_, i) => ({
+          : Array.from({ length: 74 }, (_, i) => ({
               idx: i,
               layer: "LAYER: " + String(i + 1).padStart(2, "0"),
+              series: i < 24 ? "SERIE 1" : (i < 44 ? "SERIE 2" : "SERIE 3"),
               title: "PLANTILLA " + (i + 1),
-              sub: "Diseño coleccionable Lain 4x1",
+              sub: "Diseño coleccionable 4x1",
               kanji: "デザイン"
             }));
         return window._lainTemplatesCache;
@@ -2347,8 +2372,14 @@
         const templates = getTemplates();
         const tiles = [];
         templates.forEach((t) => {
+          if (window._currentSeriesFilter && window._currentSeriesFilter !== 'ALL') {
+            const tSeries = t.series || (t.idx < 24 ? 'SERIE 1' : (t.idx < 44 ? 'SERIE 2' : 'SERIE 3'));
+            if (!tSeries.includes(window._currentSeriesFilter)) return;
+          }
           const isFixed = window.activeLainTemplateIdx === t.idx;
+          const isHaibane = (t.series && t.series.includes('SERIE 3')) || t.idx >= 44;
           const tile = document.createElement("div");
+          if (isHaibane) tile.style.borderColor = '#d97706';
           tile.className = "lain-template-tile" + (isFixed ? " is-active" : "");
           tile.title = t.layer + " — " + t.title + " (click para fijar / doble click para desactivar)";
           tile.innerHTML =

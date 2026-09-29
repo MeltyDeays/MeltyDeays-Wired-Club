@@ -213,7 +213,7 @@
       <div id="auth-feedback" class="auth-feedback-banner"></div>
 
       <!-- Formulario Login -->
-      <div id="form-client-login">
+      <form id="form-client-login" onsubmit="event.preventDefault(); submitClientLogin();" autocomplete="on">
         <h3 style="font-size: 1.15rem; font-weight: 900; margin-bottom: 0.35rem; color: var(--dark);">Acceder a Mi CyberPass</h3>
         <p style="color: var(--gray-700); font-size: 0.82rem; margin-bottom: 1.25rem;">
           Ingresa con tu número de teléfono o WhatsApp para consultar y canjear tus puntos.
@@ -223,23 +223,23 @@
           <label class="form-label">Teléfono / WhatsApp (8 dígitos)</label>
           <div class="phone-input-group">
             <span class="phone-prefix-addon">🇳🇮 +505</span>
-            <input type="tel" id="login-phone" class="form-input" placeholder="5843-8412" maxlength="9" autocomplete="tel">
+            <input type="tel" id="login-phone" name="login_phone" class="form-input" placeholder="5843-8412" maxlength="9" autocomplete="tel">
           </div>
         </div>
 
         <div class="form-group" style="margin-bottom: 1.5rem;">
           <label class="form-label">PIN de Seguridad (4 a 8 dígitos)</label>
           <div style="display: flex; gap: 0.35rem; align-items: center;">
-            <input type="password" id="login-pin" class="form-input" placeholder="••••••" maxlength="8" style="text-align: center; letter-spacing: 6px; font-size: 1.3rem; font-weight: 900;">
+            <input type="password" id="login-pin" name="login_pin" autocomplete="current-password" class="form-input" placeholder="••••••" maxlength="8" style="text-align: center; letter-spacing: 6px; font-size: 1.3rem; font-weight: 900;">
             <button type="button" class="btn-secondary" style="padding: 0.5rem 0.65rem; font-size: 0.85rem;" onclick="toggleClientPinVisibility('login-pin')" title="Ver/Ocultar PIN">👁️</button>
           </div>
         </div>
 
-        <button class="btn-primary" style="width: 100%; padding: 0.75rem;" onclick="submitClientLogin()">Ingresar a Mi Cuenta</button>
-      </div>
+        <button type="submit" class="btn-primary" style="width: 100%; padding: 0.75rem;">Ingresar a Mi Cuenta</button>
+      </form>
 
       <!-- Formulario Registro -->
-      <div id="form-client-reg" style="display: none;">
+      <form id="form-client-reg" onsubmit="event.preventDefault(); submitClientRegister();" autocomplete="on" style="display: none;">
         <h3 style="font-size: 1.15rem; font-weight: 900; margin-bottom: 0.35rem; color: var(--dark);">Registro de Nuevo Socio</h3>
         <p style="color: var(--gray-700); font-size: 0.82rem; margin-bottom: 1.25rem;">
           Únete a The Wired Club gratis para acumular puntos en cada compra en MeltyDeays.
@@ -247,27 +247,27 @@
 
         <div class="form-group" style="margin-bottom: 1rem;">
           <label class="form-label">Nombre y Apellido</label>
-          <input type="text" id="reg-name" class="form-input" placeholder="Ej: Carlos Mendoza" autocomplete="name">
+          <input type="text" id="reg-name" name="reg_name" class="form-input" placeholder="Ej: Carlos Mendoza" autocomplete="name">
         </div>
 
         <div class="form-group" style="margin-bottom: 1rem;">
           <label class="form-label">Teléfono / WhatsApp (8 dígitos)</label>
           <div class="phone-input-group">
             <span class="phone-prefix-addon">🇳🇮 +505</span>
-            <input type="tel" id="reg-phone" class="form-input" placeholder="5843-8412" maxlength="9" autocomplete="tel">
+            <input type="tel" id="reg-phone" name="reg_phone" class="form-input" placeholder="5843-8412" maxlength="9" autocomplete="tel">
           </div>
         </div>
 
         <div class="form-group" style="margin-bottom: 1.5rem;">
           <label class="form-label">Crea tu PIN de Seguridad (4 a 8 dígitos)</label>
           <div style="display: flex; gap: 0.35rem; align-items: center;">
-            <input type="password" id="reg-pin" class="form-input" placeholder="••••••" maxlength="8" style="text-align: center; letter-spacing: 6px; font-size: 1.3rem; font-weight: 900;">
+            <input type="password" id="reg-pin" name="reg_pin" autocomplete="new-password" class="form-input" placeholder="••••••" maxlength="8" style="text-align: center; letter-spacing: 6px; font-size: 1.3rem; font-weight: 900;">
             <button type="button" class="btn-secondary" style="padding: 0.5rem 0.65rem; font-size: 0.85rem;" onclick="toggleClientPinVisibility('reg-pin')" title="Ver/Ocultar PIN">👁️</button>
           </div>
         </div>
 
-        <button class="btn-primary" style="width: 100%; padding: 0.75rem;" onclick="submitClientRegister()">Crear Mi Cuenta</button>
-      </div>
+        <button type="submit" class="btn-primary" style="width: 100%; padding: 0.75rem;">Crear Mi Cuenta</button>
+      </form>
 
       <div style="text-align: center; margin-top: 1rem;">
         <button class="btn-secondary" style="width: 100%;" onclick="closeAuthModal()">Cancelar</button>
@@ -530,20 +530,22 @@
         <div style="flex: 1; height: 1px; background: #e2e8f0;"></div>
       </div>
 
-      <div class="form-group" style="margin-bottom: 1rem;">
-        <label class="form-label">Código de Puntos</label>
-        <input type="text" id="manual-input-token" class="form-input" placeholder="WP-2026-F0104-X9" style="text-transform: uppercase; font-family: var(--font-mono);">
-      </div>
+      <form id="form-manual-claim" onsubmit="event.preventDefault(); submitManualClaim();" autocomplete="on">
+        <div class="form-group" style="margin-bottom: 1rem;">
+          <label class="form-label">Código de Puntos</label>
+          <input type="text" id="manual-input-token" name="token_code" class="form-input" placeholder="WP-2026-F0104-X9" style="text-transform: uppercase; font-family: var(--font-mono);">
+        </div>
 
-      <div class="form-group" style="margin-bottom: 1.5rem;">
-        <label class="form-label">PIN de Seguridad (4 dígitos impreso en factura)</label>
-        <input type="password" id="manual-input-pin" class="form-input" placeholder="••••" maxlength="4" style="text-align: center; letter-spacing: 8px; font-size: 1.3rem; font-weight: 900;">
-      </div>
+        <div class="form-group" style="margin-bottom: 1.5rem;">
+          <label class="form-label">PIN de Seguridad (4 dígitos impreso en factura)</label>
+          <input type="password" id="manual-input-pin" name="token_pin" autocomplete="off" class="form-input" placeholder="••••" maxlength="4" style="text-align: center; letter-spacing: 8px; font-size: 1.3rem; font-weight: 900;">
+        </div>
 
-      <div style="display: flex; gap: 0.75rem;">
-        <button class="btn-secondary" style="flex: 1;" onclick="closeClaimModal()">Cancelar</button>
-        <button class="btn-primary" style="flex: 2;" onclick="submitManualClaim()">Acreditar Puntos</button>
-      </div>
+        <div style="display: flex; gap: 0.75rem;">
+          <button type="button" class="btn-secondary" style="flex: 1;" onclick="closeClaimModal()">Cancelar</button>
+          <button type="submit" class="btn-primary" style="flex: 2;">Acreditar Puntos</button>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -577,20 +579,22 @@
         Asigna el valor en Wired Points a la factura <strong id="assign-scan-folio" style="font-family: var(--font-mono); color: var(--dark);">WP-XXXX</strong> antes de entregarla.
       </p>
 
-      <div class="form-group" style="margin-bottom: 0.85rem;">
-        <label class="form-label">Wired Points a Asignar</label>
-        <input type="number" id="assign-scan-points" class="form-input" placeholder="Ej: 30" style="font-size: 1.3rem; font-weight: 900; color: var(--dark);">
-      </div>
+      <form id="form-admin-assign-scan" onsubmit="event.preventDefault(); submitAdminAssignFromScan();" autocomplete="on">
+        <div class="form-group" style="margin-bottom: 0.85rem;">
+          <label class="form-label">Wired Points a Asignar</label>
+          <input type="number" id="assign-scan-points" name="assign_points" class="form-input" placeholder="Ej: 30" style="font-size: 1.3rem; font-weight: 900; color: var(--dark);">
+        </div>
 
-      <div class="form-group" style="margin-bottom: 1.25rem;">
-        <label class="form-label">PIN Maestro de Admin</label>
-        <input type="password" id="assign-scan-admin-pin" class="form-input" placeholder="••••••" maxlength="6" style="text-align: center; letter-spacing: 6px; font-size: 1.1rem; font-weight: 900;">
-      </div>
+        <div class="form-group" style="margin-bottom: 1.25rem;">
+          <label class="form-label">PIN Maestro de Admin</label>
+          <input type="password" id="assign-scan-admin-pin" name="admin_scan_pin" autocomplete="current-password" class="form-input" placeholder="••••••" maxlength="6" style="text-align: center; letter-spacing: 6px; font-size: 1.1rem; font-weight: 900;">
+        </div>
 
-      <div style="display: flex; gap: 0.75rem;">
-        <button class="btn-secondary" style="flex: 1;" onclick="closeAdminAssignModal()">Cancelar</button>
-        <button class="btn-primary" style="flex: 2;" onclick="submitAdminAssignFromScan()">Guardar Puntos</button>
-      </div>
+        <div style="display: flex; gap: 0.75rem;">
+          <button type="button" class="btn-secondary" style="flex: 1;" onclick="closeAdminAssignModal()">Cancelar</button>
+          <button type="submit" class="btn-primary" style="flex: 2;">Guardar Puntos</button>
+        </div>
+      </form>
     </div>
   </div>
   <!-- CONTENEDOR TOAST FLOTANTE -->
