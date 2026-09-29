@@ -5313,6 +5313,61 @@ body {
     grid-template-columns: 1fr !important;
     gap: 0.5rem !important;
   }
+  .freight-presets-row {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 0.35rem !important;
+    width: 100% !important;
+    justify-content: flex-start !important;
+    margin-top: 0.35rem !important;
+  }
+  .freight-presets-row button {
+    flex: 1 1 auto !important;
+    text-align: center !important;
+  }
+  .calc-ticket-row {
+    display: flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+    flex-wrap: wrap !important;
+    width: 100% !important;
+  }
+  .calc-financial-summary-card {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.75rem !important;
+  }
+  .calc-financial-summary-actions {
+    width: 100% !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    border-top: 1px dashed #cbd5e1 !important;
+    padding-top: 0.65rem !important;
+    margin-top: 0.25rem !important;
+  }
+  .prod-img-upload-row {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.4rem !important;
+    width: 100% !important;
+  }
+  .prod-img-upload-row button {
+    width: 100% !important;
+    justify-content: center !important;
+    text-align: center !important;
+  }
+  .form-grid > *,
+  .form-grid > .form-group,
+  .form-grid > div {
+    grid-column: 1 / -1 !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .lain-modal-header {
+    padding-right: 38px !important;
+  }
 
   /* HERO CARD FACTURA DIGITAL INDIVIDUAL */
   .lain-invoice-hero-card {

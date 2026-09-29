@@ -1309,7 +1309,7 @@
         </div>
 
         <!-- PRESETS RÁPIDOS DE CASILLERO MIAMI -->
-        <div style="display: flex; gap: 0.35rem; justify-content: flex-end; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap;">
+        <div class="freight-presets-row" style="display: flex; gap: 0.35rem; justify-content: flex-end; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap;">
           <span style="font-family: var(--font-mono); font-size: 0.65rem; color: var(--gray-600); font-weight: 800;">PRESETS CASILLERO:</span>
           <button type="button" class="btn-secondary" id="btn-freight-maritimo-250" style="padding: 2px 7px; font-size: 0.68rem; font-weight: 800;" onclick="setFreightPreset(2.50, 'MARÍTIMO $2.50')">🚢 Marítimo $2.50</button>
           <button type="button" class="btn-secondary active" id="btn-freight-maritimo-300" style="padding: 2px 7px; font-size: 0.68rem; font-weight: 800;" onclick="setFreightPreset(3.00, 'MARÍTIMO $3.00')">🚢 Marítimo $3.00</button>
@@ -1348,7 +1348,7 @@
             <div style="font-family: var(--font-mono); font-size: 0.7rem; color: #334155; font-weight: 800;">
               🛍️ TICKET PROMEDIO ESTIMADO / VENTA:
             </div>
-            <div style="display: flex; align-items: center; gap: 4px;">
+            <div class="calc-ticket-row" style="display: flex; align-items: center; gap: 4px; flex-wrap: wrap;">
               <input type="number" id="calc-ticket-avg-usd" class="form-input" value="20.00" step="5" min="5"
                      style="height: 28px; width: 75px; font-family: var(--font-mono); font-weight: 800; font-size: 0.85rem; text-align: center; padding: 2px 4px;"
                      oninput="recalculateRewardPoints()">
@@ -1363,7 +1363,7 @@
         </div>
 
         <!-- RESUMEN FINANCIERO Y BOTÓN APLICAR -->
-        <div style="background: #ffffff; border: 1.5px solid var(--dark); border-radius: 4px; padding: 0.65rem 0.85rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+        <div class="calc-financial-summary-card" style="background: #ffffff; border: 1.5px solid var(--dark); border-radius: 4px; padding: 0.65rem 0.85rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
           <div style="font-family: var(--font-mono); font-size: 0.75rem;">
             <div style="color: var(--gray-700);">
               Costo Landed: <strong id="calc-landed-cost" style="color: var(--dark); font-weight: 900;">$20.00 USD</strong>
@@ -1379,7 +1379,7 @@
               Retención de negocio: <strong>75%</strong> (Inversión en regalo: $20.00 de $80 USD)
             </div>
           </div>
-          <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <div class="calc-financial-summary-actions" style="display: flex; align-items: center; gap: 0.5rem;">
             <div style="text-align: right;">
               <div style="font-family: var(--font-mono); font-size: 0.65rem; color: var(--gray-500); font-weight: 800;">PUNTOS SUGERIDOS:</div>
               <div id="calc-suggested-points" style="font-family: var(--font-mono); font-size: 1.35rem; font-weight: 900; color: #059669; line-height: 1;">800 WP</div>
@@ -1488,7 +1488,7 @@
 
         <div class="form-group" style="grid-column: span 2; margin-top: 0.4rem; margin-bottom: 0;">
           <label class="form-label" style="height: 18px; line-height: 18px; margin-bottom: 4px;">🖼️ IMAGEN DEL PRODUCTO (ARCHIVO LOCAL O URL)</label>
-          <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+          <div class="prod-img-upload-row" style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
             <input type="file" id="prod-file-input" accept="image/*" style="display: none;" onchange="handleProductImageFile(this)">
             <button type="button" class="btn-secondary" style="font-size: 0.8rem; padding: 0.45rem 0.85rem;" onclick="document.getElementById('prod-file-input').click()">
               📁 Subir desde mi PC (Gratis)
