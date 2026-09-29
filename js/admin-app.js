@@ -1569,11 +1569,7 @@ async function executePurgeAllDb() {
     const helper = document.getElementById("lot-folio-helper");
     if (helper) helper.innerHTML = "Siguiente folio libre detectado: <strong>#0001</strong> (Base de datos limpia)";
 
-    renderDashboard(vm);
-    renderCatalogTable(vm.catalog);
-    renderTokensTable(vm.tokens);
-    renderUsersTable(vm.users);
-    renderVouchersTable(vm.vouchers);
+    renderAdmin(vm);
 
     showToast("✓ Base de datos completamente purgada. El PIN de Admin sigue intacto.", "success");
   } catch (err) {
