@@ -5075,11 +5075,26 @@ body {
     flex-wrap: wrap !important;
   }
 
+  .copland-card-module-header.copland-wired-header {
+    background: linear-gradient(90deg, #1e1b4b 0%, #0f172a 100%) !important;
+    border-bottom: 1.5px solid #4338ca !important;
+  }
+
+  .copland-card-module.copland-wired-module {
+    border-color: #4338ca !important;
+    box-shadow: 2px 2px 0px #4338ca !important;
+  }
+
   .copland-module-title {
     font-size: 0.72rem !important;
     font-weight: 900 !important;
     color: var(--dark) !important;
     letter-spacing: 0.3px !important;
+  }
+
+  .copland-wired-header .copland-module-title,
+  .copland-wired-header .copland-module-title label {
+    color: #e0e7ff !important;
   }
 
   .copland-mod-status {
@@ -5090,6 +5105,10 @@ body {
     text-transform: uppercase !important;
   }
 
+  .copland-wired-header .copland-mod-status {
+    color: #a5b4fc !important;
+  }
+
   .copland-card-module-body {
     padding: 0.85rem 0.75rem !important;
   }
@@ -5098,6 +5117,48 @@ body {
   .copland-grid-client {
     grid-template-columns: 1fr !important;
     gap: 0.65rem !important;
+  }
+
+  .copland-wired-grid {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.65rem !important;
+    width: 100% !important;
+  }
+
+  .copland-wired-grid .copland-field-group {
+    width: 100% !important;
+    margin-left: 0 !important;
+  }
+
+  .copland-wp-box,
+  .copland-pin-box {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .copland-pin-input {
+    flex: 1 1 auto !important;
+    width: 100% !important;
+  }
+
+  .copland-btn-calc-wp,
+  .copland-btn-calc-modal {
+    width: 100% !important;
+    box-sizing: border-box !important;
+    justify-content: center !important;
+    text-align: center !important;
+    height: 40px !important;
+    font-size: 0.76rem !important;
+  }
+
+  #s-inv-lain-design {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    text-overflow: ellipsis !important;
   }
 
   .copland-field-label {
@@ -5159,11 +5220,30 @@ body {
     border-top: 1.5px solid var(--dark) !important;
     border-bottom: 1.5px solid var(--dark) !important;
     margin: 0.5rem 0 !important;
+    overscroll-behavior-x: contain;
   }
 
   .copland-items-table {
-    min-width: 460px !important;
+    min-width: 480px !important;
     width: 100% !important;
+  }
+
+  .modal-close-btn {
+    top: 8px !important;
+    right: 8px !important;
+    width: 32px !important;
+    height: 32px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: #ffffff !important;
+    border: 1.5px solid var(--dark) !important;
+    border-radius: 6px !important;
+    box-shadow: 2px 2px 0px var(--dark) !important;
+    font-size: 1.15rem !important;
+    color: var(--dark) !important;
+    z-index: 30 !important;
+    padding: 0 !important;
   }
 
   /* SELECTOR DE HOJA DE IMPRESIÓN */
