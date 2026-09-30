@@ -36,25 +36,29 @@ export function filterSandboxDrafts(query) {
 // ----------------------------------------------------
 
 export async function executePurgeUsers() {
-  if (!confirm("⚠️ ¿Deseas purgar TODOS los socios/clientes de prueba?\n\nEl perfil de Administrador (PIN 110805) quedará intacto.")) {
+  const isProd = isProduction();
+  const targetCol = isProd ? "users" : "dev_users";
+  const desc = isProd ? "TODOS los socios/clientes de PRODUCCIÓN" : "TODOS los socios/clientes de prueba (dev_users)";
+  if (!confirm(`⚠️ ¿Deseas purgar ${desc}?\n\nEl perfil de Administrador (PIN 110805) quedará intacto.`)) {
     return;
   }
-  showToast("Purgando base de datos de socios de prueba...", "info");
+  showToast(isProd ? "Purgando base de datos de socios en producción..." : "Purgando base de datos de socios de prueba...", "info");
   try {
     const res = await vm.purgeUsers();
     renderSandboxDbView();
     if (typeof renderAdmin === "function") renderAdmin(vm);
-    showToast(`✓ ${res.count} socios de prueba eliminados. Admin protegido.`, "success");
+    showToast(isProd ? `✓ ${res.count} socios eliminados en ${targetCol}. Admin protegido.` : `✓ ${res.count} socios de prueba eliminados. Admin protegido.`, "success");
   } catch (err) {
     showToast("❌ Error al purgar socios: " + err.message, "error");
   }
 }
 
 export async function executePurgeCirculatingPoints() {
-  if (!confirm("⚠️ ¿Deseas restablecer a 0 todos los puntos en circulación y vaciar el historial contable?")) {
+  const isProd = isProduction();
+  if (!confirm(`⚠️ ¿Deseas restablecer a 0 todos los puntos en circulación ${isProd ? "de PRODUCCIÓN " : ""}y vaciar el historial contable?`)) {
     return;
   }
-  showToast("Purgando puntos en circulación...", "info");
+  showToast(isProd ? "Purgando puntos en producción..." : "Purgando puntos en circulación...", "info");
   try {
     const res = await vm.purgeCirculatingPoints();
     renderSandboxDbView();
@@ -66,8 +70,9 @@ export async function executePurgeCirculatingPoints() {
 }
 
 export async function executePurgeVouchers(filter = "ALL") {
+  const isProd = isProduction();
   const label = filter === "PENDING" ? "PENDIENTES de retiro" : (filter === "DELIVERED" ? "ya ENTREGADOS" : "TODOS");
-  if (!confirm(`⚠️ ¿Deseas purgar los vales de canje ${label}?`)) {
+  if (!confirm(`⚠️ ¿Deseas purgar los vales de canje ${label}${isProd ? " en PRODUCCIÓN" : ""}?`)) {
     return;
   }
   showToast(`Purgando vales (${label})...`, "info");
@@ -82,25 +87,31 @@ export async function executePurgeVouchers(filter = "ALL") {
 }
 
 export async function executePurgeRewards() {
-  if (!confirm("⚠️ ¿Deseas purgar TODOS los productos del catálogo de premios de prueba?")) {
+  const isProd = isProduction();
+  const targetCol = isProd ? "rewards_catalog" : "dev_rewards_catalog";
+  const desc = isProd ? "TODOS los productos del catálogo de PRODUCCIÓN" : "TODOS los productos del catálogo de premios de prueba";
+  if (!confirm(`⚠️ ¿Deseas purgar ${desc}?`)) {
     return;
   }
-  showToast("Purgando catálogo de premios...", "info");
+  showToast(isProd ? "Purgando catálogo de producción..." : "Purgando catálogo de premios...", "info");
   try {
     const res = await vm.purgeRewards();
     renderSandboxDbView();
     if (typeof renderAdmin === "function") renderAdmin(vm);
-    showToast(`✓ ${res.count} productos de catálogo eliminados.`, "success");
+    showToast(isProd ? `✓ ${res.count} productos eliminados en ${targetCol}.` : `✓ ${res.count} productos de catálogo eliminados.`, "success");
   } catch (err) {
     showToast("❌ Error al purgar catálogo: " + err.message, "error");
   }
 }
 
 export async function executePurgeInvoicesFromSandbox() {
-  if (!confirm("⚠️ ¿Deseas purgar TODAS las facturas/tokens QR y restablecer el folio a #0001?")) {
+  const isProd = isProduction();
+  const targetCol = isProd ? "qr_tokens" : "dev_qr_tokens";
+  const desc = isProd ? "TODAS las facturas y tokens QR de PRODUCCIÓN" : "TODAS las facturas/tokens QR y restablecer el folio a #0001";
+  if (!confirm(`⚠️ ¿Deseas purgar ${desc} y restablecer el folio a #0001?`)) {
     return;
   }
-  showToast("Purgando facturas y tokens de prueba...", "info");
+  showToast(isProd ? "Purgando facturas y tokens en producción..." : "Purgando facturas y tokens de prueba...", "info");
   try {
     const res = await vm.purgeAllInvoiceTokens();
     const folioEl = document.getElementById("lot-start-folio");
@@ -114,13 +125,18 @@ export async function executePurgeInvoicesFromSandbox() {
     renderSandboxDbView();
     if (typeof renderTokensTable === "function") renderTokensTable(vm.tokens);
     if (typeof renderAdmin === "function") renderAdmin(vm);
-    showToast(`✓ Facturas eliminadas. Siguiente folio libre: #0001.`, "success");
+    showToast(isProd ? `✓ Facturas eliminadas en ${targetCol}. Siguiente folio libre: #0001.` : `✓ Facturas eliminadas. Siguiente folio libre: #0001.`, "success");
   } catch (err) {
     showToast("❌ Error al purgar facturas: " + err.message, "error");
   }
 }
 
 export async function executeSeedDevData() {
+  const isProd = isProduction();
+  if (isProd) {
+    showToast("⚠️ Acción restringida en entorno de producción.", "error");
+    return;
+  }
   if (!confirm("🌱 ¿Deseas sembrar datos demo estándar (3 socios y 3 productos de prueba)?")) {
     return;
   }
@@ -229,6 +245,17 @@ export function renderSandboxDbView() {
   const envInfo = getEnvironmentInfo();
   const nextFolio = vm.getNextAvailableFolio();
 
+  const tabBtn = document.getElementById("tab-btn-sandbox_db");
+  if (tabBtn) {
+    tabBtn.innerHTML = isProd ? "🗄️ Base de Datos" : "🧪 BD Sandbox";
+  }
+
+  const usersCol = isProd ? "users" : "dev_users";
+  const tokensCol = isProd ? "qr_tokens" : "dev_qr_tokens";
+  const rewardsCol = isProd ? "rewards_catalog" : "dev_rewards_catalog";
+  const redemptionsCol = isProd ? "redemptions" : "dev_redemptions";
+  const ledgerCol = isProd ? "point_ledger" : "dev_point_ledger";
+
   let totalPointsCirc = 0;
   (vm.users || []).forEach(u => {
     totalPointsCirc += (u.pointsBalance || u.wiredPoints || 0);
@@ -243,7 +270,7 @@ export function renderSandboxDbView() {
         <span style="font-size: 1.3rem; line-height: 1;">⚠️</span>
         <div>
           <strong style="display: block; font-size: 0.9rem; margin-bottom: 2px;">ENTORNO ACTIVO: PRODUCCIÓN (LIVE)</strong>
-          <span>ADVERTENCIA: Las operaciones de eliminación y purga afectarán los datos oficiales en vivo. Proceder con precaución extrema.</span>
+          <span>ADVERTENCIA: Las operaciones de eliminación y purga afectarán los datos oficiales en vivo (<code>${usersCol}</code>, <code>${tokensCol}</code>, <code>${redemptionsCol}</code>, <code>${rewardsCol}</code>, <code>${ledgerCol}</code>). Proceder con precaución extrema.</span>
         </div>
       </div>
     `
@@ -251,8 +278,8 @@ export function renderSandboxDbView() {
       <div style="background: #fefce8; border: 1.5px solid #eab308; border-radius: 6px; padding: 12px 16px; margin-bottom: 1.25rem; font-family: var(--font-mono); font-size: 0.82rem; color: #854d0e; display: flex; align-items: flex-start; gap: 10px;">
         <span style="font-size: 1.3rem; line-height: 1;">🧪</span>
         <div>
-          <strong style="display: block; font-size: 0.9rem; margin-bottom: 2px;">SANDBOX AISLADO: ENTORNO DE PRUEBAS (dev_*)</strong>
-          <span>Todas las operaciones de esta consola modifican <strong>única y exclusivamente</strong> las colecciones y almacenamiento de pruebas (<code>dev_users</code>, <code>dev_qr_tokens</code>, <code>dev_redemptions</code>, <code>dev_rewards_catalog</code>, <code>dev_point_ledger</code>). <strong>La base de datos de producción está 100% blindada e intacta.</strong></span>
+          <strong style="display: block; font-size: 0.9rem; margin-bottom: 2px;">SANDBOX AISLADO: ENTORNO DE PRUEBAS (${usersCol})</strong>
+          <span>Todas las operaciones de esta consola modifican <strong>única y exclusivamente</strong> las colecciones y almacenamiento de pruebas (<code>${usersCol}</code>, <code>${tokensCol}</code>, <code>${redemptionsCol}</code>, <code>${rewardsCol}</code>, <code>${ledgerCol}</code>). <strong>La base de datos de producción está 100% blindada e intacta.</strong></span>
         </div>
       </div>
     `;
@@ -263,9 +290,9 @@ export function renderSandboxDbView() {
     <!-- METRICS TELEMETRY GRID -->
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.75rem; margin-bottom: 1.5rem;">
       <div class="noc-stat-box">
-        <div class="noc-stat-label">SOCIOS DEV</div>
+        <div class="noc-stat-label">${isProd ? 'SOCIOS REGISTRADOS' : 'SOCIOS DEV'}</div>
         <div class="noc-stat-val text-indigo">${(vm.users || []).length}</div>
-        <div class="noc-stat-sub">En dev_users</div>
+        <div class="noc-stat-sub">En ${usersCol}</div>
       </div>
       <div class="noc-stat-box">
         <div class="noc-stat-label">PUNTOS EN CIRC.</div>
@@ -275,7 +302,7 @@ export function renderSandboxDbView() {
       <div class="noc-stat-box">
         <div class="noc-stat-label">FACTURAS / QR</div>
         <div class="noc-stat-val">${(vm.tokens || []).length}</div>
-        <div class="noc-stat-sub">Tokens generados</div>
+        <div class="noc-stat-sub">Tokens generados (${tokensCol})</div>
       </div>
       <div class="noc-stat-box accent-amber">
         <div class="noc-stat-label">VALES PENDIENTES</div>
@@ -288,9 +315,9 @@ export function renderSandboxDbView() {
         <div class="noc-stat-sub">Canjes completados</div>
       </div>
       <div class="noc-stat-box">
-        <div class="noc-stat-label">CATÁLOGO DEV</div>
+        <div class="noc-stat-label">${isProd ? 'CATÁLOGO PREMIOS' : 'CATÁLOGO DEV'}</div>
         <div class="noc-stat-val">${(vm.catalog || []).length}</div>
-        <div class="noc-stat-sub">Premios en stock</div>
+        <div class="noc-stat-sub">${isProd ? 'Premios en catálogo' : 'Premios demo en stock'}</div>
       </div>
       <div class="noc-stat-box" style="border-color: #3b82f6; background: #eff6ff;">
         <div class="noc-stat-label" style="color: #1d4ed8;">FOLIO DISPONIBLE</div>
@@ -305,13 +332,13 @@ export function renderSandboxDbView() {
         <div>
           <h2>⚡ Acciones de Purga Granular</h2>
           <div style="font-size: 0.8rem; color: var(--gray-500); font-family: var(--font-mono); margin-top: 2px;">
-            LIMPIEZA MODULAR DE TABLAS INDIVIDUALES (ZERO-POLLUTION)
+            ${isProd ? 'MANTENIMIENTO MODULAR DE TABLAS DE PRODUCCIÓN' : 'LIMPIEZA MODULAR DE TABLAS INDIVIDUALES (ZERO-POLLUTION)'}
           </div>
         </div>
       </div>
 
       <p style="color: var(--gray-700); font-size: 0.85rem; margin-bottom: 1rem;">
-        Ejecuta purgas específicas por módulo sin necesidad de resetear toda la base de datos de pruebas.
+        ${isProd ? 'Ejecuta purgas específicas por colección en la base de datos oficial de producción.' : 'Ejecuta purgas específicas por módulo sin necesidad de resetear toda la base de datos de pruebas.'}
       </p>
 
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 0.85rem; margin-bottom: 1.25rem;">
@@ -319,10 +346,10 @@ export function renderSandboxDbView() {
         <div style="border: 1px solid #cbd5e1; border-radius: 6px; padding: 1rem; background: #f8fafc; display: flex; flex-direction: column; justify-content: space-between; gap: 0.75rem;">
           <div>
             <div style="font-weight: 800; font-family: var(--font-mono); font-size: 0.88rem; color: var(--dark); display: flex; align-items: center; gap: 6px;">
-              <span>👥</span> Purgar Socios Demo
+              <span>👥</span> ${isProd ? 'Purgar Socios' : 'Purgar Socios Demo'}
             </div>
             <div style="font-size: 0.76rem; color: var(--gray-600); margin-top: 4px;">
-              Elimina todos los clientes en <code>dev_users</code>. <strong>El perfil Admin (PIN 110805) queda 100% preservado.</strong>
+              Elimina todos los clientes en <code>${usersCol}</code>. <strong>El perfil Admin (PIN 110805) queda 100% preservado.</strong>
             </div>
           </div>
           <button type="button" class="btn-secondary" style="color: #b91c1c; border-color: #ef4444; font-size: 0.78rem; font-weight: 700; width: 100%; justify-content: center;" onclick="executePurgeUsers()">
@@ -337,7 +364,7 @@ export function renderSandboxDbView() {
               <span>⚡</span> Purgar Puntos Circulando
             </div>
             <div style="font-size: 0.76rem; color: var(--gray-600); margin-top: 4px;">
-              Restablece a <strong>0 WP</strong> el saldo de todos los clientes y vacía el ledger contable de movimientos.
+              Restablece a <strong>0 WP</strong> el saldo de todos los clientes y vacía el ledger contable de movimientos (<code>${ledgerCol}</code>).
             </div>
           </div>
           <button type="button" class="btn-secondary" style="color: #b45309; border-color: #f59e0b; font-size: 0.78rem; font-weight: 700; width: 100%; justify-content: center;" onclick="executePurgeCirculatingPoints()">
@@ -352,7 +379,7 @@ export function renderSandboxDbView() {
               <span>⏳</span> Purgar Vales Pendientes
             </div>
             <div style="font-size: 0.76rem; color: var(--gray-600); margin-top: 4px;">
-              Elimina únicamente los vales emitidos aún por entregar en mostrador (status: <code>PENDING</code>).
+              Elimina en <code>${redemptionsCol}</code> únicamente los vales emitidos aún por entregar en mostrador (status: <code>PENDING</code>).
             </div>
           </div>
           <button type="button" class="btn-secondary" style="color: #b45309; border-color: #f59e0b; font-size: 0.78rem; font-weight: 700; width: 100%; justify-content: center;" onclick="executePurgeVouchers('PENDING')">
@@ -367,7 +394,7 @@ export function renderSandboxDbView() {
               <span>✓</span> Purgar Vales Entregados
             </div>
             <div style="font-size: 0.76rem; color: var(--gray-600); margin-top: 4px;">
-              Elimina los registros históricos de canjes ya despachados físicamente (status: <code>DELIVERED</code>).
+              Elimina en <code>${redemptionsCol}</code> los registros históricos de canjes ya despachados físicamente (status: <code>DELIVERED</code>).
             </div>
           </div>
           <button type="button" class="btn-secondary" style="color: #065f46; border-color: #10b981; font-size: 0.78rem; font-weight: 700; width: 100%; justify-content: center;" onclick="executePurgeVouchers('DELIVERED')">
@@ -382,7 +409,7 @@ export function renderSandboxDbView() {
               <span>🎁</span> Purgar Catálogo de Premios
             </div>
             <div style="font-size: 0.76rem; color: var(--gray-600); margin-top: 4px;">
-              Vacía todos los artículos registrados en <code>dev_rewards_catalog</code>.
+              Vacía todos los artículos registrados en <code>${rewardsCol}</code>.
             </div>
           </div>
           <button type="button" class="btn-secondary" style="color: #b91c1c; border-color: #ef4444; font-size: 0.78rem; font-weight: 700; width: 100%; justify-content: center;" onclick="executePurgeRewards()">
@@ -397,7 +424,7 @@ export function renderSandboxDbView() {
               <span>🧾</span> Purgar Facturas & QR (Reiniciar a #0001)
             </div>
             <div style="font-size: 0.76rem; color: var(--gray-600); margin-top: 4px;">
-              Elimina todos los tokens en <code>dev_qr_tokens</code> y restablece el correlativo a <strong>#0001</strong>.
+              Elimina todos los tokens en <code>${tokensCol}</code> y restablece el correlativo a <strong>#0001</strong>.
             </div>
           </div>
           <button type="button" class="btn-secondary" style="color: #b91c1c; border-color: #ef4444; font-size: 0.78rem; font-weight: 700; width: 100%; justify-content: center;" onclick="executePurgeInvoicesFromSandbox()">
@@ -408,11 +435,13 @@ export function renderSandboxDbView() {
 
       <!-- BOTONES DE RESTAURACIÓN Y RESET TOTAL -->
       <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; border-top: 1px dashed #cbd5e1; padding-top: 1rem;">
+        ${!isProd ? `
         <button type="button" class="btn-primary" style="background: linear-gradient(135deg, #059669, #047857); border-color: #065f46; font-size: 0.82rem; gap: 6px;" onclick="executeSeedDevData()">
           <span>🌱</span> <strong>Sembrar Datos Demo de Prueba</strong>
         </button>
+        ` : ''}
         <button type="button" class="btn-secondary" style="color: #991b1b; border-color: #dc2626; font-size: 0.82rem; font-weight: 800; gap: 6px;" onclick="openPurgeAllDbModal()">
-          <span>💥</span> <strong>Purgar Toda la BD (Reset Nuclear)</strong>
+          <span>💥</span> <strong>${isProd ? 'Purgar Toda la BD de Producción (Reset Total)' : 'Purgar Toda la BD (Reset Nuclear)'}</strong>
         </button>
       </div>
     </div>

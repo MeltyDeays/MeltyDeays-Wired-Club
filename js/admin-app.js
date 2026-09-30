@@ -2,7 +2,7 @@
 import { AdminViewModel } from "./viewmodels/AdminViewModel.js";
 import { InvoiceTemplateService } from "./services/InvoiceTemplateService.js";
 import { FirestoreService } from "./services/FirestoreService.js";
-import { injectEnvironmentBadge } from "./config/env.js";
+import { injectEnvironmentBadge, isProduction } from "./config/env.js";
 
 import {
   initAdminViews,
@@ -599,6 +599,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   vm.init();
   renderLainTemplateGrid();
+
+  const tabBtnSandbox = document.getElementById("tab-btn-sandbox_db");
+  if (tabBtnSandbox) {
+    tabBtnSandbox.innerHTML = isProduction() ? "🗄️ Base de Datos" : "🧪 BD Sandbox";
+  }
 
   // Inicializar máscara telefónica en campos de entrada (+505 automático)
   attachPhoneMask(document.getElementById("new-user-phone"));
