@@ -38,13 +38,23 @@ jobs:
 
       - name: Deploy to Vercel Preview
         run: |
-          echo "Attempting prebuilt deployment pipeline..."
-          if vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}; then
-            vercel build --token=${{ secrets.VERCEL_TOKEN }}
-            vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }}
-          else
-            echo "Vercel pull failed. Falling back to direct deployment..."
-            vercel deploy --token=${{ secrets.VERCEL_TOKEN }} --yes
+          echo "### Vercel Deployment Diagnostic" >> $GITHUB_STEP_SUMMARY
+          echo "Running vercel deploy with scope..."
+          OUTPUT=$(vercel deploy --token=${{ secrets.VERCEL_TOKEN }} --scope=team_vaS1CBmW92Fj6Oz0pdCXPZRc --yes 2>&1) || STATUS=$?
+          echo "$OUTPUT"
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "$OUTPUT" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          if [ -n "$STATUS" ] && [ "$STATUS" -ne 0 ]; then
+            echo "Deploy with scope failed (exit code $STATUS). Trying fallback..."
+            OUTPUT2=$(vercel deploy --token=${{ secrets.VERCEL_TOKEN }} --yes 2>&1) || STATUS2=$?
+            echo "$OUTPUT2"
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+            echo "$OUTPUT2" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+            if [ -n "$STATUS2" ] && [ "$STATUS2" -ne 0 ]; then
+              exit $STATUS2
+            fi
           fi
 
   deploy-production:
