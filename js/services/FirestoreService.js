@@ -1,6 +1,6 @@
 /* Servicio de Persistencia y Transacciones Atómicas (Cloud Firestore + Local Mirror) */
 import { db } from "../config/firebase.js";
-import { getCollectionName, getStorageKey, isProduction } from "../config/env.js";
+import { getCollectionName, getStorageKey, isProduction, getEnvironmentInfo } from "../config/env.js";
 import { INITIAL_TOKENS } from "../data/initialTokens.js";
 
 const LOCAL_STORAGE_KEY = getStorageKey("wired_club_mvvm_db_v2");
@@ -14,10 +14,18 @@ class StorageEngine {
     // Purgar agresivamente cualquier residuo de versiones anteriores para que NUNCA queden datos fantasma
     try {
       const keysToPurge = [];
+      const isProd = isProduction();
       for (let i = 0; i < localStorage.length; i++) {
         const k = localStorage.key(i);
-        if (k && (k.startsWith("wired_club_mvvm_db_") || k.startsWith("wired_club_catalog_")) && k !== LOCAL_STORAGE_KEY) {
-          keysToPurge.push(k);
+        if (!k) continue;
+        if (isProd) {
+          if (!k.startsWith("dev_") && (k.startsWith("wired_club_mvvm_db_") || k.startsWith("wired_club_catalog_")) && k !== LOCAL_STORAGE_KEY) {
+            keysToPurge.push(k);
+          }
+        } else {
+          if (k.startsWith("dev_wired_club_mvvm_db_") && k !== LOCAL_STORAGE_KEY) {
+            keysToPurge.push(k);
+          }
         }
       }
       keysToPurge.forEach(k => localStorage.removeItem(k));
@@ -456,6 +464,18 @@ export class FirestoreService {
 
   // Purga integral de facturas/tokens de prueba y reinicio limpio
   static async purgeAllTokens() {
+    const isProd = isProduction();
+    const envInfo = getEnvironmentInfo();
+    const tokensCol = getCollectionName("qr_tokens");
+    const batchesCol = getCollectionName("point_batches");
+
+    // Blindaje de seguridad: si estamos en entorno de pruebas, exigir prefijo dev_
+    if (!isProd) {
+      if (!tokensCol.startsWith("dev_") || !batchesCol.startsWith("dev_")) {
+        throw new Error("ALERTA DE SEGURIDAD: Operación cancelada. Se intentó purgar una colección no aislada en entorno de pruebas.");
+      }
+    }
+
     const snap = engine.getSnapshot();
     const count = Object.keys(snap.tokens || {}).length;
     snap.tokens = {};
@@ -464,7 +484,7 @@ export class FirestoreService {
 
     if (db) {
       try {
-        const tokenDocs = await db.collection(getCollectionName("qr_tokens")).get();
+        const tokenDocs = await db.collection(tokensCol).get();
         if (!tokenDocs.empty) {
           const batch = db.batch();
           tokenDocs.forEach(doc => {
@@ -472,7 +492,7 @@ export class FirestoreService {
           });
           await batch.commit();
         }
-        const batchDocs = await db.collection(getCollectionName("point_batches")).get().catch(() => ({ empty: true }));
+        const batchDocs = await db.collection(batchesCol).get().catch(() => ({ empty: true }));
         if (batchDocs && !batchDocs.empty) {
           const bBatch = db.batch();
           batchDocs.forEach(doc => bBatch.delete(doc.ref));
@@ -482,11 +502,28 @@ export class FirestoreService {
         console.warn("Firestore purgeAllTokens error:", e.message);
       }
     }
-    return { success: true, count };
+    return { success: true, count, environment: envInfo.name, collections: [tokensCol, batchesCol] };
   }
 
   // Purga integral de toda la base de datos (Socios, Vales, Facturas, Ledger, Catálogo)
   static async purgeEntireDatabase() {
+    const isProd = isProduction();
+    const envInfo = getEnvironmentInfo();
+    const collections = ["redemptions", "vouchers", "rewards_catalog", "qr_tokens", "point_batches", "point_ledger"].map(getCollectionName);
+    const usersCol = getCollectionName("users");
+
+    // Blindaje de seguridad estricto en pruebas: exigir prefijo dev_ en cada colección
+    if (!isProd) {
+      for (const col of collections) {
+        if (!col.startsWith("dev_")) {
+          throw new Error(`ALERTA DE SEGURIDAD: Colección ${col} no lleva prefijo dev_ en entorno de pruebas.`);
+        }
+      }
+      if (!usersCol.startsWith("dev_")) {
+        throw new Error(`ALERTA DE SEGURIDAD: Colección ${usersCol} no lleva prefijo dev_ en entorno de pruebas.`);
+      }
+    }
+
     const adminUser = {
       uid: "CLIENT-58438412",
       memberCode: "MC-2026-ADMIN",
@@ -512,7 +549,6 @@ export class FirestoreService {
 
     if (db) {
       try {
-        const collections = ["redemptions", "vouchers", "rewards_catalog", "qr_tokens", "point_batches", "point_ledger"].map(getCollectionName);
         for (const col of collections) {
           const snap = await db.collection(col).get().catch(() => ({ empty: true }));
           if (snap && !snap.empty) {
@@ -526,7 +562,7 @@ export class FirestoreService {
         }
 
         // Purgar socios dejando únicamente el perfil del administrador (PIN 110805)
-        const userSnap = await db.collection(getCollectionName("users")).get().catch(() => ({ empty: true }));
+        const userSnap = await db.collection(usersCol).get().catch(() => ({ empty: true }));
         if (userSnap && !userSnap.empty) {
           const uDocs = userSnap.docs || [];
           for (let i = 0; i < uDocs.length; i += 400) {
@@ -539,12 +575,12 @@ export class FirestoreService {
             await batch.commit();
           }
         }
-        await db.collection(getCollectionName("users")).doc(adminUser.uid).set(adminUser);
+        await db.collection(usersCol).doc(adminUser.uid).set(adminUser);
       } catch (e) {
         console.warn("Firestore purgeEntireDatabase error:", e.message);
       }
     }
-    return { success: true };
+    return { success: true, environment: envInfo.name, collections: [...collections, usersCol] };
   }
 
   // Normalización canónica anti-burlas para números de Nicaragua:

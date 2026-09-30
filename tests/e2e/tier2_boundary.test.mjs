@@ -142,5 +142,39 @@ export async function runTier2Tests() {
     }
   });
 
+  // Test 6: Purge Isolation between Sandbox and Production
+  await ctx.test('T2.6: Sandbox purge operations strictly target dev_* collections and preserve production data', async () => {
+    const { win } = setupTestEnvironment('admin.html');
+    win.location.hostname = 'localhost';
+
+    // Probar que una clave de producción existente jamás es alterada por purgas de sandbox
+    win.localStorage.setItem('wired_club_mvvm_db_v2', JSON.stringify({ productionSafe: true, tokens: { 'PROD-1': {} } }));
+
+    const fsServiceUrl = pathToFileURL(path.join(PROJECT_ROOT, 'js/services/FirestoreService.js')).href + `?t=${Date.now()}`;
+    const { FirestoreService } = await import(fsServiceUrl);
+
+    // 1. Purga de facturas en sandbox
+    const purgeTokensRes = await FirestoreService.purgeAllTokens();
+    expect(purgeTokensRes.success).toBe(true, 'purgeAllTokens debe ser exitoso');
+    expect(purgeTokensRes.environment).toBe('PRUEBAS (SANDBOX)', 'Debe ejecutarse en entorno sandbox');
+    for (const col of purgeTokensRes.collections) {
+      expect(col.startsWith('dev_')).toBe(true, `Colección ${col} debe iniciar con prefijo dev_`);
+    }
+
+    // 2. Purga total de base de datos en sandbox
+    const purgeDbRes = await FirestoreService.purgeEntireDatabase();
+    expect(purgeDbRes.success).toBe(true, 'purgeEntireDatabase debe ser exitoso');
+    expect(purgeDbRes.environment).toBe('PRUEBAS (SANDBOX)', 'Debe ejecutarse en entorno sandbox');
+    for (const col of purgeDbRes.collections) {
+      expect(col.startsWith('dev_')).toBe(true, `Colección ${col} debe iniciar con prefijo dev_`);
+    }
+
+    // 3. Verificar que el almacenamiento de producción permaneció 100% intacto
+    const prodStorageRaw = win.localStorage.getItem('wired_club_mvvm_db_v2');
+    expect(prodStorageRaw).toBeTruthy('Clave de almacenamiento de producción debe existir tras purgas de sandbox');
+    const prodStorage = JSON.parse(prodStorageRaw);
+    expect(prodStorage.productionSafe).toBe(true, 'Datos de producción deben permanecer intactos');
+  });
+
   return ctx.summary();
 }

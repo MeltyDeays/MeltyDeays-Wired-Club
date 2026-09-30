@@ -4,6 +4,7 @@
 import { InvoiceTemplateService } from "../services/InvoiceTemplateService.js";
 import { FirestoreService } from "../services/FirestoreService.js";
 import { setProductPublicationMode, recalculateProductDiscount } from "./AdminCatalogCalculatorView.js";
+import { isProduction, getEnvironmentInfo } from "../config/env.js";
 
 let vm = null;
 let showToast = () => {};
@@ -120,12 +121,38 @@ export function openPurgeModal() {
   const countBadge = document.getElementById("purge-tokens-count-badge");
   const count = (vm.tokens || []).length;
   if (countBadge) countBadge.textContent = `${count} ${count === 1 ? 'factura registrada' : 'facturas registradas'}`;
+
+  const envBanner = document.getElementById("purge-invoices-env-banner");
+  if (envBanner) {
+    const isProd = isProduction();
+    if (isProd) {
+      envBanner.innerHTML = `
+        <div style="background: #fef2f2; border: 1.5px solid #ef4444; border-radius: 4px; padding: 8px 12px; font-family: var(--font-mono); font-size: 0.78rem; color: #991b1b; display: flex; align-items: flex-start; gap: 8px;">
+          <span style="font-size: 1.1rem; line-height: 1;">⚠️</span>
+          <div>
+            <strong style="display: block; margin-bottom: 2px;">ENTORNO ACTIVO: PRODUCCIÓN (LIVE)</strong>
+            <span>Esta acción eliminará facturas de la colección principal <code>qr_tokens</code> y <code>point_batches</code>.</span>
+          </div>
+        </div>`;
+    } else {
+      envBanner.innerHTML = `
+        <div style="background: #fefce8; border: 1.5px solid #eab308; border-radius: 4px; padding: 8px 12px; font-family: var(--font-mono); font-size: 0.78rem; color: #854d0e; display: flex; align-items: flex-start; gap: 8px;">
+          <span style="font-size: 1.1rem; line-height: 1;">🧪</span>
+          <div>
+            <strong style="display: block; margin-bottom: 2px;">ENTORNO ACTIVO: PRUEBAS (SANDBOX)</strong>
+            <span>Solo se eliminarán facturas de prueba en <code>dev_qr_tokens</code> y <code>dev_point_batches</code>. <strong>La base de datos de PRODUCCIÓN está 100% protegida e intacta.</strong></span>
+          </div>
+        </div>`;
+    }
+  }
+
   modal.style.display = "flex";
 }
 
 export async function executePurgeInvoices() {
   closeModal("modal-purge-invoices");
-  showToast("Ejecutando purga atómica en Firestore y almacenamiento local...", "info");
+  const isProd = isProduction();
+  showToast(isProd ? "Ejecutando purga en base de datos de producción..." : "Ejecutando purga en base de datos de PRUEBAS (dev_*)...", "info");
   try {
     const res = await vm.purgeAllInvoiceTokens();
     const folioEl = document.getElementById("lot-start-folio");
@@ -137,7 +164,7 @@ export async function executePurgeInvoices() {
     if (helper) helper.innerHTML = "Siguiente folio libre detectado: <strong>#0001</strong> (Base de datos limpia)";
 
     renderTokensTable(vm.tokens);
-    showToast("✓ Base de datos purgada: facturas eliminadas y correlativo restablecido a #0001.", "success");
+    showToast(isProd ? "✓ Facturas de PRODUCCIÓN eliminadas y correlativo restablecido a #0001." : "✓ Facturas de PRUEBAS (dev_*) eliminadas y correlativo restablecido a #0001. Producción 100% intacta.", "success");
   } catch (err) {
     showToast("❌ Error al limpiar base de datos: " + err.message, "error");
   }
@@ -146,12 +173,38 @@ export async function executePurgeInvoices() {
 export function openPurgeAllDbModal() {
   const modal = document.getElementById("modal-purge-all-db");
   if (!modal) return;
+
+  const envBanner = document.getElementById("purge-all-db-env-banner");
+  if (envBanner) {
+    const isProd = isProduction();
+    if (isProd) {
+      envBanner.innerHTML = `
+        <div style="background: #fef2f2; border: 1.5px solid #ef4444; border-radius: 4px; padding: 8px 12px; font-family: var(--font-mono); font-size: 0.78rem; color: #991b1b; display: flex; align-items: flex-start; gap: 8px;">
+          <span style="font-size: 1.1rem; line-height: 1;">⚠️</span>
+          <div>
+            <strong style="display: block; margin-bottom: 2px;">ENTORNO ACTIVO: PRODUCCIÓN (LIVE)</strong>
+            <span>Esta acción purgará los datos oficiales de producción en Firestore y almacenamiento local.</span>
+          </div>
+        </div>`;
+    } else {
+      envBanner.innerHTML = `
+        <div style="background: #fefce8; border: 1.5px solid #eab308; border-radius: 4px; padding: 8px 12px; font-family: var(--font-mono); font-size: 0.78rem; color: #854d0e; display: flex; align-items: flex-start; gap: 8px;">
+          <span style="font-size: 1.1rem; line-height: 1;">🧪</span>
+          <div>
+            <strong style="display: block; margin-bottom: 2px;">ENTORNO ACTIVO: PRUEBAS (SANDBOX)</strong>
+            <span>La purga solo borrará colecciones <code>dev_*</code> (socios, vales, facturas y catálogo demo). <strong>La base de datos de PRODUCCIÓN está 100% blindada y jamás será alterada.</strong></span>
+          </div>
+        </div>`;
+    }
+  }
+
   modal.style.display = "flex";
 }
 
 export async function executePurgeAllDb() {
   closeModal("modal-purge-all-db");
-  showToast("Ejecutando purga total de la base de datos (Firestore + Local)...", "info");
+  const isProd = isProduction();
+  showToast(isProd ? "Ejecutando purga total de producción..." : "Ejecutando purga de base de datos de PRUEBAS (dev_*)...", "info");
   try {
     const res = await vm.purgeEntireDatabase();
     const folioEl = document.getElementById("lot-start-folio");
@@ -164,7 +217,7 @@ export async function executePurgeAllDb() {
 
     renderAdmin(vm);
 
-    showToast("✓ Base de datos completamente purgada. El PIN de Admin sigue intacto.", "success");
+    showToast(isProd ? "✓ Base de datos de PRODUCCIÓN purgada. El PIN de Admin sigue intacto." : "✓ Base de datos de PRUEBAS (dev_*) purgada. Base de datos de PRODUCCIÓN 100% intacta.", "success");
   } catch (err) {
     showToast("❌ Error al purgar la base de datos: " + err.message, "error");
   }
