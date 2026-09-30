@@ -90,20 +90,27 @@ export class CustomerViewModel {
     const urlParams = new URLSearchParams(window.location.search);
     const claimCode = urlParams.get("claim");
     if (claimCode) {
-      const cleanClaim = claimCode.trim().toUpperCase();
-      try {
-        const cleanUrl = window.location.pathname + window.location.hash;
-        window.history.replaceState({}, document.title, cleanUrl);
-      } catch (e) {}
+      let cleanClaim = claimCode.trim().toUpperCase();
+      if (cleanClaim === "UNDEFINED" || cleanClaim === "NULL" || cleanClaim.length < 5 || !cleanClaim.startsWith("WP-")) {
+        const match = (window.location.search || window.location.href).match(/WP-[A-Z0-9-]+/i);
+        cleanClaim = match ? match[0].toUpperCase() : null;
+      }
 
-      let alreadyProcessed = false;
-      try {
-        const processed = JSON.parse(sessionStorage.getItem("melty_processed_tokens") || "[]");
-        if (processed.includes(cleanClaim)) alreadyProcessed = true;
-      } catch (e) {}
+      if (cleanClaim && cleanClaim !== "UNDEFINED" && cleanClaim !== "NULL" && cleanClaim.length >= 5 && cleanClaim.startsWith("WP-")) {
+        try {
+          const cleanUrl = window.location.pathname + window.location.hash;
+          window.history.replaceState({}, document.title, cleanUrl);
+        } catch (e) {}
 
-      if (!alreadyProcessed) {
-        this.pendingClaimToken = cleanClaim;
+        let alreadyProcessed = false;
+        try {
+          const processed = JSON.parse(sessionStorage.getItem("melty_processed_tokens") || "[]");
+          if (processed.includes(cleanClaim)) alreadyProcessed = true;
+        } catch (e) {}
+
+        if (!alreadyProcessed) {
+          this.pendingClaimToken = cleanClaim;
+        }
       }
     }
 
@@ -298,7 +305,8 @@ export class CustomerViewModel {
   }
 
   async claimPendingToken() {
-    if (!this.pendingClaimToken) {
+    if (!this.pendingClaimToken || this.pendingClaimToken === "UNDEFINED" || this.pendingClaimToken === "NULL" || !this.pendingClaimToken.startsWith("WP-")) {
+      this.pendingClaimToken = null;
       throw new Error("No hay ninguna factura pendiente para acreditar.");
     }
     const tokenToClaim = this.pendingClaimToken;
@@ -313,8 +321,8 @@ export class CustomerViewModel {
     }
 
     const cleanToken = (tokenCode || "").trim().toUpperCase();
-    if (!cleanToken) {
-      throw new Error("Código de factura no proporcionado.");
+    if (!cleanToken || cleanToken === "UNDEFINED" || cleanToken === "NULL" || cleanToken.length < 5 || !cleanToken.startsWith("WP-")) {
+      throw new Error("El código de factura es inválido o no tiene el formato correcto.");
     }
 
     const rawToken = await FirestoreService.getToken(cleanToken);

@@ -91,21 +91,30 @@ export async function handleClientQrScanned(decodedText) {
   stopClientCameraScanner();
   let raw = (decodedText || "").trim();
   let tokenCode = "";
+
   if (raw.includes("claim=")) {
-    tokenCode = raw.split("claim=")[1].split("&")[0];
-  } else if (raw.startsWith("WP-")) {
+    const candidate = raw.split("claim=")[1].split("&")[0];
+    if (candidate && candidate.toLowerCase() !== "undefined" && candidate.toLowerCase() !== "null") {
+      tokenCode = candidate;
+    }
+  }
+
+  if (!tokenCode && raw.startsWith("WP-")) {
     tokenCode = raw;
-  } else {
+  }
+
+  if (!tokenCode) {
     const match = raw.match(/WP-[A-Z0-9-]+/i);
     if (match) tokenCode = match[0];
   }
 
-  if (!tokenCode) {
-    showToast("El código escaneado no corresponde a una factura MeltyDeays.", "error");
+  tokenCode = (tokenCode || "").trim().toUpperCase();
+
+  if (!tokenCode || tokenCode === "UNDEFINED" || tokenCode === "NULL" || tokenCode.length < 5 || !tokenCode.startsWith("WP-")) {
+    showToast("El código escaneado no corresponde a una factura MeltyDeays válida.", "error");
     return;
   }
 
-  tokenCode = tokenCode.toUpperCase();
   vm.pendingClaimToken = tokenCode;
 
   if (!vm.currentUser) {

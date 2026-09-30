@@ -250,7 +250,7 @@ function render(model) {
   // 3. Banner de Reclamo Pendiente (?claim=WP-XXXX)
   const claimBanner = document.getElementById("claim-banner");
   const detectedToken = document.getElementById("detected-token");
-  if (model.pendingClaimToken) {
+  if (model.pendingClaimToken && model.pendingClaimToken !== "UNDEFINED" && model.pendingClaimToken !== "NULL" && model.pendingClaimToken.startsWith("WP-")) {
     if (claimBanner) claimBanner.style.display = "flex";
     if (detectedToken) detectedToken.textContent = model.pendingClaimToken;
 

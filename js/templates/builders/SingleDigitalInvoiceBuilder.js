@@ -54,12 +54,13 @@ export class SingleDigitalInvoiceBuilder {
     const totalNio = currency === "USD" ? (totalNum * rateNio).toFixed(2) : totalNum.toFixed(2);
     const totalUsd = currency === "NIO" ? (totalNum / rateNio).toFixed(2) : totalNum.toFixed(2);
 
-    const hasPoints = Boolean(data.tokenCode && (data.pointsValue > 0 || data.pointsValue === 0));
+    const rawCode = data.tokenCode || data.token_code || (data.token && (data.token.tokenCode || data.token.token_code)) || "";
+    const hasPoints = Boolean(rawCode && (data.pointsValue > 0 || data.pointsValue === 0));
     const pointsVal = Number(data.pointsValue || 0);
-    const tokenCode = data.tokenCode || ("WP-2026-F" + formattedFolio + "-DIGITAL");
-    const securityPin = data.securityPin || "----";
+    const tokenCode = rawCode || ("WP-2026-F" + formattedFolio + "-DIGITAL");
+    const securityPin = data.securityPin || data.security_pin || (data.token && (data.token.securityPin || data.token.security_pin)) || "----";
     const warrantyText = data.warrantyText || "30 DÍAS CALENDARIO (DEFECTOS DE FÁBRICA)";
-    const claimUrl = "https://meltydeays-wired-club.vercel.app/?claim=" + tokenCode;
+    const claimUrl = "https://meltydeays-wired-club.vercel.app/?claim=" + encodeURIComponent(tokenCode);
 
     // Filas de artículos (mínimo 8 filas para estructura oficial idéntica al talonario)
     let rowsHtml = "";
@@ -300,9 +301,10 @@ export class SingleDigitalInvoiceBuilder {
     const data = inv || {};
     const formattedFolio = String(data.folio || "0001").padStart(4, "0");
     const pointsVal = Number(data.pointsValue || 0);
+    const rawCode = data.tokenCode || data.token_code || (data.token && (data.token.tokenCode || data.token.token_code)) || "";
     const tok = {
-      tokenCode: data.tokenCode || ("WP-2026-F" + formattedFolio + "-DIGITAL"),
-      securityPin: data.securityPin || "4891",
+      tokenCode: rawCode || ("WP-2026-F" + formattedFolio + "-DIGITAL"),
+      securityPin: data.securityPin || data.security_pin || (data.token && (data.token.securityPin || data.token.security_pin)) || "4891",
       invoiceFolio: formattedFolio,
       pointsValue: pointsVal
     };
@@ -473,7 +475,10 @@ export class SingleDigitalInvoiceBuilder {
     const dims = paperDims || { name: 'Carta (Letter)', widthMm: 215.9, heightMm: 279.4, cssSize: 'letter portrait' };
     const inv = invoiceData || {};
     const formattedFolio = String(inv.folio || "0001").padStart(4, "0");
-    const claimUrl = "https://meltydeays-wired-club.vercel.app/?claim=" + (inv.tokenCode || "");
+    const rawTokenCode = inv.tokenCode || inv.token_code || (inv.token && (inv.token.tokenCode || inv.token.token_code)) || "";
+    const claimUrl = (rawTokenCode && rawTokenCode !== "undefined" && rawTokenCode !== "null")
+      ? ("https://meltydeays-wired-club.vercel.app/?claim=" + encodeURIComponent(rawTokenCode))
+      : ("https://meltydeays-wired-club.vercel.app/?claim=WP-2026-F" + formattedFolio + "-DIGITAL");
     const configs = getDigitalExclusiveDesigns();
     const folioNum = parseInt(inv.folio, 10);
     let chosenIdx = 0;
@@ -616,7 +621,7 @@ export class SingleDigitalInvoiceBuilder {
     function renderBackQr() {
       const qrBackEl = document.getElementById("print-qr-digital-back");
       if (!qrBackEl) return;
-      if (!claimUrl || !claimUrl.includes("claim=")) {
+      if (!claimUrl || !claimUrl.includes("claim=") || claimUrl.endsWith("claim=") || claimUrl.toLowerCase().includes("claim=" + "undefined") || claimUrl.toLowerCase().includes("claim=" + "null")) {
         qrBackEl.innerHTML = '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#f1f5f9;border-radius:3px;font-size:9px;color:#94a3b8;font-weight:800;">SIN QR</div>';
         return;
       }

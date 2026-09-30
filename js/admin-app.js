@@ -550,51 +550,55 @@ function renderTokensTable(tokens) {
   }
 
   tbody.innerHTML = filtered.slice(0, 100).map(t => {
-    const isClaimed = t.isClaimed();
-    const isPending = t.isPendingAssignment();
-    const isActive = t.isActive();
+    const isClaimed = typeof t.isClaimed === 'function' ? t.isClaimed() : t.status === "CLAIMED";
+    const isPending = typeof t.isPendingAssignment === 'function' ? t.isPendingAssignment() : (t.pointsValue <= 0 || t.status === "PENDING_ASSIGNMENT");
+    const isActive = typeof t.isActive === 'function' ? t.isActive() : (t.status === "ACTIVE" && t.pointsValue > 0);
+    const code = t.tokenCode || t.token_code || "";
+    const folio = t.invoiceFolio || t.invoice_folio || "";
+    const pts = Number(t.pointsValue !== undefined ? t.pointsValue : (t.points_value || 0));
+    const pin = t.securityPin || t.security_pin || "••••";
 
     let pointsBadge = "";
     if (isPending) {
       pointsBadge = `<span class="badge-navi" style="background:#fef3c7; color:#b45309; border:1px solid #fde68a; white-space:nowrap; display:inline-flex; align-items:center; gap:4px; padding:3px 8px; font-size:0.72rem;">⏳ Sin Asignar (0 WP)</span>`;
     } else {
-      pointsBadge = `<span class="badge-navi" style="background:#eef2ff; color:#4338ca; border:1px solid #c7d2fe; white-space:nowrap; display:inline-flex; align-items:center; gap:4px; padding:3px 8px; font-size:0.72rem;">⚡ ${t.pointsValue} WP</span>`;
+      pointsBadge = `<span class="badge-navi" style="background:#eef2ff; color:#4338ca; border:1px solid #c7d2fe; white-space:nowrap; display:inline-flex; align-items:center; gap:4px; padding:3px 8px; font-size:0.72rem;">⚡ ${pts} WP</span>`;
     }
 
     let statusBadge = "";
     if (isClaimed) {
       statusBadge = `<span class="badge-navi" style="background:#fee2e2; color:#b91c1c; border: 1px solid #fecdd3; white-space:nowrap; display:inline-flex; align-items:center; gap:4px; padding:3px 8px; font-size:0.72rem;">✔ RECLAMADO</span>`;
     } else if (isActive) {
-      statusBadge = `<span class="badge-navi" style="background:#ecfdf5; color:#065f46; border: 1px solid #a7f3d0; white-space:nowrap; display:inline-flex; align-items:center; gap:4px; padding:3px 8px; font-size:0.72rem;">● SIN RECLAMAR (${t.pointsValue} WP)</span>`;
+      statusBadge = `<span class="badge-navi" style="background:#ecfdf5; color:#065f46; border: 1px solid #a7f3d0; white-space:nowrap; display:inline-flex; align-items:center; gap:4px; padding:3px 8px; font-size:0.72rem;">● SIN RECLAMAR (${pts} WP)</span>`;
     } else {
       statusBadge = `<span class="badge-navi" style="background:#fffbeb; color:#92400e; border: 1px solid #fcd34d; white-space:nowrap; display:inline-flex; align-items:center; gap:4px; padding:3px 8px; font-size:0.72rem;">⏳ EN ESPERA DE VALOR</span>`;
     }
 
     return `
       <tr>
-        <td style="white-space:nowrap;"><code class="token-code-pill">${t.tokenCode}</code></td>
-        <td style="white-space:nowrap;"><strong>#MD-${t.invoiceFolio}</strong></td>
+        <td style="white-space:nowrap;"><code class="token-code-pill">${code}</code></td>
+        <td style="white-space:nowrap;"><strong>#MD-${folio}</strong></td>
         <td style="white-space:nowrap;">${pointsBadge}</td>
-        <td style="white-space:nowrap; text-align: center;"><span class="pin-badge">${t.securityPin || "••••"}</span></td>
+        <td style="white-space:nowrap; text-align: center;"><span class="pin-badge">${pin}</span></td>
         <td style="white-space:nowrap;">${statusBadge}</td>
         <td style="text-align: right; white-space: nowrap;">
           <div style="display: inline-flex; align-items: center; justify-content: flex-end; gap: 4px;">
             ${!isClaimed ? `
-              <button class="btn-primary btn-compact" onclick="promptAssignPoints('${t.tokenCode}', '${t.invoiceFolio}')" title="Asignar puntos a esta factura">
+              <button class="btn-primary btn-compact" onclick="promptAssignPoints('${code}', '${folio}')" title="Asignar puntos a esta factura">
                 ⚡ Cargar
               </button>
             ` : ""}
-            <button class="btn-secondary btn-compact" onclick="viewSingleTokenQr('${t.tokenCode}', '${t.invoiceFolio}', ${t.pointsValue}, '${t.securityPin}')" title="Ver código QR oficial">
+            <button class="btn-secondary btn-compact" onclick="viewSingleTokenQr('${code}', '${folio}', ${pts}, '${pin}')" title="Ver código QR oficial">
               🔍 QR
             </button>
-            <button class="btn-secondary btn-compact" style="color:#059669; border-color:#059669; font-weight:800;" onclick="handleInvoiceBtnClick('${t.tokenCode}')" title="Ver o Imprimir Factura Digital Completa">
+            <button class="btn-secondary btn-compact" style="color:#059669; border-color:#059669; font-weight:800;" onclick="handleInvoiceBtnClick('${code}')" title="Ver o Imprimir Factura Digital Completa">
               🧾 Factura
             </button>
-            <button class="btn-secondary btn-dots" onclick="openTokenActionsModal('${t.tokenCode}')" title="Más opciones">
+            <button class="btn-secondary btn-dots" onclick="openTokenActionsModal('${code}')" title="Más opciones">
               ···
             </button>
-            <button type="button" class="btn-release-folio btn-compact-release" onclick="deleteSingleToken('${t.tokenCode}', '${t.invoiceFolio}')" title="Eliminar factura y liberar folio #${t.invoiceFolio}">
-              <span class="btn-icon">🗑️</span> <span>Liberar #${t.invoiceFolio}</span>
+            <button type="button" class="btn-release-folio btn-compact-release" onclick="deleteSingleToken('${code}', '${folio}')" title="Eliminar factura y liberar folio #${folio}">
+              <span class="btn-icon">🗑️</span> <span>Liberar #${folio}</span>
             </button>
           </div>
         </td>

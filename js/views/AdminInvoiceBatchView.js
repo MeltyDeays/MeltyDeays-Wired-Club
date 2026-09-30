@@ -622,12 +622,18 @@ export function viewSingleTokenQr(tokenCode, invoiceFolio, pointsValue, security
   const modal = document.getElementById("modal-single-qr");
   if (!modal) return;
 
-  currentSingleTokenUrl = "https://meltydeays-wired-club.vercel.app/?claim=" + tokenCode;
+  const cleanCode = (tokenCode || "").trim();
+  if (!cleanCode || cleanCode === "undefined" || cleanCode === "null") {
+    showToast("El código de esta factura no está disponible.", "error");
+    return;
+  }
+
+  currentSingleTokenUrl = "https://meltydeays-wired-club.vercel.app/?claim=" + encodeURIComponent(cleanCode);
 
   document.getElementById("single-qr-folio").textContent = "Factura #MD-2026-" + invoiceFolio;
   document.getElementById("single-qr-points").textContent = pointsValue > 0 ? pointsValue + " WP" : "Sin Asignar (0 WP)";
   document.getElementById("single-qr-pin").textContent = securityPin || "••••";
-  document.getElementById("single-qr-code").textContent = tokenCode;
+  document.getElementById("single-qr-code").textContent = cleanCode;
 
   const canvas = document.getElementById("single-qr-canvas");
   if (canvas && typeof QRCode !== "undefined") {
@@ -735,7 +741,9 @@ export function executeTokenOptQr() {
 
 export function executeTokenOptCopyLink() {
   if (selectedTokenForActions) {
-    const url = "https://meltydeays-wired-club.vercel.app/?claim=" + selectedTokenForActions.tokenCode;
+    const code = selectedTokenForActions.tokenCode || selectedTokenForActions.token_code;
+    if (!code) { showToast("Código no disponible", "error"); return; }
+    const url = "https://meltydeays-wired-club.vercel.app/?claim=" + encodeURIComponent(code);
     if (navigator.clipboard) {
       navigator.clipboard.writeText(url).then(() => {
         showToast("✓ Enlace de auto-reclamo copiado al portapapeles", "success");
@@ -746,7 +754,9 @@ export function executeTokenOptCopyLink() {
 
 export function executeTokenOptTestUrl() {
   if (selectedTokenForActions) {
-    const url = "https://meltydeays-wired-club.vercel.app/?claim=" + selectedTokenForActions.tokenCode;
+    const code = selectedTokenForActions.tokenCode || selectedTokenForActions.token_code;
+    if (!code) { showToast("Código no disponible", "error"); return; }
+    const url = "https://meltydeays-wired-club.vercel.app/?claim=" + encodeURIComponent(code);
     window.open(url, "_blank");
   }
 }
@@ -754,7 +764,7 @@ export function executeTokenOptTestUrl() {
 export function executeTokenOptDigitalInvoice() {
   closeModal("modal-token-actions");
   if (selectedTokenForActions) {
-    openSingleDigitalInvoiceModal(selectedTokenForActions.tokenCode);
+    openSingleDigitalInvoiceModal(selectedTokenForActions.tokenCode || selectedTokenForActions.token_code);
   }
 }
 
@@ -764,6 +774,9 @@ export function executeTokenOptViewInvoice() {
   const hasInvData = !!(token.invoiceData && token.invoiceData.items && token.invoiceData.items.length > 0);
   closeModal("modal-token-actions");
   if (hasInvData) {
+    if (!token.invoiceData.tokenCode) token.invoiceData.tokenCode = token.tokenCode || token.token_code;
+    if (!token.invoiceData.securityPin) token.invoiceData.securityPin = token.securityPin || token.security_pin;
+    if (!token.invoiceData.folio) token.invoiceData.folio = token.invoiceFolio || token.invoice_folio;
     const printDims = getSelectedPaperDimensions ? getSelectedPaperDimensions("preview") : null;
     const docHtml = InvoiceTemplateService.generateSingleDigitalInvoiceDocument(
       token.invoiceData,
@@ -775,7 +788,7 @@ export function executeTokenOptViewInvoice() {
     if (w) { w.document.open(); w.document.write(docHtml); w.document.close(); }
     else showToast("⚠️ Habilita ventanas emergentes para ver la factura.", "error");
   } else {
-    openSingleDigitalInvoiceModal(token.tokenCode);
+    openSingleDigitalInvoiceModal(token.tokenCode || token.token_code);
   }
 }
 
@@ -817,10 +830,13 @@ export async function executeTokenOptDelete() {
 }
 
 export function handleInvoiceBtnClick(tokenCode) {
-  const token = (vm.tokens || []).find(t => t.tokenCode === tokenCode);
+  const token = (vm.tokens || []).find(t => (t.tokenCode === tokenCode || t.token_code === tokenCode));
   if (!token) { openSingleDigitalInvoiceModal(tokenCode); return; }
   const hasInvData = !!(token.invoiceData && token.invoiceData.items && token.invoiceData.items.length > 0);
   if (hasInvData) {
+    if (!token.invoiceData.tokenCode) token.invoiceData.tokenCode = token.tokenCode || token.token_code;
+    if (!token.invoiceData.securityPin) token.invoiceData.securityPin = token.securityPin || token.security_pin;
+    if (!token.invoiceData.folio) token.invoiceData.folio = token.invoiceFolio || token.invoice_folio;
     const printDims = getSelectedPaperDimensions ? getSelectedPaperDimensions("preview") : null;
     const docHtml = InvoiceTemplateService.generateSingleDigitalInvoiceDocument(
       token.invoiceData,
@@ -832,7 +848,7 @@ export function handleInvoiceBtnClick(tokenCode) {
     if (w) { w.document.open(); w.document.write(docHtml); w.document.close(); }
     else showToast("⚠️ Habilita ventanas emergentes.", "error");
   } else {
-    openSingleDigitalInvoiceModal(tokenCode);
+    openSingleDigitalInvoiceModal(token.tokenCode || token.token_code || tokenCode);
   }
 }
 

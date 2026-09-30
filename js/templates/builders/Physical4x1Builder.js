@@ -244,9 +244,9 @@ export class Physical4x1Builder {
     const item = configs[idx];
     const isHaibane = (item.series && item.series.startsWith('SERIE 3')) || (idx >= 44);
     item.layer = item.layer || ('LAYER: ' + String(idx + 1).padStart(2, '0'));
-    const tokenCode = tok ? tok.tokenCode : item.sn;
-    const pin = tok ? tok.securityPin : "••••";
-    const folioStr = tok ? ("F" + tok.invoiceFolio) : "0000";
+    const tokenCode = tok ? (tok.tokenCode || tok.token_code || tok.code || item.sn) : item.sn;
+    const pin = tok ? (tok.securityPin || tok.security_pin || "••••") : "••••";
+    const folioStr = tok ? ("F" + (tok.invoiceFolio || tok.invoice_folio || tok.folio || "0000")) : "0000";
 
     const cardClass = isHaibane ? 'lain-card theme-haibane' : 'lain-card';
     const cornerSymbol = isHaibane ? '✦' : '+';
@@ -461,7 +461,12 @@ export class Physical4x1Builder {
   ${pagesHtml}
 
   <script>
-    const tokens = ${JSON.stringify(allTokens)};
+    const tokens = ${JSON.stringify(allTokens.map(tok => ({
+      tokenCode: tok ? (tok.tokenCode || tok.token_code || tok.code || "") : "",
+      invoiceFolio: tok ? (tok.invoiceFolio || tok.invoice_folio || tok.folio || "") : "",
+      pointsValue: Number(tok ? (tok.pointsValue !== undefined ? tok.pointsValue : (tok.points_value !== undefined ? tok.points_value : 0)) : 0),
+      securityPin: tok ? (tok.securityPin || tok.security_pin || "") : ""
+    })))};
 
     function toggleBW() {
       document.body.classList.toggle('bw-mode');
@@ -481,10 +486,11 @@ export class Physical4x1Builder {
       function renderAllQrs() {
         tokens.forEach((tok, idx) => {
           const el = document.getElementById("print-qr-" + idx);
-          if (el && typeof QRCode !== "undefined") {
+          const code = tok ? (tok.tokenCode || tok.token_code || tok.code || "") : "";
+          if (el && typeof QRCode !== "undefined" && code && code !== "undefined") {
             el.innerHTML = "";
             new QRCode(el, {
-              text: "https://meltydeays-wired-club.vercel.app/?claim=" + tok.tokenCode,
+              text: "https://meltydeays-wired-club.vercel.app/?claim=" + encodeURIComponent(code),
               width: 78, height: 78,
               colorDark: "#0f172a",
               colorLight: "#ffffff",

@@ -284,7 +284,11 @@ export async function runAdversarialCustomerPortalTests() {
     // Test with malformed & garbage inputs
     const garbagePayloads = [
       '', '   ', 'null', 'undefined', 'https://evil.com/hack', 'just a barcode 12345',
-      'claim=', 'WP-', '<script>alert(1)</script>', 'WP-@#$%^&*()'
+      'claim=', 'WP-', '<script>alert(1)</script>', 'WP-@#$%^&*()',
+      'https://meltydeays-wired-club.vercel.app/?claim=undefined',
+      'https://meltydeays-wired-club.vercel.app/?claim=null',
+      'https://meltydeays-wired-club.vercel.app/?claim=',
+      'https://meltydeays-wired-club.vercel.app/?claim=123'
     ];
 
     for (const garbage of garbagePayloads) {
@@ -620,6 +624,34 @@ export async function runAdversarialCustomerPortalTests() {
 
     console.log(`      ✓ Verified ${handlerList.length} inline handlers: 100% callable on window:`);
     console.log(`        [${handlerList.join(', ')}]`);
+  });
+
+  await ctx.test('ADV-5.2: Invoice builders robustly generate QR claim URLs from token_code/tokenCode without ever creating claim=undefined', async () => {
+    const { InvoiceTemplateService } = await import('../js/services/InvoiceTemplateService.js');
+
+    // 1. Physical 4x1 Builder with raw token_code objects
+    const rawTokens = [
+      { token_code: "WP-2026-F0001-TEST1", invoice_folio: "0001", points_value: 50, security_pin: "1234" },
+      { token_code: "WP-2026-F0002-TEST2", invoice_folio: "0002", points_value: 0, security_pin: "5678" }
+    ];
+
+    const physicalHtml = InvoiceTemplateService.generatePrintDocument(rawTokens, null, "both", false);
+    expect(physicalHtml.includes("claim=undefined")).toBeFalsy("Physical invoice must NEVER contain claim=undefined");
+    expect(physicalHtml.includes("WP-2026-F0001-TEST1")).toBeTruthy("Physical invoice must include correct token_code in data for token 1");
+    expect(physicalHtml.includes("WP-2026-F0002-TEST2")).toBeTruthy("Physical invoice must include correct token_code in data for token 2");
+
+    // 2. Single Digital Invoice Builder with raw token_code
+    const rawInvoice = {
+      folio: "0005",
+      token_code: "WP-2026-F0005-DIGI5",
+      pointsValue: 100,
+      clientName: "Bryan Bermudez",
+      clientPhone: "58438412"
+    };
+
+    const digitalHtml = InvoiceTemplateService.generateSingleDigitalInvoiceDocument(rawInvoice, null, false);
+    expect(digitalHtml.includes("claim=undefined")).toBeFalsy("Digital invoice must NEVER contain claim=undefined");
+    expect(digitalHtml.includes("claim=WP-2026-F0005-DIGI5")).toBeTruthy("Digital invoice must include correct token_code URL");
   });
 
   return ctx.summary();

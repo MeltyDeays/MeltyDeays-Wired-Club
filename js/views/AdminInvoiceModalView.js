@@ -426,12 +426,16 @@ async function submitSingleDigitalInvoice(action = 'print') {
     if (action === "whatsapp") {
       let rawPhone = FirestoreService.normalizePhone(clientPhone);
       if (rawPhone.length === 8) rawPhone = '505' + rawPhone;
-      const claimUrl = "https://meltydeays-wired-club.vercel.app/?claim=" + result.token.tokenCode;
+      const tokCode = (result && result.token && (result.token.tokenCode || result.token.token_code)) ||
+                      (result && result.invoicePayload && (result.invoicePayload.tokenCode || result.invoicePayload.token_code)) || "";
+      const claimUrl = (tokCode && tokCode !== "undefined" && tokCode !== "null")
+        ? ("https://meltydeays-wired-club.vercel.app/?claim=" + encodeURIComponent(tokCode))
+        : "";
       const textMsg = encodeURIComponent(
         `¡Hola ${clientName}! 👋 Gracias por tu compra en MeltyDeays STORE.\n\n` +
         `🧾 Factura Electrónica: #MD-2026-${result.invoicePayload.folio}\n` +
         `💰 Total Facturado: ${currency === "NIO" ? "C$" : "$"} ${total.toFixed(2)}\n` +
-        (pointsVal > 0 ? `⚡ Puntos Wired Points acreditados: +${pointsVal} WP\n📲 Reclama tus puntos aquí: ${claimUrl}\n` : "") +
+        (pointsVal > 0 && claimUrl ? `⚡ Puntos Wired Points acreditados: +${pointsVal} WP\n📲 Reclama tus puntos aquí: ${claimUrl}\n` : "") +
         `🛡️ Garantía oficial MeltyDeays: ${warrantyText}\n\n` +
         `¡Agradecemos tu preferencia!`
       );
