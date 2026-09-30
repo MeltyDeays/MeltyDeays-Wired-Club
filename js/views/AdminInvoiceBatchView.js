@@ -843,20 +843,19 @@ let _currentSeriesFilter = 'ALL';
 let _lainTemplatesCache = null;
 
 function getLainTemplates() {
-  if (_lainTemplatesCache && _lainTemplatesCache.length) return _lainTemplatesCache;
+  if (_lainTemplatesCache && _lainTemplatesCache.length && _lainTemplatesCache[0].svg) return _lainTemplatesCache;
   if (InvoiceTemplateService && typeof InvoiceTemplateService.getAvailableLainTemplates === "function") {
     _lainTemplatesCache = InvoiceTemplateService.getAvailableLainTemplates('physical');
-  } else {
-    _lainTemplatesCache = Array.from({ length: 74 }, (_, i) => ({
-      idx: i,
-      layer: "LAYER: " + String(i + 1).padStart(2, "0"),
-      series: i < 24 ? "SERIE 1" : (i < 44 ? "SERIE 2" : "SERIE 3"),
-      title: "PLANTILLA " + (i + 1),
-      sub: "Diseño coleccionable 4x1",
-      kanji: "デザイン"
-    }));
+    return _lainTemplatesCache;
   }
-  return _lainTemplatesCache;
+  return Array.from({ length: 74 }, (_, i) => ({
+    idx: i,
+    layer: "LAYER: " + String(i + 1).padStart(2, "0"),
+    series: i < 24 ? "SERIE 1" : (i < 44 ? "SERIE 2" : "SERIE 3"),
+    title: "PLANTILLA " + (i + 1),
+    sub: "Diseño coleccionable 4x1",
+    kanji: "デザイン"
+  }));
 }
 
 export function filterLainSeries(series) {
