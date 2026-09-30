@@ -38,23 +38,14 @@ jobs:
 
       - name: Deploy to Vercel Preview
         run: |
-          echo "### Vercel Deployment Diagnostic" >> $GITHUB_STEP_SUMMARY
-          echo "Running vercel deploy with scope..."
-          OUTPUT=$(vercel deploy --token=${{ secrets.VERCEL_TOKEN }} --scope=team_vaS1CBmW92Fj6Oz0pdCXPZRc --yes 2>&1) || STATUS=$?
-          echo "$OUTPUT"
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          echo "$OUTPUT" >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "Running vercel deploy with verbose diagnostics..."
+          OUTPUT=$(vercel deploy --token=${{ secrets.VERCEL_TOKEN }} --yes 2>&1) || STATUS=$?
+          echo "Output was: $OUTPUT"
+          # Replace newlines with space for single-line annotation
+          CLEAN_MSG=$(echo "$OUTPUT" | tr '\n' ' ')
+          echo "::error title=VercelDeployOutput::$CLEAN_MSG"
           if [ -n "$STATUS" ] && [ "$STATUS" -ne 0 ]; then
-            echo "Deploy with scope failed (exit code $STATUS). Trying fallback..."
-            OUTPUT2=$(vercel deploy --token=${{ secrets.VERCEL_TOKEN }} --yes 2>&1) || STATUS2=$?
-            echo "$OUTPUT2"
-            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-            echo "$OUTPUT2" >> $GITHUB_STEP_SUMMARY
-            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-            if [ -n "$STATUS2" ] && [ "$STATUS2" -ne 0 ]; then
-              exit $STATUS2
-            fi
+            exit $STATUS
           fi
 
   deploy-production:
