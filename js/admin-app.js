@@ -128,7 +128,22 @@ import {
   setActiveLainTemplate,
   cycleLainTemplate,
   randomizeLainTemplate,
-  renderLainTemplateGrid
+  renderLainTemplateGrid,
+  // 6. Consola Sandbox DB & Borrado Selectivo
+  executeTokenOptDelete,
+  renderSandboxDbView,
+  setSandboxDraftTab,
+  filterSandboxDrafts,
+  deleteSingleToken,
+  deleteSingleUser,
+  deleteSingleVoucher,
+  deleteSingleReward,
+  executePurgeUsers,
+  executePurgeCirculatingPoints,
+  executePurgeVouchers,
+  executePurgeRewards,
+  executePurgeInvoicesFromSandbox,
+  executeSeedDevData
 } from "./views/index.js";
 
 const vm = new AdminViewModel();
@@ -201,7 +216,7 @@ export function closeModal(id) {
 
 export function switchAdminTab(tabName) {
   currentTab = tabName;
-  const tabs = ["pos", "clients", "invoices", "catalog", "history"];
+  const tabs = ["pos", "clients", "invoices", "catalog", "history", "sandbox_db"];
   tabs.forEach(t => {
     const btn = document.getElementById("tab-btn-" + t);
     const sec = document.getElementById("sec-" + t);
@@ -221,6 +236,8 @@ export function switchAdminTab(tabName) {
 
   if (tabName === "invoices") {
     renderLainTemplateGrid();
+  } else if (tabName === "sandbox_db") {
+    renderSandboxDbView();
   }
 }
 
@@ -278,6 +295,7 @@ function renderAdmin(model) {
   renderTokensTable(model.tokens);
   renderUsersTable(model.users);
   renderVouchersTable(model.vouchers);
+  renderSandboxDbView();
 }
 
 function renderCatalogTable(catalog) {
@@ -390,6 +408,9 @@ function renderTokensTable(tokens) {
             </button>
             <button class="btn-secondary btn-dots" onclick="openTokenActionsModal('${t.tokenCode}')" title="Más opciones">
               ···
+            </button>
+            <button class="btn-danger btn-compact" style="background:#fef2f2; border:1px solid #fca5a5; color:#b91c1c; font-weight:800; padding:4px 7px;" onclick="deleteSingleToken('${t.tokenCode}', '${t.invoiceFolio}')" title="Eliminar factura y liberar folio #${t.invoiceFolio}">
+              ✕
             </button>
           </div>
         </td>
@@ -536,6 +557,22 @@ document.addEventListener("DOMContentLoaded", () => {
   window.autoCalculateSingleInvoicePoints = autoCalculateSingleInvoicePoints;
   window.regenerateSingleInvoicePin = regenerateSingleInvoicePin;
   window.submitSingleDigitalInvoice = submitSingleDigitalInvoice;
+
+  // Consola Sandbox DB & Borrado Selectivo
+  window.executeTokenOptDelete = executeTokenOptDelete;
+  window.renderSandboxDbView = renderSandboxDbView;
+  window.setSandboxDraftTab = setSandboxDraftTab;
+  window.filterSandboxDrafts = filterSandboxDrafts;
+  window.deleteSingleToken = deleteSingleToken;
+  window.deleteSingleUser = deleteSingleUser;
+  window.deleteSingleVoucher = deleteSingleVoucher;
+  window.deleteSingleReward = deleteSingleReward;
+  window.executePurgeUsers = executePurgeUsers;
+  window.executePurgeCirculatingPoints = executePurgeCirculatingPoints;
+  window.executePurgeVouchers = executePurgeVouchers;
+  window.executePurgeRewards = executePurgeRewards;
+  window.executePurgeInvoicesFromSandbox = executePurgeInvoicesFromSandbox;
+  window.executeSeedDevData = executeSeedDevData;
 
   // Utilidades y Servicios Globales
   window.closeModal = closeModal;

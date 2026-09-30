@@ -176,5 +176,51 @@ export async function runTier2Tests() {
     expect(prodStorage.productionSafe).toBe(true, 'Datos de producción deben permanecer intactos');
   });
 
+  // Test 7: Granular Purge Operations and Selective Item Deletion with Folio Liberation
+  await ctx.test('T2.7: Granular purges and selective token deletion liberate folios for re-emission', async () => {
+    const { win } = setupTestEnvironment('admin.html');
+    win.location.hostname = 'localhost';
+
+    const vmUrl = pathToFileURL(path.join(PROJECT_ROOT, 'js/viewmodels/AdminViewModel.js')).href + `?t=${Date.now()}`;
+    const { AdminViewModel } = await import(vmUrl);
+    const vm = new AdminViewModel();
+    await vm.init();
+
+    // 1. Sembrar datos demo y limpiar tokens
+    const seedRes = await vm.seedDevData();
+    expect(seedRes.usersSeeded).toBeGreaterThan(0, 'Debe sembrar usuarios demo');
+    expect(seedRes.rewardsSeeded).toBeGreaterThan(0, 'Debe sembrar premios demo');
+    await vm.purgeAllInvoiceTokens();
+
+    // 2. Generar un lote de 4 facturas (folios 1, 2, 3, 4)
+    await vm.generateLot(1, 4, 50);
+    expect(vm.tokens.length).toBe(4, 'Deben existir 4 tokens');
+    expect(vm.getNextAvailableFolio()).toBe(5, 'Siguiente folio debe ser 5');
+
+    // 3. Borrar selectivamente el último token (folio 4)
+    const token4 = vm.tokens.find(t => t.invoiceFolio === '0004');
+    expect(token4).toBeTruthy('Token con folio 0004 debe existir');
+    await vm.deleteToken(token4.tokenCode);
+
+    expect(vm.tokens.length).toBe(3, 'Deben quedar 3 tokens');
+    expect(vm.getNextAvailableFolio()).toBe(4, 'El folio 4 debe quedar liberado de inmediato para reemisión');
+
+    // 4. Probar purga granular de socios
+    const purgeUsersRes = await vm.purgeUsers();
+    expect(purgeUsersRes.success).toBe(true, 'Purga de usuarios debe ser exitosa');
+    expect(vm.users.length).toBe(1, 'Solo debe quedar 1 usuario (Admin)');
+    expect(vm.users[0].uid).toBe('CLIENT-58438412', 'El usuario restante debe ser el Admin');
+
+    // 5. Probar purga de puntos en circulación
+    const purgePointsRes = await vm.purgeCirculatingPoints();
+    expect(purgePointsRes.success).toBe(true, 'Purga de puntos debe ser exitosa');
+    expect(vm.users[0].pointsBalance).toBe(0, 'Balance de puntos del admin debe ser 0');
+
+    // 6. Probar purga de catálogo
+    const purgeRewardsRes = await vm.purgeRewards();
+    expect(purgeRewardsRes.success).toBe(true, 'Purga de catálogo debe ser exitosa');
+    expect(vm.catalog.length).toBe(0, 'Catálogo debe quedar vacío');
+  });
+
   return ctx.summary();
 }

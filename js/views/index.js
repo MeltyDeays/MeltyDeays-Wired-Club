@@ -8,6 +8,7 @@ import * as UsersView from "./AdminUsersView.js";
 import * as VouchersView from "./AdminVouchersView.js";
 import * as PosView from "./AdminPosView.js";
 import * as InvoiceBatchView from "./AdminInvoiceBatchView.js";
+import * as SandboxDbView from "./AdminSandboxDbView.js";
 
 export * from "./AdminCatalogCalculatorView.js";
 export * from "./AdminSalePointsCalculatorView.js";
@@ -16,6 +17,7 @@ export * from "./AdminUsersView.js";
 export * from "./AdminVouchersView.js";
 export * from "./AdminPosView.js";
 export * from "./AdminInvoiceBatchView.js";
+export * from "./AdminSandboxDbView.js";
 
 export function initAdminViews(deps) {
   CatalogCalcView.initAdminCatalogCalculatorView(deps);
@@ -38,5 +40,10 @@ export function initAdminViews(deps) {
     ...deps,
     promptAssignPoints: PosView.promptAssignPoints,
     openSingleDigitalInvoiceModal: InvoiceModalView.openSingleDigitalInvoiceModal
+  });
+  SandboxDbView.initAdminSandboxDbView({
+    ...deps,
+    renderTokensTable: deps.renderTokensTable,
+    renderAdmin: deps.renderAdmin
   });
 }

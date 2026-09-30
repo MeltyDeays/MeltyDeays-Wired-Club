@@ -361,6 +361,27 @@ export class FirestoreService {
     return tokens;
   }
 
+  static async deleteToken(tokenCode) {
+    const isProd = isProduction();
+    const colName = getCollectionName("qr_tokens");
+    if (!isProd && !colName.startsWith("dev_")) {
+      throw new Error("ALERTA DE SEGURIDAD: Operación cancelada. Colección no aislada en pruebas.");
+    }
+    const snap = engine.getSnapshot();
+    if (snap.tokens && snap.tokens[tokenCode]) {
+      delete snap.tokens[tokenCode];
+      engine.saveSnapshot(snap);
+    }
+    if (db) {
+      try {
+        await db.collection(colName).doc(tokenCode).delete();
+      } catch (e) {
+        console.warn("Firestore deleteToken error:", e.message);
+      }
+    }
+    return true;
+  }
+
   // Vales de Canje
   static async fetchVouchers() {
     if (db) {
@@ -421,6 +442,33 @@ export class FirestoreService {
       }
     }
     return voucher;
+  }
+
+  static async deleteVoucher(voucherCode) {
+    const isProd = isProduction();
+    const colName = getCollectionName("redemptions");
+    if (!isProd && !colName.startsWith("dev_")) {
+      throw new Error("ALERTA DE SEGURIDAD: Operación cancelada. Colección no aislada en pruebas.");
+    }
+    const clean = (voucherCode || "").trim().toUpperCase();
+    const snap = engine.getSnapshot();
+    if (snap.vouchers) {
+      delete snap.vouchers[clean];
+      for (const [k, v] of Object.entries(snap.vouchers)) {
+        if ((v.voucher_code || v.voucherCode || "").trim().toUpperCase() === clean) {
+          delete snap.vouchers[k];
+        }
+      }
+      engine.saveSnapshot(snap);
+    }
+    if (db) {
+      try {
+        await db.collection(colName).doc(clean).delete();
+      } catch (e) {
+        console.warn("Firestore deleteVoucher error:", e.message);
+      }
+    }
+    return true;
   }
 
   // Ledger / Historial de transacciones
@@ -581,6 +629,248 @@ export class FirestoreService {
       }
     }
     return { success: true, environment: envInfo.name, collections: [...collections, usersCol] };
+  }
+
+  // Purga granular de socios de prueba (preservando perfil de administrador)
+  static async purgeUsers() {
+    const isProd = isProduction();
+    const envInfo = getEnvironmentInfo();
+    const usersCol = getCollectionName("users");
+
+    if (!isProd && !usersCol.startsWith("dev_")) {
+      throw new Error("ALERTA DE SEGURIDAD: Operación cancelada. Colección no aislada en entorno de pruebas.");
+    }
+
+    const adminUser = {
+      uid: "CLIENT-58438412",
+      memberCode: "MC-2026-ADMIN",
+      name: "Evertz Lopez (Admin)",
+      phone: "58438412",
+      pin: "110805",
+      tier: "DEUS",
+      pointsBalance: 0,
+      lifetimePoints: 0,
+      status: "ACTIVE",
+      createdAt: new Date().toISOString()
+    };
+
+    const snap = engine.getSnapshot();
+    const count = Math.max(0, Object.keys(snap.users || {}).length - 1);
+    snap.users = { "CLIENT-58438412": adminUser };
+    const adminLedger = (snap.ledger && snap.ledger["CLIENT-58438412"]) || [];
+    snap.ledger = { "CLIENT-58438412": adminLedger };
+    engine.saveSnapshot(snap);
+
+    if (db) {
+      try {
+        const userSnap = await db.collection(usersCol).get().catch(() => ({ empty: true }));
+        if (userSnap && !userSnap.empty) {
+          const uDocs = userSnap.docs || [];
+          for (let i = 0; i < uDocs.length; i += 400) {
+            const batch = db.batch();
+            uDocs.slice(i, i + 400).forEach(d => {
+              if (d.id !== adminUser.uid && d.data()?.phone !== "58438412") {
+                batch.delete(d.ref);
+              }
+            });
+            await batch.commit();
+          }
+        }
+        await db.collection(usersCol).doc(adminUser.uid).set(adminUser, { merge: true });
+      } catch (e) {
+        console.warn("Firestore purgeUsers error:", e.message);
+      }
+    }
+    return { success: true, count, environment: envInfo.name, collection: usersCol };
+  }
+
+  // Purga granular de puntos en circulación (resetea balance de todos los usuarios a 0 y vacía ledger)
+  static async purgeCirculatingPoints() {
+    const isProd = isProduction();
+    const envInfo = getEnvironmentInfo();
+    const usersCol = getCollectionName("users");
+    const ledgerCol = getCollectionName("point_ledger");
+
+    if (!isProd) {
+      if (!usersCol.startsWith("dev_") || !ledgerCol.startsWith("dev_")) {
+        throw new Error("ALERTA DE SEGURIDAD: Operación cancelada. Colección no aislada en entorno de pruebas.");
+      }
+    }
+
+    const snap = engine.getSnapshot();
+    let totalReset = 0;
+    if (snap.users) {
+      Object.values(snap.users).forEach(u => {
+        totalReset += (u.pointsBalance || u.wiredPoints || 0);
+        u.pointsBalance = 0;
+        u.wiredPoints = 0;
+        u.lifetimePoints = 0;
+      });
+    }
+    snap.ledger = {};
+    engine.saveSnapshot(snap);
+
+    if (db) {
+      try {
+        const userSnap = await db.collection(usersCol).get().catch(() => ({ empty: true }));
+        if (userSnap && !userSnap.empty) {
+          const uDocs = userSnap.docs || [];
+          for (let i = 0; i < uDocs.length; i += 400) {
+            const batch = db.batch();
+            uDocs.slice(i, i + 400).forEach(d => {
+              batch.set(d.ref, { pointsBalance: 0, wiredPoints: 0, lifetimePoints: 0 }, { merge: true });
+            });
+            await batch.commit();
+          }
+        }
+        const ledgerSnap = await db.collection(ledgerCol).get().catch(() => ({ empty: true }));
+        if (ledgerSnap && !ledgerSnap.empty) {
+          const lDocs = ledgerSnap.docs || [];
+          for (let i = 0; i < lDocs.length; i += 400) {
+            const batch = db.batch();
+            lDocs.slice(i, i + 400).forEach(d => batch.delete(d.ref));
+            await batch.commit();
+          }
+        }
+      } catch (e) {
+        console.warn("Firestore purgeCirculatingPoints error:", e.message);
+      }
+    }
+    return { success: true, totalReset, environment: envInfo.name };
+  }
+
+  // Purga granular de vales (filtrado por ALL, PENDING o DELIVERED)
+  static async purgeVouchers(filter = "ALL") {
+    const isProd = isProduction();
+    const envInfo = getEnvironmentInfo();
+    const colName = getCollectionName("redemptions");
+
+    if (!isProd && !colName.startsWith("dev_")) {
+      throw new Error("ALERTA DE SEGURIDAD: Operación cancelada. Colección no aislada en entorno de pruebas.");
+    }
+
+    const isPending = (v) => {
+      const s = (v.status || "").toUpperCase();
+      return s === "PENDING" || s === "ISSUED" || (!v.redeemed && s !== "DELIVERED" && s !== "REDEEMED");
+    };
+    const isDelivered = (v) => {
+      const s = (v.status || "").toUpperCase();
+      return s === "DELIVERED" || s === "REDEEMED" || v.redeemed === true;
+    };
+
+    const snap = engine.getSnapshot();
+    let count = 0;
+    const remaining = {};
+    const toDeleteIds = [];
+
+    Object.entries(snap.vouchers || {}).forEach(([code, v]) => {
+      let matches = false;
+      if (filter === "ALL") matches = true;
+      else if (filter === "PENDING") matches = isPending(v);
+      else if (filter === "DELIVERED") matches = isDelivered(v);
+
+      if (matches) {
+        count++;
+        toDeleteIds.push(code);
+      } else {
+        remaining[code] = v;
+      }
+    });
+
+    snap.vouchers = remaining;
+    engine.saveSnapshot(snap);
+
+    if (db) {
+      try {
+        if (filter === "ALL") {
+          const rSnap = await db.collection(colName).get().catch(() => ({ empty: true }));
+          if (rSnap && !rSnap.empty) {
+            const docs = rSnap.docs || [];
+            for (let i = 0; i < docs.length; i += 400) {
+              const batch = db.batch();
+              docs.slice(i, i + 400).forEach(d => batch.delete(d.ref));
+              await batch.commit();
+            }
+          }
+        } else {
+          for (let i = 0; i < toDeleteIds.length; i += 400) {
+            const batch = db.batch();
+            toDeleteIds.slice(i, i + 400).forEach(id => {
+              batch.delete(db.collection(colName).doc(id));
+            });
+            await batch.commit();
+          }
+        }
+      } catch (e) {
+        console.warn("Firestore purgeVouchers error:", e.message);
+      }
+    }
+    return { success: true, count, filter, environment: envInfo.name };
+  }
+
+  // Purga granular de productos del catálogo de premios
+  static async purgeRewards() {
+    const isProd = isProduction();
+    const envInfo = getEnvironmentInfo();
+    const colName = getCollectionName("rewards_catalog");
+
+    if (!isProd && !colName.startsWith("dev_")) {
+      throw new Error("ALERTA DE SEGURIDAD: Operación cancelada. Colección no aislada en entorno de pruebas.");
+    }
+
+    const snap = engine.getSnapshot();
+    const count = Object.keys(snap.rewards || {}).length;
+    snap.rewards = {};
+    engine.saveSnapshot(snap);
+
+    if (db) {
+      try {
+        const rSnap = await db.collection(colName).get().catch(() => ({ empty: true }));
+        if (rSnap && !rSnap.empty) {
+          const docs = rSnap.docs || [];
+          for (let i = 0; i < docs.length; i += 400) {
+            const batch = db.batch();
+            docs.slice(i, i + 400).forEach(d => batch.delete(d.ref));
+            await batch.commit();
+          }
+        }
+      } catch (e) {
+        console.warn("Firestore purgeRewards error:", e.message);
+      }
+    }
+    return { success: true, count, environment: envInfo.name, collection: colName };
+  }
+
+  // Purga granular de ledger contable
+  static async purgeLedger() {
+    const isProd = isProduction();
+    const envInfo = getEnvironmentInfo();
+    const ledgerCol = getCollectionName("point_ledger");
+
+    if (!isProd && !ledgerCol.startsWith("dev_")) {
+      throw new Error("ALERTA DE SEGURIDAD: Operación cancelada. Colección no aislada en entorno de pruebas.");
+    }
+
+    const snap = engine.getSnapshot();
+    snap.ledger = {};
+    engine.saveSnapshot(snap);
+
+    if (db) {
+      try {
+        const lSnap = await db.collection(ledgerCol).get().catch(() => ({ empty: true }));
+        if (lSnap && !lSnap.empty) {
+          const docs = lSnap.docs || [];
+          for (let i = 0; i < docs.length; i += 400) {
+            const batch = db.batch();
+            docs.slice(i, i + 400).forEach(d => batch.delete(d.ref));
+            await batch.commit();
+          }
+        }
+      } catch (e) {
+        console.warn("Firestore purgeLedger error:", e.message);
+      }
+    }
+    return { success: true, environment: envInfo.name };
   }
 
   // Normalización canónica anti-burlas para números de Nicaragua:

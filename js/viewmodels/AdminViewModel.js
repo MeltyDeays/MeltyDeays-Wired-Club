@@ -332,14 +332,16 @@ export class AdminViewModel {
 
   getNextAvailableFolio() {
     if (!this.tokens || this.tokens.length === 0) return 1;
-    let maxFolio = 0;
-    for (const t of this.tokens) {
-      const num = parseInt(t.invoiceFolio, 10);
-      if (!isNaN(num) && num > maxFolio) {
-        maxFolio = num;
-      }
+    const existing = new Set(
+      this.tokens
+        .map(t => parseInt(t.invoiceFolio, 10))
+        .filter(n => !isNaN(n) && n > 0)
+    );
+    let candidate = 1;
+    while (existing.has(candidate)) {
+      candidate++;
     }
-    return maxFolio + 1;
+    return candidate;
   }
 
   async generateLot(startFolio, count, pointsPerQr = 0) {
@@ -476,5 +478,75 @@ export class AdminViewModel {
     const raw = await FirestoreService.findUserByCodeOrPhone(query);
     if (!raw) return null;
     return new UserModel(raw);
+  }
+
+  async deleteToken(tokenCode) {
+    const res = await FirestoreService.deleteToken(tokenCode);
+    await this.refreshData();
+    this.notify();
+    return res;
+  }
+
+  async deleteVoucher(voucherCode) {
+    const res = await FirestoreService.deleteVoucher(voucherCode);
+    await this.refreshData();
+    this.notify();
+    return res;
+  }
+
+  async deleteUser(uid) {
+    const res = await FirestoreService.deleteUser(uid);
+    await this.refreshData();
+    this.notify();
+    return res;
+  }
+
+  async deleteReward(rewardId) {
+    const res = await FirestoreService.deleteReward(rewardId);
+    await this.refreshData();
+    this.notify();
+    return res;
+  }
+
+  async purgeUsers() {
+    const res = await FirestoreService.purgeUsers();
+    await this.refreshData();
+    this.notify();
+    return res;
+  }
+
+  async purgeCirculatingPoints() {
+    const res = await FirestoreService.purgeCirculatingPoints();
+    await this.refreshData();
+    this.notify();
+    return res;
+  }
+
+  async purgeVouchers(filter = "ALL") {
+    const res = await FirestoreService.purgeVouchers(filter);
+    await this.refreshData();
+    this.notify();
+    return res;
+  }
+
+  async purgeRewards() {
+    const res = await FirestoreService.purgeRewards();
+    await this.refreshData();
+    this.notify();
+    return res;
+  }
+
+  async purgeLedger() {
+    const res = await FirestoreService.purgeLedger();
+    await this.refreshData();
+    this.notify();
+    return res;
+  }
+
+  async seedDevData() {
+    const res = await FirestoreService.seedDevData();
+    await this.refreshData();
+    this.notify();
+    return res;
   }
 }

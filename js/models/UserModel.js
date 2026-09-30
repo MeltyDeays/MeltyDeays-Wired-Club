@@ -21,6 +21,14 @@ export class UserModel {
     return "NAVI_USER";
   }
 
+  get pointsBalance() {
+    return this.wiredPoints;
+  }
+
+  set pointsBalance(val) {
+    this.wiredPoints = Number(val) || 0;
+  }
+
   isBanned() {
     return this.status === "BANNED";
   }

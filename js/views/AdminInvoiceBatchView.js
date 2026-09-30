@@ -627,6 +627,11 @@ export function openTokenActionsModal(tokenCode) {
     btnEditInvoice.style.display = hasInvData ? "inline-flex" : "none";
   }
 
+  const deleteLabel = document.getElementById("btn-token-opt-delete-label");
+  if (deleteLabel) {
+    deleteLabel.textContent = `Eliminar Factura #MD-2026-${token.invoiceFolio} (Liberar Folio)`;
+  }
+
   modal.style.display = "flex";
 }
 
@@ -694,6 +699,36 @@ export function executeTokenOptEditInvoice() {
   closeModal("modal-token-actions");
   if (selectedTokenForActions) {
     openSingleDigitalInvoiceModal(selectedTokenForActions.tokenCode, true);
+  }
+}
+
+export async function executeTokenOptDelete() {
+  if (!selectedTokenForActions) return;
+  const token = selectedTokenForActions;
+  closeModal("modal-token-actions");
+
+  if (!confirm(`🗑️ ¿Eliminar definitivamente la factura #MD-2026-${token.invoiceFolio} (${token.tokenCode})?\n\nEl folio #${token.invoiceFolio} quedará libre para volverse a generar de inmediato.`)) {
+    return;
+  }
+
+  showToast(`Eliminando factura #${token.invoiceFolio}...`, "info");
+  try {
+    await vm.deleteToken(token.tokenCode);
+    const nextFolio = vm.getNextAvailableFolio();
+    const folioEl = document.getElementById("lot-start-folio");
+    if (folioEl) {
+      delete folioEl.dataset.userEdited;
+      folioEl.value = nextFolio;
+    }
+    const helper = document.getElementById("lot-folio-helper");
+    if (helper) {
+      helper.innerHTML = `Siguiente folio libre detectado: <strong>#${String(nextFolio).padStart(4, "0")}</strong> (folio liberado disponible)`;
+    }
+    renderTokensTable(vm.tokens);
+    if (typeof renderAdmin === "function") renderAdmin(vm);
+    showToast(`✓ Factura #MD-2026-${token.invoiceFolio} eliminada. Folio liberado.`, "success");
+  } catch (err) {
+    showToast("❌ Error al eliminar factura: " + err.message, "error");
   }
 }
 

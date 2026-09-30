@@ -200,6 +200,9 @@
       <button class="admin-tab-btn" id="tab-btn-history" onclick="switchAdminTab('history')">
         📜 Historial de Canjes
       </button>
+      <button class="admin-tab-btn" id="tab-btn-sandbox_db" onclick="switchAdminTab('sandbox_db')" style="border-left: 2px dashed #eab308; background: rgba(254, 252, 232, 0.6);">
+        🧪 BD Sandbox
+      </button>
     </nav>
 
     <!-- MÓDULO 1: TERMINAL 1-SCAN POS DE ENTREGA EN MOSTRADOR -->
@@ -790,7 +793,11 @@
             <tbody id="vouchers-table-body"></tbody>
           </table>
         </div>
-      </div>
+    </div>
+
+    <!-- SECCIÓN 6: GESTIÓN DE BASE DE DATOS SANDBOX / PRUEBAS -->
+    <div id="sec-sandbox_db" class="admin-tab-content" style="display: none;">
+      <div id="sandbox-db-root"></div>
     </div>
   </main>
 
@@ -1230,6 +1237,9 @@
         </button>
         <button type="button" class="btn-secondary" style="justify-content: flex-start; gap: 8px; padding: 0.65rem 0.9rem; font-size: 0.82rem; white-space: normal; text-align: left;" onclick="executeTokenOptTestUrl()">
           <span>🔗</span> <strong>Probar Enlace en Nueva Pestaña</strong>
+        </button>
+        <button type="button" class="btn-danger" id="btn-token-opt-delete" style="justify-content: flex-start; gap: 8px; padding: 0.65rem 0.9rem; font-size: 0.82rem; background: #fef2f2; border: 1.5px solid #ef4444; color: #b91c1c; font-weight: 800; white-space: normal; text-align: left;" onclick="executeTokenOptDelete()">
+          <span>🗑️</span> <strong id="btn-token-opt-delete-label">Eliminar Factura y Liberar Folio</strong>
         </button>
       </div>
 
@@ -2511,6 +2521,6 @@
     })();
   </script>
 
-  <script type="module" src="./js/admin-app.js?v=2.7.7"></script>
+  <script type="module" src="./js/admin-app.js?v=2.8.0"></script>
 </body>
 </html>
