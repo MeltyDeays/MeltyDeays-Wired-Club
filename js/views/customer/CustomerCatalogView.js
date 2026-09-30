@@ -357,8 +357,8 @@ export function renderCatalog(catalog, user) {
               <span class="pricing-val total">${formatPrice(cashToPayWithPts)}</span>
             </div>
             <div class="pricing-row footnote-row">
-              <span>Tope máx. (${maxCapPts} WP):</span>
-              <span>-${formatPrice(item.maxDiscountUsd)} (${maxPct}% OFF)</span>
+              <span class="pricing-label">Tope máx. (${maxCapPts} WP):</span>
+              <span class="pricing-val">-${formatPrice(item.maxDiscountUsd)} (${maxPct}% OFF)</span>
             </div>
           </div>
         `;
@@ -378,8 +378,8 @@ export function renderCatalog(catalog, user) {
               <span class="pricing-val total">${formatPrice(item.priceUsd)}</span>
             </div>
             <div class="pricing-row footnote-row">
-              <span>Tope máx. (${maxCapPts} WP):</span>
-              <span>Hasta -${formatPrice(item.maxDiscountUsd)} (${maxPct}% OFF)</span>
+              <span class="pricing-label">Tope máx. (${maxCapPts} WP):</span>
+              <span class="pricing-val">Hasta -${formatPrice(item.maxDiscountUsd)} (${maxPct}% OFF)</span>
             </div>
           </div>
         `;
@@ -460,7 +460,7 @@ export function renderCatalog(catalog, user) {
                 <span class="btn-redeem-icon">🛒</span>
                 <span class="btn-redeem-text">COMPRAR EN TIENDA</span>
               </div>
-              <div class="btn-redeem-pts-badge">0 WP (HASTA ${maxPct}% OFF)</div>
+              <div class="btn-redeem-pts-badge">HASTA ${maxPct}% OFF</div>
             </button>
           </div>
         `;
@@ -599,7 +599,7 @@ export function confirmRedeem(rewardId) {
     if (isPartial) {
       typeCallout.style.display = "block";
       const maxPct = reward.maxDiscountPct || 5;
-      if (typePrice) typePrice.textContent = formatDualPrice(reward.priceUsd);
+      if (typePrice) typePrice.innerHTML = formatDualPrice(reward.priceUsd);
       if (typeMaxDisc) typeMaxDisc.textContent = `-${formatPrice(reward.maxDiscountUsd)} (${maxCapPts.toLocaleString()} WP = ${maxPct}% OFF)`;
 
       if (controlsWrap) {
@@ -688,7 +688,7 @@ export function updateConfirmCalculation() {
     if (typePctCalc) typePctCalc.textContent = `${formattedPct}% de descuento / Máximo ${maxPct}%`;
     if (calcPctLabel) calcPctLabel.textContent = `${formattedPct}%`;
     if (typeDisc) typeDisc.textContent = `-${formatPrice(discountUsd)}`;
-    if (typeCash) typeCash.textContent = formatDualPrice(cashToPayUsd);
+    if (typeCash) typeCash.innerHTML = formatDualPrice(cashToPayUsd);
     if (ptsAppliedNotice) ptsAppliedNotice.textContent = `${deductPts.toLocaleString()} WP aplicados`;
 
     const doRedeemBtn = document.getElementById("btn-do-redeem");
@@ -799,7 +799,7 @@ export async function executeRedeem() {
     if (voucher.discountUsd > 0) {
       showToast(`🏷️ ¡Vale con descuento emitido! Ahorro: -${formatPrice(voucher.discountUsd)}`, "success");
     } else if (voucher.cashToPayUsd > 0) {
-      showToast(`🛒 ¡Vale de compra emitido! Paga en tienda: ${formatDualPrice(voucher.cashToPayUsd)}`, "success");
+      showToast(`🛒 ¡Vale de compra emitido! Paga en tienda: ${formatPrice(voucher.cashToPayUsd)}`, "success");
     } else {
       showToast(`⚡ ¡Canje Autorizado! Vale emitido: ${voucher.voucherCode}`, "success");
     }

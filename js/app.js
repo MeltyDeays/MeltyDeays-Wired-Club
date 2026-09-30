@@ -79,6 +79,16 @@ export function formatDualPrice(amountUsd) {
   return `<strong>$${usd.toFixed(2)} USD</strong> <span style="font-size:0.75rem; color:#64748b; font-weight:600;">(C$ ${nio.toFixed(2)} NIO)</span>`;
 }
 
+export function formatDualPricePlain(amountUsd) {
+  const curr = (vm && vm.preferredCurrency) ? vm.preferredCurrency : "USD";
+  const usd = Number(amountUsd) || 0;
+  const nio = usd * USD_TO_NIO_RATE;
+  if (curr === "NIO") {
+    return `C$ ${nio.toFixed(2)} NIO ($${usd.toFixed(2)} USD)`;
+  }
+  return `$${usd.toFixed(2)} USD (C$ ${nio.toFixed(2)} NIO)`;
+}
+
 export async function setAppCurrency(curr) {
   if (curr !== "USD" && curr !== "NIO") return;
   if (vm) {
@@ -156,6 +166,7 @@ initCustomerViews({
   attachPhoneMask,
   formatPrice,
   formatDualPrice,
+  formatDualPricePlain,
   USD_TO_NIO_RATE
 });
 

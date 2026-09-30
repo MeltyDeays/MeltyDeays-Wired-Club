@@ -305,9 +305,9 @@
 
       <!-- INFO MODALIDAD: CANJE 100% GRATIS O DESCUENTO TOPE -->
       <div id="confirm-type-callout" style="display: none; background: #fffbeb; border: 1.5px solid #f59e0b; border-radius: 4px; padding: 0.75rem 0.85rem; margin-bottom: 1rem; font-family: var(--font-mono); font-size: 0.75rem; color: #78350f;">
-        <div style="font-weight: 900; margin-bottom: 4px; display: flex; align-items: center; justify-content: space-between; color: #b45309;">
+        <div style="font-weight: 900; margin-bottom: 4px; display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 6px; color: #b45309;">
           <span>🏷️ VENTA CON DESCUENTO (<span id="confirm-type-pct">5% OFF</span>)</span>
-          <span id="confirm-type-price" style="color: var(--dark); font-weight: 800;">$0.00 USD</span>
+          <span id="confirm-type-price" style="color: var(--dark); font-weight: 800; text-align: right; margin-left: auto;">$0.00 USD</span>
         </div>
         <div style="font-size: 0.72rem; color: #92400e; margin-bottom: 4px;">
           Descuento según puntos: <strong id="confirm-type-pct-calc" style="color: #059669;">0% de descuento / Máximo 5%</strong>
@@ -344,9 +344,9 @@
             <span>Ahorro con tus puntos (<span id="confirm-calc-pct-label">0%</span>):</span>
             <strong id="confirm-type-discount" style="color: #059669;">-$0.00 USD</strong>
           </div>
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 3px;">
+          <div style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 6px; margin-top: 3px;">
             <strong style="color: #1e1b4b;">Efectivo a pagar en tienda:</strong>
-            <strong id="confirm-type-cash" style="color: #dc2626; font-size: 0.92rem;">$0.00 USD</strong>
+            <strong id="confirm-type-cash" style="color: #dc2626; font-size: 0.92rem; text-align: right; margin-left: auto;">$0.00 USD</strong>
           </div>
         </div>
         <div style="font-size: 0.68rem; color: #92400e; margin-top: 4px;">
@@ -376,7 +376,7 @@
         🛡️ <strong>CONDICIÓN DE GARANTÍA:</strong> Los artículos gratuitos por lealtad ($0 en efectivo) se entregan probados a satisfacción en mostrador y están <strong>estrictamente exentos de garantía técnica posterior</strong>.
       </div>
 
-      <div style="display: flex; gap: 0.75rem; justify-content: flex-end;">
+      <div class="confirm-redeem-actions" style="display: flex; gap: 0.75rem; justify-content: flex-end;">
         <button class="btn-secondary" onclick="closeRedeemModal()">CANCELAR</button>
         <button class="btn-primary" id="btn-do-redeem" onclick="executeRedeem()" style="padding: 0.6rem 1.25rem; font-size: 0.85rem;">
           ⚡ AUTORIZAR CANJE WIRED

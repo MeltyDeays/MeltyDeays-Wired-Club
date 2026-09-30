@@ -693,7 +693,70 @@
 
   .reward-card {
     width: 100% !important;
+    max-width: 100% !important;
     box-sizing: border-box !important;
+    overflow: hidden !important;
+  }
+
+  .reward-pricing-box {
+    padding: 6px 8px !important;
+  }
+
+  .pricing-row {
+    gap: 4px !important;
+  }
+
+  .pricing-label {
+    font-size: 0.68rem !important;
+  }
+
+  .pricing-val {
+    font-size: 0.70rem !important;
+  }
+
+  .pricing-row.footnote-row {
+    font-size: 0.64rem !important;
+  }
+
+  .pricing-row.footnote-row .pricing-label {
+    font-size: 0.64rem !important;
+  }
+
+  .pricing-row.footnote-row .pricing-val {
+    font-size: 0.64rem !important;
+  }
+
+  .btn-redeem-partial {
+    padding: 0.4rem 0.6rem !important;
+    min-height: 38px !important;
+    gap: 5px !important;
+  }
+
+  .btn-redeem-content {
+    font-size: 0.72rem !important;
+    gap: 5px !important;
+  }
+
+  .btn-redeem-text {
+    font-size: 0.72rem !important;
+  }
+
+  .btn-redeem-pts-badge {
+    font-size: 0.66rem !important;
+    padding: 2.5px 5px !important;
+  }
+
+  .confirm-redeem-actions {
+    flex-direction: column-reverse !important;
+    gap: 0.5rem !important;
+  }
+
+  .confirm-redeem-actions button {
+    width: 100% !important;
+    justify-content: center !important;
+    text-align: center !important;
+    white-space: normal !important;
+    line-height: 1.25 !important;
   }
 
   /* FORMULARIOS Y GRID DE DISPATCH */

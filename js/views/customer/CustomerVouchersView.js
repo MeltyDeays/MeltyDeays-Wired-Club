@@ -5,6 +5,7 @@ let vm = null;
 let showToast = () => {};
 let formatPrice = (usd) => `$${Number(usd || 0).toFixed(2)} USD`;
 let formatDualPrice = (usd) => `$${Number(usd || 0).toFixed(2)} USD`;
+let formatDualPricePlain = (usd) => `$${Number(usd || 0).toFixed(2)} USD`;
 
 export function initCustomerVouchersView(deps) {
   if (deps) {
@@ -12,6 +13,7 @@ export function initCustomerVouchersView(deps) {
     if (deps.showToast) showToast = deps.showToast;
     if (deps.formatPrice) formatPrice = deps.formatPrice;
     if (deps.formatDualPrice) formatDualPrice = deps.formatDualPrice;
+    if (deps.formatDualPricePlain) formatDualPricePlain = deps.formatDualPricePlain;
   }
 }
 
@@ -389,11 +391,11 @@ export function showVoucherModal(voucherCode) {
       if (!isCommercial) {
         textMsg = encodeURIComponent(`Hola MeltyDeays! He canjeado mi vale [${voucher.voucherCode}] por "${voucher.rewardTitle}". Mi nombre es ${voucher.userName || "Cliente"}. Quisiera coordinar la entrega.`);
       } else if (isPaid) {
-        textMsg = encodeURIComponent(`Hola MeltyDeays! Ya tengo mi vale [${voucher.voucherCode}] pagado (${formatDualPrice(voucher.cashToPayUsd)}) para "${voucher.rewardTitle}". Mi nombre es ${voucher.userName || "Cliente"}. Quisiera coordinar la entrega física.`);
+        textMsg = encodeURIComponent(`Hola MeltyDeays! Ya tengo mi vale [${voucher.voucherCode}] pagado (${formatDualPricePlain(voucher.cashToPayUsd)}) para "${voucher.rewardTitle}". Mi nombre es ${voucher.userName || "Cliente"}. Quisiera coordinar la entrega física.`);
       } else if (voucher.discountUsd > 0) {
-        textMsg = encodeURIComponent(`Hola MeltyDeays! He generado mi vale [${voucher.voucherCode}] con descuento de -${formatPrice(voucher.discountUsd)} en "${voucher.rewardTitle}". Saldo a abonar: ${formatDualPrice(voucher.cashToPayUsd)}. Mi nombre es ${voucher.userName || "Cliente"}.`);
+        textMsg = encodeURIComponent(`Hola MeltyDeays! He generado mi vale [${voucher.voucherCode}] con descuento de -${formatPrice(voucher.discountUsd)} en "${voucher.rewardTitle}". Saldo a abonar: ${formatDualPricePlain(voucher.cashToPayUsd)}. Mi nombre es ${voucher.userName || "Cliente"}.`);
       } else {
-        textMsg = encodeURIComponent(`Hola MeltyDeays! He generado mi reserva de compra [${voucher.voucherCode}] para "${voucher.rewardTitle}". Saldo a abonar: ${formatDualPrice(voucher.cashToPayUsd)}. Mi nombre es ${voucher.userName || "Cliente"}.`);
+        textMsg = encodeURIComponent(`Hola MeltyDeays! He generado mi reserva de compra [${voucher.voucherCode}] para "${voucher.rewardTitle}". Saldo a abonar: ${formatDualPricePlain(voucher.cashToPayUsd)}. Mi nombre es ${voucher.userName || "Cliente"}.`);
       }
       waBtn.href = `https://wa.me/${phone}?text=${textMsg}`;
     }

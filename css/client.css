@@ -566,7 +566,7 @@
   background: #ffffff;
   border: 2px solid var(--dark);
   border-radius: 8px;
-  overflow: visible;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   box-shadow: 3px 3px 0px var(--dark);
@@ -593,10 +593,24 @@
 .pricing-row {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: baseline;
   color: var(--gray-500);
   margin-bottom: 3px;
-  gap: 8px;
+  gap: 6px;
+  min-width: 0;
+}
+
+.pricing-label {
+  white-space: nowrap;
+  flex-shrink: 0;
+  font-size: 0.72rem;
+}
+
+.pricing-val {
+  text-align: right;
+  word-break: break-word;
+  font-size: 0.74rem;
+  min-width: 0;
 }
 
 .pricing-row.discount-row {
@@ -1446,7 +1460,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.45rem 0.85rem;
+  padding: 0.45rem 0.75rem;
   background: linear-gradient(135deg, #d97706, #b45309);
   color: #ffffff;
   border: 2px solid var(--dark);
@@ -1457,6 +1471,9 @@
   cursor: pointer;
   transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
   box-sizing: border-box;
+  overflow: hidden;
+  white-space: normal;
+  gap: 6px;
 }
 
 .btn-redeem-partial:hover {
@@ -1480,11 +1497,20 @@
 .btn-redeem-content {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  font-size: 0.78rem;
+  gap: 6px;
+  font-size: 0.76rem;
   font-weight: 900;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.2px;
   text-transform: uppercase;
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+}
+
+.btn-redeem-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .btn-redeem-icon {
@@ -1496,12 +1522,14 @@
   background: rgba(15, 23, 42, 0.35);
   border: 1px solid rgba(255, 255, 255, 0.3);
   color: #ffffff;
-  font-size: 0.72rem;
+  font-size: 0.70rem;
   font-weight: 900;
   font-family: var(--font-mono);
-  padding: 3px 8px;
+  padding: 3px 6px;
   border-radius: 4px;
   white-space: nowrap;
+  flex-shrink: 0;
+  margin-left: auto;
 }
 
 .reward-footer, .product-meta {
