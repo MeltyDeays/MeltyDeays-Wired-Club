@@ -48,12 +48,33 @@ export function clearPosScanner() {
   clearPosFeedback();
 }
 
+let posAssignSuccessTimer = null;
+let posAssignCountdownInterval = null;
+
+export function clearPosAssignTimers() {
+  if (posAssignSuccessTimer) {
+    clearTimeout(posAssignSuccessTimer);
+    posAssignSuccessTimer = null;
+  }
+  if (posAssignCountdownInterval) {
+    clearInterval(posAssignCountdownInterval);
+    posAssignCountdownInterval = null;
+  }
+}
+
 export function closePosResult() {
+  clearPosAssignTimers();
   const resultBox = document.getElementById("scan-result-box");
   const invoiceBox = document.getElementById("scan-invoice-box");
   const customerBox = document.getElementById("scan-customer-box");
   if (resultBox) resultBox.style.display = "none";
-  if (invoiceBox) invoiceBox.style.display = "none";
+  if (invoiceBox) {
+    invoiceBox.style.display = "none";
+    const mainContent = document.getElementById("scan-invoice-main-content");
+    const successView = document.getElementById("scan-invoice-success-view");
+    if (mainContent) mainContent.style.display = "block";
+    if (successView) successView.style.display = "none";
+  }
   if (customerBox) customerBox.style.display = "none";
 }
 
@@ -201,6 +222,11 @@ export async function verifyVoucherAdmin() {
     if (customerBox) customerBox.style.display = "none";
 
     if (invoiceBox) {
+      clearPosAssignTimers();
+      const mainContent = document.getElementById("scan-invoice-main-content");
+      const successView = document.getElementById("scan-invoice-success-view");
+      if (mainContent) mainContent.style.display = "block";
+      if (successView) successView.style.display = "none";
       invoiceBox.style.display = "block";
       document.getElementById("scan-inv-code").textContent = token.tokenCode;
       document.getElementById("scan-inv-folio").textContent = "#MD-2026-" + token.invoiceFolio;
@@ -473,7 +499,51 @@ export async function submitAssignPoints() {
     const scanInput = document.getElementById("input-scan-voucher");
     if (scanInput) {
       scanInput.value = "";
-      scanInput.focus();
+    }
+
+    // Notificación animada yay con auto-ocultado en 5 segundos
+    clearPosAssignTimers();
+    const mainContent = document.getElementById("scan-invoice-main-content");
+    const successView = document.getElementById("scan-invoice-success-view");
+
+    if (mainContent && successView) {
+      const yayPts = document.getElementById("yay-points-display");
+      const yayFolio = document.getElementById("yay-folio-display");
+      const yayPin = document.getElementById("yay-pin-display");
+      const yayCode = document.getElementById("yay-code-display");
+      const countdownNum = document.getElementById("yay-countdown-num");
+      const progressBar = document.getElementById("yay-progress-bar");
+
+      if (yayPts) yayPts.textContent = points;
+      if (yayFolio) yayFolio.textContent = "#MD-2026-" + updated.invoiceFolio;
+      const pinText = document.getElementById("scan-inv-pin")?.textContent || "••••";
+      if (yayPin) yayPin.textContent = pinText;
+      if (yayCode) yayCode.textContent = tokenCode;
+
+      mainContent.style.display = "none";
+      successView.style.display = "flex";
+
+      if (progressBar) {
+        progressBar.style.animation = "none";
+        void progressBar.offsetWidth;
+        progressBar.style.animation = "yayProgressShrink 5s linear forwards";
+      }
+
+      let remaining = 5;
+      if (countdownNum) countdownNum.textContent = remaining;
+      posAssignCountdownInterval = setInterval(() => {
+        remaining--;
+        if (countdownNum) countdownNum.textContent = Math.max(0, remaining);
+        if (remaining <= 0) {
+          clearInterval(posAssignCountdownInterval);
+          posAssignCountdownInterval = null;
+        }
+      }, 1000);
+
+      posAssignSuccessTimer = setTimeout(() => {
+        closePosResult();
+        if (scanInput) scanInput.focus();
+      }, 5000);
     }
   } catch (err) {
     showToast("❌ " + err.message, "error");

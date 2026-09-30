@@ -337,75 +337,114 @@
       </div>
 
       <!-- Cuadro de Asignación y Carga de Puntos a Factura (Escaneo en Mostrador) -->
-      <div id="scan-invoice-box" class="dispatch-ticket-card" style="display: none;">
+      <div id="scan-invoice-box" class="dispatch-ticket-card invoice-assignment-card" style="display: none;">
         <div class="tech-corner top-left">+</div>
         <div class="tech-corner top-right">+</div>
         <div class="tech-corner bottom-left">+</div>
         <div class="tech-corner bottom-right">+</div>
 
-        <div class="dispatch-header">
-          <div>
-            <span class="badge-navi">FACTURA DETECTADA // CARGA DE PUNTOS EN MOSTRADOR</span>
-            <div id="scan-inv-code" class="dispatch-code-title">WP-2026-F0104-XXXX</div>
-          </div>
-          <div id="scan-inv-status-wrap">
-            <span id="scan-inv-status" class="dispatch-status-pill"></span>
-          </div>
-        </div>
-
-        <div class="dispatch-grid">
-          <div class="dispatch-item">
-            <div class="dispatch-label">Nº DE FACTURA FÍSICA</div>
-            <div id="scan-inv-folio" class="dispatch-val-highlight">#MD-2026-0104</div>
-          </div>
-          <div class="dispatch-item">
-            <div class="dispatch-label">PIN DE SEGURIDAD (EN REVERSO)</div>
-            <div id="scan-inv-pin" class="dispatch-val" style="font-family: var(--font-mono); font-size: 1.15rem; font-weight: 900; letter-spacing: 2px;">••••</div>
-          </div>
-          <div class="dispatch-item">
-            <div class="dispatch-label">ESTADO ACTUAL</div>
-            <div id="scan-inv-points-current" class="dispatch-val-points">0 WP</div>
-          </div>
-          <div class="dispatch-item">
-            <div class="dispatch-label">FECHA DE GENERACIÓN</div>
-            <div id="scan-inv-date" class="dispatch-val">Hoy</div>
-          </div>
-        </div>
-
-        <!-- ÁREA DE ASIGNACIÓN DE PUNTOS (CERO POPUPS) -->
-        <div id="scan-inv-assign-area" style="background: #f8fafc; border: 1.5px dashed var(--dark); padding: 1.15rem; border-radius: 6px; margin-top: 1.25rem;">
-          <label class="form-label" style="display: block; margin-bottom: 0.5rem; font-size: 0.85rem; font-weight: 800;">
-            ⚡ DESIGNAR PUNTOS PARA ESTA FACTURA (ANTES DE ENTREGAR AL CLIENTE):
-          </label>
-          <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; margin-bottom: 0.85rem;">
-            <div style="display: flex; align-items: center; gap: 0.4rem;">
-              <input type="number" id="input-assign-points" class="form-input" placeholder="100" min="1" max="100000"
-                     style="max-width: 160px; text-align: center; font-size: 1.35rem; font-weight: 900; font-family: var(--font-mono); padding: 0.4rem 0.6rem;"
-                     onkeydown="if(event.key==='Enter') submitAssignPoints()">
-              <span style="font-family: var(--font-mono); font-weight: 900; font-size: 1.1rem; color: var(--accent);">WP</span>
+        <!-- Vista Normal de Asignación de Puntos -->
+        <div id="scan-invoice-main-content">
+          <div class="dispatch-header">
+            <div>
+              <span class="badge-navi" style="background:#0f172a; color:#38bdf8;">FACTURA DETECTADA // CARGA DE PUNTOS EN MOSTRADOR</span>
+              <div id="scan-inv-code" class="dispatch-code-title">WP-2026-F0104-XXXX</div>
             </div>
-            
-            <!-- Botones de Carga Rápida -->
-            <div style="display: flex; gap: 0.35rem; margin-left: auto; flex-wrap: wrap; align-items: center;">
-              <button type="button" class="btn-secondary" style="padding: 4px 8px; font-size: 0.72rem; font-weight: 800; background: #ecfdf5; border-color: #059669; color: #065f46;" onclick="openSalePointsCalculatorModal('pos')" title="Calcular puntos de esta venta regulando costo y 50% de retorno">
-                🧮 Calcular Puntos de Venta
-              </button>
-              <button type="button" class="btn-secondary" style="padding: 4px 8px; font-size: 0.72rem;" onclick="setQuickPoints(50)">+50 WP</button>
-              <button type="button" class="btn-secondary" style="padding: 4px 8px; font-size: 0.72rem;" onclick="setQuickPoints(100)">+100 WP</button>
-              <button type="button" class="btn-secondary" style="padding: 4px 8px; font-size: 0.72rem;" onclick="setQuickPoints(150)">+150 WP</button>
-              <button type="button" class="btn-secondary" style="padding: 4px 8px; font-size: 0.72rem;" onclick="setQuickPoints(200)">+200 WP</button>
-              <button type="button" class="btn-secondary" style="padding: 4px 8px; font-size: 0.72rem;" onclick="setQuickPoints(500)">+500 WP</button>
+            <div id="scan-inv-status-wrap">
+              <span id="scan-inv-status" class="dispatch-status-pill"></span>
             </div>
           </div>
 
-          <div class="dispatch-actions" style="margin-top: 0.75rem;">
-            <button id="btn-save-inv-points" class="btn-primary btn-dispatch-action" onclick="submitAssignPoints()">
-              ⚡ Guardar Puntos y Activar Factura (Listo para entregar)
-            </button>
-            <button type="button" class="btn-secondary" onclick="closePosResult()">
-              Cerrar Ficha
-            </button>
+          <!-- LAYOUT ERGONÓMICO HORIZONTAL: 2 COLUMNAS (ALTO COMPACTO PARA 100% ZOOM) -->
+          <div class="invoice-pos-layout">
+            <!-- COLUMNA 1: DATOS Y TELEMETRÍA DE LA FACTURA -->
+            <div class="dispatch-grid-col">
+              <div class="dispatch-grid" style="margin-bottom: 0; height: 100%; box-sizing: border-box;">
+                <div class="dispatch-item">
+                  <div class="dispatch-label">Nº DE FACTURA FÍSICA</div>
+                  <div id="scan-inv-folio" class="dispatch-val-highlight">#MD-2026-0104</div>
+                </div>
+                <div class="dispatch-item">
+                  <div class="dispatch-label">PIN DE SEGURIDAD (REVERSO)</div>
+                  <div id="scan-inv-pin" class="dispatch-val" style="font-family: var(--font-mono); font-size: 1.15rem; font-weight: 900; letter-spacing: 2px;">••••</div>
+                </div>
+                <div class="dispatch-item">
+                  <div class="dispatch-label">ESTADO ACTUAL</div>
+                  <div id="scan-inv-points-current" class="dispatch-val-points">0 WP</div>
+                </div>
+                <div class="dispatch-item">
+                  <div class="dispatch-label">FECHA DE GENERACIÓN</div>
+                  <div id="scan-inv-date" class="dispatch-val">Hoy</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- COLUMNA 2: ASIGNACIÓN DE PUNTOS Y BOTONES DE ACCIÓN -->
+            <div id="scan-inv-assign-area" class="dispatch-assign-col">
+              <div>
+                <label class="form-label" style="display: block; margin-bottom: 0.45rem; font-size: 0.8rem; font-weight: 800; color: var(--dark);">
+                  ⚡ DESIGNAR PUNTOS PARA ESTA FACTURA:
+                </label>
+                <div style="display: flex; gap: 0.65rem; align-items: center; margin-bottom: 0.65rem; flex-wrap: wrap;">
+                  <div style="display: flex; align-items: center; gap: 0.35rem; background: #ffffff; border: 1.5px solid var(--dark); border-radius: 4px; padding: 2px 8px; box-shadow: 2px 2px 0px var(--dark);">
+                    <input type="number" id="input-assign-points" class="form-input" placeholder="100" min="1" max="100000"
+                           style="max-width: 110px; border: none; box-shadow: none; text-align: center; font-size: 1.35rem; font-weight: 900; font-family: var(--font-mono); padding: 2px 4px; height: 34px;"
+                           onkeydown="if(event.key==='Enter') submitAssignPoints()">
+                    <span style="font-family: var(--font-mono); font-weight: 900; font-size: 1.1rem; color: var(--accent);">WP</span>
+                  </div>
+                  <button type="button" class="btn-secondary" style="padding: 5px 10px; font-size: 0.74rem; font-weight: 800; background: #ecfdf5; border-color: #059669; color: #065f46; display: flex; align-items: center; gap: 4px;" onclick="openSalePointsCalculatorModal('pos')" title="Calcular puntos de esta venta regulando costo y 50% de retorno">
+                    🧮 Calcular Puntos
+                  </button>
+                </div>
+
+                <!-- Botones de Carga Rápida -->
+                <div style="display: flex; gap: 0.3rem; margin-bottom: 0.65rem; flex-wrap: wrap;">
+                  <button type="button" class="btn-secondary" style="padding: 3px 7px; font-size: 0.72rem; font-weight: 800;" onclick="setQuickPoints(50)">+50 WP</button>
+                  <button type="button" class="btn-secondary" style="padding: 3px 7px; font-size: 0.72rem; font-weight: 800;" onclick="setQuickPoints(100)">+100 WP</button>
+                  <button type="button" class="btn-secondary" style="padding: 3px 7px; font-size: 0.72rem; font-weight: 800;" onclick="setQuickPoints(150)">+150 WP</button>
+                  <button type="button" class="btn-secondary" style="padding: 3px 7px; font-size: 0.72rem; font-weight: 800;" onclick="setQuickPoints(200)">+200 WP</button>
+                  <button type="button" class="btn-secondary" style="padding: 3px 7px; font-size: 0.72rem; font-weight: 800;" onclick="setQuickPoints(500)">+500 WP</button>
+                </div>
+              </div>
+
+              <div class="dispatch-actions" style="margin-top: 0.4rem; display: flex; gap: 0.5rem;">
+                <button id="btn-save-inv-points" class="btn-primary btn-dispatch-action" style="flex: 1; padding: 0.6rem 0.85rem; font-size: 0.82rem;" onclick="submitAssignPoints()">
+                  ⚡ Guardar Puntos y Activar Factura
+                </button>
+                <button type="button" class="btn-secondary" style="padding: 0.6rem 0.85rem; font-size: 0.82rem;" onclick="closePosResult()">
+                  Cerrar
+                </button>
+              </div>
+            </div>
           </div>
+        </div>
+
+        <!-- Vista de Notificación de Éxito con Animación Yay y Auto-cierre (5 segundos) -->
+        <div id="scan-invoice-success-view" class="dispatch-success-card" style="display: none;">
+          <div class="yay-icon-wrap">
+            <span>🎉</span>
+          </div>
+          <div class="yay-info-wrap">
+            <span class="badge-navi" style="background: #ffffff; color: #065f46; border: 1.5px solid #059669; align-self: flex-start;">
+              ✓ FACTURA ACTIVADA // PUNTOS CARGADOS CON ÉXITO
+            </span>
+            <div class="yay-title-text">
+              ¡+<span id="yay-points-display">100</span> WP ASIGNADOS CORRECTAMENTE!
+            </div>
+            <div class="yay-sub-text">
+              Factura <strong id="yay-folio-display">#MD-2026-0001</strong> · PIN: <strong id="yay-pin-display">••••</strong> · <span id="yay-code-display">WP-2026-F0001</span>
+            </div>
+            <div class="yay-progress-bar-bg">
+              <div id="yay-progress-bar" class="yay-progress-bar-fill"></div>
+            </div>
+            <div style="font-size: 0.72rem; color: #047857; font-family: var(--font-mono); margin-top: 3px; display: flex; justify-content: space-between;">
+              <span>Ficha lista para entrega. Cerrando escáner en <strong id="yay-countdown-num">5</strong>s...</span>
+              <span style="cursor: pointer; text-decoration: underline; font-weight: 800;" onclick="closePosResult()">Cerrar ahora [✕]</span>
+            </div>
+          </div>
+          <button type="button" class="btn-secondary" style="margin-left: auto; align-self: center; padding: 6px 12px; font-weight: 800; border-color: #059669; color: #065f46;" onclick="closePosResult()">
+            ✕ Listo
+          </button>
         </div>
       </div>
 
@@ -2517,6 +2556,6 @@
     })();
   </script>
 
-  <script type="module" src="./js/admin-app.js?v=2.8.2"></script>
+  <script type="module" src="./js/admin-app.js?v=2.8.3"></script>
 </body>
 </html>

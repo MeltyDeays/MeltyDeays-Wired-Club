@@ -668,6 +668,129 @@
   margin-top: 1.25rem;
 }
 
+.dispatch-ticket-card.invoice-assignment-card {
+  max-width: 980px;
+  width: 100%;
+}
+
+.invoice-pos-layout {
+  display: grid;
+  grid-template-columns: 1fr 1.15fr;
+  gap: 1.15rem;
+  align-items: stretch;
+}
+
+@media (max-width: 860px) {
+  .invoice-pos-layout {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+}
+
+.dispatch-assign-col {
+  background: #f8fafc;
+  border: 1.5px dashed var(--dark);
+  padding: 1rem 1.15rem;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+/* NOTIFICACIÓN ANIMADA DE ÉXITO ("YAY" CELEBRATION EFFECT) */
+.dispatch-success-card {
+  background: #ecfdf5;
+  border: 2px solid #059669;
+  border-radius: 8px;
+  padding: 1.4rem 1.6rem;
+  box-shadow: 4px 4px 0px #065f46;
+  position: relative;
+  overflow: hidden;
+  animation: yayCelebrate 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+@keyframes yayCelebrate {
+  0% {
+    opacity: 0;
+    transform: scale(0.92) translateY(8px);
+  }
+  50% {
+    transform: scale(1.02) translateY(-2px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.yay-icon-wrap {
+  width: 64px;
+  height: 64px;
+  min-width: 64px;
+  background: #10b981;
+  color: #ffffff;
+  border: 2px solid var(--dark);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.1rem;
+  box-shadow: 3px 3px 0px var(--dark);
+  animation: yayBounce 1.2s ease infinite alternate;
+}
+
+@keyframes yayBounce {
+  0% { transform: translateY(0) rotate(0deg); }
+  100% { transform: translateY(-4px) rotate(6deg); }
+}
+
+.yay-info-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.yay-title-text {
+  font-family: var(--font-mono);
+  font-size: 1.35rem;
+  font-weight: 900;
+  color: #065f46;
+  letter-spacing: 0.5px;
+  margin: 0;
+}
+
+.yay-sub-text {
+  font-size: 0.82rem;
+  color: #047857;
+  font-family: var(--font-mono);
+}
+
+.yay-progress-bar-bg {
+  width: 100%;
+  height: 5px;
+  background: #a7f3d0;
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 6px;
+}
+
+.yay-progress-bar-fill {
+  height: 100%;
+  width: 100%;
+  background: #059669;
+  border-radius: 3px;
+  animation: yayProgressShrink 5s linear forwards;
+}
+
+@keyframes yayProgressShrink {
+  0% { width: 100%; }
+  100% { width: 0%; }
+}
+
 @keyframes dispatchSlideDown {
   from { opacity: 0; transform: translateY(-8px); }
   to { opacity: 1; transform: translateY(0); }
