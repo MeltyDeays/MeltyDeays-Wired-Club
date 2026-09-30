@@ -1,0 +1,656 @@
+@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700;800;900&family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
+
+:root {
+  --dark: #0f172a;
+  --dark-surface: #1e293b;
+  --accent: #e11d48;
+  --primary: #4338ca;
+  --indigo-light: #6366f1;
+  --amber: #d97706;
+  --amber-light: #f59e0b;
+  --green: #059669;
+  --dot-color: #cbd5e1;
+  --bg-page: #f8fafc;
+  --card-bg: #ffffff;
+  
+  --gray-100: #f1f5f9;
+  --gray-200: #e2e8f0;
+  --gray-300: #cbd5e1;
+  --gray-400: #94a3b8;
+  --gray-500: #64748b;
+  --gray-700: #334155;
+
+  --font-main: 'Outfit', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  
+  --border-thick: 1.5px solid var(--dark);
+  --border-thin: 1px solid var(--gray-300);
+  --hard-shadow: 3px 3px 0px var(--dark);
+  --hard-shadow-sm: 2px 2px 0px var(--dark);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  background-color: var(--bg-page);
+  background-image: radial-gradient(var(--dot-color) 0.85px, transparent 0.85px);
+  background-size: 8px 8px;
+  color: var(--dark);
+  font-family: var(--font-main);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+}
+
+/* NAVBAR TÉCNICA ESTILO ENCABEZADO DE FACTURA */
+.navbar {
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(8px);
+  border-bottom: 2px solid var(--dark);
+  padding: 0.75rem 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.06);
+}
+
+.nav-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.currency-toggle-wrapper {
+  display: inline-flex;
+  align-items: center;
+  background: #ffffff;
+  border: 1.5px solid var(--dark);
+  border-radius: 4px;
+  overflow: hidden;
+  height: 32px;
+  box-shadow: 2px 2px 0px var(--dark);
+  flex-shrink: 0;
+  width: auto;
+}
+
+.currency-toggle-btn {
+  border: none;
+  background: transparent;
+  color: var(--dark);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 0 10px;
+  height: 100%;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.brand-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.brand-badge-icon {
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.12));
+}
+
+.brand-text-col {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5px;
+}
+
+.brand-name-line {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  line-height: 1;
+}
+
+.brand-word-melty {
+  font-size: 19px;
+  font-weight: 900;
+  letter-spacing: -0.6px;
+  color: var(--dark);
+}
+
+.brand-word-deays {
+  font-size: 19px;
+  font-weight: 900;
+  letter-spacing: -0.4px;
+  color: var(--accent);
+}
+
+.brand-pill-tag {
+  font-family: var(--font-mono);
+  font-size: 6.5px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  background: #eef2ff;
+  color: #4338ca;
+  border: 1px solid #c7d2fe;
+  border-radius: 3px;
+  padding: 1.5px 5px;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.brand-kicker {
+  font-family: var(--font-mono);
+  font-size: 7.5px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  color: #475569;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.brand-subitems {
+  font-size: 7px;
+  font-weight: 700;
+  color: var(--primary);
+  line-height: 1.1;
+  letter-spacing: 0.1px;
+}
+
+/* SWITCH DE MODO (CLIENTE / ADMIN) ESTILO FACTURA */
+.mode-switch {
+  background: #f1f5f9;
+  border: 1.5px solid var(--dark);
+  border-radius: 6px;
+  padding: 2px;
+  display: flex;
+  gap: 2px;
+  box-shadow: 1px 1px 0px rgba(0,0,0,0.15);
+}
+
+.mode-btn {
+  background: transparent;
+  border: none;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 800;
+  padding: 0.4rem 0.85rem;
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--gray-700);
+  transition: all 0.15s ease;
+  text-transform: uppercase;
+}
+
+.mode-btn.active {
+  background: var(--dark);
+  color: #ffffff;
+}
+
+/* CONTENEDOR PRINCIPAL */
+.main-container {
+  flex: 1;
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 1.75rem 1.25rem;
+}
+
+#admin-main-panel {
+  max-width: 100%;
+  width: 100%;
+  padding: 1.5rem 1.25rem;
+}
+
+/* BOTONES TÉCNICOS ESTILO FACTURA */
+.btn-primary {
+  background: var(--dark);
+  color: #ffffff;
+  border: 1.5px solid var(--dark);
+  font-family: var(--font-mono);
+  font-weight: 800;
+  font-size: 0.82rem;
+  padding: 0.6rem 1.1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  box-shadow: var(--hard-shadow-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.btn-primary:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0px var(--dark);
+}
+
+.btn-primary:active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0px var(--dark);
+}
+
+.btn-secondary {
+  background: #ffffff;
+  color: var(--dark);
+  border: 1.5px solid var(--dark);
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 0.78rem;
+  padding: 0.55rem 0.95rem;
+  border-radius: 4px;
+  cursor: pointer;
+  box-shadow: var(--hard-shadow-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  transition: all 0.1s ease;
+}
+
+.btn-secondary:hover {
+  background: var(--gray-100);
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0px var(--dark);
+}
+
+.btn-secondary:active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0px var(--dark);
+}
+
+/* BANNER DE DETECCIÓN DE FACTURA */
+.claim-banner {
+  background: #ffffff;
+  border: 2px solid var(--accent);
+  border-radius: 6px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  box-shadow: 4px 4px 0px var(--accent);
+  position: relative;
+}
+
+.claim-info h3 {
+  font-size: 1.1rem;
+  font-weight: 900;
+  color: var(--accent);
+  font-family: var(--font-mono);
+}
+
+.claim-info p {
+  color: var(--gray-700);
+  font-size: 0.85rem;
+  margin-top: 0.25rem;
+}
+
+/* TARJETA TRASERA DE LAIN (CYBER-PASS DE SOCIO) */
+.cyberpass-wrapper {
+  margin-bottom: 2.25rem;
+}
+
+.lain-card {
+  background: #ffffff;
+  border: 2px solid var(--dark);
+  border-radius: 8px;
+  padding: 1.5rem 1.75rem;
+  position: relative;
+  box-shadow: var(--hard-shadow);
+  overflow: hidden;
+  background-image: radial-gradient(var(--dot-color) 0.85px, transparent 0.85px);
+  background-size: 8px 8px;
+}
+
+/* ESQUINAS TÉCNICAS CON CRUCES (+) */
+.tech-corner {
+  position: absolute;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--gray-400);
+  line-height: 1;
+  pointer-events: none;
+}
+.tech-corner.top-left { top: 6px; left: 8px; }
+.tech-corner.top-right { top: 6px; right: 8px; }
+.tech-corner.bottom-left { bottom: 6px; left: 8px; }
+.tech-corner.bottom-right { bottom: 6px; right: 8px; }
+
+.lain-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1.5px solid var(--dark);
+  padding-bottom: 0.6rem;
+  margin-bottom: 1rem;
+}
+
+.badge-navi {
+  background: var(--dark);
+  color: #ffffff;
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  padding: 2.5px 7px;
+  border-radius: 3px;
+  text-transform: uppercase;
+}
+
+.badge-layer {
+  background: #e0e7ff;
+  color: var(--primary);
+  border: 1px solid #c7d2fe;
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  padding: 2px 7px;
+  border-radius: 3px;
+  margin-left: 6px;
+}
+
+.lain-os-tag {
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  font-weight: 800;
+  color: var(--gray-500);
+  letter-spacing: 1px;
+}
+
+.lain-content-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.balance-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.balance-label {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--gray-500);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.balance-amount {
+  font-size: 3rem;
+  font-weight: 900;
+  color: var(--dark);
+  line-height: 1;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.balance-unit {
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--accent);
+}
+
+.lain-footer-specs {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px dashed var(--gray-300);
+  padding-top: 0.75rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--gray-700);
+}
+
+/* PESTAÑAS ESTILO ÍNDICE TÉCNICO */
+.tabs-container {
+  display: flex;
+  gap: 0.5rem;
+  border-bottom: 2px solid var(--dark);
+  margin-bottom: 2rem;
+  overflow-x: auto;
+}
+
+.tab-btn {
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  color: var(--gray-500);
+  font-family: var(--font-mono);
+  font-weight: 800;
+  font-size: 0.85rem;
+  padding: 0.75rem 1.25rem;
+  cursor: pointer;
+  white-space: nowrap;
+  text-transform: uppercase;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.tab-btn.active {
+  color: var(--dark);
+  border-bottom-color: var(--dark);
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.tab-badge {
+  background: var(--dark);
+  color: #fff;
+  font-size: 0.65rem;
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+/* TABLAS ESTILO FACTURA (ENCABEZADOS DARK) */
+.table-responsive {
+  overflow-x: auto;
+  border: 1.5px solid var(--dark);
+  border-radius: 4px;
+  background: #ffffff;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.table-responsive::-webkit-scrollbar {
+  display: none;
+}
+
+.token-code-pill {
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  font-weight: 800;
+  background: #f8fafc;
+  padding: 2px 6px;
+  border-radius: 3px;
+  border: 1px solid #e2e8f0;
+  display: inline-block;
+  color: var(--dark);
+}
+
+.btn-compact {
+  padding: 3px 8px !important;
+  font-size: 0.72rem !important;
+}
+
+.btn-dots {
+  padding: 3px 8px !important;
+  font-size: 0.8rem !important;
+  font-weight: 900 !important;
+  letter-spacing: 1px;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.8rem;
+}
+
+.admin-table th {
+  background: var(--dark);
+  color: #ffffff;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 0.65rem 0.85rem;
+  border-right: 1px solid rgba(255, 255, 255, 0.15);
+  text-transform: uppercase;
+}
+
+.admin-table td {
+  padding: 0.75rem 0.85rem;
+  border-bottom: 1px solid var(--gray-200);
+  border-right: 1px solid var(--gray-200);
+  color: var(--dark);
+}
+
+.admin-table tr:last-child td {
+  border-bottom: none;
+}
+
+/* FORMULARIOS ESTILO TICKET */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.form-label {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--dark);
+  text-transform: uppercase;
+}
+
+.form-input, .form-select {
+  background: #ffffff;
+  border: 1.5px solid var(--dark);
+  color: var(--dark);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: 4px;
+  outline: none;
+  box-shadow: 1px 1px 0px rgba(0,0,0,0.1);
+}
+
+.form-input:focus, .form-select:focus {
+  border-color: var(--accent);
+  box-shadow: 2px 2px 0px var(--accent);
+}
+
+/* GRUPO DE ENTRADA TELEFÓNICA CON PREFIJO +505 POR DEFECTO */
+.phone-input-group {
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+}
+
+.phone-prefix-addon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.55rem 0.75rem;
+  background: #f1f5f9;
+  border: 1.5px solid var(--dark);
+  border-right: none;
+  border-radius: 4px 0 0 4px;
+  font-family: var(--font-mono);
+  font-weight: 800;
+  font-size: 0.85rem;
+  color: var(--dark);
+  user-select: none;
+  white-space: nowrap;
+  letter-spacing: 0.5px;
+}
+
+.phone-input-group .form-input {
+  border-top-left-radius: 0 !important;
+  border-bottom-left-radius: 0 !important;
+  flex: 1;
+  min-width: 0;
+  letter-spacing: 1px;
+}
+
+.phone-input-group .form-input:focus {
+  border-left: 1.5px solid var(--accent);
+}
+
+/* TOASTS */
+.toast-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 10000;
+  pointer-events: none;
+}
+
+.toast {
+  background: var(--dark);
+  color: #ffffff;
+  border: 1.5px solid var(--dark);
+  box-shadow: 4px 4px 0px rgba(0,0,0,0.3);
+  padding: 0.8rem 1.25rem;
+  border-radius: 6px;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  pointer-events: auto;
+  animation: toastSlideIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  max-width: 380px;
+}
+
+@keyframes toastSlideIn {
+  from { transform: translateY(16px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.toast.success { border-color: #10b981; border-left-width: 5px; }
+.toast.error { border-color: var(--accent); border-left-width: 5px; }
+.toast.info { border-color: #0ea5e9; border-left-width: 5px; }

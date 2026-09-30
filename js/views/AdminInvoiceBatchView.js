@@ -1,0 +1,765 @@
+/**
+ * Vista / Subcontrolador: Lotes de Facturación 4x1, Impresión de Pliegos, Opciones de Token y Catálogo (The Wired Club)
+ */
+import { InvoiceTemplateService } from "../services/InvoiceTemplateService.js";
+import { FirestoreService } from "../services/FirestoreService.js";
+import { setProductPublicationMode, recalculateProductDiscount } from "./AdminCatalogCalculatorView.js";
+
+let vm = null;
+let showToast = () => {};
+let closeModal = () => {};
+let switchAdminTab = () => {};
+let promptAssignPoints = () => {};
+let openSingleDigitalInvoiceModal = () => {};
+let renderTokensTable = () => {};
+let renderAdmin = (m) => { if (vm && typeof vm.notify === "function") vm.notify(); };
+
+export function initAdminInvoiceBatchView(deps) {
+  if (deps) {
+    if (deps.vm) vm = deps.vm;
+    if (deps.showToast) showToast = deps.showToast;
+    if (deps.closeModal) closeModal = deps.closeModal;
+    if (deps.switchAdminTab) switchAdminTab = deps.switchAdminTab;
+    if (deps.promptAssignPoints) promptAssignPoints = deps.promptAssignPoints;
+    if (deps.openSingleDigitalInvoiceModal) openSingleDigitalInvoiceModal = deps.openSingleDigitalInvoiceModal;
+    if (deps.renderTokensTable) renderTokensTable = deps.renderTokensTable;
+    if (deps.renderAdmin) renderAdmin = deps.renderAdmin;
+  }
+}
+
+let currentSingleTokenUrl = "";
+let currentSheetTokens = [];
+
+
+export async function generateBatchAdmin() {
+  const folioEl = document.getElementById("lot-start-folio");
+  const countEl = document.getElementById("lot-count");
+  const folio = folioEl?.value || 1;
+  let count = parseInt(countEl?.value, 10) || 4;
+
+  if (count < 4) count = 4;
+  if (count % 4 !== 0) count = Math.ceil(count / 4) * 4;
+  if (countEl) countEl.value = count;
+
+  showToast(`Generando y guardando lote de ${count} facturas con QR únicos...`, "info");
+
+  try {
+    const res = await vm.generateLot(folio, count, 0);
+    currentSheetTokens = res.tokens;
+    showToast(`¡Lote guardado! ${res.tokens.length} facturas registradas en estado 'En espera de valor'.`, "success");
+    triggerNativeSheetPrint(res.tokens);
+  } catch (err) {
+    showToast("❌ " + err.message, "error");
+  }
+}
+
+export async function printFromModal() {
+  closeModal("modal-print-sheet");
+  await generateBatchAdmin();
+}
+
+// [MODULARIZADO]: Lógica de calculadora de catálogo migrada a js/views/AdminCatalogCalculatorView.js
+
+
+// -----------------------------------------------------------------------------
+// CALCULADORA DE PUNTOS POR VENTA (FACTURA 4X1 // REGULADOR DE RETORNO)
+// -----------------------------------------------------------------------------
+// [MODULARIZADO]: Lógica de calculadora de retorno WP migrada a js/views/AdminSalePointsCalculatorView.js
+
+
+export function openNewProductModal() {
+  const modal = document.getElementById("modal-new-product");
+  if (!modal) return;
+  modal.style.display = "flex";
+  setProductPublicationMode("FREE_REWARD");
+  setTimeout(() => {
+    const input = document.getElementById("prod-title");
+    if (input) input.focus();
+  }, 100);
+}
+
+
+export function validateLotCountInput(input) {
+  let val = parseInt(input?.value, 10);
+  const helper = document.getElementById("lot-count-helper");
+  if (!helper) return;
+
+  if (isNaN(val) || val <= 0) {
+    helper.textContent = "⚠️ Ingresa una cantidad válida (múltiplos de 4).";
+    helper.style.color = "#dc2626";
+    return;
+  }
+
+  const sheets = Math.ceil(val / 4);
+  const exact = val % 4 === 0;
+
+  if (exact) {
+    helper.innerHTML = `📐 <strong>${sheets} pliegos carta</strong> = ${val} facturas a doble cara con QR únicos`;
+    helper.style.color = "var(--primary)";
+  } else {
+    const recommended = sheets * 4;
+    helper.innerHTML = `⚠️ No es múltiplo de 4. Se redondeará a <strong>${recommended} facturas (${sheets} pliegos carta completos)</strong>`;
+    helper.style.color = "#d97706";
+  }
+}
+
+export function enforceMultipleOfFour(input) {
+  let val = parseInt(input?.value, 10);
+  if (isNaN(val) || val < 4) val = 4;
+  if (val % 4 !== 0) {
+    const rounded = Math.ceil(val / 4) * 4;
+    input.value = rounded;
+    showToast(`Cantidad ajustada a ${rounded} facturas (${rounded / 4} pliegos carta completos de 4x1).`, "info");
+  }
+  validateLotCountInput(input);
+}
+
+export function openPurgeModal() {
+  const modal = document.getElementById("modal-purge-invoices");
+  if (!modal) return;
+  const countBadge = document.getElementById("purge-tokens-count-badge");
+  const count = (vm.tokens || []).length;
+  if (countBadge) countBadge.textContent = `${count} ${count === 1 ? 'factura registrada' : 'facturas registradas'}`;
+  modal.style.display = "flex";
+}
+
+export async function executePurgeInvoices() {
+  closeModal("modal-purge-invoices");
+  showToast("Ejecutando purga atómica en Firestore y almacenamiento local...", "info");
+  try {
+    const res = await vm.purgeAllInvoiceTokens();
+    const folioEl = document.getElementById("lot-start-folio");
+    if (folioEl) {
+      folioEl.value = 1;
+      delete folioEl.dataset.userEdited;
+    }
+    const helper = document.getElementById("lot-folio-helper");
+    if (helper) helper.innerHTML = "Siguiente folio libre detectado: <strong>#0001</strong> (Base de datos limpia)";
+
+    renderTokensTable(vm.tokens);
+    showToast("✓ Base de datos purgada: facturas eliminadas y correlativo restablecido a #0001.", "success");
+  } catch (err) {
+    showToast("❌ Error al limpiar base de datos: " + err.message, "error");
+  }
+}
+
+export function openPurgeAllDbModal() {
+  const modal = document.getElementById("modal-purge-all-db");
+  if (!modal) return;
+  modal.style.display = "flex";
+}
+
+export async function executePurgeAllDb() {
+  closeModal("modal-purge-all-db");
+  showToast("Ejecutando purga total de la base de datos (Firestore + Local)...", "info");
+  try {
+    const res = await vm.purgeEntireDatabase();
+    const folioEl = document.getElementById("lot-start-folio");
+    if (folioEl) {
+      folioEl.value = 1;
+      delete folioEl.dataset.userEdited;
+    }
+    const helper = document.getElementById("lot-folio-helper");
+    if (helper) helper.innerHTML = "Siguiente folio libre detectado: <strong>#0001</strong> (Base de datos limpia)";
+
+    renderAdmin(vm);
+
+    showToast("✓ Base de datos completamente purgada. El PIN de Admin sigue intacto.", "success");
+  } catch (err) {
+    showToast("❌ Error al purgar la base de datos: " + err.message, "error");
+  }
+}
+
+let currentProductBase64 = null;
+
+export function handleProductImageFile(input) {
+  if (!input.files || !input.files[0]) return;
+  const file = input.files[0];
+
+  if (!file.type.startsWith("image/")) {
+    showToast("⚠️ Selecciona un archivo de imagen válido (JPG, PNG, WebP).", "error");
+    return;
+  }
+
+  showToast("Optimizando y convirtiendo imagen a Base64 gratuito...", "info");
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const img = new Image();
+    img.onload = () => {
+      const maxDim = 500;
+      let width = img.width;
+      let height = img.height;
+
+      if (width > maxDim || height > maxDim) {
+        if (width > height) {
+          height = Math.round((height * maxDim) / width);
+          width = maxDim;
+        } else {
+          width = Math.round((width * maxDim) / height);
+          height = maxDim;
+        }
+      }
+
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0, width, height);
+
+      const base64Data = canvas.toDataURL("image/jpeg", 0.78);
+      currentProductBase64 = base64Data;
+
+      const previewBox = document.getElementById("prod-img-preview-box");
+      const previewImg = document.getElementById("prod-img-preview");
+      const nameEl = document.getElementById("prod-img-name");
+      const sizeEl = document.getElementById("prod-img-size");
+      const imgInput = document.getElementById("prod-img");
+
+      if (previewImg) previewImg.src = base64Data;
+      if (nameEl) nameEl.textContent = file.name;
+      const approxKb = Math.round(base64Data.length * 0.75 / 1024);
+      if (sizeEl) sizeEl.textContent = `✓ Optimizado (${width}×${height}px · ~${approxKb} KB en Base64)`;
+      if (previewBox) previewBox.style.display = "flex";
+      if (imgInput) imgInput.value = base64Data;
+
+      showToast("✓ Imagen optimizada y lista para guardar en la base de datos.", "success");
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+export function clearProductImageUpload() {
+  currentProductBase64 = null;
+  const fileInput = document.getElementById("prod-file-input");
+  if (fileInput) fileInput.value = "";
+  const imgInput = document.getElementById("prod-img");
+  if (imgInput) imgInput.value = "";
+  const previewBox = document.getElementById("prod-img-preview-box");
+  if (previewBox) previewBox.style.display = "none";
+}
+
+export function previewProductImageFromUrl(url) {
+  const val = (url || "").trim();
+  const previewBox = document.getElementById("prod-img-preview-box");
+  const previewImg = document.getElementById("prod-img-preview");
+  const nameEl = document.getElementById("prod-img-name");
+  const sizeEl = document.getElementById("prod-img-size");
+
+  if (!val) {
+    if (previewBox) previewBox.style.display = "none";
+    return;
+  }
+
+  if (val.startsWith("data:image")) {
+    currentProductBase64 = val;
+  } else {
+    currentProductBase64 = null;
+  }
+
+  if (previewImg) previewImg.src = val;
+  if (nameEl) nameEl.textContent = val.startsWith("data:") ? "Imagen Base64" : "Imagen Remota";
+  if (sizeEl) sizeEl.textContent = val.startsWith("data:") ? "Almacenamiento Local" : "URL Externa";
+  if (previewBox) previewBox.style.display = "flex";
+}
+
+export async function saveProductAdmin() {
+  const title = (document.getElementById("prod-title").value || "").trim();
+  const pointsCost = parseInt(document.getElementById("prod-cost").value, 10);
+  const stock = parseInt(document.getElementById("prod-stock").value, 10) || 1;
+  const imageUrl = currentProductBase64 || (document.getElementById("prod-img").value || "").trim();
+  const description = (document.getElementById("prod-desc").value || "").trim();
+
+  const activeProductMode = document.getElementById("prod-reward-type")?.value || "FREE_REWARD";
+  let rewardType = (document.getElementById("prod-reward-type")?.value) || activeProductMode || "FREE_REWARD";
+  let priceUsd = parseFloat(document.getElementById("prod-price-usd")?.value) || 0;
+  let maxDiscountPct = parseFloat(document.getElementById("prod-max-discount-pct")?.value) || 0;
+  let maxDiscountUsd = parseFloat(document.getElementById("prod-max-discount-usd")?.value) || 0;
+  let cashToPayUsd = parseFloat(document.getElementById("prod-cash-to-pay-usd")?.value) || 0;
+
+  if (activeProductMode === "PARTIAL_DISCOUNT" || rewardType === "PARTIAL_DISCOUNT") {
+    rewardType = "PARTIAL_DISCOUNT";
+    const calc = recalculateProductDiscount();
+    priceUsd = calc.salePrice;
+    maxDiscountPct = calc.discountPct;
+    maxDiscountUsd = calc.maxDiscountUsd;
+    cashToPayUsd = calc.cashDue;
+  }
+
+  if (!title) {
+    showToast("⚠️ El nombre del producto es obligatorio.", "error");
+    return;
+  }
+  if (isNaN(pointsCost) || pointsCost <= 0) {
+    showToast("⚠️ Ingresa un costo válido en Wired Points.", "error");
+    return;
+  }
+
+  try {
+    await vm.addReward({
+      title,
+      rewardType,
+      priceUsd,
+      maxDiscountPct,
+      maxDiscountUsd,
+      cashToPayUsd,
+      pointsCost,
+      stock,
+      imageUrl,
+      description
+    });
+    closeModal("modal-new-product");
+    document.getElementById("prod-title").value = "";
+    document.getElementById("prod-cost").value = "";
+    document.getElementById("prod-stock").value = "1";
+    document.getElementById("prod-img").value = "";
+    document.getElementById("prod-desc").value = "";
+    document.getElementById("prod-reward-type").value = "FREE_REWARD";
+    document.getElementById("prod-price-usd").value = "0";
+    document.getElementById("prod-max-discount-pct").value = "0";
+    document.getElementById("prod-max-discount-usd").value = "0";
+    document.getElementById("prod-cash-to-pay-usd").value = "0";
+    const pill = document.getElementById("prod-commercial-summary-pill");
+    if (pill) pill.style.display = "none";
+    clearProductImageUpload();
+    showToast("✓ Producto registrado con éxito en el catálogo.", "success");
+  } catch (err) {
+    showToast("❌ " + err.message, "error");
+  }
+}
+
+export const saveNewProduct = saveProductAdmin;
+
+export async function removeProductAdmin(id) {
+  if (confirm("¿Estás seguro de eliminar este producto del catálogo?")) {
+    await vm.deleteReward(id);
+    showToast("Producto eliminado del catálogo", "info");
+  }
+}
+
+export function toggleCustomPaperInputs() {
+  const select = document.getElementById("lot-paper-size");
+  const customBox = document.getElementById("custom-paper-fields");
+  if (customBox) {
+    customBox.style.display = select.value === "custom" ? "flex" : "none";
+  }
+}
+
+export function getSelectedPaperDimensions(source = "preview") {
+  const selectId = source === "preview" ? "preview-paper-size" : "lot-paper-size";
+  const select = document.getElementById(selectId);
+  const sizeType = select ? select.value : "letter";
+
+  if (sizeType === "letter") {
+    return { name: "Carta (Letter)", widthMm: 215.9, heightMm: 279.4, cssSize: "letter portrait" };
+  } else if (sizeType === "a4") {
+    return { name: "A4", widthMm: 210, heightMm: 297, cssSize: "A4 portrait" };
+  } else if (sizeType === "legal") {
+    return { name: "Oficio (Legal)", widthMm: 215.9, heightMm: 355.6, cssSize: "legal portrait" };
+  } else {
+    const wId = source === "preview" ? "preview-custom-w" : "custom-paper-width";
+    const hId = source === "preview" ? "preview-custom-h" : "custom-paper-height";
+    const w = Number(document.getElementById(wId)?.value) || 216;
+    const h = Number(document.getElementById(hId)?.value) || 279;
+    return { name: "Personalizado (" + w + "x" + h + " mm)", widthMm: w, heightMm: h, cssSize: w + "mm " + h + "mm" };
+  }
+}
+
+let currentPreviewMode = "both";
+
+export function switchPreviewMode(mode) {
+  currentPreviewMode = mode;
+  const inputEl = document.getElementById("print-duplex-mode");
+  if (inputEl) inputEl.value = mode;
+
+  ["front", "back", "both"].forEach(m => {
+    const btn = document.getElementById("btn-preview-mode-" + m);
+    if (btn) {
+      if (m === mode) {
+        btn.classList.add("active");
+        btn.style.background = "#0f172a";
+        btn.style.color = "#ffffff";
+      } else {
+        btn.classList.remove("active");
+        btn.style.background = "#f8fafc";
+        btn.style.color = "#475569";
+      }
+    }
+  });
+
+  updatePreviewSheetDimensions();
+}
+
+export function updatePreviewSheetDimensions() {
+  const dims = getSelectedPaperDimensions("preview");
+  const select = document.getElementById("preview-paper-size");
+  const customBox = document.getElementById("preview-custom-dims");
+  const label = document.getElementById("preview-dims-label");
+
+  if (customBox) customBox.style.display = select.value === "custom" ? "flex" : "none";
+  if (label) label.textContent = dims.name + ": " + dims.widthMm + " mm × " + dims.heightMm + " mm";
+
+  const mode = currentPreviewMode || document.getElementById("print-duplex-mode")?.value || "both";
+  const tokensToRender = (currentSheetTokens && currentSheetTokens.length >= 4)
+    ? currentSheetTokens.slice(0, 4)
+    : (vm && vm.tokens && vm.tokens.length >= 4
+        ? vm.tokens.slice(0, 4)
+        : [
+            { tokenCode: "WP-2026-F0104-A98B", invoiceFolio: "0104", pointsValue: 0, securityPin: "4891" },
+            { tokenCode: "WP-2026-F0105-C34D", invoiceFolio: "0105", pointsValue: 0, securityPin: "7124" },
+            { tokenCode: "WP-2026-F0106-E56F", invoiceFolio: "0106", pointsValue: 0, securityPin: "8390" },
+            { tokenCode: "WP-2026-F0107-G78H", invoiceFolio: "0107", pointsValue: 0, securityPin: "1923" }
+          ]);
+
+  const iframe = document.getElementById("sheet-preview-iframe");
+  if (iframe) {
+    const docHtml = InvoiceTemplateService.generatePrintDocument(tokensToRender, dims, mode, false);
+    iframe.srcdoc = docHtml;
+  }
+}
+
+export function downloadPrintSheetHtml() {
+  const dims = getSelectedPaperDimensions("preview");
+  const mode = currentPreviewMode || document.getElementById("print-duplex-mode")?.value || "both";
+  const tokensToRender = (currentSheetTokens && currentSheetTokens.length >= 4)
+    ? currentSheetTokens.slice(0, 4)
+    : (vm && vm.tokens && vm.tokens.length >= 4 ? vm.tokens.slice(0, 4) : []);
+
+  const docHtml = InvoiceTemplateService.generatePrintDocument(tokensToRender, dims, mode, false);
+  const blob = new Blob([docHtml], { type: "text/html;charset=utf-8" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `pliego_facturas_meltydeays_4x1_${mode}.html`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  showToast("✓ Archivo de pliego 4x1 descargado con éxito.", "success");
+}
+
+export function openPrintSheetModal() {
+  if (currentSheetTokens.length === 0 && vm.tokens.length > 0) {
+    currentSheetTokens = vm.tokens.slice(0, 4);
+  }
+
+  const mainPaperSize = document.getElementById("lot-paper-size")?.value || "letter";
+  const modalSelect = document.getElementById("preview-paper-size");
+  if (modalSelect) modalSelect.value = mainPaperSize;
+
+  switchPreviewMode("both");
+
+  const modal = document.getElementById("modal-print-sheet");
+  if (modal) modal.style.display = "flex";
+}
+
+export function triggerNativeSheetPrint(explicitTokens) {
+  const dims = getSelectedPaperDimensions("preview");
+  const mode = document.getElementById("print-duplex-mode")?.value || "both";
+  
+  if (!explicitTokens && currentSheetTokens.length === 0 && vm.tokens.length === 0) {
+    // Si no hay tokens generados aún, generar el lote directamente para guardar en sistema
+    generateBatchAdmin();
+    return;
+  }
+
+  const tokensToPrint = explicitTokens && explicitTokens.length > 0
+    ? explicitTokens
+    : (currentSheetTokens.length > 0 
+        ? currentSheetTokens 
+        : vm.tokens);
+
+  const printWindow = window.open("", "_blank");
+  if (!printWindow) {
+    showToast("Por favor habilita las ventanas emergentes en tu navegador para imprimir.", "error");
+    return;
+  }
+
+  const printDoc = InvoiceTemplateService.generatePrintDocument(tokensToPrint, dims, mode);
+  printWindow.document.open();
+  printWindow.document.write(printDoc);
+  printWindow.document.close();
+}
+
+
+export function viewSingleTokenQr(tokenCode, invoiceFolio, pointsValue, securityPin) {
+  const modal = document.getElementById("modal-single-qr");
+  if (!modal) return;
+
+  currentSingleTokenUrl = "https://meltydeays-wired-club.vercel.app/?claim=" + tokenCode;
+
+  document.getElementById("single-qr-folio").textContent = "Factura #MD-2026-" + invoiceFolio;
+  document.getElementById("single-qr-points").textContent = pointsValue > 0 ? pointsValue + " WP" : "Sin Asignar (0 WP)";
+  document.getElementById("single-qr-pin").textContent = securityPin || "••••";
+  document.getElementById("single-qr-code").textContent = tokenCode;
+
+  const canvas = document.getElementById("single-qr-canvas");
+  if (canvas && typeof QRCode !== "undefined") {
+    canvas.innerHTML = "";
+    new QRCode(canvas, {
+      text: currentSingleTokenUrl,
+      width: 170,
+      height: 170,
+      colorDark: "#0f172a",
+      colorLight: "#ffffff",
+      correctLevel: QRCode.CorrectLevel.H
+    });
+  }
+
+  modal.style.display = "flex";
+}
+
+export function copySingleQrUrl() {
+  if (navigator.clipboard && currentSingleTokenUrl) {
+    navigator.clipboard.writeText(currentSingleTokenUrl).then(() => {
+      showToast("Enlace de auto-reclamo copiado al portapapeles", "success");
+    });
+  }
+}
+
+export function testSingleQrUrl() {
+  if (currentSingleTokenUrl) {
+    window.open(currentSingleTokenUrl, "_blank");
+  }
+}
+
+let selectedTokenForActions = null;
+
+export function openTokenActionsModal(tokenCode) {
+  const token = (vm.tokens || []).find(t => t.tokenCode === tokenCode);
+  if (!token) return;
+  selectedTokenForActions = token;
+
+  const modal = document.getElementById("modal-token-actions");
+  if (!modal) return;
+
+  const titleEl = document.getElementById("token-actions-title");
+  const codeEl = document.getElementById("token-actions-code");
+  const pinEl = document.getElementById("token-actions-pin-badge");
+  const statusRow = document.getElementById("token-actions-status-row");
+  const btnAssign = document.getElementById("btn-token-opt-assign");
+
+  if (titleEl) titleEl.textContent = `Factura #MD-2026-${token.invoiceFolio}`;
+  if (codeEl) codeEl.textContent = token.tokenCode;
+  if (pinEl) pinEl.textContent = `PIN: ${token.securityPin || "••••"}`;
+
+  if (statusRow) {
+    statusRow.innerHTML = `
+      <span class="badge-navi" style="font-size: 0.72rem; padding: 2px 7px; margin-right: 4px;">
+        ${token.pointsValue > 0 ? `⚡ ${token.pointsValue} WP` : '⏳ Sin Asignar (0 WP)'}
+      </span>
+      <span class="badge-navi" style="font-size: 0.72rem; padding: 2px 7px;">
+        ${token.isClaimed() ? '✔ RECLAMADO' : (token.isActive() ? '● SIN RECLAMAR' : '⏳ EN ESPERA DE VALOR')}
+      </span>
+    `;
+  }
+
+  if (btnAssign) {
+    if (token.isClaimed()) {
+      btnAssign.style.display = "none";
+    } else {
+      btnAssign.style.display = "inline-flex";
+      btnAssign.innerHTML = `<span>⚡</span> <strong>${token.isPendingAssignment() ? 'Cargar Puntos de Venta' : 'Modificar Puntos Asignados'}</strong>`;
+    }
+  }
+
+  const btnViewInvoice = document.getElementById("btn-token-opt-view-invoice");
+  const btnViewLabel = document.getElementById("btn-token-opt-view-invoice-label");
+  const btnEditInvoice = document.getElementById("btn-token-opt-edit-invoice");
+  const hasInvData = !!(token.invoiceData && token.invoiceData.items && token.invoiceData.items.length > 0);
+  if (btnViewInvoice) {
+    btnViewInvoice.style.display = "inline-flex";
+    if (btnViewLabel) btnViewLabel.textContent = hasInvData ? "Ver Factura Digital (Datos Guardados)" : "Generar / Ver Factura Digital (1 Página Completa)";
+  }
+  if (btnEditInvoice) {
+    btnEditInvoice.style.display = hasInvData ? "inline-flex" : "none";
+  }
+
+  modal.style.display = "flex";
+}
+
+export function executeTokenOptAssign() {
+  closeModal("modal-token-actions");
+  if (selectedTokenForActions) {
+    promptAssignPoints(selectedTokenForActions.tokenCode, selectedTokenForActions.invoiceFolio);
+  }
+}
+
+export function executeTokenOptQr() {
+  closeModal("modal-token-actions");
+  if (selectedTokenForActions) {
+    viewSingleTokenQr(selectedTokenForActions.tokenCode, selectedTokenForActions.invoiceFolio, selectedTokenForActions.pointsValue, selectedTokenForActions.securityPin);
+  }
+}
+
+export function executeTokenOptCopyLink() {
+  if (selectedTokenForActions) {
+    const url = "https://meltydeays-wired-club.vercel.app/?claim=" + selectedTokenForActions.tokenCode;
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(url).then(() => {
+        showToast("✓ Enlace de auto-reclamo copiado al portapapeles", "success");
+      });
+    }
+  }
+}
+
+export function executeTokenOptTestUrl() {
+  if (selectedTokenForActions) {
+    const url = "https://meltydeays-wired-club.vercel.app/?claim=" + selectedTokenForActions.tokenCode;
+    window.open(url, "_blank");
+  }
+}
+
+export function executeTokenOptDigitalInvoice() {
+  closeModal("modal-token-actions");
+  if (selectedTokenForActions) {
+    openSingleDigitalInvoiceModal(selectedTokenForActions.tokenCode);
+  }
+}
+
+export function executeTokenOptViewInvoice() {
+  if (!selectedTokenForActions) return;
+  const token = selectedTokenForActions;
+  const hasInvData = !!(token.invoiceData && token.invoiceData.items && token.invoiceData.items.length > 0);
+  closeModal("modal-token-actions");
+  if (hasInvData) {
+    const printDims = getSelectedPaperDimensions ? getSelectedPaperDimensions("preview") : null;
+    const docHtml = InvoiceTemplateService.generateSingleDigitalInvoiceDocument(
+      token.invoiceData,
+      printDims,
+      false,
+      token.invoiceData.selectedLainDesignIdx
+    );
+    const w = window.open("", "_blank");
+    if (w) { w.document.open(); w.document.write(docHtml); w.document.close(); }
+    else showToast("⚠️ Habilita ventanas emergentes para ver la factura.", "error");
+  } else {
+    openSingleDigitalInvoiceModal(token.tokenCode);
+  }
+}
+
+export function executeTokenOptEditInvoice() {
+  closeModal("modal-token-actions");
+  if (selectedTokenForActions) {
+    openSingleDigitalInvoiceModal(selectedTokenForActions.tokenCode, true);
+  }
+}
+
+export function handleInvoiceBtnClick(tokenCode) {
+  const token = (vm.tokens || []).find(t => t.tokenCode === tokenCode);
+  if (!token) { openSingleDigitalInvoiceModal(tokenCode); return; }
+  const hasInvData = !!(token.invoiceData && token.invoiceData.items && token.invoiceData.items.length > 0);
+  if (hasInvData) {
+    const printDims = getSelectedPaperDimensions ? getSelectedPaperDimensions("preview") : null;
+    const docHtml = InvoiceTemplateService.generateSingleDigitalInvoiceDocument(
+      token.invoiceData,
+      printDims,
+      false,
+      token.invoiceData.selectedLainDesignIdx
+    );
+    const w = window.open("", "_blank");
+    if (w) { w.document.open(); w.document.write(docHtml); w.document.close(); }
+    else showToast("⚠️ Habilita ventanas emergentes.", "error");
+  } else {
+    openSingleDigitalInvoiceModal(tokenCode);
+  }
+}
+
+// ========================================================
+// CONTROLADOR DE GALERÍA Y SELECCIÓN DE DISEÑOS LAIN
+// ========================================================
+let _currentSeriesFilter = 'ALL';
+let _lainTemplatesCache = null;
+
+function getLainTemplates() {
+  if (_lainTemplatesCache && _lainTemplatesCache.length) return _lainTemplatesCache;
+  if (InvoiceTemplateService && typeof InvoiceTemplateService.getAvailableLainTemplates === "function") {
+    _lainTemplatesCache = InvoiceTemplateService.getAvailableLainTemplates('physical');
+  } else {
+    _lainTemplatesCache = Array.from({ length: 74 }, (_, i) => ({
+      idx: i,
+      layer: "LAYER: " + String(i + 1).padStart(2, "0"),
+      series: i < 24 ? "SERIE 1" : (i < 44 ? "SERIE 2" : "SERIE 3"),
+      title: "PLANTILLA " + (i + 1),
+      sub: "Diseño coleccionable 4x1",
+      kanji: "デザイン"
+    }));
+  }
+  return _lainTemplatesCache;
+}
+
+export function filterLainSeries(series) {
+  _currentSeriesFilter = series;
+  if (typeof window !== "undefined") window._currentSeriesFilter = series;
+  ['all', 's1', 's2', 's3'].forEach(k => {
+    const btn = document.getElementById('btn-filter-' + k);
+    if (btn) {
+      btn.style.background = '#fff';
+      btn.style.color = '#334155';
+    }
+  });
+  const activeBtn = document.getElementById('btn-filter-' + (series === 'ALL' ? 'all' : (series === 'SERIE 1' ? 's1' : (series === 'SERIE 2' ? 's2' : 's3'))));
+  if (activeBtn) {
+    activeBtn.style.background = series === 'SERIE 3' ? '#b45309' : '#0f172a';
+    activeBtn.style.color = '#fff';
+  }
+  renderLainTemplateGrid();
+}
+
+export function setActiveLainTemplate(idx) {
+  const templates = getLainTemplates();
+  const val = (idx === null || idx === undefined) ? null : Math.max(0, Math.min((templates.length || 74) - 1, Number(idx) | 0));
+  if (typeof window !== "undefined") window.activeLainTemplateIdx = val;
+  renderLainTemplateGrid();
+}
+
+function getAllowedLainIndices() {
+  const sf = _currentSeriesFilter || 'ALL';
+  if (sf === 'SERIE 1') return Array.from({ length: 24 }, (_, i) => i);
+  if (sf === 'SERIE 2') return Array.from({ length: 20 }, (_, i) => i + 24);
+  if (sf === 'SERIE 3') return Array.from({ length: 30 }, (_, i) => i + 44);
+  return Array.from({ length: getLainTemplates().length || 74 }, (_, i) => i);
+}
+
+export function cycleLainTemplate(dir) {
+  const allowed = getAllowedLainIndices();
+  const currentIdx = typeof window !== "undefined" && window.activeLainTemplateIdx !== undefined ? window.activeLainTemplateIdx : null;
+  const cur = currentIdx === null ? -1 : currentIdx;
+  const curPos = allowed.indexOf(cur);
+  let nextPos = 0;
+  if (curPos === -1) {
+    nextPos = dir > 0 ? 0 : allowed.length - 1;
+  } else {
+    nextPos = (curPos + (dir > 0 ? 1 : -1) + allowed.length) % allowed.length;
+  }
+  setActiveLainTemplate(allowed[nextPos]);
+}
+
+export function randomizeLainTemplate() {
+  const allowed = getAllowedLainIndices();
+  const rnd = allowed[Math.floor(Math.random() * allowed.length)];
+  setActiveLainTemplate(rnd);
+}
+
+export function renderLainTemplateGrid() {
+  const grid = document.getElementById("lain-template-grid");
+  if (!grid) return;
+  const templates = getLainTemplates();
+  const currentIdx = typeof window !== "undefined" ? window.activeLainTemplateIdx : null;
+  const sf = _currentSeriesFilter || 'ALL';
+  const label = document.getElementById("lain-template-active-label");
+  if (label) {
+    if (currentIdx === null || currentIdx === undefined) {
+      const seriesName = sf === 'SERIE 3' ? 'SERIE 3 (30 Diseños Haibane Renmei)' : (sf === 'SERIE 2' ? 'SERIE 2 (20 Diseños Copland OS)' : (sf === 'SERIE 1' ? 'SERIE 1 (24 Diseños Lain)' : 'TODAS (74 Diseños)'));
+      label.innerHTML = "▣ MODO DINÁMICO ACTIVO: Rotación por lote en " + seriesName;
+      label.style.background = sf === 'SERIE 3' ? "#fef3c7" : "#ecfdf5";
+      label.style.color = sf === 'SERIE 3' ? "#92400e" : "#047857";
+      label.style.borderColor = sf === 'SERIE 3' ? "#f59e0b" : "#6ee7b7";
+    } else {
+      const sel = templates[currentIdx] || templates[0];
+      label.innerHTML = "▣ DISEÑO FIJO ACTIVO: " + sel.layer + " — " + sel.title;
+      label.style.background = "#eef2ff";
+      label.style.color = "#4338ca";
+      label.style.borderColor = "#c7d2fe";
+    }
+  }
+}

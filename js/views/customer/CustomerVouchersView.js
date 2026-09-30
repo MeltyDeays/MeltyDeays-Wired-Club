@@ -1,0 +1,576 @@
+/**
+ * Vista / Subcontrolador: Vales Digitales con QR, Historial Contable (Ledger) y Cancelación de Compras (The Wired Club)
+ */
+let vm = null;
+let showToast = () => {};
+let formatPrice = (usd) => `$${Number(usd || 0).toFixed(2)} USD`;
+let formatDualPrice = (usd) => `$${Number(usd || 0).toFixed(2)} USD`;
+
+export function initCustomerVouchersView(deps) {
+  if (deps) {
+    if (deps.vm) vm = deps.vm;
+    if (deps.showToast) showToast = deps.showToast;
+    if (deps.formatPrice) formatPrice = deps.formatPrice;
+    if (deps.formatDualPrice) formatDualPrice = deps.formatDualPrice;
+  }
+}
+
+let currentOpenVoucherCode = null;
+let pendingCancelVoucherCode = null;
+
+export function renderVouchers(vouchers) {
+  const container = document.getElementById("vouchers-container");
+  const countBadge = document.getElementById("vouchers-count-badge");
+  if (!container) return;
+
+  const pending = (vouchers || []).filter(v => v.status === "PENDING_DELIVERY" || !v.isDelivered?.());
+  if (countBadge) countBadge.textContent = pending.length;
+
+  if (!vouchers || vouchers.length === 0) {
+    container.innerHTML = `
+      <div class="cyber-empty-box">
+        <div class="empty-icon-wrap" style="color: var(--accent); background: #fff1f2; border-color: #fecdd3;">
+          <svg viewBox="0 0 24 24" width="34" height="34" stroke="currentColor" stroke-width="1.8" fill="none">
+            <path d="M4 8V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2a2 2 0 0 0 0-4Z" />
+            <path d="M10 4v16M14 4v16" stroke-dasharray="2 2" />
+          </svg>
+        </div>
+        <div class="empty-tag">VALES // HISTORIAL VACÍO</div>
+        <h3 class="empty-title">No Tienes Vales Activos</h3>
+        <p class="empty-desc">
+          Cuando canjees un producto en el catálogo, aquí aparecerá tu vale digital con QR para retirar directamente en mostrador.
+        </p>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = `
+    <div class="vouchers-grid">
+      ${vouchers.map(v => {
+    const isDelivered = v.status === "DELIVERED" || (typeof v.isDelivered === "function" && v.isDelivered()) || Boolean(v.deliveredAt);
+    const isCancelled = v.status === "CANCELLED" || (typeof v.isCancelled === "function" && v.isCancelled()) || Boolean(v.cancelledAt);
+    const isCommercial = typeof v.isCommercial === "function" ? v.isCommercial() : (v.rewardType === "PARTIAL_DISCOUNT" || (v.cashToPayUsd && v.cashToPayUsd > 0));
+    const isPaid = typeof v.isPaidVoucher === "function" ? v.isPaidVoucher() : Boolean(v.isPaid || v.status === "PAID" || v.paidAt);
+    const isExpired = v.status === "EXPIRED" || (typeof v.isExpired === "function" ? v.isExpired() : (isCommercial && !isPaid && !isDelivered && !isCancelled && v.expiresAt && new Date() > new Date(v.expiresAt)));
+    const cost = v.pointsSpent || v.pointsCost || 0;
+    const dateStr = v.createdAt ? new Date(v.createdAt).toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" }) : "-";
+
+    let badgeHtml = "";
+    if (isDelivered) {
+      badgeHtml = `<div class="voucher-badge delivered" style="background:#ecfdf5; color:#065f46; border:1px solid #a7f3d0; font-family:var(--font-mono); font-size:0.68rem; font-weight:800; padding:2px 7px; border-radius:3px;">✓ ENTREGADO</div>`;
+    } else if (isCancelled) {
+      badgeHtml = `<div class="voucher-badge cancelled" style="background:#fee2e2; color:#991b1b; border:1px solid #fca5a5; font-family:var(--font-mono); font-size:0.68rem; font-weight:800; padding:2px 7px; border-radius:3px;">❌ CANCELADO</div>`;
+    } else if (isExpired) {
+      badgeHtml = `<div class="voucher-badge expired" style="background:#fef2f2; color:#b91c1c; border:1px solid #fecaca; font-family:var(--font-mono); font-size:0.68rem; font-weight:800; padding:2px 7px; border-radius:3px;">⚠️ CADUCADO (3D)</div>`;
+    } else if (isPaid) {
+      badgeHtml = `<div class="voucher-badge paid" style="background:#f0fdf4; color:#15803d; border:1px solid #86efac; font-family:var(--font-mono); font-size:0.68rem; font-weight:800; padding:2px 7px; border-radius:3px;">💵 PAGO CONFIRMADO</div>`;
+    } else if (isCommercial) {
+      badgeHtml = `<div class="voucher-badge pending-pay" style="background:#fffbeb; color:#92400e; border:1px solid #fcd34d; font-family:var(--font-mono); font-size:0.68rem; font-weight:800; padding:2px 7px; border-radius:3px;">⏱️ PENDIENTE DE PAGO</div>`;
+    } else {
+      badgeHtml = `<div class="voucher-badge pending" style="background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; font-family:var(--font-mono); font-size:0.68rem; font-weight:800; padding:2px 7px; border-radius:3px;">🎁 LISTO PARA RETIRAR</div>`;
+    }
+
+    let expInfo = "";
+    if (isExpired) {
+      expInfo = cost > 0
+        ? `<div style="font-family:var(--font-mono); font-size:0.68rem; color:#dc2626; font-weight:800; margin-top:3px;">⚠️ Plazo de 3 días vencido · -10 WP penalización por irresponsabilidad</div>`
+        : `<div style="font-family:var(--font-mono); font-size:0.68rem; color:#dc2626; font-weight:800; margin-top:3px;">⚠️ Plazo de 3 días para pagar vencido · Stock devuelto a tienda</div>`;
+    } else if (!isDelivered && !isCancelled) {
+      if (!isCommercial) {
+        // Recompensa 100% gratis: Cero límite de tiempo
+        expInfo = `<div style="font-family:var(--font-mono); font-size:0.68rem; color:#059669; font-weight:700; margin-top:3px;">🎁 Canje 100% Puntos · Sin límite de tiempo para retiro</div>`;
+      } else if (isPaid) {
+        // Compra comercial ya pagada en efectivo: Cero límite de tiempo
+        expInfo = `<div style="font-family:var(--font-mono); font-size:0.68rem; color:#15803d; font-weight:700; margin-top:3px;">✅ Pago confirmado (${formatPrice(v.cashToPayUsd)}) · Sin límite para retirar</div>`;
+      } else if (v.expiresAt) {
+        const msLeft = new Date(v.expiresAt) - new Date();
+        if (msLeft <= 0) {
+          expInfo = cost > 0
+            ? `<div style="font-family:var(--font-mono); font-size:0.68rem; color:#dc2626; font-weight:800; margin-top:3px;">⚠️ Plazo de 3 días vencido · -10 WP penalización por irresponsabilidad</div>`
+            : `<div style="font-family:var(--font-mono); font-size:0.68rem; color:#dc2626; font-weight:800; margin-top:3px;">⚠️ Plazo de 3 días para pagar vencido · Stock devuelto a tienda</div>`;
+        } else {
+          const hoursLeft = Math.floor(msLeft / (1000 * 60 * 60));
+          const daysLeft = Math.floor(hoursLeft / 24);
+          const remHours = hoursLeft % 24;
+          const timeStr = daysLeft > 0 ? `${daysLeft}d ${remHours}h` : `${hoursLeft}h`;
+          expInfo = `<div style="font-family:var(--font-mono); font-size:0.68rem; color:#b45309; font-weight:700; margin-top:3px;">⏱️ Plazo para pagar: ${timeStr} restantes (Máx 3 días)</div>`;
+        }
+      } else {
+        expInfo = `<div style="font-family:var(--font-mono); font-size:0.68rem; color:#059669; font-weight:700; margin-top:3px;">⏱️ Sin caducidad</div>`;
+      }
+    }
+
+    const canCancel = !isDelivered && !isCancelled && !isExpired && (!isCommercial || !isPaid);
+
+    return `
+          <div class="voucher-card" onclick="showVoucherModal('${v.voucherCode}')" style="cursor: pointer; transition: transform 0.15s ease; ${isCancelled || isExpired ? 'opacity: 0.8; background: #fffaf0;' : ''}" title="Clic para ver código QR">
+            <div class="voucher-header" style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:0.5rem;">
+              <div class="voucher-title" style="font-weight:900; font-size:1.05rem; color:var(--dark);">${v.rewardTitle || "Artículo"}</div>
+              ${badgeHtml}
+            </div>
+            <div class="voucher-code" style="font-family:var(--font-mono); font-size:1.35rem; font-weight:900; letter-spacing:2px; color:var(--dark); margin:0.35rem 0;">${v.voucherCode}</div>
+            ${(v.cashToPayUsd && v.cashToPayUsd > 0) ? `
+              <div style="background:${isPaid ? '#ecfdf5' : '#fffbeb'}; border:1px solid ${isPaid ? '#a7f3d0' : '#fcd34d'}; border-radius:3px; padding:3px 6px; font-family:var(--font-mono); font-size:0.72rem; color:${isPaid ? '#065f46' : '#92400e'}; margin: 4px 0;">
+                ${isPaid
+          ? `✅ <strong>Abonado: ${formatPrice(v.cashToPayUsd)}</strong> (Pago confirmado)`
+          : ((v.discountUsd && v.discountUsd > 0)
+            ? `🏷️ Descuento: -${formatPrice(v.discountUsd)} · <strong style="color:#dc2626;">Abonar: ${formatPrice(v.cashToPayUsd)}</strong>`
+            : `🛒 Compra en tienda · <strong style="color:#dc2626;">Abonar: ${formatPrice(v.cashToPayUsd)}</strong>`)
+        }
+              </div>
+            ` : ''}
+            ${expInfo}
+            <div class="voucher-meta" style="display:flex; justify-content:space-between; align-items:center; font-family:var(--font-mono); font-size:0.75rem; color:var(--gray-600); border-top:1px dashed var(--gray-300); padding-top:0.6rem; margin-top:0.6rem;">
+              <div>Puntos: <strong style="color:var(--dark);">${cost > 0 ? cost.toLocaleString() + ' WP' : '0 WP (Sin desc.)'}</strong></div>
+              <div>${dateStr}</div>
+              <div style="display: flex; gap: 4px; align-items: center;">
+                ${canCancel ? `
+                  <button class="btn-secondary" style="padding:2px 7px; font-size:0.7rem; color:#b91c1c; border-color:#fca5a5; background:#fff1f2;" onclick="event.stopPropagation(); promptCancelVoucher('${v.voucherCode}')" title="Cancelar este vale y devolver puntos">❌ Cancelar</button>
+                ` : ''}
+                <button class="btn-secondary" style="padding:2px 7px; font-size:0.7rem;" onclick="event.stopPropagation(); showVoucherModal('${v.voucherCode}')">👁️ Ver QR</button>
+              </div>
+            </div>
+          </div>
+        `;
+  }).join("")}
+    </div>
+  `;
+}
+
+
+export function renderLedger(ledger) {
+  const container = document.getElementById("ledger-container");
+  if (!container) return;
+
+  if (ledger.length === 0) {
+    container.innerHTML = `
+      <div class="cyber-empty-box">
+        <div class="empty-icon-wrap" style="color: #0284c7; background: #e0f2fe; border-color: #bae6fd;">
+          <svg viewBox="0 0 24 24" width="34" height="34" stroke="currentColor" stroke-width="1.8" fill="none">
+            <line x1="12" y1="20" x2="12" y2="10" />
+            <line x1="18" y1="20" x2="18" y2="4" />
+            <line x1="6" y1="20" x2="6" y2="16" />
+          </svg>
+        </div>
+        <div class="empty-tag">LEDGER // AUDITORÍA</div>
+        <h3 class="empty-title">Sin Movimientos Aún</h3>
+        <p class="empty-desc">
+          Aquí podrás consultar el historial contable de puntos acreditados por facturas y canjes realizados.
+        </p>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = `
+    <div class="ledger-list">
+      ${ledger.map(entry => {
+    const isCredit = entry.delta > 0;
+    return `
+          <div class="ledger-item">
+            <div class="ledger-info">
+              <h4>${entry.note || 'Movimiento de Wired Points'}</h4>
+              <div class="ledger-date">${new Date(entry.created_at).toLocaleString()}</div>
+            </div>
+            <div class="ledger-delta ${isCredit ? 'positive' : 'negative'}">
+              ${isCredit ? '+' : ''}${entry.delta} WP
+            </div>
+          </div>
+        `;
+  }).join("")}
+    </div>
+  `;
+}
+
+
+export function showVoucherModal(voucherCode) {
+  const voucher = vm.vouchers.find(v => v.voucherCode === voucherCode);
+  if (!voucher) return;
+
+  currentOpenVoucherCode = voucher.voucherCode;
+
+  const isDelivered = voucher.status === "DELIVERED" ||
+    voucher.status === "REDEEMED" ||
+    (typeof voucher.isDelivered === "function" && voucher.isDelivered()) ||
+    Boolean(voucher.deliveredAt);
+  const isCancelled = voucher.status === "CANCELLED" ||
+    (typeof voucher.isCancelled === "function" && voucher.isCancelled()) ||
+    Boolean(voucher.cancelledAt);
+  const isExpired = typeof voucher.isExpired === "function"
+    ? voucher.isExpired()
+    : (voucher.expiresAt && !isDelivered && !isCancelled && new Date() > new Date(voucher.expiresAt));
+
+  const modalTitle = document.getElementById("modal-voucher-title");
+  const modalCode = document.getElementById("modal-voucher-code");
+  const qrCanvas = document.getElementById("voucher-qr-canvas");
+  const waBtn = document.getElementById("btn-whatsapp-voucher");
+  const cancelBtn = document.getElementById("btn-cancel-voucher");
+  const instructionsBox = document.getElementById("modal-voucher-instructions");
+  const deliveredBanner = document.getElementById("modal-voucher-delivered-banner");
+  const deliveredDetail = document.getElementById("modal-voucher-delivered-detail");
+  const deliveredStamp = document.getElementById("voucher-delivered-stamp");
+  const statusBadge = document.getElementById("modal-voucher-status-badge");
+  const subtitleEl = document.getElementById("modal-voucher-subtitle");
+  const closeBtn = document.getElementById("btn-close-voucher");
+  const expPill = document.getElementById("modal-voucher-exp-pill");
+  const expText = document.getElementById("modal-voucher-exp-text");
+
+  if (modalTitle) modalTitle.textContent = voucher.rewardTitle || "Recompensa";
+  if (modalCode) modalCode.textContent = voucher.voucherCode;
+
+  if (isDelivered) {
+    if (waBtn) waBtn.style.display = "none";
+    if (cancelBtn) cancelBtn.style.display = "none";
+    if (expPill) expPill.style.display = "none";
+    if (instructionsBox) instructionsBox.style.display = "none";
+    if (deliveredBanner) {
+      deliveredBanner.style.display = "block";
+      deliveredBanner.style.background = "#ecfdf5";
+      deliveredBanner.style.borderColor = "#059669";
+      deliveredBanner.style.color = "#065f46";
+      deliveredBanner.innerHTML = `
+        <div style="font-weight: 900; display: flex; align-items: center; gap: 6px; font-family: var(--font-mono);">
+          <span>✓</span> RECOMPENSA ENTREGADA EN MOSTRADOR
+        </div>
+        <div id="modal-voucher-delivered-detail" style="font-size: 0.75rem; color: #047857; margin-top: 3px;"></div>
+      `;
+    }
+    if (deliveredStamp) deliveredStamp.style.display = "block";
+    const cashPillD = document.getElementById("modal-voucher-cash-pill");
+    if (cashPillD) cashPillD.style.display = "none";
+    if (statusBadge) {
+      statusBadge.textContent = "✓ ENTREGADO EN TIENDA";
+      statusBadge.style.background = "#ecfdf5";
+      statusBadge.style.color = "#065f46";
+      statusBadge.style.borderColor = "#a7f3d0";
+    }
+    if (subtitleEl) subtitleEl.textContent = "Comprobante digital de producto físico entregado al socio.";
+    const deliveredDetailEl = document.getElementById("modal-voucher-delivered-detail");
+    if (deliveredDetailEl) {
+      const dateStr = voucher.deliveredAt ? new Date(voucher.deliveredAt).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : "Despachado en mostrador";
+      deliveredDetailEl.innerHTML = `Retirado exitosamente en mostrador MeltyDeays.<br><span style="font-family: var(--font-mono); font-size: 0.72rem; color: #059669;">Entrega confirmada: ${dateStr}</span>`;
+    }
+    if (closeBtn) closeBtn.textContent = "✓ Cerrar Comprobante";
+  } else if (isCancelled) {
+    if (waBtn) waBtn.style.display = "none";
+    if (cancelBtn) cancelBtn.style.display = "none";
+    if (expPill) expPill.style.display = "none";
+    if (instructionsBox) instructionsBox.style.display = "none";
+    if (deliveredStamp) deliveredStamp.style.display = "none";
+    const cashPillC = document.getElementById("modal-voucher-cash-pill");
+    if (cashPillC) cashPillC.style.display = "none";
+    if (deliveredBanner) {
+      deliveredBanner.style.display = "block";
+      deliveredBanner.style.background = "#fee2e2";
+      deliveredBanner.style.borderColor = "#ef4444";
+      deliveredBanner.style.color = "#991b1b";
+      const cancelDate = voucher.cancelledAt ? new Date(voucher.cancelledAt).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : "Previamente";
+      deliveredBanner.innerHTML = `
+        <div style="font-weight: 900; display: flex; align-items: center; gap: 6px; font-family: var(--font-mono);">
+          <span>❌</span> VALE CANCELADO POR EL USUARIO
+        </div>
+        <div style="font-size: 0.75rem; color: #b91c1c; margin-top: 3px;">
+          Esta reserva fue cancelada el ${cancelDate} y los puntos gastados fueron devueltos a tu cuenta.
+        </div>
+      `;
+    }
+    if (statusBadge) {
+      statusBadge.textContent = "❌ CANCELADO";
+      statusBadge.style.background = "#fee2e2";
+      statusBadge.style.color = "#991b1b";
+      statusBadge.style.borderColor = "#fca5a5";
+    }
+    if (subtitleEl) subtitleEl.textContent = "Vale sin validez comercial (cancelado y reembolsado).";
+    if (closeBtn) closeBtn.textContent = "✓ Cerrar Vale";
+  } else {
+    const isCommercial = typeof voucher.isCommercial === "function"
+      ? voucher.isCommercial()
+      : (voucher.rewardType === "PARTIAL_DISCOUNT" || (voucher.cashToPayUsd && voucher.cashToPayUsd > 0));
+    const isPaid = typeof voucher.isPaidVoucher === "function"
+      ? voucher.isPaidVoucher()
+      : Boolean(voucher.isPaid || voucher.status === "PAID" || voucher.paidAt);
+    const isExpired = typeof voucher.isExpired === "function"
+      ? voucher.isExpired()
+      : (isCommercial && !isPaid && voucher.expiresAt && new Date() > new Date(voucher.expiresAt));
+
+    const cashPill = document.getElementById("modal-voucher-cash-pill");
+    const cashVal = document.getElementById("modal-voucher-cash-val");
+    const cashLabel = document.getElementById("modal-voucher-cash-label");
+
+    if (cashPill) {
+      if (isCommercial) {
+        cashPill.style.display = "block";
+        if (isPaid) {
+          cashPill.style.background = "#ecfdf5";
+          cashPill.style.borderColor = "#10b981";
+          cashPill.style.color = "#065f46";
+          if (cashLabel) cashLabel.innerHTML = "✅ <strong>PAGO CONFIRMADO:</strong>";
+          if (cashVal) {
+            cashVal.style.color = "#059669";
+            cashVal.textContent = formatPrice(voucher.cashToPayUsd);
+          }
+        } else {
+          cashPill.style.background = "#fffbeb";
+          cashPill.style.borderColor = "#d97706";
+          cashPill.style.color = "#78350f";
+          if (cashLabel) cashLabel.innerHTML = "💵 <strong>A PAGAR AL VENDEDOR:</strong>";
+          if (cashVal) {
+            cashVal.style.color = "#dc2626";
+            cashVal.textContent = formatPrice(voucher.cashToPayUsd);
+          }
+        }
+      } else {
+        // Recompensa 100% gratuita
+        cashPill.style.display = "none";
+      }
+    }
+
+    // Píldora de vigencia / tiempo (SIN LÍMITE para gratis ni pagados; 3 días para compras impagas)
+    if (expPill && expText) {
+      if (!isCommercial) {
+        // Recompensa 100% Gratis: NUNCA expira, CERO avisos de pago
+        expPill.style.display = "block";
+        expPill.style.background = "#ecfdf5";
+        expPill.style.borderColor = "#a7f3d0";
+        expPill.style.color = "#065f46";
+        expText.innerHTML = "🎁 <strong>Canje 100% Puntos · Sin límite de tiempo para retiro</strong>";
+      } else if (isPaid) {
+        // Compra comercial pagada: Ya no tiene límite de tiempo
+        expPill.style.display = "block";
+        expPill.style.background = "#eff6ff";
+        expPill.style.borderColor = "#bfdbfe";
+        expPill.style.color = "#1e40af";
+        expText.innerHTML = "✅ <strong>Pago Concretado · Sin límite de retiro (Coordina tu entrega)</strong>";
+      } else if (voucher.expiresAt) {
+        const msLeft = new Date(voucher.expiresAt) - new Date();
+        if (msLeft <= 0 || isExpired) {
+          expPill.style.display = "block";
+          expPill.style.background = "#fef2f2";
+          expPill.style.borderColor = "#fecaca";
+          expPill.style.color = "#b91c1c";
+          const hasPoints = Number(voucher.pointsSpent || 0) > 0;
+          expText.innerHTML = hasPoints
+            ? "⚠️ <strong>Plazo de 3 días para pagar vencido</strong> (Reserva caducada · -10 WP penalización por irresponsabilidad aplicada)"
+            : "⚠️ <strong>Plazo de 3 días para pagar vencido</strong> (Reserva caducada · Artículo devuelto al stock)";
+        } else {
+          const hoursLeft = Math.floor(msLeft / (1000 * 60 * 60));
+          const daysLeft = Math.floor(hoursLeft / 24);
+          const remHours = hoursLeft % 24;
+          const timeStr = daysLeft > 0 ? `${daysLeft}d ${remHours}h` : `${hoursLeft}h`;
+          expPill.style.display = "block";
+          expPill.style.background = "#fff1f2";
+          expPill.style.borderColor = "#fecdd3";
+          expPill.style.color = "#9f1239";
+          expText.innerHTML = `⏱️ <strong>Plazo para pagar:</strong> ${timeStr} restantes (Máx 3 días para abonar a MeltyDeays)`;
+        }
+      } else {
+        expPill.style.display = "none";
+      }
+    }
+
+    if (instructionsBox) {
+      instructionsBox.style.display = "block";
+      if (!isCommercial) {
+        instructionsBox.innerHTML = `📌 <strong>Instrucciones:</strong> Muestra este código QR o envíalo por WhatsApp a MeltyDeays para coordinar la entrega personal de tu producto 100% gratis.<div style="margin-top:4px; font-size:0.68rem; color:#64748b; font-family:var(--font-mono);">🛡️ Premio de fidelidad: Se entrega probado personalmente. Exento de garantía comercial posterior de 30 días.</div>`;
+      } else if (isPaid) {
+        instructionsBox.innerHTML = `📌 <strong>Pago Registrado con Éxito:</strong> Ya cancelaste <strong>${formatPrice(voucher.cashToPayUsd)}</strong>. Envía el comprobante por WhatsApp a MeltyDeays para pactar la entrega personal en el momento que te sea más conveniente.<div style="margin-top:4px; font-size:0.68rem; color:#047857; font-family:var(--font-mono);">🛡️ Garantía técnica oficial de 30 días amparada por tu compra comercial.</div>`;
+      } else {
+        instructionsBox.innerHTML = (voucher.discountUsd > 0)
+          ? `📌 <strong>Vale de Descuento Pendiente de Pago:</strong> Tienes 3 días para coordinar el abono de <strong>${formatPrice(voucher.cashToPayUsd)}</strong> (descuento aplicado: -${formatPrice(voucher.discountUsd)} con tus puntos).<div style="margin-top:4px; font-size:0.68rem; color:#78350f; font-family:var(--font-mono);">🛡️ Garantía técnica comercial de 30 días tras concretar el pago. Si no se abona en 3 días, la reserva caduca con penalización de 10 WP.</div>`
+          : `📌 <strong>Reserva de Compra Pendiente de Pago:</strong> Tienes 3 días para coordinar el abono de <strong>${formatPrice(voucher.cashToPayUsd)}</strong> con MeltyDeays.<div style="margin-top:4px; font-size:0.68rem; color:#78350f; font-family:var(--font-mono);">🛡️ Garantía técnica comercial de 30 días tras concretar el pago. Si no se abona en 3 días, la reserva caduca y el stock regresa a la tienda sin penalización de puntos.</div>`;
+      }
+    }
+
+    if (waBtn) {
+      waBtn.style.display = "flex";
+      const phone = "50588888888";
+      let textMsg = "";
+      if (!isCommercial) {
+        textMsg = encodeURIComponent(`Hola MeltyDeays! He canjeado mi vale [${voucher.voucherCode}] por "${voucher.rewardTitle}". Mi nombre es ${voucher.userName || "Cliente"}. Quisiera coordinar la entrega.`);
+      } else if (isPaid) {
+        textMsg = encodeURIComponent(`Hola MeltyDeays! Ya tengo mi vale [${voucher.voucherCode}] pagado (${formatDualPrice(voucher.cashToPayUsd)}) para "${voucher.rewardTitle}". Mi nombre es ${voucher.userName || "Cliente"}. Quisiera coordinar la entrega física.`);
+      } else if (voucher.discountUsd > 0) {
+        textMsg = encodeURIComponent(`Hola MeltyDeays! He generado mi vale [${voucher.voucherCode}] con descuento de -${formatPrice(voucher.discountUsd)} en "${voucher.rewardTitle}". Saldo a abonar: ${formatDualPrice(voucher.cashToPayUsd)}. Mi nombre es ${voucher.userName || "Cliente"}.`);
+      } else {
+        textMsg = encodeURIComponent(`Hola MeltyDeays! He generado mi reserva de compra [${voucher.voucherCode}] para "${voucher.rewardTitle}". Saldo a abonar: ${formatDualPrice(voucher.cashToPayUsd)}. Mi nombre es ${voucher.userName || "Cliente"}.`);
+      }
+      waBtn.href = `https://wa.me/${phone}?text=${textMsg}`;
+    }
+
+    // Botón para cancelar compra / devolver puntos
+    const canCancel = !isDelivered && !isCancelled && !isExpired && (!isCommercial || !isPaid);
+    if (cancelBtn) {
+      if (canCancel) {
+        cancelBtn.style.display = "block";
+        const pts = voucher.pointsSpent || 0;
+        cancelBtn.textContent = pts > 0
+          ? `❌ Cancelar Vale / Reembolsar ${pts.toLocaleString()} WP`
+          : `❌ Cancelar Reserva de Compra`;
+      } else {
+        cancelBtn.style.display = "none";
+      }
+    }
+
+    if (deliveredBanner) deliveredBanner.style.display = "none";
+    if (deliveredStamp) deliveredStamp.style.display = "none";
+    if (statusBadge) {
+      if (isPaid) {
+        statusBadge.textContent = "💵 PAGO CONFIRMADO";
+        statusBadge.style.background = "#f0fdf4";
+        statusBadge.style.color = "#15803d";
+        statusBadge.style.borderColor = "#86efac";
+      } else if (isExpired) {
+        statusBadge.textContent = "⚠️ CADUCADO (3D)";
+        statusBadge.style.background = "#fef2f2";
+        statusBadge.style.color = "#b91c1c";
+        statusBadge.style.borderColor = "#fecaca";
+      } else if (isCommercial) {
+        statusBadge.textContent = "⏱️ PENDIENTE DE PAGO";
+        statusBadge.style.background = "#fffbeb";
+        statusBadge.style.color = "#b45309";
+        statusBadge.style.borderColor = "#fde68a";
+      } else {
+        statusBadge.textContent = "🎁 LISTO PARA RETIRAR";
+        statusBadge.style.background = "#eff6ff";
+        statusBadge.style.color = "#1d4ed8";
+        statusBadge.style.borderColor = "#bfdbfe";
+      }
+    }
+
+    if (subtitleEl) {
+      if (!isCommercial) {
+        subtitleEl.textContent = "Válido para entrega personal de producto con MeltyDeays (Sin límite de tiempo).";
+      } else if (isPaid) {
+        subtitleEl.textContent = "Pago completado. Coordinando entrega física personal con MeltyDeays.";
+      } else {
+        subtitleEl.textContent = "Plazo máximo de 3 días para abonar el valor pactado con el vendedor.";
+      }
+    }
+    if (closeBtn) closeBtn.textContent = "✓ Entendido / Cerrar Vale";
+  }
+
+  if (qrCanvas && typeof QRCode !== "undefined") {
+    try {
+      qrCanvas.innerHTML = "";
+      new QRCode(qrCanvas, {
+        text: voucher.voucherCode,
+        width: 148,
+        height: 148,
+        colorDark: (isDelivered || isCancelled) ? "#64748b" : "#0f172a",
+        colorLight: "#ffffff",
+        correctLevel: (QRCode.CorrectLevel && QRCode.CorrectLevel.H) !== undefined ? QRCode.CorrectLevel.H : 2
+      });
+    } catch (e) {
+      console.warn("QRCode generation skipped:", e.message);
+    }
+  }
+
+  const modal = document.getElementById("modal-voucher");
+  if (modal) modal.style.display = "flex";
+}
+
+export function closeVoucherModal() {
+  currentOpenVoucherCode = null;
+  const modal = document.getElementById("modal-voucher");
+  if (modal) modal.style.display = "none";
+}
+
+export function promptCancelCurrentVoucher() {
+  if (currentOpenVoucherCode) {
+    promptCancelVoucher(currentOpenVoucherCode);
+  }
+}
+
+export function promptCancelVoucher(voucherCode) {
+  const code = (voucherCode || "").trim().toUpperCase();
+  const voucher = vm.vouchers.find(v => (v.voucherCode || "").trim().toUpperCase() === code);
+  if (!voucher) {
+    showToast("Vale no encontrado.", "error");
+    return;
+  }
+  if (voucher.isDelivered()) {
+    showToast("Este vale ya fue despachado en tienda. No puede cancelarse.", "error");
+    return;
+  }
+  if (voucher.isCancelled()) {
+    showToast("Este vale ya está cancelado.", "info");
+    return;
+  }
+
+  pendingCancelVoucherCode = code;
+  const modal = document.getElementById("modal-confirm-cancel-voucher");
+  const summaryEl = document.getElementById("cancel-modal-summary");
+  const pts = voucher.pointsSpent || 0;
+
+  if (summaryEl) {
+    summaryEl.innerHTML = `
+      <div><strong>Vale:</strong> ${voucher.voucherCode}</div>
+      <div><strong>Artículo:</strong> ${voucher.rewardTitle}</div>
+      ${pts > 0 ? `
+        <div style="margin-top:6px; font-weight:800; color:#059669; font-size:0.82rem;">
+          ✓ Se te devolverán: <strong>+${pts.toLocaleString()} WP</strong> a tu saldo.
+        </div>
+      ` : `
+        <div style="margin-top:6px; color:#475569;">
+          • Compra a precio de tienda (0 WP gastados). Se liberará el producto reservado.
+        </div>
+      `}
+      <div style="margin-top:6px; color:#64748b; font-size:0.7rem; border-top:1px dashed #fecdd3; padding-top:4px;">
+        El stock en tienda se repondrá inmediatamente (+1 disponible).
+      </div>
+    `;
+  }
+
+  if (modal) modal.style.display = "flex";
+}
+
+export function closeCancelVoucherModal() {
+  pendingCancelVoucherCode = null;
+  const modal = document.getElementById("modal-confirm-cancel-voucher");
+  if (modal) modal.style.display = "none";
+}
+
+export async function executeCancelVoucher() {
+  if (!pendingCancelVoucherCode) return;
+  const code = pendingCancelVoucherCode;
+  const btn = document.getElementById("btn-execute-cancel-voucher");
+  const origText = btn ? btn.textContent : "";
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = "Cancelando...";
+  }
+
+  try {
+    const res = await vm.cancelVoucher(code);
+    closeCancelVoucherModal();
+    closeVoucherModal();
+
+    if (res.pointsRefunded > 0) {
+      showToast(`Vale ${code} cancelado. Se te han reembolsado ${res.pointsRefunded.toLocaleString()} WP.`, "success");
+    } else {
+      showToast(`Reserva ${code} cancelada exitosamente.`, "success");
+    }
+
+    if (vm && typeof vm.notify === 'function') vm.notify();
+  } catch (err) {
+    showToast(err.message || "Error al cancelar vale.", "error");
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = origText;
+    }
+  }
+}
+
+
+export function copyVoucherCode() {
+  const codeEl = document.getElementById("modal-voucher-code");
+  const code = codeEl ? codeEl.textContent.trim() : "";
+  if (!code) return;
+  navigator.clipboard.writeText(code).then(() => {
+    showToast(`✓ Vale [${code}] copiado al portapapeles`, "success");
+  }).catch(() => {
+    showToast(`Vale: ${code}`, "info");
+  });
+}

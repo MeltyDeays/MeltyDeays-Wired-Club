@@ -4,6 +4,7 @@ import { UserModel } from "../models/UserModel.js";
 import { RewardModel } from "../models/RewardModel.js";
 import { VoucherModel } from "../models/VoucherModel.js";
 import { TokenModel } from "../models/TokenModel.js";
+import { getStorageKey } from "../config/env.js";
 
 export class CustomerViewModel {
   constructor() {
@@ -13,7 +14,7 @@ export class CustomerViewModel {
     this.ledger = [];
     this.activeTab = "catalog"; // catalog | vouchers | ledger
     this.pendingClaimToken = null;
-    this.preferredCurrency = localStorage.getItem("melty_preferred_currency") || "USD";
+    this.preferredCurrency = localStorage.getItem(getStorageKey("melty_preferred_currency")) || "USD";
     this.usdToNioRate = 37.0;
     this.listeners = [];
   }
@@ -29,13 +30,17 @@ export class CustomerViewModel {
   async setCurrency(newCurrency) {
     const clean = (newCurrency || "").toUpperCase() === "NIO" ? "NIO" : "USD";
     this.preferredCurrency = clean;
-    localStorage.setItem("melty_preferred_currency", clean);
+    localStorage.setItem(getStorageKey("melty_preferred_currency"), clean);
     if (this.currentUser) {
       this.currentUser.setCurrency(clean);
       await FirestoreService.saveUser(this.currentUser.toJSON());
     }
     this.notify();
     return this.preferredCurrency;
+  }
+
+  async setPreferredCurrency(curr) {
+    return this.setCurrency(curr);
   }
 
   formatMoney(amountUsd) {
@@ -68,14 +73,14 @@ export class CustomerViewModel {
     });
 
     // 2. Cargar sesión de usuario si existe
-    const savedUid = localStorage.getItem("melty_client_uid");
+    const savedUid = localStorage.getItem(getStorageKey("melty_client_uid"));
     if (savedUid) {
       const u = await FirestoreService.getUser(savedUid);
       if (u) {
         this.currentUser = new UserModel(u);
         if (this.currentUser.currency) {
           this.preferredCurrency = this.currentUser.currency;
-          localStorage.setItem("melty_preferred_currency", this.preferredCurrency);
+          localStorage.setItem(getStorageKey("melty_preferred_currency"), this.preferredCurrency);
         }
         await this.refreshUserData();
       }
@@ -229,9 +234,9 @@ export class CustomerViewModel {
     this.currentUser = new UserModel(u);
     if (this.currentUser.currency) {
       this.preferredCurrency = this.currentUser.currency;
-      localStorage.setItem("melty_preferred_currency", this.preferredCurrency);
+      localStorage.setItem(getStorageKey("melty_preferred_currency"), this.preferredCurrency);
     }
-    localStorage.setItem("melty_client_uid", u.uid || uid);
+    localStorage.setItem(getStorageKey("melty_client_uid"), u.uid || uid);
     await this.refreshCatalog();
     await this.refreshUserData();
     this.notify();
@@ -278,7 +283,7 @@ export class CustomerViewModel {
 
     await FirestoreService.saveUser(newUser.toJSON());
     this.currentUser = newUser;
-    localStorage.setItem("melty_client_uid", uid);
+    localStorage.setItem(getStorageKey("melty_client_uid"), uid);
     await this.refreshUserData();
     this.notify();
     return this.currentUser;
@@ -288,7 +293,7 @@ export class CustomerViewModel {
     this.currentUser = null;
     this.vouchers = [];
     this.ledger = [];
-    localStorage.removeItem("melty_client_uid");
+    localStorage.removeItem(getStorageKey("melty_client_uid"));
     this.notify();
   }
 

@@ -1,0 +1,53 @@
+.lain-toggle-group {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.lain-toggle-btn {
+  border: 2px solid var(--gray-300);
+  background: #ffffff;
+  padding: 0.65rem 0.85rem;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  font-weight: 800;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.lain-toggle-btn:hover {
+  border-color: var(--dark);
+}
+
+.lain-toggle-btn.active-add {
+  border-color: #059669 !important;
+  background: #ecfdf5 !important;
+  color: #065f46 !important;
+  box-shadow: 2px 2px 0px #059669 !important;
+}
+
+.lain-toggle-btn.active-sub {
+  border-color: #e11d48 !important;
+  background: #fff1f2 !important;
+  color: #9f1239 !important;
+  box-shadow: 2px 2px 0px #e11d48 !important;
+}
+
+.lain-number-input {
+  border: 2px solid var(--dark);
+  background: #ffffff;
+  box-shadow: 3px 3px 0px var(--dark);
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-weight: 900;
+  text-align: center;
+}
+
+/* ========================================================

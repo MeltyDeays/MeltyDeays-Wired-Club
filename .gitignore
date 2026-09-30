@@ -10,3 +10,7 @@ Thumbs.db
 .env
 .env.*
 !.env.example
+
+# Local Agent Workspace
+.agents/
+

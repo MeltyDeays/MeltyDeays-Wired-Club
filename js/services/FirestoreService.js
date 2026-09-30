@@ -1,8 +1,9 @@
 /* Servicio de Persistencia y Transacciones Atómicas (Cloud Firestore + Local Mirror) */
 import { db } from "../config/firebase.js";
+import { getCollectionName, getStorageKey, isProduction } from "../config/env.js";
 import { INITIAL_TOKENS } from "../data/initialTokens.js";
 
-const LOCAL_STORAGE_KEY = "wired_club_mvvm_db_v2";
+const LOCAL_STORAGE_KEY = getStorageKey("wired_club_mvvm_db_v2");
 
 class StorageEngine {
   constructor() {
@@ -67,7 +68,7 @@ export class FirestoreService {
   static subscribeRewards(callback) {
     if (!db || typeof callback !== "function") return () => {};
     try {
-      return db.collection("rewards_catalog").onSnapshot(snap => {
+      return db.collection(getCollectionName("rewards_catalog")).onSnapshot(snap => {
         const local = engine.getSnapshot();
         local.rewards = {};
         if (snap && !snap.empty) {
@@ -90,7 +91,7 @@ export class FirestoreService {
   static async fetchRewards() {
     if (db) {
       try {
-        const snap = await db.collection("rewards_catalog").get();
+        const snap = await db.collection(getCollectionName("rewards_catalog")).get();
         const local = engine.getSnapshot();
         // Reemplazar COMPLETAMENTE el catálogo local — evita productos "fantasma"
         local.rewards = {};
@@ -113,7 +114,7 @@ export class FirestoreService {
     if (!rewardId) return null;
     if (db) {
       try {
-        const doc = await db.collection("rewards_catalog").doc(rewardId).get();
+        const doc = await db.collection(getCollectionName("rewards_catalog")).doc(rewardId).get();
         if (doc.exists) {
           const r = doc.data();
           const snap = engine.getSnapshot();
@@ -149,7 +150,7 @@ export class FirestoreService {
 
     if (db) {
       try {
-        await db.collection("rewards_catalog").doc(reward.id).set(reward, { merge: true });
+        await db.collection(getCollectionName("rewards_catalog")).doc(reward.id).set(reward, { merge: true });
       } catch (e) {
         console.warn("Firestore saveReward error:", e.message);
       }
@@ -164,7 +165,7 @@ export class FirestoreService {
 
     if (db) {
       try {
-        await db.collection("rewards_catalog").doc(rewardId).delete();
+        await db.collection(getCollectionName("rewards_catalog")).doc(rewardId).delete();
       } catch (e) {
         console.warn("Firestore deleteReward error:", e.message);
       }
@@ -175,7 +176,7 @@ export class FirestoreService {
   static async getUser(uid) {
     if (db) {
       try {
-        const doc = await db.collection("users").doc(uid).get();
+        const doc = await db.collection(getCollectionName("users")).doc(uid).get();
         if (doc.exists) {
           const u = doc.data();
           const snap = engine.getSnapshot();
@@ -194,7 +195,7 @@ export class FirestoreService {
   static async fetchUsers() {
     if (db) {
       try {
-        const snap = await db.collection("users").get();
+        const snap = await db.collection(getCollectionName("users")).get();
         const local = engine.getSnapshot();
         // Overwrite completo — elimina usuarios fantasma que ya no existen en Firestore
         local.users = {};
@@ -256,7 +257,7 @@ export class FirestoreService {
 
     if (db) {
       try {
-        await db.collection("users").doc(user.uid).set(user, { merge: true });
+        await db.collection(getCollectionName("users")).doc(user.uid).set(user, { merge: true });
       } catch (e) {
         console.warn("Firestore saveUser error:", e.message);
       }
@@ -272,7 +273,7 @@ export class FirestoreService {
 
     if (db) {
       try {
-        await db.collection("users").doc(uid).delete();
+        await db.collection(getCollectionName("users")).doc(uid).delete();
       } catch (e) {
         console.warn("Firestore deleteUser error:", e.message);
       }
@@ -284,7 +285,7 @@ export class FirestoreService {
   static async getToken(tokenCode) {
     if (db) {
       try {
-        const doc = await db.collection("qr_tokens").doc(tokenCode).get();
+        const doc = await db.collection(getCollectionName("qr_tokens")).doc(tokenCode).get();
         if (doc.exists) return doc.data();
       } catch (e) {
         console.warn("Firestore getToken fallback:", e.message);
@@ -297,7 +298,7 @@ export class FirestoreService {
   static async fetchTokens() {
     if (db) {
       try {
-        const snap = await db.collection("qr_tokens").get();
+        const snap = await db.collection(getCollectionName("qr_tokens")).get();
         const local = engine.getSnapshot();
         // Overwrite completo — elimina tokens fantasma
         local.tokens = {};
@@ -321,7 +322,7 @@ export class FirestoreService {
 
     if (db) {
       try {
-        await db.collection("qr_tokens").doc(token.token_code).set(token, { merge: true });
+        await db.collection(getCollectionName("qr_tokens")).doc(token.token_code).set(token, { merge: true });
       } catch (e) {
         console.warn("Firestore saveToken error:", e.message);
       }
@@ -341,7 +342,7 @@ export class FirestoreService {
       try {
         const batch = db.batch();
         tokens.forEach(tok => {
-          const docRef = db.collection("qr_tokens").doc(tok.token_code);
+          const docRef = db.collection(getCollectionName("qr_tokens")).doc(tok.token_code);
           batch.set(docRef, tok, { merge: true });
         });
         await batch.commit();
@@ -356,7 +357,7 @@ export class FirestoreService {
   static async fetchVouchers() {
     if (db) {
       try {
-        const snap = await db.collection("redemptions").get();
+        const snap = await db.collection(getCollectionName("redemptions")).get();
         const local = engine.getSnapshot();
         // Overwrite completo — elimina vales fantasma
         local.vouchers = {};
@@ -378,7 +379,7 @@ export class FirestoreService {
     if (!clean) return null;
     if (db) {
       try {
-        const doc = await db.collection("redemptions").doc(clean).get();
+        const doc = await db.collection(getCollectionName("redemptions")).doc(clean).get();
         if (doc.exists) return doc.data();
       } catch (e) {
         console.warn("Firestore getVoucher fallback:", e.message);
@@ -406,7 +407,7 @@ export class FirestoreService {
 
     if (db) {
       try {
-        await db.collection("redemptions").doc(code).set(voucher, { merge: true });
+        await db.collection(getCollectionName("redemptions")).doc(code).set(voucher, { merge: true });
       } catch (e) {
         console.warn("Firestore saveVoucher error:", e.message);
       }
@@ -428,7 +429,7 @@ export class FirestoreService {
 
     if (db) {
       try {
-        db.collection("users").doc(userUid).collection("ledger").doc(entry.id).set(entry).catch(e => {});
+        db.collection(getCollectionName("users")).doc(userUid).collection("ledger").doc(entry.id).set(entry).catch(e => {});
       } catch (e) {}
     }
   }
@@ -463,7 +464,7 @@ export class FirestoreService {
 
     if (db) {
       try {
-        const tokenDocs = await db.collection("qr_tokens").get();
+        const tokenDocs = await db.collection(getCollectionName("qr_tokens")).get();
         if (!tokenDocs.empty) {
           const batch = db.batch();
           tokenDocs.forEach(doc => {
@@ -471,7 +472,7 @@ export class FirestoreService {
           });
           await batch.commit();
         }
-        const batchDocs = await db.collection("point_batches").get().catch(() => ({ empty: true }));
+        const batchDocs = await db.collection(getCollectionName("point_batches")).get().catch(() => ({ empty: true }));
         if (batchDocs && !batchDocs.empty) {
           const bBatch = db.batch();
           batchDocs.forEach(doc => bBatch.delete(doc.ref));
@@ -511,7 +512,7 @@ export class FirestoreService {
 
     if (db) {
       try {
-        const collections = ["redemptions", "vouchers", "rewards_catalog", "qr_tokens", "point_batches", "point_ledger"];
+        const collections = ["redemptions", "vouchers", "rewards_catalog", "qr_tokens", "point_batches", "point_ledger"].map(getCollectionName);
         for (const col of collections) {
           const snap = await db.collection(col).get().catch(() => ({ empty: true }));
           if (snap && !snap.empty) {
@@ -525,7 +526,7 @@ export class FirestoreService {
         }
 
         // Purgar socios dejando únicamente el perfil del administrador (PIN 110805)
-        const userSnap = await db.collection("users").get().catch(() => ({ empty: true }));
+        const userSnap = await db.collection(getCollectionName("users")).get().catch(() => ({ empty: true }));
         if (userSnap && !userSnap.empty) {
           const uDocs = userSnap.docs || [];
           for (let i = 0; i < uDocs.length; i += 400) {
@@ -538,7 +539,7 @@ export class FirestoreService {
             await batch.commit();
           }
         }
-        await db.collection("users").doc(adminUser.uid).set(adminUser);
+        await db.collection(getCollectionName("users")).doc(adminUser.uid).set(adminUser);
       } catch (e) {
         console.warn("Firestore purgeEntireDatabase error:", e.message);
       }
@@ -599,18 +600,18 @@ export class FirestoreService {
     if (db) {
       try {
         // 1. Búsqueda por Member Code
-        let snap = await db.collection("users").where("member_code", "==", q).limit(1).get();
+        let snap = await db.collection(getCollectionName("users")).where("member_code", "==", q).limit(1).get();
         if (!snap.empty) return snap.docs[0].data();
 
-        snap = await db.collection("users").where("memberCode", "==", q).limit(1).get();
+        snap = await db.collection(getCollectionName("users")).where("memberCode", "==", q).limit(1).get();
         if (!snap.empty) return snap.docs[0].data();
 
         // 2. Búsqueda directa por Doc ID (UID Canónico y Legacy)
         if (normPhone && normPhone.length === 8) {
-          const docRef1 = await db.collection("users").doc("CLIENT-" + normPhone).get();
+          const docRef1 = await db.collection(getCollectionName("users")).doc("CLIENT-" + normPhone).get();
           if (docRef1.exists) return docRef1.data();
 
-          const docRef2 = await db.collection("users").doc("CLIENT-505" + normPhone).get();
+          const docRef2 = await db.collection(getCollectionName("users")).doc("CLIENT-505" + normPhone).get();
           if (docRef2.exists) return docRef2.data();
         }
 
@@ -629,7 +630,7 @@ export class FirestoreService {
         }
 
         for (const variant of phoneVariants) {
-          snap = await db.collection("users").where("phone", "==", variant).limit(1).get();
+          snap = await db.collection(getCollectionName("users")).where("phone", "==", variant).limit(1).get();
           if (!snap.empty) return snap.docs[0].data();
         }
       } catch (e) {
@@ -638,4 +639,100 @@ export class FirestoreService {
     }
     return null;
   }
+
+  // Sembrador seguro de datos ficticios para pruebas (bloqueado en Producción)
+  static async seedDevData() {
+    if (isProduction()) {
+      throw new Error("Acción bloqueada: No se permite sembrar datos ficticios en el entorno de Producción.");
+    }
+
+    const demoUsers = [
+      {
+        uid: "CLIENT-88881111",
+        memberCode: "MC-DEMO-01",
+        displayName: "Carlos Mendoza (Demo)",
+        phone: "88881111",
+        pin: "1234",
+        tier: "NAVI_PRO",
+        wiredPoints: 450,
+        lifetimePoints: 600,
+        currency: "USD",
+        status: "ACTIVE",
+        createdAt: new Date().toISOString()
+      },
+      {
+        uid: "CLIENT-88882222",
+        memberCode: "MC-DEMO-02",
+        displayName: "Valeria Ríos (Demo)",
+        phone: "88882222",
+        pin: "4321",
+        tier: "ELITE",
+        wiredPoints: 1200,
+        lifetimePoints: 1500,
+        currency: "NIO",
+        status: "ACTIVE",
+        createdAt: new Date().toISOString()
+      },
+      {
+        uid: "CLIENT-88883333",
+        memberCode: "MC-DEMO-03",
+        displayName: "Mateo Silva (Demo)",
+        phone: "88883333",
+        pin: "1111",
+        tier: "NAVI_USER",
+        wiredPoints: 80,
+        lifetimePoints: 100,
+        currency: "USD",
+        status: "ACTIVE",
+        createdAt: new Date().toISOString()
+      }
+    ];
+
+    const demoRewards = [
+      {
+        id: "REW-DEMO-01",
+        title: "Mouse Pad Melty Cyberpunk XL",
+        description: "Superficie de microfibra de alta precisión con costuras reforzadas y base de goma antideslizante (Demo).",
+        pointsCost: 150,
+        stock: 5,
+        rewardType: "FREE_REWARD",
+        status: "ACTIVE"
+      },
+      {
+        id: "REW-DEMO-02",
+        title: "Keycaps Artesanales Serial Experiments Lain",
+        description: "Set de 4 teclas artesanales PBT sublimadas con estética retro tech (Demo).",
+        pointsCost: 300,
+        stock: 3,
+        rewardType: "FREE_REWARD",
+        status: "ACTIVE"
+      },
+      {
+        id: "REW-DEMO-03",
+        title: "Mouse Gamer Óptico RGB 12000 DPI",
+        description: "Sensor óptico de alta precisión, switches mecánicos Omron y cable paracord ultraligero (Demo).",
+        pointsCost: 200,
+        priceUsd: 35.0,
+        cashToPayUsd: 15.0,
+        maxDiscountUsd: 20.0,
+        maxDiscountPct: 57,
+        stock: 2,
+        rewardType: "PARTIAL_DISCOUNT",
+        status: "ACTIVE"
+      }
+    ];
+
+    for (const u of demoUsers) {
+      await this.saveUser(u);
+    }
+    for (const r of demoRewards) {
+      await this.saveReward(r);
+    }
+
+    return {
+      usersSeeded: demoUsers.length,
+      rewardsSeeded: demoRewards.length
+    };
+  }
 }
+

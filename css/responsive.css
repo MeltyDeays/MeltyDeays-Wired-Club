@@ -1,0 +1,797 @@
+/* ========================================================= */
+/* ULTRA-RESPONSIVE ADAPTABILITY FOR ALL MOBILE SCREEN SIZES */
+/* (CLIENT PORTAL + ADMIN NOC TERMINAL)                     */
+/* ========================================================= */
+
+@media (max-width: 900px) {
+  .noc-stats-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 0.85rem !important;
+  }
+  .form-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .navbar {
+    padding: 0.75rem 0.85rem !important;
+  }
+  .brand-subitems {
+    display: none !important;
+  }
+  .balance-amount {
+    font-size: 2.1rem !important;
+  }
+  .admin-section {
+    padding: 1rem 0.85rem !important;
+    margin-bottom: 1.25rem !important;
+  }
+  .table-responsive {
+    width: 100% !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    display: block !important;
+    margin-bottom: 1rem !important;
+  }
+  .admin-table {
+    min-width: 560px !important;
+    font-size: 0.75rem !important;
+  }
+}
+
+@media (max-width: 640px) {
+  /* NAVBAR UNIVERSAL */
+  .navbar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.75rem !important;
+    padding: 0.75rem 0.85rem !important;
+  }
+
+  .brand-wrapper {
+    justify-content: center !important;
+  }
+
+  .nav-controls {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 0.45rem !important;
+    width: 100% !important;
+  }
+
+  .currency-toggle-wrapper {
+    order: 1;
+  }
+
+  #nav-user-pill, #nav-login-btn {
+    order: 2;
+  }
+
+  .btn-scan-qr {
+    order: 3;
+    flex: 1 1 auto;
+    justify-content: center;
+    min-height: 42px;
+  }
+
+  .nav-controls .btn-primary, .nav-controls .btn-secondary {
+    order: 4;
+    flex: 1 1 auto;
+    justify-content: center;
+    min-height: 42px;
+  }
+
+  /* PESTAÑAS DE NAVEGACIÓN TÁCTILES (CLIENTE & ADMIN) */
+  .admin-nav-tabs, .client-nav-tabs, .portal-tabs {
+    display: flex !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    gap: 0.35rem !important;
+    padding: 0.35rem 0.25rem 0.5rem 0.25rem !important;
+    scrollbar-width: none !important;
+  }
+  .admin-nav-tabs::-webkit-scrollbar, .client-nav-tabs::-webkit-scrollbar, .portal-tabs::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  .admin-tab-btn, .client-tab-btn {
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+    padding: 0.55rem 0.85rem !important;
+    font-size: 0.75rem !important;
+    min-height: 40px !important;
+  }
+
+  /* NOC DASHBOARD HUD (ADMIN) */
+  .noc-dashboard-card {
+    padding: 1rem 0.85rem !important;
+    margin-bottom: 1.25rem !important;
+  }
+
+  .noc-hud-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 0.65rem !important;
+  }
+
+  .noc-hud-right {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 0.5rem !important;
+    width: 100% !important;
+  }
+
+  .noc-telemetry-item {
+    font-size: 0.68rem !important;
+  }
+
+  .noc-stats-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.55rem !important;
+  }
+
+  .noc-stat-box {
+    padding: 0.75rem 0.65rem !important;
+  }
+
+  .noc-stat-val {
+    font-size: 1.45rem !important;
+  }
+
+  .noc-stat-label {
+    font-size: 0.62rem !important;
+  }
+
+  .noc-stat-sub {
+    font-size: 0.62rem !important;
+  }
+
+  /* MOSTRADOR POS 1-SCAN */
+  .pos-input-group {
+    flex-direction: column !important;
+    height: auto !important;
+    min-height: 94px !important;
+    overflow: hidden !important;
+    border: 2px solid var(--dark) !important;
+    border-radius: 8px !important;
+    background: #ffffff !important;
+    gap: 0 !important;
+  }
+
+  .pos-input-main-row {
+    display: flex !important;
+    align-items: stretch !important;
+    width: 100% !important;
+    height: 48px !important;
+    border-bottom: 1.5px solid var(--dark) !important;
+    background: #ffffff !important;
+  }
+
+  .pos-input-prefix {
+    padding: 0 0.55rem !important;
+    font-size: 0.72rem !important;
+    letter-spacing: 0.5px !important;
+    flex-shrink: 0 !important;
+    border-right: 1.5px solid var(--dark) !important;
+  }
+
+  .pos-scanner-input {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    width: 100% !important;
+    padding: 0 0.65rem !important;
+    font-size: 1.05rem !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+    box-sizing: border-box !important;
+  }
+
+  .pos-btn-clear {
+    width: 42px !important;
+    flex-shrink: 0 !important;
+    border-left: 1px solid #e2e8f0 !important;
+    background: #f8fafc !important;
+    color: #94a3b8 !important;
+  }
+
+  .pos-input-btns-row {
+    display: flex !important;
+    align-items: stretch !important;
+    width: 100% !important;
+    height: 46px !important;
+    background: #f1f5f9 !important;
+  }
+
+  .pos-btn-camera {
+    flex: 1 !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    font-size: 0.75rem !important;
+    font-weight: 800 !important;
+    border: none !important;
+    border-right: 1.5px solid var(--dark) !important;
+    background: #f8fafc !important;
+    color: #0f172a !important;
+  }
+
+  .pos-btn-scan {
+    flex: 1.5 !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    font-size: 0.78rem !important;
+    font-weight: 900 !important;
+    background: #4f46e5 !important;
+    color: #ffffff !important;
+    border: none !important;
+  }
+
+  /* MODAL FACTURA DIGITAL INDIVIDUAL COPLAND OS 21.0 */
+  .copland-modal-wrapper {
+    padding: 1rem 0.65rem !important;
+    width: 98% !important;
+    max-width: 100% !important;
+    border-radius: 8px !important;
+    position: relative !important;
+  }
+
+  .copland-modal-wrapper .modal-close-btn {
+    top: 8px !important;
+    right: 8px !important;
+    width: 32px !important;
+    height: 32px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: #ffffff !important;
+    border: 1.5px solid var(--dark) !important;
+    border-radius: 6px !important;
+    box-shadow: 2px 2px 0px var(--dark) !important;
+    font-size: 1.15rem !important;
+    color: var(--dark) !important;
+    z-index: 25 !important;
+    padding: 0 !important;
+  }
+
+  .copland-modal-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 0.35rem !important;
+    padding-right: 38px !important;
+  }
+
+  .copland-modal-title {
+    font-size: 0.98rem !important;
+    line-height: 1.3 !important;
+  }
+
+  .copland-modal-subtitle {
+    font-size: 0.72rem !important;
+    line-height: 1.35 !important;
+    margin-top: 3px !important;
+  }
+
+  .copland-card-module {
+    border: 1.5px solid var(--dark) !important;
+    border-radius: 6px !important;
+    box-shadow: 2px 2px 0px var(--dark) !important;
+    margin-bottom: 0.85rem !important;
+    overflow: hidden !important;
+    background: #ffffff !important;
+  }
+
+  .copland-card-module-header {
+    background: #f8fafc !important;
+    border-bottom: 1.5px solid var(--dark) !important;
+    padding: 6px 10px !important;
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    gap: 0.35rem !important;
+    flex-wrap: wrap !important;
+  }
+
+  .copland-card-module-header.copland-wired-header {
+    background: linear-gradient(90deg, #1e1b4b 0%, #0f172a 100%) !important;
+    border-bottom: 1.5px solid #4338ca !important;
+  }
+
+  .copland-card-module.copland-wired-module {
+    border-color: #4338ca !important;
+    box-shadow: 2px 2px 0px #4338ca !important;
+  }
+
+  .copland-module-title {
+    font-size: 0.72rem !important;
+    font-weight: 900 !important;
+    color: var(--dark) !important;
+    letter-spacing: 0.3px !important;
+  }
+
+  .copland-wired-header .copland-module-title,
+  .copland-wired-header .copland-module-title label {
+    color: #e0e7ff !important;
+  }
+
+  .copland-mod-status {
+    font-size: 0.6rem !important;
+    color: #64748b !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.4px !important;
+    text-transform: uppercase !important;
+  }
+
+  .copland-wired-header .copland-mod-status {
+    color: #a5b4fc !important;
+  }
+
+  .copland-card-module-body {
+    padding: 0.85rem 0.75rem !important;
+  }
+
+  .copland-grid-4,
+  .copland-grid-client {
+    grid-template-columns: 1fr !important;
+    gap: 0.65rem !important;
+  }
+
+  .copland-wired-grid {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.65rem !important;
+    width: 100% !important;
+  }
+
+  .copland-wired-grid .copland-field-group {
+    width: 100% !important;
+    margin-left: 0 !important;
+  }
+
+  .copland-wp-box,
+  .copland-pin-box {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .copland-pin-input {
+    flex: 1 1 auto !important;
+    width: 100% !important;
+  }
+
+  .copland-btn-calc-wp,
+  .copland-btn-calc-modal {
+    width: 100% !important;
+    box-sizing: border-box !important;
+    justify-content: center !important;
+    text-align: center !important;
+    height: 40px !important;
+    font-size: 0.76rem !important;
+  }
+
+  #s-inv-lain-design {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    text-overflow: ellipsis !important;
+  }
+
+  .copland-field-label {
+    font-size: 0.65rem !important;
+    font-weight: 800 !important;
+    color: var(--dark) !important;
+    margin-bottom: 3px !important;
+  }
+
+  .copland-input,
+  .copland-select {
+    height: 40px !important;
+    font-size: 0.85rem !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .copland-folio-group,
+  .phone-input-group {
+    display: flex !important;
+    align-items: stretch !important;
+    width: 100% !important;
+  }
+
+  .copland-input-folio,
+  #s-inv-client-phone {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    height: 40px !important;
+    box-sizing: border-box !important;
+  }
+
+  .copland-btn-auto,
+  .phone-prefix-addon {
+    height: 40px !important;
+    flex-shrink: 0 !important;
+  }
+
+  .copland-module-actions {
+    width: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.4rem !important;
+  }
+
+  .copland-select-sm,
+  .copland-btn-add-row {
+    width: 100% !important;
+    box-sizing: border-box !important;
+    text-align: center !important;
+    height: 38px !important;
+  }
+
+  .copland-table-container {
+    width: 100% !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    display: block !important;
+    border-top: 1.5px solid var(--dark) !important;
+    border-bottom: 1.5px solid var(--dark) !important;
+    margin: 0.5rem 0 !important;
+    overscroll-behavior-x: contain;
+  }
+
+  .copland-items-table {
+    min-width: 480px !important;
+    width: 100% !important;
+  }
+
+  .modal-close-btn {
+    top: 8px !important;
+    right: 8px !important;
+    width: 32px !important;
+    height: 32px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: #ffffff !important;
+    border: 1.5px solid var(--dark) !important;
+    border-radius: 6px !important;
+    box-shadow: 2px 2px 0px var(--dark) !important;
+    font-size: 1.15rem !important;
+    color: var(--dark) !important;
+    z-index: 30 !important;
+    padding: 0 !important;
+  }
+
+  /* SELECTOR DE HOJA DE IMPRESIÓN */
+  #lot-paper-size {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    font-size: 0.78rem !important;
+  }
+  .paper-setup-card {
+    padding: 1rem 0.85rem !important;
+    overflow: hidden !important;
+  }
+
+  /* RESPONSIVIDAD CALCULADORA WP Y MÁRGENES */
+  .sale-calc-inputs-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.5rem !important;
+  }
+  .sale-calc-presets-row {
+    justify-content: flex-start !important;
+    margin-top: 0.4rem !important;
+  }
+
+  /* MODAL ACTIONS RESPONSIVE Y BOTONES */
+  .modal-actions-responsive {
+    flex-direction: column !important;
+    width: 100% !important;
+    gap: 0.5rem !important;
+  }
+  .modal-actions-responsive button,
+  .modal-actions-responsive .btn-primary,
+  .modal-actions-responsive .btn-secondary {
+    width: 100% !important;
+    min-height: 44px !important;
+    justify-content: center !important;
+    text-align: center !important;
+    box-sizing: border-box !important;
+  }
+
+  /* LAIN TOGGLE GROUP (CARGAR / DEDUCIR PUNTOS) */
+  .lain-toggle-group {
+    grid-template-columns: 1fr !important;
+    gap: 0.45rem !important;
+  }
+  .lain-toggle-btn {
+    padding: 0.65rem 0.85rem !important;
+    font-size: 0.78rem !important;
+    justify-content: center !important;
+  }
+
+  /* MODAL COMPACT MOBILE Y LAIN CARDS */
+  .modal-content.lain-card,
+  .modal-compact-mobile {
+    padding: 1.15rem 0.85rem !important;
+    max-width: 95vw !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  /* MODAL AGREGAR PRODUCTO (CALCULADORA DE FLETE Y CANJE) */
+  .prod-mode-grid {
+    grid-template-columns: 1fr !important;
+    gap: 0.5rem !important;
+  }
+  .prod-calc-3col {
+    grid-template-columns: 1fr !important;
+    gap: 0.5rem !important;
+  }
+  .freight-presets-row {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 0.35rem !important;
+    width: 100% !important;
+    justify-content: flex-start !important;
+    margin-top: 0.35rem !important;
+  }
+  .freight-presets-row button {
+    flex: 1 1 auto !important;
+    text-align: center !important;
+  }
+  .calc-ticket-row {
+    display: flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+    flex-wrap: wrap !important;
+    width: 100% !important;
+  }
+  .calc-financial-summary-card {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.75rem !important;
+  }
+  .calc-financial-summary-actions {
+    width: 100% !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    border-top: 1px dashed #cbd5e1 !important;
+    padding-top: 0.65rem !important;
+    margin-top: 0.25rem !important;
+  }
+  .prod-img-upload-row {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.4rem !important;
+    width: 100% !important;
+  }
+  .prod-img-upload-row button {
+    width: 100% !important;
+    justify-content: center !important;
+    text-align: center !important;
+  }
+  .form-grid > *,
+  .form-grid > .form-group,
+  .form-grid > div {
+    grid-column: 1 / -1 !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .lain-modal-header {
+    padding-right: 38px !important;
+  }
+
+  /* HERO CARD FACTURA DIGITAL INDIVIDUAL */
+  .lain-invoice-hero-card {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.85rem !important;
+    padding: 1rem 0.85rem !important;
+  }
+  .lain-hero-left,
+  .lain-hero-right {
+    width: 100% !important;
+    flex: none !important;
+  }
+  .lain-hero-right {
+    flex-direction: column !important;
+  }
+  .lain-btn-digital-invoice,
+  .lain-btn-calc-shortcut {
+    width: 100% !important;
+    white-space: normal !important;
+    justify-content: center !important;
+    text-align: center !important;
+    min-height: 44px !important;
+    box-sizing: border-box !important;
+  }
+
+  /* SELECTOR DE PLANTILLAS LAIN (44 DISEÑOS) */
+  .lain-template-btn-group {
+    width: 100% !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 0.4rem !important;
+  }
+  .lain-template-btn-group .copland-bar-btn {
+    flex: 1 1 calc(50% - 0.4rem) !important;
+    justify-content: center !important;
+    text-align: center !important;
+  }
+
+  /* BOTONES CABECERA SOCIOS */
+  .admin-header-actions {
+    width: 100% !important;
+    margin-top: 0.5rem !important;
+  }
+  .admin-header-actions button {
+    flex: 1 1 calc(50% - 0.4rem) !important;
+    justify-content: center !important;
+  }
+
+  /* AJUSTE DE PUNTOS FILA INPUT Y PRESETS */
+  .adjust-points-input-row {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.6rem !important;
+  }
+  .adjust-points-input-row input {
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+  .adjust-points-input-row div {
+    width: 100% !important;
+    justify-content: space-between !important;
+  }
+  .adjust-points-input-row div button {
+    flex: 1 1 auto !important;
+    text-align: center !important;
+    padding: 6px 4px !important;
+  }
+
+  /* BREAK-WORD EN TEXTOS CRÍTICOS */
+  #token-actions-title,
+  #ledger-user-name,
+  #ban-user-title,
+  #single-qr-folio {
+    word-break: break-word !important;
+  }
+  #single-qr-code,
+  #token-actions-code {
+    word-break: break-all !important;
+  }
+
+  /* BANNER DE RECLAMO FLUIDO (CLIENTE) */
+  .claim-banner {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    text-align: left !important;
+    padding: 1rem !important;
+    gap: 0.85rem !important;
+  }
+
+  .claim-banner .btn-primary, #btn-execute-claim {
+    width: 100% !important;
+    text-align: center !important;
+    padding: 0.75rem 1rem !important;
+    font-size: 0.95rem !important;
+    box-sizing: border-box !important;
+  }
+
+  /* CATÁLOGO RESPONSIVO EN PANTALLAS ANGOSTAS (360px - 480px) */
+  .rewards-grid, .catalog-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1.15rem !important;
+  }
+
+  .reward-card {
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  /* FORMULARIOS Y GRID DE DISPATCH */
+  .form-grid, .dispatch-grid, .filter-grid {
+    grid-template-columns: 1fr !important;
+    gap: 0.75rem !important;
+  }
+
+  /* MODALES Y LECTOR DE CÁMARA FLUIDOS */
+  .modal-overlay {
+    padding: 0.5rem !important;
+  }
+
+  .modal-content {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 1.15rem 0.95rem !important;
+    border-radius: 8px !important;
+    box-sizing: border-box !important;
+    max-height: 92vh !important;
+    overflow-y: auto !important;
+  }
+
+  #client-camera-reader, #camera-scanner-reader {
+    min-height: 220px !important;
+    max-height: 50vh !important;
+  }
+
+  #client-camera-reader video, #camera-scanner-reader video {
+    border-radius: 6px !important;
+    object-fit: cover !important;
+    max-height: 50vh !important;
+  }
+
+  /* PIE DE MODALES DE ACCIÓN */
+  .copland-modal-footer, .modal-footer {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.5rem !important;
+  }
+
+  .copland-footer-btn-cancel, .copland-footer-btn-group, .copland-footer-btn-primary, .copland-footer-btn {
+    width: 100% !important;
+    justify-content: center !important;
+    text-align: center !important;
+    box-sizing: border-box !important;
+  }
+
+  /* FACTURADOR DINÁMICO & TOTALES (ADMIN) */
+  .copland-items-table {
+    min-width: 520px !important;
+  }
+  .copland-totals-wrapper {
+    justify-content: stretch !important;
+    padding: 0.65rem 0.5rem !important;
+  }
+  .copland-totals-card {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .copland-bar-actions {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+  .copland-bar-btn {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+}
+
+@media (max-width: 420px) {
+  .sale-calc-inputs-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .lain-template-btn-group .copland-bar-btn {
+    flex: 1 1 100% !important;
+  }
+  .admin-header-actions button {
+    flex: 1 1 100% !important;
+  }
+}
+
+@media (max-width: 380px) {
+  .noc-stats-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .balance-amount {
+    font-size: 1.85rem !important;
+  }
+  .brand-word-melty, .brand-word-deays {
+    font-size: 1.15rem !important;
+  }
+  .lain-card {
+    padding: 0.85rem 0.65rem !important;
+  }
+}
+
+
+
+
