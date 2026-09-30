@@ -218,6 +218,10 @@ export function switchAdminTab(tabName) {
   if (vm && vm.isAuthenticated) {
     vm.refreshData();
   }
+
+  if (tabName === "invoices") {
+    renderLainTemplateGrid();
+  }
 }
 
 function renderAdmin(model) {
@@ -546,6 +550,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   vm.init();
+  renderLainTemplateGrid();
 
   // Inicializar máscara telefónica en campos de entrada (+505 automático)
   attachPhoneMask(document.getElementById("new-user-phone"));

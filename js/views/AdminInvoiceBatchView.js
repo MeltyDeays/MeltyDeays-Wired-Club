@@ -746,6 +746,74 @@ export function renderLainTemplateGrid() {
   const templates = getLainTemplates();
   const currentIdx = typeof window !== "undefined" ? window.activeLainTemplateIdx : null;
   const sf = _currentSeriesFilter || 'ALL';
+  const tiles = [];
+
+  templates.forEach((t) => {
+    if (sf && sf !== 'ALL') {
+      const tSeries = t.series || (t.idx < 24 ? 'SERIE 1' : (t.idx < 44 ? 'SERIE 2' : 'SERIE 3'));
+      if (!tSeries.includes(sf)) return;
+    }
+    const isFixed = currentIdx === t.idx;
+    const isHaibane = (t.series && t.series.includes('SERIE 3')) || t.idx >= 44;
+    const tile = document.createElement("div");
+    if (isHaibane) tile.style.borderColor = '#d97706';
+    tile.className = "lain-template-tile" + (isFixed ? " is-active" : "");
+    tile.title = t.layer + " — " + t.title + " (click para fijar / doble click para desactivar)";
+    tile.innerHTML =
+      '<div class="lain-template-layer">' + t.layer + '</div>' +
+      '<div class="lain-template-title">' + t.title + '</div>' +
+      '<div class="lain-template-sub">' + (t.sub || '') + '</div>' +
+      '<div class="lain-template-kanji">' + (t.kanji || '') + '</div>';
+    tile.onclick = () => setActiveLainTemplate(t.idx);
+    tile.ondblclick = () => setActiveLainTemplate(null);
+    tiles.push(tile);
+  });
+
+  // Añadir tile modo AUTOMÁTICO (null) adaptativo por serie
+  const autoTile = document.createElement("div");
+  autoTile.className = "lain-template-tile" + (currentIdx === null || currentIdx === undefined ? " is-active" : "");
+  let autoBadge = "AUTO · TODAS (74)";
+  let autoTitle = "MODO DINÁMICO";
+  let autoSub = "Rotación completa entre los 74 diseños disponibles por folio.";
+  let autoKanji = "全74種 · 自動";
+  let autoColor = "#059669";
+
+  if (sf === 'SERIE 1') {
+    autoBadge = "AUTO · SERIE 1 (24)";
+    autoTitle = "MODO DINÁMICO (LAIN)";
+    autoSub = "Rotación exclusiva en los 24 diseños de Serial Experiments Lain.";
+    autoKanji = "連続実験 · 動的";
+    autoColor = "#0284c7";
+  } else if (sf === 'SERIE 2') {
+    autoBadge = "AUTO · SERIE 2 (20)";
+    autoTitle = "MODO DINÁMICO (COPLAND)";
+    autoSub = "Rotación exclusiva en los 20 diseños Copland OS.";
+    autoKanji = "OS端末 · 動的";
+    autoColor = "#6366f1";
+  } else if (sf === 'SERIE 3') {
+    autoBadge = "AUTO · SERIE 3 (30)";
+    autoTitle = "MODO DINÁMICO (HAIBANE)";
+    autoSub = "Rotación exclusiva en los 30 diseños Haibane Renmei.";
+    autoKanji = "灰羽連盟 · 動的";
+    autoColor = "#b45309";
+    if (currentIdx === null || currentIdx === undefined) {
+      autoTile.style.borderColor = "#b45309";
+      autoTile.style.background = "#fffbeb";
+    }
+  }
+
+  autoTile.title = "Haz click: " + autoTitle + ". Las facturas rotarán dentro de esta serie seleccionada.";
+  autoTile.innerHTML =
+    '<div class="lain-template-layer" style="color:' + autoColor + ';">' + autoBadge + '</div>' +
+    '<div class="lain-template-title" style="' + (sf === 'SERIE 3' ? 'color:#78350f;' : '') + '">' + autoTitle + '</div>' +
+    '<div class="lain-template-sub">' + autoSub + '</div>' +
+    '<div class="lain-template-kanji" style="color:' + autoColor + ';">' + autoKanji + '</div>';
+  autoTile.onclick = () => setActiveLainTemplate(null);
+  tiles.unshift(autoTile);
+
+  grid.innerHTML = "";
+  tiles.forEach(t => grid.appendChild(t));
+
   const label = document.getElementById("lain-template-active-label");
   if (label) {
     if (currentIdx === null || currentIdx === undefined) {

@@ -261,5 +261,32 @@ export async function runTier1Tests() {
     expect(invoiceModal.style.display).toBe('none', 'Single digital invoice modal should be closed');
   });
 
+  // Test 10: Lain Template Gallery Rendering and Filtering
+  await ctx.test('T1.10: Lain template gallery renders all 74 designs and responds to series filters', async () => {
+    const { doc, win } = setupTestEnvironment('admin.html');
+    const adminAppUrl = pathToFileURL(path.join(PROJECT_ROOT, 'js/admin-app.js')).href + `?t=${Date.now()}`;
+    await import(adminAppUrl);
+    win.document.dispatchEvent({ type: 'DOMContentLoaded' });
+
+    const grid = doc.getElementById('lain-template-grid');
+    expect(grid).toBeTruthy('lain-template-grid must exist in admin DOM');
+
+    win.renderLainTemplateGrid();
+    expect(grid.children.length).toBe(75, 'Expected 75 tiles for ALL series filter (1 auto + 74 designs)');
+
+    win.filterLainSeries('SERIE 1');
+    expect(grid.children.length).toBe(25, 'Expected 25 tiles for Serie 1 (1 auto + 24 designs)');
+
+    win.filterLainSeries('SERIE 2');
+    expect(grid.children.length).toBe(21, 'Expected 21 tiles for Serie 2 (1 auto + 20 designs)');
+
+    win.filterLainSeries('SERIE 3');
+    expect(grid.children.length).toBe(31, 'Expected 31 tiles for Serie 3 (1 auto + 30 designs)');
+
+    win.setActiveLainTemplate(44);
+    const label = doc.getElementById('lain-template-active-label');
+    expect(label.innerHTML).toContain('COCOON // THE DREAM', 'Active label should show selected Serie 3 template');
+  });
+
   return ctx.summary();
 }
