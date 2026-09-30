@@ -200,7 +200,7 @@
       <button class="admin-tab-btn" id="tab-btn-history" onclick="switchAdminTab('history')">
         📜 Historial de Canjes
       </button>
-      <button class="admin-tab-btn" id="tab-btn-sandbox_db" onclick="switchAdminTab('sandbox_db')" style="border-left: 2px dashed #eab308; background: rgba(254, 252, 232, 0.6);">
+      <button class="admin-tab-btn" id="tab-btn-sandbox_db" onclick="switchAdminTab('sandbox_db')">
         🧪 BD Sandbox
       </button>
     </nav>
@@ -728,12 +728,6 @@
           <button type="button" class="copland-bar-btn copland-bar-btn-emerald" id="btn-print-active-sheet" onclick="generateBatchAdmin()">
             <span>🖨️</span> IMPRIMIR 4X1 (DOBLE CARA)
           </button>
-          <button type="button" class="copland-bar-btn copland-bar-btn-amber" onclick="openPurgeModal()" title="Vaciar facturas de prueba en Firestore/Local y reiniciar correlativo a #0001">
-            <span>🗑️</span> RESETEAR FACTURAS
-          </button>
-          <button type="button" class="copland-bar-btn copland-bar-btn-crimson" onclick="openPurgeAllDbModal()" title="Limpiar todos los datos de la base de datos (Socios, Vales, Facturas, Ledger) preservando solo el PIN del Admin">
-            <span>💥</span> PURGAR TODA LA BD
-          </button>
         </div>
       </div>
 
@@ -793,6 +787,7 @@
             <tbody id="vouchers-table-body"></tbody>
           </table>
         </div>
+      </div>
     </div>
 
     <!-- SECCIÓN 6: GESTIÓN DE BASE DE DATOS SANDBOX / PRUEBAS -->
@@ -2521,6 +2516,6 @@
     })();
   </script>
 
-  <script type="module" src="./js/admin-app.js?v=2.8.0"></script>
+  <script type="module" src="./js/admin-app.js?v=2.8.1"></script>
 </body>
 </html>
