@@ -14,6 +14,8 @@ export function initAdminVouchersView(deps) {
 }
 
 let vouchersFilterState = "ALL";
+let vouchersFilterQuery = "";
+let vouchersSortOrder = "newest";
 let currentPaidVoucherId = null;
 
 export function playAdminDispatchSound() {
@@ -109,12 +111,49 @@ export function renderVouchersTable(vouchers) {
   const tbody = document.getElementById("vouchers-table-body");
   if (!tbody) return;
 
-  let filtered = vouchers || [];
+  let filtered = [...(vouchers || [])];
   if (vouchersFilterState === "PENDING") {
-    filtered = filtered.filter(v => !v.isDelivered());
+    filtered = filtered.filter(v => typeof v.isDelivered === "function" ? !v.isDelivered() : v.status !== "DELIVERED");
   } else if (vouchersFilterState === "DELIVERED") {
-    filtered = filtered.filter(v => v.isDelivered());
+    filtered = filtered.filter(v => typeof v.isDelivered === "function" ? v.isDelivered() : v.status === "DELIVERED");
   }
+
+  if (vouchersFilterQuery) {
+    const q = vouchersFilterQuery.toLowerCase();
+    filtered = filtered.filter(v => {
+      const code = (v.voucherCode || v.voucher_code || "").toLowerCase();
+      const title = (v.rewardTitle || v.reward_title || "").toLowerCase();
+      const targetUid = v.userUid || v.user_uid || v.userId || v.user_id || "";
+      const userMatch = (vm && vm.users) ? vm.users.find(u => u.uid === targetUid || (u.memberCode && u.memberCode === targetUid)) : null;
+      const clientName = (v.userName || v.userDisplayName || (userMatch ? userMatch.displayName : "")).toLowerCase();
+      const clientContact = (userMatch && userMatch.phone ? userMatch.phone : (v.userPhone || "")).toLowerCase();
+      return code.includes(q) || title.includes(q) || clientName.includes(q) || clientContact.includes(q);
+    });
+  }
+
+  // Ordenamiento dinámico
+  filtered.sort((a, b) => {
+    if (vouchersSortOrder === "newest") {
+      const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return timeB - timeA;
+    } else if (vouchersSortOrder === "oldest") {
+      const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return timeA - timeB;
+    } else if (vouchersSortOrder === "points-desc") {
+      const costA = Number(a.pointsSpent || a.pointsCost || a.points_spent || (a.reward ? a.reward.pointsCost : 0));
+      const costB = Number(b.pointsSpent || b.pointsCost || b.points_spent || (b.reward ? b.reward.pointsCost : 0));
+      return costB - costA;
+    } else if (vouchersSortOrder === "points-asc") {
+      const costA = Number(a.pointsSpent || a.pointsCost || a.points_spent || (a.reward ? a.reward.pointsCost : 0));
+      const costB = Number(b.pointsSpent || b.pointsCost || b.points_spent || (b.reward ? b.reward.pointsCost : 0));
+      return costA - costB;
+    } else if (vouchersSortOrder === "code-asc") {
+      return (a.voucherCode || "").localeCompare(b.voucherCode || "");
+    }
+    return 0;
+  });
 
   if (filtered.length === 0) {
     tbody.innerHTML = `
@@ -295,7 +334,28 @@ export function markVoucherPaidAdmin(voucherCode, cashDue = 0) {
 
 export function filterVouchersTable(state) {
   vouchersFilterState = state;
-  renderVouchersTable(vm.vouchers);
+  const states = ["ALL", "PENDING", "DELIVERED"];
+  states.forEach(s => {
+    const btn = document.getElementById("voucher-filter-" + s);
+    if (btn) {
+      if (s === state) btn.classList.add("active");
+      else btn.classList.remove("active");
+    }
+  });
+  if (vm) renderVouchersTable(vm.vouchers);
+}
+
+export function filterVouchersAdmin() {
+  const input = document.getElementById("search-vouchers-input");
+  vouchersFilterQuery = (input ? input.value : "").trim();
+  if (vm) renderVouchersTable(vm.vouchers);
+}
+
+export function sortVouchersAdmin(order) {
+  vouchersSortOrder = order || "newest";
+  const select = document.getElementById("sort-vouchers-select");
+  if (select && select.value !== vouchersSortOrder) select.value = vouchersSortOrder;
+  if (vm) renderVouchersTable(vm.vouchers);
 }
 
 let currentModalDeliverCode = null;

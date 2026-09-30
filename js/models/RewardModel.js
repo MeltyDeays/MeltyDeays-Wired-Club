@@ -12,8 +12,13 @@ export function parseProductDescription(rawText) {
   if (trimmed.includes("\n")) {
     const lines = trimmed.split("\n").map(l => l.trim()).filter(Boolean);
     if (lines.length > 1) {
-      const intro = lines[0];
-      const specs = lines.slice(1).map(l => l.replace(/^[•\-\*▸✓✔]\s*/, ""));
+      let intro = lines[0];
+      let specs = lines.slice(1);
+      if (intro.length <= 4 && specs.length > 0) {
+        intro = intro + " " + specs[0];
+        specs = specs.slice(1);
+      }
+      specs = specs.map(l => l.replace(/^[•\-\*▸✓✔]\s*/, ""));
       return {
         intro,
         specs,

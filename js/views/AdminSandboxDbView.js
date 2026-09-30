@@ -21,6 +21,18 @@ export function initAdminSandboxDbView(deps) {
   }
 }
 
+let sandboxTokensStatus = "ALL";
+let sandboxTokensSort = "folio-asc";
+
+let sandboxUsersTier = "ALL";
+let sandboxUsersSort = "newest";
+
+let sandboxVouchersStatus = "ALL";
+let sandboxVouchersSort = "newest";
+
+let sandboxCatalogType = "ALL";
+let sandboxCatalogSort = "cost-desc";
+
 export function setSandboxDraftTab(tab) {
   activeDraftTab = tab;
   renderSandboxDbView();
@@ -31,6 +43,24 @@ export function filterSandboxDrafts(query) {
   renderDraftTable();
 }
 
+export function setSandboxDraftStatus(status) {
+  if (activeDraftTab === "tokens") sandboxTokensStatus = status;
+  else if (activeDraftTab === "users") sandboxUsersTier = status;
+  else if (activeDraftTab === "vouchers") sandboxVouchersStatus = status;
+  else if (activeDraftTab === "catalog") sandboxCatalogType = status;
+  renderSandboxDbView();
+}
+
+export function setSandboxDraftSort(sortOrder) {
+  if (activeDraftTab === "tokens") sandboxTokensSort = sortOrder;
+  else if (activeDraftTab === "users") sandboxUsersSort = sortOrder;
+  else if (activeDraftTab === "vouchers") sandboxVouchersSort = sortOrder;
+  else if (activeDraftTab === "catalog") sandboxCatalogSort = sortOrder;
+  renderDraftTable();
+}
+
+const safeConfirm = (msg) => (typeof window !== "undefined" && typeof window.confirm === "function") ? window.confirm(msg) : (typeof confirm === "function" ? confirm(msg) : true);
+
 // ----------------------------------------------------
 // ACCIONES DE PURGA GRANULAR
 // ----------------------------------------------------
@@ -39,7 +69,7 @@ export async function executePurgeUsers() {
   const isProd = isProduction();
   const targetCol = isProd ? "users" : "dev_users";
   const desc = isProd ? "TODOS los socios/clientes de PRODUCCIÓN" : "TODOS los socios/clientes de prueba (dev_users)";
-  if (!confirm(`⚠️ ¿Deseas purgar ${desc}?\n\nEl perfil de Administrador (PIN 110805) quedará intacto.`)) {
+  if (!safeConfirm(`⚠️ ¿Deseas purgar ${desc}?\n\nEl perfil de Administrador (PIN 110805) quedará intacto.`)) {
     return;
   }
   showToast(isProd ? "Purgando base de datos de socios en producción..." : "Purgando base de datos de socios de prueba...", "info");
@@ -55,7 +85,7 @@ export async function executePurgeUsers() {
 
 export async function executePurgeCirculatingPoints() {
   const isProd = isProduction();
-  if (!confirm(`⚠️ ¿Deseas restablecer a 0 todos los puntos en circulación ${isProd ? "de PRODUCCIÓN " : ""}y vaciar el historial contable?`)) {
+  if (!safeConfirm(`⚠️ ¿Deseas restablecer a 0 todos los puntos en circulación ${isProd ? "de PRODUCCIÓN " : ""}y vaciar el historial contable?`)) {
     return;
   }
   showToast(isProd ? "Purgando puntos en producción..." : "Purgando puntos en circulación...", "info");
@@ -72,7 +102,7 @@ export async function executePurgeCirculatingPoints() {
 export async function executePurgeVouchers(filter = "ALL") {
   const isProd = isProduction();
   const label = filter === "PENDING" ? "PENDIENTES de retiro" : (filter === "DELIVERED" ? "ya ENTREGADOS" : "TODOS");
-  if (!confirm(`⚠️ ¿Deseas purgar los vales de canje ${label}${isProd ? " en PRODUCCIÓN" : ""}?`)) {
+  if (!safeConfirm(`⚠️ ¿Deseas purgar los vales de canje ${label}${isProd ? " en PRODUCCIÓN" : ""}?`)) {
     return;
   }
   showToast(`Purgando vales (${label})...`, "info");
@@ -90,7 +120,7 @@ export async function executePurgeRewards() {
   const isProd = isProduction();
   const targetCol = isProd ? "rewards_catalog" : "dev_rewards_catalog";
   const desc = isProd ? "TODOS los productos del catálogo de PRODUCCIÓN" : "TODOS los productos del catálogo de premios de prueba";
-  if (!confirm(`⚠️ ¿Deseas purgar ${desc}?`)) {
+  if (!safeConfirm(`⚠️ ¿Deseas purgar ${desc}?`)) {
     return;
   }
   showToast(isProd ? "Purgando catálogo de producción..." : "Purgando catálogo de premios...", "info");
@@ -108,7 +138,7 @@ export async function executePurgeInvoicesFromSandbox() {
   const isProd = isProduction();
   const targetCol = isProd ? "qr_tokens" : "dev_qr_tokens";
   const desc = isProd ? "TODAS las facturas y tokens QR de PRODUCCIÓN" : "TODAS las facturas/tokens QR y restablecer el folio a #0001";
-  if (!confirm(`⚠️ ¿Deseas purgar ${desc} y restablecer el folio a #0001?`)) {
+  if (!safeConfirm(`⚠️ ¿Deseas purgar ${desc} y restablecer el folio a #0001?`)) {
     return;
   }
   showToast(isProd ? "Purgando facturas y tokens en producción..." : "Purgando facturas y tokens de prueba...", "info");
@@ -137,7 +167,7 @@ export async function executeSeedDevData() {
     showToast("⚠️ Acción restringida en entorno de producción.", "error");
     return;
   }
-  if (!confirm("🌱 ¿Deseas sembrar datos demo estándar (3 socios y 3 productos de prueba)?")) {
+  if (!safeConfirm("🌱 ¿Deseas sembrar datos demo estándar (3 socios y 3 productos de prueba)?")) {
     return;
   }
   showToast("Sembrando datos de demostración...", "info");
@@ -156,7 +186,7 @@ export async function executeSeedDevData() {
 // ----------------------------------------------------
 
 export async function deleteSingleToken(tokenCode, folio) {
-  if (!confirm(`🗑️ ¿Eliminar definitivamente la factura #MD-2026-${folio} (${tokenCode})?\n\nEl folio #${folio} quedará libre para volverse a generar de inmediato.`)) {
+  if (!safeConfirm(`🗑️ ¿Eliminar definitivamente la factura #MD-2026-${folio} (${tokenCode})?\n\nEl folio #${folio} quedará libre para volverse a generar de inmediato.`)) {
     return;
   }
   showToast(`Eliminando factura #${folio}...`, "info");
@@ -189,7 +219,7 @@ export async function deleteSingleUser(uid, name) {
     showToast("⚠️ Acción protegida: No se puede eliminar el perfil del Administrador principal.", "error");
     return;
   }
-  if (!confirm(`🗑️ ¿Eliminar al socio "${name}" (${uid})?`)) {
+  if (!safeConfirm(`🗑️ ¿Eliminar al socio "${name}" (${uid})?`)) {
     return;
   }
   showToast("Eliminando socio...", "info");
@@ -204,7 +234,7 @@ export async function deleteSingleUser(uid, name) {
 }
 
 export async function deleteSingleVoucher(code) {
-  if (!confirm(`🗑️ ¿Eliminar el vale de canje "${code}"?`)) {
+  if (!safeConfirm(`🗑️ ¿Eliminar el vale de canje "${code}"?`)) {
     return;
   }
   showToast("Eliminando vale...", "info");
@@ -219,7 +249,7 @@ export async function deleteSingleVoucher(code) {
 }
 
 export async function deleteSingleReward(rewardId, title) {
-  if (!confirm(`🗑️ ¿Eliminar del catálogo el producto "${title}" (${rewardId})?`)) {
+  if (!safeConfirm(`🗑️ ¿Eliminar del catálogo el producto "${title}" (${rewardId})?`)) {
     return;
   }
   showToast("Eliminando producto...", "info");
@@ -477,17 +507,96 @@ export function renderSandboxDbView() {
         </button>
       </div>
 
-      <!-- BUSCADOR EN VIVO -->
-      <div style="margin-bottom: 1rem; display: flex; gap: 0.5rem; align-items: center;">
-        <input 
-          type="text" 
-          id="sandbox-draft-search" 
-          placeholder="🔍 Filtrar registros por folio, código, teléfono o título..." 
-          value="${draftSearchQuery}"
-          oninput="filterSandboxDrafts(this.value)"
-          style="flex: 1; padding: 8px 12px; border: 1.5px solid var(--dark); border-radius: 4px; font-family: var(--font-mono); font-size: 0.82rem;"
-        />
-        ${draftSearchQuery ? `<button type="button" class="btn-secondary" style="padding: 6px 12px; font-size: 0.78rem;" onclick="filterSandboxDrafts('')">Limpiar</button>` : ''}
+      <!-- BARRA DE BÚSQUEDA Y FILTROS EN VIVO -->
+      <div class="admin-filter-bar" style="margin-bottom: 1rem; display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center; justify-content: space-between;">
+        <div style="display: flex; gap: 0.5rem; align-items: center; flex: 1; min-width: 240px;">
+          <input 
+            type="text" 
+            id="sandbox-draft-search" 
+            placeholder="🔍 Filtrar registros por folio, código, teléfono o título..." 
+            value="${draftSearchQuery}"
+            oninput="filterSandboxDrafts(this.value)"
+            style="flex: 1; padding: 7px 12px; border: 1.5px solid var(--dark); border-radius: 4px; font-family: var(--font-mono); font-size: 0.82rem; margin: 0;"
+          />
+          ${draftSearchQuery ? `<button type="button" class="btn-secondary" style="padding: 5px 10px; font-size: 0.78rem;" onclick="filterSandboxDrafts('')">Limpiar</button>` : ''}
+        </div>
+        ${activeDraftTab === 'tokens' ? `
+          <div style="display: flex; gap: 0.35rem; align-items: center; flex-wrap: wrap;">
+            <span style="font-family: var(--font-mono); font-size: 0.72rem; font-weight: 700; color: var(--gray-500);">ESTADO:</span>
+            <button type="button" class="btn-secondary ${sandboxTokensStatus === 'ALL' ? 'active' : ''}" style="padding: 3px 8px; font-size: 0.72rem;" onclick="setSandboxDraftStatus('ALL')">Todas</button>
+            <button type="button" class="btn-secondary ${sandboxTokensStatus === 'PENDING' ? 'active' : ''}" style="padding: 3px 8px; font-size: 0.72rem;" onclick="setSandboxDraftStatus('PENDING')">⏳ Sin Asignar</button>
+            <button type="button" class="btn-secondary ${sandboxTokensStatus === 'ACTIVE' ? 'active' : ''}" style="padding: 3px 8px; font-size: 0.72rem;" onclick="setSandboxDraftStatus('ACTIVE')">● Sin Reclamar</button>
+            <button type="button" class="btn-secondary ${sandboxTokensStatus === 'CLAIMED' ? 'active' : ''}" style="padding: 3px 8px; font-size: 0.72rem;" onclick="setSandboxDraftStatus('CLAIMED')">✔ Reclamadas</button>
+            <div style="display: inline-flex; align-items: center; gap: 0.35rem; margin-left: 0.4rem;">
+              <span style="font-family: var(--font-mono); font-size: 0.72rem; font-weight: 700; color: var(--gray-500);">ORDENAR:</span>
+              <select id="sandbox-tokens-sort" class="form-input" style="padding: 2px 7px; font-size: 0.75rem; width: auto; font-family: var(--font-mono); height: 26px; line-height: 1;" onchange="setSandboxDraftSort(this.value)">
+                <option value="folio-asc" ${sandboxTokensSort === 'folio-asc' ? 'selected' : ''}>🔢 Folio 1 al 40 (Asc)</option>
+                <option value="folio-desc" ${sandboxTokensSort === 'folio-desc' ? 'selected' : ''}>🔢 Folio 40 al 1 (Desc)</option>
+                <option value="newest" ${sandboxTokensSort === 'newest' ? 'selected' : ''}>🕒 Más nuevas / recientes</option>
+                <option value="oldest" ${sandboxTokensSort === 'oldest' ? 'selected' : ''}>⌛ Más viejas / antiguas</option>
+                <option value="points-desc" ${sandboxTokensSort === 'points-desc' ? 'selected' : ''}>⚡ Mayor valor WP</option>
+                <option value="points-asc" ${sandboxTokensSort === 'points-asc' ? 'selected' : ''}>📉 Menor valor WP</option>
+              </select>
+            </div>
+          </div>
+        ` : (activeDraftTab === 'users' ? `
+          <div style="display: flex; gap: 0.35rem; align-items: center; flex-wrap: wrap;">
+            <span style="font-family: var(--font-mono); font-size: 0.72rem; font-weight: 700; color: var(--gray-500);">RANGO:</span>
+            <button type="button" class="btn-secondary ${sandboxUsersTier === 'ALL' ? 'active' : ''}" style="padding: 3px 8px; font-size: 0.72rem;" onclick="setSandboxDraftStatus('ALL')">Todos</button>
+            <button type="button" class="btn-secondary ${sandboxUsersTier === 'NAVI' ? 'active' : ''}" style="padding: 3px 8px; font-size: 0.72rem;" onclick="setSandboxDraftStatus('NAVI')">NAVI</button>
+            <button type="button" class="btn-secondary ${sandboxUsersTier === 'RUNNER' ? 'active' : ''}" style="padding: 3px 8px; font-size: 0.72rem;" onclick="setSandboxDraftStatus('RUNNER')">RUNNER</button>
+            <button type="button" class="btn-secondary ${sandboxUsersTier === 'ELITE' ? 'active' : ''}" style="padding: 3px 8px; font-size: 0.72rem;" onclick="setSandboxDraftStatus('ELITE')">ELITE</button>
+            <button type="button" class="btn-secondary ${sandboxUsersTier === 'DEUS' ? 'active' : ''}" style="padding: 3px 8px; font-size: 0.72rem;" onclick="setSandboxDraftStatus('DEUS')">DEUS</button>
+            <div style="display: inline-flex; align-items: center; gap: 0.35rem; margin-left: 0.4rem;">
+              <span style="font-family: var(--font-mono); font-size: 0.72rem; font-weight: 700; color: var(--gray-500);">ORDENAR:</span>
+              <select id="sandbox-users-sort" class="form-input" style="padding: 2px 7px; font-size: 0.75rem; width: auto; font-family: var(--font-mono); height: 26px; line-height: 1;" onchange="setSandboxDraftSort(this.value)">
+                <option value="newest" ${sandboxUsersSort === 'newest' ? 'selected' : ''}>🕒 Más recientes</option>
+                <option value="oldest" ${sandboxUsersSort === 'oldest' ? 'selected' : ''}>⌛ Más antiguos</option>
+                <option value="points-desc" ${sandboxUsersSort === 'points-desc' ? 'selected' : ''}>⚡ Mayor saldo WP</option>
+                <option value="points-asc" ${sandboxUsersSort === 'points-asc' ? 'selected' : ''}>📉 Menor saldo WP</option>
+                <option value="name-asc" ${sandboxUsersSort === 'name-asc' ? 'selected' : ''}>🔤 Nombre A-Z</option>
+                <option value="name-desc" ${sandboxUsersSort === 'name-desc' ? 'selected' : ''}>🔡 Nombre Z-A</option>
+              </select>
+            </div>
+          </div>
+        ` : (activeDraftTab === 'vouchers' ? `
+          <div style="display: flex; gap: 0.35rem; align-items: center; flex-wrap: wrap;">
+            <span style="font-family: var(--font-mono); font-size: 0.72rem; font-weight: 700; color: var(--gray-500);">ESTADO:</span>
+            <button type="button" class="btn-secondary ${sandboxVouchersStatus === 'ALL' ? 'active' : ''}" style="padding: 3px 8px; font-size: 0.72rem;" onclick="setSandboxDraftStatus('ALL')">Todos</button>
+            <button type="button" class="btn-secondary ${sandboxVouchersStatus === 'PENDING' ? 'active' : ''}" style="padding: 3px 8px; font-size: 0.72rem;" onclick="setSandboxDraftStatus('PENDING')">⏳ Pendientes</button>
+            <button type="button" class="btn-secondary ${sandboxVouchersStatus === 'DELIVERED' ? 'active' : ''}" style="padding: 3px 8px; font-size: 0.72rem;" onclick="setSandboxDraftStatus('DELIVERED')">✓ Despachados</button>
+            <div style="display: inline-flex; align-items: center; gap: 0.35rem; margin-left: 0.4rem;">
+              <span style="font-family: var(--font-mono); font-size: 0.72rem; font-weight: 700; color: var(--gray-500);">ORDENAR:</span>
+              <select id="sandbox-vouchers-sort" class="form-input" style="padding: 2px 7px; font-size: 0.75rem; width: auto; font-family: var(--font-mono); height: 26px; line-height: 1;" onchange="setSandboxDraftSort(this.value)">
+                <option value="newest" ${sandboxVouchersSort === 'newest' ? 'selected' : ''}>🕒 Más reciente a más viejo</option>
+                <option value="oldest" ${sandboxVouchersSort === 'oldest' ? 'selected' : ''}>⌛ Más viejo a más reciente</option>
+                <option value="points-desc" ${sandboxVouchersSort === 'points-desc' ? 'selected' : ''}>⚡ Mayor costo WP</option>
+                <option value="points-asc" ${sandboxVouchersSort === 'points-asc' ? 'selected' : ''}>🪙 Menor costo WP</option>
+                <option value="code-asc" ${sandboxVouchersSort === 'code-asc' ? 'selected' : ''}>🔤 Código (A-Z)</option>
+              </select>
+            </div>
+          </div>
+        ` : `
+          <div style="display: flex; gap: 0.35rem; align-items: center; flex-wrap: wrap;">
+            <span style="font-family: var(--font-mono); font-size: 0.72rem; font-weight: 700; color: var(--gray-500);">TIPO:</span>
+            <button type="button" class="btn-secondary ${sandboxCatalogType === 'ALL' ? 'active' : ''}" style="padding: 3px 8px; font-size: 0.72rem;" onclick="setSandboxDraftStatus('ALL')">Todos</button>
+            <button type="button" class="btn-secondary ${sandboxCatalogType === 'FREE' ? 'active' : ''}" style="padding: 3px 8px; font-size: 0.72rem;" onclick="setSandboxDraftStatus('FREE')">🎁 100% Puntos</button>
+            <button type="button" class="btn-secondary ${sandboxCatalogType === 'PARTIAL' ? 'active' : ''}" style="padding: 3px 8px; font-size: 0.72rem;" onclick="setSandboxDraftStatus('PARTIAL')">🏷️ Venta Topada</button>
+            <div style="display: inline-flex; align-items: center; gap: 0.35rem; margin-left: 0.4rem;">
+              <span style="font-family: var(--font-mono); font-size: 0.72rem; font-weight: 700; color: var(--gray-500);">ORDENAR:</span>
+              <select id="sandbox-catalog-sort" class="form-input" style="padding: 2px 7px; font-size: 0.75rem; width: auto; font-family: var(--font-mono); height: 26px; line-height: 1;" onchange="setSandboxDraftSort(this.value)">
+                <option value="cost-desc" ${sandboxCatalogSort === 'cost-desc' ? 'selected' : ''}>💰 Más caro a más barato (WP)</option>
+                <option value="cost-asc" ${sandboxCatalogSort === 'cost-asc' ? 'selected' : ''}>🪙 Más barato a más caro (WP)</option>
+                <option value="discount-desc" ${sandboxCatalogSort === 'discount-desc' ? 'selected' : ''}>🏷️ Mayor descuento tope</option>
+                <option value="discount-asc" ${sandboxCatalogSort === 'discount-asc' ? 'selected' : ''}>🏷️ Menor descuento tope</option>
+                <option value="stock-desc" ${sandboxCatalogSort === 'stock-desc' ? 'selected' : ''}>📦 Mayor stock disponible</option>
+                <option value="stock-asc" ${sandboxCatalogSort === 'stock-asc' ? 'selected' : ''}>📉 Menor stock disponible</option>
+                <option value="title-asc" ${sandboxCatalogSort === 'title-asc' ? 'selected' : ''}>🔤 Nombre A-Z</option>
+                <option value="title-desc" ${sandboxCatalogSort === 'title-desc' ? 'selected' : ''}>🔡 Nombre Z-A</option>
+              </select>
+            </div>
+          </div>
+        `))}
       </div>
 
       <!-- TABLA DINÁMICA DE ELEMENTOS -->
@@ -505,7 +614,16 @@ function renderDraftTable() {
   const q = draftSearchQuery;
 
   if (activeDraftTab === "tokens") {
-    let tokens = vm.tokens || [];
+    let tokens = [...(vm.tokens || [])];
+
+    if (sandboxTokensStatus === "PENDING") {
+      tokens = tokens.filter(t => t.isPendingAssignment());
+    } else if (sandboxTokensStatus === "ACTIVE") {
+      tokens = tokens.filter(t => t.isActive());
+    } else if (sandboxTokensStatus === "CLAIMED") {
+      tokens = tokens.filter(t => t.isClaimed());
+    }
+
     if (q) {
       tokens = tokens.filter(t => 
         (t.invoiceFolio || "").toLowerCase().includes(q) ||
@@ -514,10 +632,32 @@ function renderDraftTable() {
       );
     }
 
+    const parseFolio = (f) => parseInt(String(f || "").replace(/\D/g, ""), 10) || 0;
+    tokens.sort((a, b) => {
+      if (sandboxTokensSort === "folio-asc") {
+        return parseFolio(a.invoiceFolio) - parseFolio(b.invoiceFolio);
+      } else if (sandboxTokensSort === "folio-desc") {
+        return parseFolio(b.invoiceFolio) - parseFolio(a.invoiceFolio);
+      } else if (sandboxTokensSort === "newest") {
+        const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return (timeB - timeA) || (parseFolio(b.invoiceFolio) - parseFolio(a.invoiceFolio));
+      } else if (sandboxTokensSort === "oldest") {
+        const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return (timeA - timeB) || (parseFolio(a.invoiceFolio) - parseFolio(b.invoiceFolio));
+      } else if (sandboxTokensSort === "points-desc") {
+        return (b.pointsValue || 0) - (a.pointsValue || 0);
+      } else if (sandboxTokensSort === "points-asc") {
+        return (a.pointsValue || 0) - (b.pointsValue || 0);
+      }
+      return 0;
+    });
+
     if (tokens.length === 0) {
       container.innerHTML = `
         <div style="text-align: center; padding: 2rem; color: var(--gray-500); font-family: var(--font-mono); font-size: 0.85rem;">
-          No hay tokens de facturación que coincidan con la búsqueda.
+          No hay tokens de facturación que coincidan con los filtros y búsqueda.
         </div>`;
       return;
     }
@@ -554,8 +694,10 @@ function renderDraftTable() {
                   <td style="text-align: center;"><span class="pin-badge">${t.securityPin || "••••"}</span></td>
                   <td>${statusBadge}</td>
                   <td style="text-align: right; white-space: nowrap;">
-                    <button type="button" class="btn-danger btn-compact" style="background: #fef2f2; border: 1.5px solid #ef4444; color: #b91c1c; font-weight: 800; gap: 4px;" onclick="deleteSingleToken('${t.tokenCode}', '${t.invoiceFolio}')" title="Eliminar factura y liberar folio #${t.invoiceFolio}">
-                      ✕ Borrar QR (Liberar Folio #${t.invoiceFolio})
+                    <button type="button" class="btn-release-folio" onclick="deleteSingleToken('${t.tokenCode}', '${t.invoiceFolio}')" title="Eliminar factura y liberar folio #${t.invoiceFolio} para reemisión inmediata">
+                      <span class="btn-icon">🗑️</span>
+                      <span class="btn-text">Borrar QR</span>
+                      <span class="folio-tag">Liberar #${t.invoiceFolio}</span>
                     </button>
                   </td>
                 </tr>
@@ -566,20 +708,58 @@ function renderDraftTable() {
       </div>
     `;
   } else if (activeDraftTab === "users") {
-    let users = vm.users || [];
+    let users = [...(vm.users || [])];
+    if (sandboxUsersTier !== "ALL") {
+      users = users.filter(u => {
+        const t = (u.tier || "NAVI_USER").toUpperCase();
+        if (sandboxUsersTier === "NAVI") return t.includes("NAVI");
+        if (sandboxUsersTier === "RUNNER") return t.includes("RUNNER");
+        if (sandboxUsersTier === "ELITE") return t.includes("ELITE");
+        if (sandboxUsersTier === "DEUS") return t.includes("DEUS");
+        return t === sandboxUsersTier;
+      });
+    }
+
     if (q) {
+      const qClean = q.replace(/\D/g, "");
       users = users.filter(u => 
         (u.displayName || u.name || "").toLowerCase().includes(q) ||
         (u.phone || "").toLowerCase().includes(q) ||
+        (qClean && (u.phone || "").replace(/\D/g, "").includes(qClean)) ||
         (u.memberCode || "").toLowerCase().includes(q) ||
         (u.uid || "").toLowerCase().includes(q)
       );
     }
 
+    users.sort((a, b) => {
+      if (sandboxUsersSort === "newest") {
+        const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return timeB - timeA;
+      } else if (sandboxUsersSort === "oldest") {
+        const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return timeA - timeB;
+      } else if (sandboxUsersSort === "points-desc") {
+        const ptsA = a.pointsBalance ?? a.wiredPoints ?? 0;
+        const ptsB = b.pointsBalance ?? b.wiredPoints ?? 0;
+        return ptsB - ptsA;
+      } else if (sandboxUsersSort === "points-asc") {
+        const ptsA = a.pointsBalance ?? a.wiredPoints ?? 0;
+        const ptsB = b.pointsBalance ?? b.wiredPoints ?? 0;
+        return ptsA - ptsB;
+      } else if (sandboxUsersSort === "name-asc") {
+        return (a.displayName || a.name || "").localeCompare(b.displayName || b.name || "");
+      } else if (sandboxUsersSort === "name-desc") {
+        return (b.displayName || b.name || "").localeCompare(a.displayName || a.name || "");
+      }
+      return 0;
+    });
+
     if (users.length === 0) {
       container.innerHTML = `
         <div style="text-align: center; padding: 2rem; color: var(--gray-500); font-family: var(--font-mono); font-size: 0.85rem;">
-          No hay socios que coincidan con la búsqueda.
+          No hay socios que coincidan con los filtros y búsqueda.
         </div>`;
       return;
     }
@@ -630,7 +810,13 @@ function renderDraftTable() {
       </div>
     `;
   } else if (activeDraftTab === "vouchers") {
-    let vouchers = vm.vouchers || [];
+    let vouchers = [...(vm.vouchers || [])];
+    if (sandboxVouchersStatus === "PENDING") {
+      vouchers = vouchers.filter(v => typeof v.isDelivered === "function" ? !v.isDelivered() : v.status !== "DELIVERED");
+    } else if (sandboxVouchersStatus === "DELIVERED") {
+      vouchers = vouchers.filter(v => typeof v.isDelivered === "function" ? v.isDelivered() : v.status === "DELIVERED");
+    }
+
     if (q) {
       vouchers = vouchers.filter(v =>
         (v.voucherCode || v.voucher_code || "").toLowerCase().includes(q) ||
@@ -639,10 +825,33 @@ function renderDraftTable() {
       );
     }
 
+    vouchers.sort((a, b) => {
+      if (sandboxVouchersSort === "newest") {
+        const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return timeB - timeA;
+      } else if (sandboxVouchersSort === "oldest") {
+        const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return timeA - timeB;
+      } else if (sandboxVouchersSort === "points-desc") {
+        const costA = Number(a.pointsCost || a.points_cost || a.pointsSpent || 0);
+        const costB = Number(b.pointsCost || b.points_cost || b.pointsSpent || 0);
+        return costB - costA;
+      } else if (sandboxVouchersSort === "points-asc") {
+        const costA = Number(a.pointsCost || a.points_cost || a.pointsSpent || 0);
+        const costB = Number(b.pointsCost || b.points_cost || b.pointsSpent || 0);
+        return costA - costB;
+      } else if (sandboxVouchersSort === "code-asc") {
+        return (a.voucherCode || a.voucher_code || "").localeCompare(b.voucherCode || b.voucher_code || "");
+      }
+      return 0;
+    });
+
     if (vouchers.length === 0) {
       container.innerHTML = `
         <div style="text-align: center; padding: 2rem; color: var(--gray-500); font-family: var(--font-mono); font-size: 0.85rem;">
-          No hay vales de canje que coincidan con la búsqueda.
+          No hay vales de canje que coincidan con los filtros y búsqueda.
         </div>`;
       return;
     }
@@ -694,7 +903,13 @@ function renderDraftTable() {
       </div>
     `;
   } else if (activeDraftTab === "catalog") {
-    let catalog = vm.catalog || [];
+    let catalog = [...(vm.catalog || [])];
+    if (sandboxCatalogType === "FREE") {
+      catalog = catalog.filter(p => p.rewardType !== "PARTIAL_DISCOUNT" && !(typeof p.isPartialDiscount === "function" && p.isPartialDiscount()));
+    } else if (sandboxCatalogType === "PARTIAL") {
+      catalog = catalog.filter(p => p.rewardType === "PARTIAL_DISCOUNT" || (typeof p.isPartialDiscount === "function" && p.isPartialDiscount()));
+    }
+
     if (q) {
       catalog = catalog.filter(p =>
         (p.id || "").toLowerCase().includes(q) ||
@@ -703,10 +918,35 @@ function renderDraftTable() {
       );
     }
 
+    catalog.sort((a, b) => {
+      if (sandboxCatalogSort === "cost-desc") {
+        return (b.pointsCost || 0) - (a.pointsCost || 0);
+      } else if (sandboxCatalogSort === "cost-asc") {
+        return (a.pointsCost || 0) - (b.pointsCost || 0);
+      } else if (sandboxCatalogSort === "discount-desc") {
+        const discA = (a.maxDiscountPct || 0) * (a.priceUsd || 1) + (a.maxDiscountUsd || 0);
+        const discB = (b.maxDiscountPct || 0) * (b.priceUsd || 1) + (b.maxDiscountUsd || 0);
+        return discB - discA;
+      } else if (sandboxCatalogSort === "discount-asc") {
+        const discA = (a.maxDiscountPct || 0) * (a.priceUsd || 1) + (a.maxDiscountUsd || 0);
+        const discB = (b.maxDiscountPct || 0) * (b.priceUsd || 1) + (b.maxDiscountUsd || 0);
+        return discA - discB;
+      } else if (sandboxCatalogSort === "stock-desc") {
+        return (b.stock || 0) - (a.stock || 0);
+      } else if (sandboxCatalogSort === "stock-asc") {
+        return (a.stock || 0) - (b.stock || 0);
+      } else if (sandboxCatalogSort === "title-asc") {
+        return (a.title || "").localeCompare(b.title || "");
+      } else if (sandboxCatalogSort === "title-desc") {
+        return (b.title || "").localeCompare(a.title || "");
+      }
+      return 0;
+    });
+
     if (catalog.length === 0) {
       container.innerHTML = `
         <div style="text-align: center; padding: 2rem; color: var(--gray-500); font-family: var(--font-mono); font-size: 0.85rem;">
-          No hay artículos en catálogo que coincidan con la búsqueda.
+          No hay artículos en catálogo que coincidan con los filtros y búsqueda.
         </div>`;
       return;
     }

@@ -2099,4 +2099,59 @@
   transform: translate(1px, 1px);
 }
 
+/* Botón Neobrutalista: Borrar QR y Liberar Folio */
+.btn-release-folio {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 11px;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 800;
+  border-radius: 5px;
+  cursor: pointer;
+  background: #ffffff;
+  color: #b91c1c;
+  border: 1.5px solid #ef4444;
+  box-shadow: 2px 2px 0px rgba(220, 38, 38, 0.28);
+  transition: all 0.15s ease;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.btn-release-folio:hover {
+  background: #fef2f2;
+  color: #991b1b;
+  border-color: #dc2626;
+  box-shadow: 1px 1px 0px rgba(185, 28, 28, 0.45);
+  transform: translate(1px, 1px);
+}
+
+.btn-release-folio:active {
+  transform: translate(2px, 2px);
+  box-shadow: none;
+}
+
+.btn-release-folio .btn-icon {
+  font-size: 0.85rem;
+  line-height: 1;
+}
+
+.btn-release-folio .folio-tag {
+  background: #fee2e2;
+  color: #991b1b;
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  border: 1px solid #fca5a5;
+  letter-spacing: 0.5px;
+}
+
+.btn-release-folio.btn-compact-release {
+  padding: 4px 8px;
+  font-size: 0.72rem;
+  gap: 4px;
+}
+
 /* ======================================================== */

@@ -7,7 +7,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <link rel="stylesheet" href="./styles.css?v=2.9.1">
+  <link rel="stylesheet" href="./styles.css?v=2.9.3">
   
   <!-- Limpieza inmediata de cachés viejos residuales antes de cargar módulos -->
   <script>
@@ -528,11 +528,22 @@
           <input type="text" id="search-users-input" class="admin-search-input" placeholder="🔍 Buscar por nombre, teléfono o código de socio..." oninput="filterUsers()">
           <div style="display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap;">
             <span style="font-family: var(--font-mono); font-size: 0.72rem; font-weight: 700; color: var(--gray-500);">FILTRAR RANGO:</span>
-            <button class="btn-secondary active" id="tier-btn-ALL" style="padding: 3px 8px; font-size: 0.72rem;" onclick="filterUsersByTier('ALL')">Todos</button>
-            <button class="btn-secondary" id="tier-btn-NAVI" style="padding: 3px 8px; font-size: 0.72rem;" onclick="filterUsersByTier('NAVI')">NAVI</button>
-            <button class="btn-secondary" id="tier-btn-RUNNER" style="padding: 3px 8px; font-size: 0.72rem;" onclick="filterUsersByTier('RUNNER')">RUNNER</button>
-            <button class="btn-secondary" id="tier-btn-ELITE" style="padding: 3px 8px; font-size: 0.72rem;" onclick="filterUsersByTier('ELITE')">ELITE</button>
-            <button class="btn-secondary" id="tier-btn-DEUS" style="padding: 3px 8px; font-size: 0.72rem;" onclick="filterUsersByTier('DEUS')">DEUS</button>
+            <button type="button" class="btn-secondary active" id="tier-btn-ALL" style="padding: 3px 8px; font-size: 0.72rem;" onclick="filterUsersByTier('ALL')">Todos</button>
+            <button type="button" class="btn-secondary" id="tier-btn-NAVI" style="padding: 3px 8px; font-size: 0.72rem;" onclick="filterUsersByTier('NAVI')">NAVI</button>
+            <button type="button" class="btn-secondary" id="tier-btn-RUNNER" style="padding: 3px 8px; font-size: 0.72rem;" onclick="filterUsersByTier('RUNNER')">RUNNER</button>
+            <button type="button" class="btn-secondary" id="tier-btn-ELITE" style="padding: 3px 8px; font-size: 0.72rem;" onclick="filterUsersByTier('ELITE')">ELITE</button>
+            <button type="button" class="btn-secondary" id="tier-btn-DEUS" style="padding: 3px 8px; font-size: 0.72rem;" onclick="filterUsersByTier('DEUS')">DEUS</button>
+            <div style="display: inline-flex; align-items: center; gap: 0.35rem; margin-left: 0.4rem;">
+              <span style="font-family: var(--font-mono); font-size: 0.72rem; font-weight: 700; color: var(--gray-500);">ORDENAR:</span>
+              <select id="sort-users-select" class="form-input" style="padding: 2px 7px; font-size: 0.75rem; width: auto; font-family: var(--font-mono); height: 26px; line-height: 1;" onchange="sortUsersAdmin(this.value)">
+                <option value="newest">🕒 Más recientes</option>
+                <option value="oldest">⌛ Más antiguos</option>
+                <option value="points-desc">⚡ Mayor saldo WP</option>
+                <option value="points-asc">📉 Menor saldo WP</option>
+                <option value="name-asc">🔤 Nombre A-Z</option>
+                <option value="name-desc">🔡 Nombre Z-A</option>
+              </select>
+            </div>
           </div>
         </div>
 
@@ -565,6 +576,34 @@
       <p style="color: var(--gray-700); font-size: 0.85rem; margin-bottom: 1.25rem;">
         Agrega tus artículos físicos reales (combos, mousepads, cables, accesorios), fija cuántos puntos cuesta y su stock en tienda.
       </p>
+
+      <!-- Barra de búsqueda y ordenamiento de catálogo -->
+      <div class="admin-filter-bar" style="margin-bottom: 1rem; display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center; justify-content: space-between;">
+        <div style="display: flex; gap: 0.5rem; align-items: center; flex: 1; min-width: 240px;">
+          <input type="text" id="search-catalog-input" class="admin-search-input" placeholder="🔍 Buscar por nombre, ID o descripción..." oninput="filterCatalogAdmin()" style="margin: 0; width: 100%;">
+        </div>
+        <div style="display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap;">
+          <div style="display: flex; gap: 0.35rem; align-items: center;">
+            <span style="font-family: var(--font-mono); font-size: 0.72rem; font-weight: 700; color: var(--gray-500);">TIPO:</span>
+            <button type="button" class="btn-secondary active" id="catalog-filter-ALL" style="padding: 3px 8px; font-size: 0.72rem;" onclick="filterCatalogByType('ALL')">Todos</button>
+            <button type="button" class="btn-secondary" id="catalog-filter-FREE" style="padding: 3px 8px; font-size: 0.72rem;" onclick="filterCatalogByType('FREE')">🎁 100% Puntos</button>
+            <button type="button" class="btn-secondary" id="catalog-filter-PARTIAL" style="padding: 3px 8px; font-size: 0.72rem;" onclick="filterCatalogByType('PARTIAL')">🏷️ Venta Topada</button>
+          </div>
+          <div style="display: flex; gap: 0.35rem; align-items: center;">
+            <span style="font-family: var(--font-mono); font-size: 0.72rem; font-weight: 700; color: var(--gray-500);">ORDENAR:</span>
+            <select id="sort-catalog-select" class="form-input" style="padding: 3px 8px; font-size: 0.75rem; width: auto; font-family: var(--font-mono); height: 28px; line-height: 1;" onchange="sortCatalogAdmin(this.value)">
+              <option value="cost-desc">💰 Más caro a más barato (WP)</option>
+              <option value="cost-asc">🪙 Más barato a más caro (WP)</option>
+              <option value="discount-desc">🏷️ Mayor descuento tope</option>
+              <option value="discount-asc">🏷️ Menor descuento tope</option>
+              <option value="stock-desc">📦 Mayor stock disponible</option>
+              <option value="stock-asc">📉 Menor stock disponible</option>
+              <option value="title-asc">🔤 Nombre A-Z</option>
+              <option value="title-desc">🔡 Nombre Z-A</option>
+            </select>
+          </div>
+        </div>
+      </div>
 
       <div class="table-responsive">
         <table class="admin-table">
@@ -771,7 +810,33 @@
       </div>
 
       <!-- TABLA DE TOKENS REGISTRADOS -->
-      <div class="table-responsive" style="margin-top: 1.5rem;">
+      <div class="admin-filter-bar" style="margin-top: 1.25rem; margin-bottom: 0.75rem; display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center; justify-content: space-between;">
+        <div style="display: flex; gap: 0.5rem; align-items: center; flex: 1; min-width: 240px;">
+          <input type="text" id="search-tokens-input" class="admin-search-input" placeholder="🔍 Buscar por folio (#MD-0001), token o PIN..." oninput="filterTokensAdmin()" style="margin: 0; width: 100%;">
+        </div>
+        <div style="display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap;">
+          <div style="display: flex; gap: 0.35rem; align-items: center;">
+            <span style="font-family: var(--font-mono); font-size: 0.72rem; font-weight: 700; color: var(--gray-500);">ESTADO:</span>
+            <button type="button" class="btn-secondary active" id="token-filter-ALL" style="padding: 3px 8px; font-size: 0.72rem;" onclick="filterTokensByStatus('ALL')">Todas</button>
+            <button type="button" class="btn-secondary" id="token-filter-PENDING" style="padding: 3px 8px; font-size: 0.72rem;" onclick="filterTokensByStatus('PENDING')">⏳ Sin Asignar</button>
+            <button type="button" class="btn-secondary" id="token-filter-ACTIVE" style="padding: 3px 8px; font-size: 0.72rem;" onclick="filterTokensByStatus('ACTIVE')">● Sin Reclamar</button>
+            <button type="button" class="btn-secondary" id="token-filter-CLAIMED" style="padding: 3px 8px; font-size: 0.72rem;" onclick="filterTokensByStatus('CLAIMED')">✔ Reclamadas</button>
+          </div>
+          <div style="display: flex; gap: 0.35rem; align-items: center;">
+            <span style="font-family: var(--font-mono); font-size: 0.72rem; font-weight: 700; color: var(--gray-500);">ORDENAR:</span>
+            <select id="sort-tokens-select" class="form-input" style="padding: 3px 8px; font-size: 0.75rem; width: auto; font-family: var(--font-mono); height: 28px; line-height: 1;" onchange="sortTokensAdmin(this.value)">
+              <option value="folio-asc">🔢 Folio 1 al 40 (Asc)</option>
+              <option value="folio-desc">🔢 Folio 40 al 1 (Desc)</option>
+              <option value="newest">🕒 Más nuevas / recientes</option>
+              <option value="oldest">⌛ Más viejas / antiguas</option>
+              <option value="points-desc">⚡ Mayor valor WP</option>
+              <option value="points-asc">📉 Menor valor WP</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="table-responsive">
         <table class="admin-table">
           <thead>
             <tr>
@@ -799,16 +864,36 @@
               REGISTRO DE SALIDAS FÍSICAS DE MOSTRADOR · CONTROL DE ENTREGA
             </div>
           </div>
-          <div style="display: flex; gap: 0.4rem;">
-            <button class="btn-secondary" style="padding: 4px 9px; font-size: 0.75rem;" onclick="filterVouchersTable('ALL')">Todos</button>
-            <button class="btn-secondary" style="padding: 4px 9px; font-size: 0.75rem;" onclick="filterVouchersTable('PENDING')">⏳ Pendientes</button>
-            <button class="btn-secondary" style="padding: 4px 9px; font-size: 0.75rem;" onclick="filterVouchersTable('DELIVERED')">✓ Despachados</button>
-          </div>
         </div>
 
-        <p style="color: var(--gray-700); font-size: 0.85rem; margin-bottom: 1.25rem;">
+        <p style="color: var(--gray-700); font-size: 0.85rem; margin-bottom: 1rem;">
           Historial completo de vales emitidos por clientes para canjear productos del catálogo físico. Los vales despachados quedan inhabilitados para evitar entregas duplicadas.
         </p>
+
+        <!-- Barra de búsqueda y filtros de historial de vales -->
+        <div class="admin-filter-bar" style="margin-bottom: 1rem; display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center; justify-content: space-between;">
+          <div style="display: flex; gap: 0.5rem; align-items: center; flex: 1; min-width: 260px;">
+            <input type="text" id="search-vouchers-input" class="admin-search-input" placeholder="🔍 Buscar por código de canje (CANJE-XXXX), socio o artículo..." oninput="filterVouchersAdmin()" style="margin: 0; width: 100%;">
+          </div>
+          <div style="display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap;">
+            <div style="display: flex; gap: 0.35rem; align-items: center;">
+              <span style="font-family: var(--font-mono); font-size: 0.72rem; font-weight: 700; color: var(--gray-500);">ESTADO:</span>
+              <button type="button" class="btn-secondary active" id="voucher-filter-ALL" style="padding: 3px 8px; font-size: 0.72rem;" onclick="filterVouchersTable('ALL')">Todos</button>
+              <button type="button" class="btn-secondary" id="voucher-filter-PENDING" style="padding: 3px 8px; font-size: 0.72rem;" onclick="filterVouchersTable('PENDING')">⏳ Pendientes</button>
+              <button type="button" class="btn-secondary" id="voucher-filter-DELIVERED" style="padding: 3px 8px; font-size: 0.72rem;" onclick="filterVouchersTable('DELIVERED')">✓ Despachados</button>
+            </div>
+            <div style="display: flex; gap: 0.35rem; align-items: center;">
+              <span style="font-family: var(--font-mono); font-size: 0.72rem; font-weight: 700; color: var(--gray-500);">ORDENAR:</span>
+              <select id="sort-vouchers-select" class="form-input" style="padding: 3px 8px; font-size: 0.75rem; width: auto; font-family: var(--font-mono); height: 28px; line-height: 1;" onchange="sortVouchersAdmin(this.value)">
+                <option value="newest">🕒 Más reciente a más viejo</option>
+                <option value="oldest">⌛ Más viejo a más reciente</option>
+                <option value="points-desc">⚡ Mayor costo WP</option>
+                <option value="points-asc">🪙 Menor costo WP</option>
+                <option value="code-asc">🔤 Código (A-Z)</option>
+              </select>
+            </div>
+          </div>
+        </div>
 
         <div class="table-responsive">
           <table class="admin-table">
@@ -2732,6 +2817,6 @@
     })();
   </script>
 
-  <script type="module" src="./js/admin-app.js?v=2.9.1"></script>
+  <script type="module" src="./js/admin-app.js?v=2.9.3"></script>
 </body>
 </html>

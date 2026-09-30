@@ -64,9 +64,12 @@ import {
   openBanUserModal,
   executeBanUserAdmin,
   toggleBanUserAdmin,
+  sortUsersAdmin,
   // 5. Vales e Historial
   renderVouchersTable,
   filterVouchersTable,
+  filterVouchersAdmin,
+  sortVouchersAdmin,
   deliverVoucherFromTable,
   markVoucherPaidAdmin,
   openMarkPaidModal,
@@ -140,6 +143,8 @@ import {
   renderSandboxDbView,
   setSandboxDraftTab,
   filterSandboxDrafts,
+  setSandboxDraftStatus,
+  setSandboxDraftSort,
   deleteSingleToken,
   deleteSingleUser,
   deleteSingleVoucher,
@@ -304,22 +309,95 @@ function renderAdmin(model) {
   renderSandboxDbView();
 }
 
+let catalogFilterQuery = "";
+let catalogTypeFilter = "ALL";
+let catalogSortOrder = "cost-desc";
+
+function filterCatalogAdmin() {
+  const input = document.getElementById("search-catalog-input");
+  catalogFilterQuery = (input ? input.value : "").trim();
+  renderCatalogTable(vm ? vm.catalog : []);
+}
+
+function filterCatalogByType(type) {
+  catalogTypeFilter = type || "ALL";
+  const types = ["ALL", "FREE", "PARTIAL"];
+  types.forEach(t => {
+    const btn = document.getElementById("catalog-filter-" + t);
+    if (btn) {
+      if (t === catalogTypeFilter) btn.classList.add("active");
+      else btn.classList.remove("active");
+    }
+  });
+  renderCatalogTable(vm ? vm.catalog : []);
+}
+
+function sortCatalogAdmin(order) {
+  catalogSortOrder = order || "cost-desc";
+  const select = document.getElementById("sort-catalog-select");
+  if (select && select.value !== catalogSortOrder) select.value = catalogSortOrder;
+  renderCatalogTable(vm ? vm.catalog : []);
+}
+
 function renderCatalogTable(catalog) {
   const tbody = document.getElementById("catalog-table-body");
   if (!tbody) return;
 
-  if (catalog.length === 0) {
+  let filtered = [...(catalog || [])];
+
+  if (catalogTypeFilter === "FREE") {
+    filtered = filtered.filter(p => p.rewardType !== "PARTIAL_DISCOUNT" && !(typeof p.isPartialDiscount === "function" && p.isPartialDiscount()));
+  } else if (catalogTypeFilter === "PARTIAL") {
+    filtered = filtered.filter(p => p.rewardType === "PARTIAL_DISCOUNT" || (typeof p.isPartialDiscount === "function" && p.isPartialDiscount()));
+  }
+
+  if (catalogFilterQuery) {
+    const q = catalogFilterQuery.toLowerCase();
+    filtered = filtered.filter(p => {
+      return (p.title || "").toLowerCase().includes(q) ||
+        (p.id || "").toLowerCase().includes(q) ||
+        (p.description || "").toLowerCase().includes(q);
+    });
+  }
+
+  // Ordenamiento dinámico
+  filtered.sort((a, b) => {
+    if (catalogSortOrder === "cost-desc") {
+      return (b.pointsCost || 0) - (a.pointsCost || 0);
+    } else if (catalogSortOrder === "cost-asc") {
+      return (a.pointsCost || 0) - (b.pointsCost || 0);
+    } else if (catalogSortOrder === "discount-desc") {
+      const discA = (a.maxDiscountPct || 0) * (a.priceUsd || 1) + (a.maxDiscountUsd || 0);
+      const discB = (b.maxDiscountPct || 0) * (b.priceUsd || 1) + (b.maxDiscountUsd || 0);
+      return discB - discA;
+    } else if (catalogSortOrder === "discount-asc") {
+      const discA = (a.maxDiscountPct || 0) * (a.priceUsd || 1) + (a.maxDiscountUsd || 0);
+      const discB = (b.maxDiscountPct || 0) * (b.priceUsd || 1) + (b.maxDiscountUsd || 0);
+      return discA - discB;
+    } else if (catalogSortOrder === "stock-desc") {
+      return (b.stock || 0) - (a.stock || 0);
+    } else if (catalogSortOrder === "stock-asc") {
+      return (a.stock || 0) - (b.stock || 0);
+    } else if (catalogSortOrder === "title-asc") {
+      return (a.title || "").localeCompare(b.title || "");
+    } else if (catalogSortOrder === "title-desc") {
+      return (b.title || "").localeCompare(a.title || "");
+    }
+    return 0;
+  });
+
+  if (filtered.length === 0) {
     tbody.innerHTML = `
       <tr>
         <td colspan="5" style="text-align: center; padding: 2rem; color: var(--gray-500);">
-          El catálogo está vacío. Haz clic en <strong>"+ Agregar Producto"</strong> para registrar el primer artículo.
+          No se encontraron artículos con los filtros aplicados.
         </td>
       </tr>
     `;
     return;
   }
 
-  tbody.innerHTML = catalog.map(p => {
+  tbody.innerHTML = filtered.map(p => {
     const isPartial = p.rewardType === "PARTIAL_DISCOUNT" || (typeof p.isPartialDiscount === "function" && p.isPartialDiscount());
     const typeBadge = isPartial
       ? `<span class="badge-navi" style="background:#fef3c7; color:#92400e; border:1px solid #fcd34d; font-size:0.68rem;">🏷️ VENTA TOPADA (${p.maxDiscountPct || 5}%)</span>`
@@ -380,16 +458,90 @@ function renderCatalogTable(catalog) {
   }).join("");
 }
 
+let tokensFilterQuery = "";
+let tokensStatusFilter = "ALL";
+let tokensSortOrder = "folio-asc";
+
+function filterTokensAdmin() {
+  const input = document.getElementById("search-tokens-input");
+  tokensFilterQuery = (input ? input.value : "").trim();
+  renderTokensTable(vm ? vm.tokens : []);
+}
+
+function filterTokensByStatus(status) {
+  tokensStatusFilter = status || "ALL";
+  const statuses = ["ALL", "PENDING", "ACTIVE", "CLAIMED"];
+  statuses.forEach(s => {
+    const btn = document.getElementById("token-filter-" + s);
+    if (btn) {
+      if (s === tokensStatusFilter) btn.classList.add("active");
+      else btn.classList.remove("active");
+    }
+  });
+  renderTokensTable(vm ? vm.tokens : []);
+}
+
+function sortTokensAdmin(order) {
+  tokensSortOrder = order || "folio-asc";
+  const select = document.getElementById("sort-tokens-select");
+  if (select && select.value !== tokensSortOrder) select.value = tokensSortOrder;
+  renderTokensTable(vm ? vm.tokens : []);
+}
+
 function renderTokensTable(tokens) {
   const tbody = document.getElementById("tokens-table-body");
   if (!tbody) return;
 
-  if (tokens.length === 0) {
+  let filtered = [...(tokens || [])];
+
+  if (tokensStatusFilter === "PENDING") {
+    filtered = filtered.filter(t => t.isPendingAssignment());
+  } else if (tokensStatusFilter === "ACTIVE") {
+    filtered = filtered.filter(t => t.isActive());
+  } else if (tokensStatusFilter === "CLAIMED") {
+    filtered = filtered.filter(t => t.isClaimed());
+  }
+
+  if (tokensFilterQuery) {
+    const q = tokensFilterQuery.toLowerCase();
+    filtered = filtered.filter(t => {
+      const folio = (t.invoiceFolio || "").toLowerCase();
+      const code = (t.tokenCode || "").toLowerCase();
+      const pin = (t.securityPin || "").toLowerCase();
+      return folio.includes(q) || code.includes(q) || pin.includes(q);
+    });
+  }
+
+  // Ordenamiento dinámico
+  const parseFolio = (f) => parseInt(String(f || "").replace(/\D/g, ""), 10) || 0;
+
+  filtered.sort((a, b) => {
+    if (tokensSortOrder === "folio-asc") {
+      return parseFolio(a.invoiceFolio) - parseFolio(b.invoiceFolio);
+    } else if (tokensSortOrder === "folio-desc") {
+      return parseFolio(b.invoiceFolio) - parseFolio(a.invoiceFolio);
+    } else if (tokensSortOrder === "newest") {
+      const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return (timeB - timeA) || (parseFolio(b.invoiceFolio) - parseFolio(a.invoiceFolio));
+    } else if (tokensSortOrder === "oldest") {
+      const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return (timeA - timeB) || (parseFolio(a.invoiceFolio) - parseFolio(b.invoiceFolio));
+    } else if (tokensSortOrder === "points-desc") {
+      return (b.pointsValue || 0) - (a.pointsValue || 0);
+    } else if (tokensSortOrder === "points-asc") {
+      return (a.pointsValue || 0) - (b.pointsValue || 0);
+    }
+    return 0;
+  });
+
+  if (filtered.length === 0) {
     tbody.innerHTML = `
       <tr>
         <td colspan="6" style="text-align: center; padding: 2.5rem 1rem; color: var(--gray-500);">
           <div style="font-size: 1.8rem; margin-bottom: 0.5rem;">🖨️</div>
-          <strong>No hay lotes de facturación activos.</strong>
+          <strong>No hay lotes de facturación activos que coincidan con los filtros.</strong>
           <div style="font-size: 0.8rem; margin-top: 4px;">Usa el formulario superior para generar tu primer pliego de 4 facturas sincronizadas.</div>
         </td>
       </tr>
@@ -397,7 +549,7 @@ function renderTokensTable(tokens) {
     return;
   }
 
-  tbody.innerHTML = tokens.slice(0, 100).map(t => {
+  tbody.innerHTML = filtered.slice(0, 100).map(t => {
     const isClaimed = t.isClaimed();
     const isPending = t.isPendingAssignment();
     const isActive = t.isActive();
@@ -441,8 +593,8 @@ function renderTokensTable(tokens) {
             <button class="btn-secondary btn-dots" onclick="openTokenActionsModal('${t.tokenCode}')" title="Más opciones">
               ···
             </button>
-            <button class="btn-danger btn-compact" style="background:#fef2f2; border:1px solid #fca5a5; color:#b91c1c; font-weight:800; padding:4px 7px;" onclick="deleteSingleToken('${t.tokenCode}', '${t.invoiceFolio}')" title="Eliminar factura y liberar folio #${t.invoiceFolio}">
-              ✕
+            <button type="button" class="btn-release-folio btn-compact-release" onclick="deleteSingleToken('${t.tokenCode}', '${t.invoiceFolio}')" title="Eliminar factura y liberar folio #${t.invoiceFolio}">
+              <span class="btn-icon">🗑️</span> <span>Liberar #${t.invoiceFolio}</span>
             </button>
           </div>
         </td>
@@ -514,6 +666,9 @@ document.addEventListener("DOMContentLoaded", () => {
   window.executeTokenOptViewInvoice = executeTokenOptViewInvoice;
   window.executeTokenOptEditInvoice = executeTokenOptEditInvoice;
   window.handleInvoiceBtnClick = handleInvoiceBtnClick;
+  window.filterTokensAdmin = filterTokensAdmin;
+  window.filterTokensByStatus = filterTokensByStatus;
+  window.sortTokensAdmin = sortTokensAdmin;
 
   // Catálogo de Premios y Productos
   window.openNewProductModal = openNewProductModal;
@@ -523,6 +678,9 @@ document.addEventListener("DOMContentLoaded", () => {
   window.handleProductImageFile = handleProductImageFile;
   window.clearProductImageUpload = clearProductImageUpload;
   window.previewProductImageFromUrl = previewProductImageFromUrl;
+  window.filterCatalogAdmin = filterCatalogAdmin;
+  window.filterCatalogByType = filterCatalogByType;
+  window.sortCatalogAdmin = sortCatalogAdmin;
 
   // Calculadora de Retorno de Catálogo
   window.recalculateRewardPoints = recalculateRewardPoints;
@@ -548,6 +706,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Socios y Puntos
   window.filterUsers = filterUsers;
   window.filterUsersByTier = filterUsersByTier;
+  window.sortUsersAdmin = sortUsersAdmin;
   window.refreshAdminUsers = refreshAdminUsers;
   window.openAdjustPointsModal = openAdjustPointsModal;
   window.selectAdjustDirection = selectAdjustDirection;
@@ -573,6 +732,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Historial de Vales y Despacho
   window.filterVouchersTable = filterVouchersTable;
+  window.filterVouchersAdmin = filterVouchersAdmin;
+  window.sortVouchersAdmin = sortVouchersAdmin;
   window.deliverVoucherFromTable = deliverVoucherFromTable;
   window.markVoucherPaidAdmin = markVoucherPaidAdmin;
   window.openMarkPaidModal = openMarkPaidModal;
@@ -600,6 +761,8 @@ document.addEventListener("DOMContentLoaded", () => {
   window.renderSandboxDbView = renderSandboxDbView;
   window.setSandboxDraftTab = setSandboxDraftTab;
   window.filterSandboxDrafts = filterSandboxDrafts;
+  window.setSandboxDraftStatus = setSandboxDraftStatus;
+  window.setSandboxDraftSort = setSandboxDraftSort;
   window.deleteSingleToken = deleteSingleToken;
   window.deleteSingleUser = deleteSingleUser;
   window.deleteSingleVoucher = deleteSingleVoucher;

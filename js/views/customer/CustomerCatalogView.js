@@ -13,6 +13,7 @@ let showVoucherModal = (code) => {
 };
 let formatPrice = (usd) => `$${Number(usd || 0).toFixed(2)} USD`;
 let formatDualPrice = (usd) => `$${Number(usd || 0).toFixed(2)} USD`;
+let currentlyOpenSpecsId = null;
 
 export function toggleRewardSpecs(itemId) {
   const drop = document.getElementById("specs-drop-" + itemId);
@@ -20,9 +21,27 @@ export function toggleRewardSpecs(itemId) {
   if (!drop || !btn) return;
 
   const isHidden = drop.style.display === "none" || !drop.style.display;
+
+  // Cerrar cualquier otro dropdown abierto previamente para no saturar la vista
+  if (currentlyOpenSpecsId && currentlyOpenSpecsId !== itemId) {
+    const prevDrop = document.getElementById("specs-drop-" + currentlyOpenSpecsId);
+    const prevBtn = document.getElementById("specs-btn-" + currentlyOpenSpecsId);
+    if (prevDrop) prevDrop.style.display = "none";
+    if (prevBtn) {
+      prevBtn.classList.remove("expanded");
+      const prevCount = prevDrop ? prevDrop.querySelectorAll("li").length : 0;
+      const prevLabel = prevBtn.querySelector(".btn-specs-label");
+      const prevIcon = prevBtn.querySelector(".btn-specs-icon");
+      if (prevLabel) prevLabel.textContent = `📋 Ver especificaciones (${prevCount})`;
+      if (prevIcon) prevIcon.textContent = "▾";
+    }
+    currentlyOpenSpecsId = null;
+  }
+
   if (isHidden) {
     drop.style.display = "block";
     btn.classList.add("expanded");
+    currentlyOpenSpecsId = itemId;
     const label = btn.querySelector(".btn-specs-label");
     const icon = btn.querySelector(".btn-specs-icon");
     if (label) label.textContent = "✕ Ocultar especificaciones";
@@ -30,12 +49,32 @@ export function toggleRewardSpecs(itemId) {
   } else {
     drop.style.display = "none";
     btn.classList.remove("expanded");
+    currentlyOpenSpecsId = null;
     const count = drop.querySelectorAll("li").length;
     const label = btn.querySelector(".btn-specs-label");
     const icon = btn.querySelector(".btn-specs-icon");
     if (label) label.textContent = `📋 Ver especificaciones (${count})`;
     if (icon) icon.textContent = "▾";
   }
+}
+
+if (typeof document !== "undefined" && typeof document.addEventListener === "function") {
+  document.addEventListener("click", (e) => {
+    if (currentlyOpenSpecsId) {
+      const drop = document.getElementById("specs-drop-" + currentlyOpenSpecsId);
+      const btn = document.getElementById("specs-btn-" + currentlyOpenSpecsId);
+      if (drop && btn && !drop.contains(e.target) && !btn.contains(e.target)) {
+        drop.style.display = "none";
+        btn.classList.remove("expanded");
+        const count = drop.querySelectorAll("li").length;
+        const label = btn.querySelector(".btn-specs-label");
+        const icon = btn.querySelector(".btn-specs-icon");
+        if (label) label.textContent = `📋 Ver especificaciones (${count})`;
+        if (icon) icon.textContent = "▾";
+        currentlyOpenSpecsId = null;
+      }
+    }
+  });
 }
 
 export function initCustomerCatalogView(deps) {
@@ -226,13 +265,17 @@ export function renderCatalog(catalog, user) {
     const descHtml = parsed.hasSpecs
       ? `
         <div class="reward-desc-wrap" id="desc-wrap-${item.id}">
-          <div class="reward-desc-intro">${parsed.intro}</div>
+          <div class="reward-desc-intro" title="${parsed.intro}">${parsed.intro}</div>
           <div class="reward-specs-box">
             <button type="button" class="reward-specs-toggle-btn" onclick="toggleRewardSpecs('${item.id}')" id="specs-btn-${item.id}">
               <span class="btn-specs-label">📋 Ver especificaciones (${parsed.specs.length})</span>
               <span class="btn-specs-icon">▾</span>
             </button>
             <div class="reward-specs-dropdown" id="specs-drop-${item.id}" style="display:none;">
+              <div class="specs-dropdown-header">
+                <span class="specs-dropdown-title">ESPECIFICACIONES (${parsed.specs.length})</span>
+                <button type="button" class="specs-close-btn" onclick="toggleRewardSpecs('${item.id}')" title="Cerrar especificaciones">✕</button>
+              </div>
               <ul class="reward-specs-ul">
                 ${parsed.specs.map(s => `<li><span class="spec-bullet">▸</span><span class="spec-content">${s}</span></li>`).join("")}
               </ul>
@@ -240,7 +283,16 @@ export function renderCatalog(catalog, user) {
           </div>
         </div>
       `
-      : `<div class="reward-desc">${parsed.intro || (isPartial ? 'Producto comercial con descuento tope en Wired Points.' : 'Recompensa oficial MeltyDeays.')}</div>`;
+      : `
+        <div class="reward-desc-wrap" id="desc-wrap-${item.id}">
+          <div class="reward-desc-intro" title="${parsed.intro || ''}">${parsed.intro || (isPartial ? 'Producto comercial con descuento tope en Wired Points.' : 'Recompensa oficial MeltyDeays.')}</div>
+          <div class="reward-specs-box">
+            <div class="reward-specs-empty-pill">
+              <span class="spec-info-text">✨ ${isPartial ? 'Garantía y entrega directa en tienda' : 'Recompensa oficial MeltyDeays'}</span>
+            </div>
+          </div>
+        </div>
+      `;
 
     return `
       <div class="reward-card">
@@ -253,7 +305,7 @@ export function renderCatalog(catalog, user) {
           <div class="stock-tag ${isOut ? 'out' : ''}">${isOut ? 'AGOTADO' : item.stock + ' DISP.'}</div>
         </div>
         <div class="reward-body">
-          <div class="reward-title">${item.title}</div>
+          <div class="reward-title" title="${item.title}">${item.title}</div>
           ${descHtml}
           ${partialBreakdown}
           <div class="reward-footer">

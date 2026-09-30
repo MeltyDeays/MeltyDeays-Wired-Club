@@ -19,6 +19,7 @@ export function initAdminUsersView(deps) {
 
 let usersFilterQuery = "";
 let usersTierFilter = "ALL";
+let usersSortOrder = "newest";
 
 export async function refreshAdminUsers() {
   if (vm && vm.isAuthenticated) {
@@ -33,7 +34,7 @@ export function renderUsersTable(users) {
   const tbody = document.getElementById("clients-table-body");
   if (!tbody) return;
 
-  let filtered = users || [];
+  let filtered = [...(users || [])];
   if (usersTierFilter !== "ALL") {
     filtered = filtered.filter(u => {
       const t = (u.tier || "NAVI_USER").toUpperCase();
@@ -61,6 +62,28 @@ export function renderUsersTable(users) {
       );
     });
   }
+
+  // Ordenamiento reactivo por más recientes, más antiguos, saldo WP y nombre
+  filtered.sort((a, b) => {
+    if (usersSortOrder === "newest") {
+      const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return timeB - timeA;
+    } else if (usersSortOrder === "oldest") {
+      const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return timeA - timeB;
+    } else if (usersSortOrder === "points-desc") {
+      return (b.wiredPoints || 0) - (a.wiredPoints || 0);
+    } else if (usersSortOrder === "points-asc") {
+      return (a.wiredPoints || 0) - (b.wiredPoints || 0);
+    } else if (usersSortOrder === "name-asc") {
+      return (a.displayName || "").localeCompare(b.displayName || "");
+    } else if (usersSortOrder === "name-desc") {
+      return (b.displayName || "").localeCompare(a.displayName || "");
+    }
+    return 0;
+  });
 
   if (filtered.length === 0) {
     tbody.innerHTML = `
@@ -149,6 +172,13 @@ export function filterUsersByTier(tier) {
     }
   });
   renderUsersTable(vm.users);
+}
+
+export function sortUsersAdmin(order) {
+  usersSortOrder = order || "newest";
+  const select = document.getElementById("sort-users-select");
+  if (select && select.value !== usersSortOrder) select.value = usersSortOrder;
+  if (vm) renderUsersTable(vm.users);
 }
 
 export function toggleAdjustType(direction) {

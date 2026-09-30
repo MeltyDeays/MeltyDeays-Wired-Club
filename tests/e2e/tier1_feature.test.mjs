@@ -306,5 +306,145 @@ export async function runTier1Tests() {
     expect(previewModal.style.display).toBe('none', 'Preview modal should be closed after confirmation');
   });
 
+  // Test 11: Admin Filter and Sort Capabilities across Users, Tokens, Catalog, Vouchers & DB Sandbox
+  await ctx.test('T1.11: Dynamic sorting, filtering, and release folio buttons function across all admin sections', async () => {
+    const { doc, win } = setupTestEnvironment('admin.html');
+    const adminAppUrl = pathToFileURL(path.join(PROJECT_ROOT, 'js/admin-app.js')).href + `?t=${Date.now()}`;
+    await import(adminAppUrl);
+    win.document.dispatchEvent({ type: 'DOMContentLoaded' });
+    win.submitAdminPin(); // Unlock
+    await win.executeSeedDevData(); // Sembrar datos para validar tablas completas
+
+    // Emisión de token para validar renderizado y botón de liberación de folio
+    win.openSingleDigitalInvoiceModal();
+    doc.getElementById('s-inv-client-name').value = 'Test Client';
+    doc.getElementById('s-inv-client-phone').value = '8888-0000';
+    win.addSingleInvoiceItemRow(1, 'Item Demo', 20.00);
+    doc.getElementById('s-inv-points-val').value = '20';
+    await win.submitSingleDigitalInvoice();
+
+    // 1. Users sorting
+    expect(typeof win.sortUsersAdmin).toBe('function', 'win.sortUsersAdmin should be exposed');
+    win.sortUsersAdmin('name-asc');
+    const usersTable = doc.getElementById('clients-table-body');
+    expect(usersTable).toBeTruthy('Clients table body should exist');
+
+    // 2. Tokens filter and sorting
+    expect(typeof win.filterTokensAdmin).toBe('function', 'win.filterTokensAdmin should be exposed');
+    expect(typeof win.sortTokensAdmin).toBe('function', 'win.sortTokensAdmin should be exposed');
+    expect(typeof win.filterTokensByStatus).toBe('function', 'win.filterTokensByStatus should be exposed');
+    win.sortTokensAdmin('folio-desc');
+    win.filterTokensByStatus('ALL');
+
+    // 3. Catalog filter and sorting
+    expect(typeof win.filterCatalogAdmin).toBe('function', 'win.filterCatalogAdmin should be exposed');
+    expect(typeof win.sortCatalogAdmin).toBe('function', 'win.sortCatalogAdmin should be exposed');
+    expect(typeof win.filterCatalogByType).toBe('function', 'win.filterCatalogByType should be exposed');
+    win.sortCatalogAdmin('cost-desc');
+    win.filterCatalogByType('ALL');
+
+    // 4. Vouchers filter and sorting
+    expect(typeof win.filterVouchersAdmin).toBe('function', 'win.filterVouchersAdmin should be exposed');
+    expect(typeof win.sortVouchersAdmin).toBe('function', 'win.sortVouchersAdmin should be exposed');
+    win.sortVouchersAdmin('newest');
+
+    // 5. DB Sandbox draft tabs, filtering, and release button
+    expect(typeof win.setSandboxDraftTab).toBe('function', 'win.setSandboxDraftTab should be exposed');
+    expect(typeof win.setSandboxDraftStatus).toBe('function', 'win.setSandboxDraftStatus should be exposed');
+    expect(typeof win.setSandboxDraftSort).toBe('function', 'win.setSandboxDraftSort should be exposed');
+    win.setSandboxDraftTab('users');
+    win.setSandboxDraftSort('points-desc');
+    win.setSandboxDraftTab('catalog');
+    win.setSandboxDraftSort('cost-desc');
+    win.setSandboxDraftTab('vouchers');
+    win.setSandboxDraftSort('newest');
+    win.setSandboxDraftTab('tokens');
+    win.setSandboxDraftSort('folio-asc');
+
+    // 6. Verify neobrutalist release folio button class in both Invoices and DB Sandbox tables
+    const tokensTableHtml = doc.getElementById('tokens-table-body')?.innerHTML || '';
+    const sandboxDraftHtml = doc.getElementById('sandbox-draft-table-container')?.innerHTML || '';
+    expect(tokensTableHtml).toContain('btn-release-folio', 'Tokens table should contain .btn-release-folio neobrutalist button');
+    expect(sandboxDraftHtml).toContain('btn-release-folio', 'Sandbox DB draft table should contain .btn-release-folio neobrutalist button');
+  });
+
+  // Test 12: Catalog Product Specifications Floating Popover & Height Alignment
+  await ctx.test('T1.12: Catalog specs toggle cleanly as floating overlays with mutual auto-close and height alignment', async () => {
+    const { doc, win } = setupTestEnvironment('index.html');
+    const appUrl = pathToFileURL(path.join(PROJECT_ROOT, 'js/app.js')).href + `?t=${Date.now()}`;
+    await import(appUrl);
+    win.document.dispatchEvent({ type: 'DOMContentLoaded' });
+
+    expect(typeof win.toggleRewardSpecs).toBe('function', 'win.toggleRewardSpecs should be exposed');
+
+    // Simular 2 productos en catálogo: uno con especificaciones y otro simple
+    const catalogContainer = doc.getElementById('catalog-container');
+    expect(catalogContainer).toBeTruthy('Catalog container should exist');
+
+    const catalogViewUrl = pathToFileURL(path.join(PROJECT_ROOT, 'js/views/customer/CustomerCatalogView.js')).href + `?t=${Date.now()}`;
+    const { renderCatalog, toggleRewardSpecs } = await import(catalogViewUrl);
+
+    const testCatalog = [
+      {
+        id: 'PROD-A',
+        title: 'Mando Hall Effect Pro',
+        description: 'Mando inalámbrico para gaming profesional.\n• Joysticks magnéticos sin drift\n• Batería 800 mAh\n• Giroscopio 6 ejes',
+        pointsCost: 200,
+        priceUsd: 25.00,
+        stock: 5,
+        imageUrl: ''
+      },
+      {
+        id: 'PROD-B',
+        title: 'Mini Jet Fan Turbo 2 en 1',
+        description: 'Soplador turbo portátil de alta velocidad.\n• Motor brushless 110,000 RPM\n• Boquillas intercambiables',
+        pointsCost: 350,
+        priceUsd: 30.00,
+        stock: 3,
+        imageUrl: ''
+      },
+      {
+        id: 'PROD-C',
+        title: 'Mousepad Gamer XL',
+        description: 'Superficie de tela micro-texturizada anti-deslizante.',
+        pointsCost: 100,
+        priceUsd: 10.00,
+        stock: 10,
+        imageUrl: ''
+      }
+    ];
+
+    renderCatalog(testCatalog, null);
+
+    const dropA = doc.getElementById('specs-drop-PROD-A');
+    const btnA = doc.getElementById('specs-btn-PROD-A');
+    const dropB = doc.getElementById('specs-drop-PROD-B');
+    const btnB = doc.getElementById('specs-btn-PROD-B');
+
+    expect(dropA).toBeTruthy('Drop A should exist in DOM');
+    expect(dropB).toBeTruthy('Drop B should exist in DOM');
+    expect(dropA.style.display === 'none' || !dropA.style.display).toBe(true, 'Drop A initially hidden');
+
+    // 1. Abrir dropdown A
+    toggleRewardSpecs('PROD-A');
+    expect(dropA.style.display).toBe('block', 'Drop A should be visible after toggle');
+    expect(btnA.classList.contains('expanded')).toBe(true, 'Button A should have expanded class');
+
+    // 2. Abrir dropdown B: Debe cerrar A automáticamente para no saturar la vista
+    toggleRewardSpecs('PROD-B');
+    expect(dropB.style.display).toBe('block', 'Drop B should be visible after toggle');
+    expect(dropA.style.display).toBe('none', 'Drop A should be automatically closed when B opens');
+    expect(btnA.classList.contains('expanded')).toBe(false, 'Button A should no longer have expanded class');
+
+    // 3. Cerrar B
+    toggleRewardSpecs('PROD-B');
+    expect(dropB.style.display).toBe('none', 'Drop B should be closed after second toggle');
+
+    // 4. Validar pill de producto sin especificaciones
+    const catalogHtml = catalogContainer.innerHTML;
+    expect(catalogHtml).toContain('reward-specs-empty-pill', 'Products without specs should have empty pill for uniform height');
+    expect(catalogHtml).toContain('specs-dropdown-header', 'Specs dropdown should include header with close button');
+  });
+
   return ctx.summary();
 }
