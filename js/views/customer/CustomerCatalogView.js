@@ -58,6 +58,44 @@ export function toggleRewardSpecs(itemId) {
   }
 }
 
+export function openProductSpecsModal(rewardId) {
+  if (!vm || !vm.catalog) return;
+  const item = vm.catalog.find(r => r.id === rewardId);
+  if (!item) return;
+
+  const modal = document.getElementById("modal-product-specs");
+  const body = document.getElementById("modal-specs-body");
+  if (!modal || !body) return;
+
+  const parsed = parseProductDescription(item.description);
+
+  body.innerHTML = `
+    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 0.85rem; padding-bottom: 0.85rem; border-bottom: 1.5px dashed var(--gray-300);">
+      ${item.imageUrl ? `<img src="${item.imageUrl}" style="width: 58px; height: 58px; object-fit: cover; border-radius: 6px; border: 1.5px solid var(--dark); flex-shrink: 0;">` : ''}
+      <div>
+        <h3 style="font-size: 1.05rem; font-weight: 900; color: var(--dark); margin: 0 0 3px 0; line-height: 1.25;">${item.title}</h3>
+        <div style="font-family: var(--font-mono); font-size: 0.74rem; color: #0284c7; font-weight: 800;">${parsed.specs.length} Especificaciones Técnicas</div>
+      </div>
+    </div>
+    ${parsed.intro ? `<div style="font-size: 0.82rem; color: var(--gray-700); line-height: 1.42; margin-bottom: 0.85rem; background: #f8fafc; padding: 7px 10px; border-radius: 4px; border: 1px solid #e2e8f0;">${parsed.intro}</div>` : ''}
+    <ul class="reward-specs-ul" style="gap: 7px;">
+      ${parsed.specs.map(s => `
+        <li style="padding: 4px 0; font-size: 0.82rem; line-height: 1.4; border-bottom: 1px dashed #e2e8f0;">
+          <span class="spec-bullet" style="font-size: 0.85rem; color: #0284c7;">▸</span>
+          <span class="spec-content" style="color: #1e293b;">${s}</span>
+        </li>
+      `).join("")}
+    </ul>
+  `;
+
+  modal.style.display = "flex";
+}
+
+export function closeProductSpecsModal() {
+  const modal = document.getElementById("modal-product-specs");
+  if (modal) modal.style.display = "none";
+}
+
 if (typeof document !== "undefined" && typeof document.addEventListener === "function") {
   document.addEventListener("click", (e) => {
     if (currentlyOpenSpecsId) {
@@ -274,7 +312,9 @@ export function renderCatalog(catalog, user) {
             <div class="reward-specs-dropdown" id="specs-drop-${item.id}" style="display:none;">
               <div class="specs-dropdown-header">
                 <span class="specs-dropdown-title">ESPECIFICACIONES (${parsed.specs.length})</span>
-                <button type="button" class="specs-close-btn" onclick="toggleRewardSpecs('${item.id}')" title="Cerrar especificaciones">✕</button>
+                <button type="button" class="specs-modal-trigger-btn" onclick="openProductSpecsModal('${item.id}')" title="Ver especificaciones en pantalla completa">
+                  <span>⛶</span> <span>Ampliar</span>
+                </button>
               </div>
               <ul class="reward-specs-ul">
                 ${parsed.specs.map(s => `<li><span class="spec-bullet">▸</span><span class="spec-content">${s}</span></li>`).join("")}

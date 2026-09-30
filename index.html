@@ -7,7 +7,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <link rel="stylesheet" href="./styles.css?v=2.9.3">
+  <link rel="stylesheet" href="./styles.css?v=2.9.4">
   
   <!-- Limpieza inmediata de cachés viejos residuales antes de cargar módulos -->
   <script>
@@ -599,10 +599,33 @@
       </form>
     </div>
   </div>
+
+  <!-- MODAL: ESPECIFICACIONES COMPLETAS DE PRODUCTO (FULL SCREEN / MODAL) -->
+  <div id="modal-product-specs" class="modal-overlay" style="display: none; align-items: center; justify-content: center; z-index: 10000;" onclick="if(event.target===this) closeProductSpecsModal()">
+    <div class="modal-content lain-card" style="max-width: 480px; width: 92vw; max-height: 85vh; display: flex; flex-direction: column; text-align: left; padding: 1.35rem; position: relative;">
+      <div class="tech-corner top-left">+</div>
+      <div class="tech-corner top-right">+</div>
+      <div class="tech-corner bottom-left">+</div>
+      <div class="tech-corner bottom-right">+</div>
+      <button class="modal-close-btn" onclick="closeProductSpecsModal()" aria-label="Cerrar">&times;</button>
+      <div style="font-family: var(--font-mono); font-size: 0.68rem; font-weight: 800; color: #0284c7; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.35rem;">
+        FICHA TÉCNICA // WIRED SPECS
+      </div>
+      <div id="modal-specs-body" style="overflow-y: auto; padding-right: 4px; flex: 1;">
+        <!-- Inyectado dinámicamente -->
+      </div>
+      <div style="margin-top: 1rem; padding-top: 0.75rem; border-top: 1.5px solid var(--gray-200); display: flex; justify-content: flex-end;">
+        <button type="button" class="btn-secondary" style="padding: 0.45rem 1.1rem; font-size: 0.78rem;" onclick="closeProductSpecsModal()">
+          ✓ Cerrar Ficha
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- CONTENEDOR TOAST FLOTANTE -->
   <div id="toast-container" class="toast-container"></div>
 
   <!-- CONTROLADOR MVVM -->
-  <script type="module" src="./js/app.js?v=2.9.3"></script>
+  <script type="module" src="./js/app.js?v=2.9.4"></script>
 </body>
 </html>

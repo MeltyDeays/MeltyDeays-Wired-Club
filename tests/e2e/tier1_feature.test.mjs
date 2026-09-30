@@ -440,10 +440,14 @@ export async function runTier1Tests() {
     toggleRewardSpecs('PROD-B');
     expect(dropB.style.display).toBe('none', 'Drop B should be closed after second toggle');
 
-    // 4. Validar pill de producto sin especificaciones
+    // 4. Validar pill de producto sin especificaciones y modal de ficha técnica
     const catalogHtml = catalogContainer.innerHTML;
     expect(catalogHtml).toContain('reward-specs-empty-pill', 'Products without specs should have empty pill for uniform height');
-    expect(catalogHtml).toContain('specs-dropdown-header', 'Specs dropdown should include header with close button');
+    expect(catalogHtml).toContain('specs-dropdown-header', 'Specs dropdown should include header with close/expand trigger');
+    expect(typeof win.openProductSpecsModal).toBe('function', 'win.openProductSpecsModal should be exposed');
+    expect(typeof win.closeProductSpecsModal).toBe('function', 'win.closeProductSpecsModal should be exposed');
+    const specsModal = doc.getElementById('modal-product-specs');
+    expect(specsModal).toBeTruthy('modal-product-specs should exist in DOM');
   });
 
   return ctx.summary();

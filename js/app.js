@@ -19,6 +19,8 @@ import {
   // 2. Catálogo y Canje
   renderCatalog,
   toggleRewardSpecs,
+  openProductSpecsModal,
+  closeProductSpecsModal,
   confirmRedeem,
   updateConfirmCalculation,
   onPointsSliderChange,
@@ -313,6 +315,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   window.confirmRedeem = confirmRedeem;
   window.toggleRewardSpecs = toggleRewardSpecs;
+  window.openProductSpecsModal = openProductSpecsModal;
+  window.closeProductSpecsModal = closeProductSpecsModal;
   window.executeRedeem = executeRedeem;
   window.closeRedeemModal = closeRedeemModal;
   window.onPointsSliderChange = onPointsSliderChange;

@@ -859,7 +859,8 @@
   background: #ffffff;
   border: 2px solid var(--dark);
   border-radius: 8px;
-  overflow: visible;
+  overflow: hidden;
+  align-self: start;
   display: flex;
   flex-direction: column;
   box-shadow: var(--hard-shadow-sm);
@@ -1002,10 +1003,12 @@
 }
 
 .reward-specs-toggle-btn.expanded {
-  background: #e0f2fe;
+  background: #f0f9ff;
   border-color: #0284c7;
   color: #0369a1;
-  box-shadow: 2px 2px 0px var(--dark);
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  box-shadow: none;
 }
 
 .reward-specs-empty-pill {
@@ -1028,19 +1031,19 @@
 }
 
 .reward-specs-dropdown {
-  position: absolute;
-  top: calc(100% + 4px);
-  left: 0;
-  right: 0;
-  z-index: 60;
+  position: static;
+  margin-top: -1px;
   background: #ffffff;
-  border: 2px solid var(--dark);
-  border-radius: 6px;
-  box-shadow: 4px 4px 0px var(--dark);
-  padding: 9px 11px;
-  max-height: 230px;
+  border: 1.5px solid #0284c7;
+  border-top: none;
+  border-bottom-left-radius: 6px;
+  border-bottom-right-radius: 6px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  padding: 8px 10px;
+  max-height: 180px;
   overflow-y: auto;
   box-sizing: border-box;
+  margin-bottom: 0.5rem;
   animation: specsPopIn 0.15s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -1071,6 +1074,29 @@
   letter-spacing: 0.6px;
   color: #0284c7;
   text-transform: uppercase;
+}
+
+.specs-modal-trigger-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #e0f2fe;
+  border: 1px solid #7dd3fc;
+  color: #0369a1;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  font-weight: 800;
+  padding: 2px 7px;
+  cursor: pointer;
+  line-height: 1.2;
+  transition: all 0.15s ease;
+}
+
+.specs-modal-trigger-btn:hover {
+  background: #bae6fd;
+  color: #0284c7;
+  transform: scale(1.02);
 }
 
 .specs-close-btn {
