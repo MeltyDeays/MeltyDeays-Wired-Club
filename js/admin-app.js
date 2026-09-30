@@ -130,6 +130,10 @@ import {
   cycleLainTemplate,
   randomizeLainTemplate,
   renderLainTemplateGrid,
+  openLainPreviewModal,
+  previewNextLainTemplate,
+  previewPrevLainTemplate,
+  confirmLainPreviewSelection,
   // 6. Consola Sandbox DB & Borrado Selectivo
   executeTokenOptDelete,
   renderSandboxDbView,
@@ -466,6 +470,10 @@ document.addEventListener("DOMContentLoaded", () => {
   window.cycleLainTemplate = cycleLainTemplate;
   window.randomizeLainTemplate = randomizeLainTemplate;
   window.renderLainTemplateGrid = renderLainTemplateGrid;
+  window.openLainPreviewModal = openLainPreviewModal;
+  window.previewNextLainTemplate = previewNextLainTemplate;
+  window.previewPrevLainTemplate = previewPrevLainTemplate;
+  window.confirmLainPreviewSelection = confirmLainPreviewSelection;
 
   // Tokens y Acciones de Factura
   window.viewSingleTokenQr = viewSingleTokenQr;

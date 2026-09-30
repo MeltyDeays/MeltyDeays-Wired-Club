@@ -286,6 +286,24 @@ export async function runTier1Tests() {
     win.setActiveLainTemplate(44);
     const label = doc.getElementById('lain-template-active-label');
     expect(label.innerHTML).toContain('COCOON // THE DREAM', 'Active label should show selected Serie 3 template');
+
+    // Test in-place design preview modal
+    const previewModal = doc.getElementById('modal-lain-preview');
+    expect(previewModal).toBeTruthy('modal-lain-preview should exist in admin DOM');
+
+    win.openLainPreviewModal(44);
+    expect(previewModal.style.display).toBe('flex', 'Preview modal should be open');
+    const svgContainer = doc.getElementById('lain-preview-svg-container');
+    expect(svgContainer.innerHTML).toContain('<svg', 'SVG container should contain valid SVG markup');
+    expect(doc.getElementById('lain-preview-title').textContent).toContain('COCOON // THE DREAM', 'Title should match active layer');
+
+    // Test next navigation in preview
+    win.previewNextLainTemplate();
+    expect(doc.getElementById('lain-preview-title').textContent).toContain('ASH WINGS // EMERGENCE', 'Next navigation should advance layer');
+
+    // Test confirm/close
+    win.confirmLainPreviewSelection();
+    expect(previewModal.style.display).toBe('none', 'Preview modal should be closed after confirmation');
   });
 
   return ctx.summary();

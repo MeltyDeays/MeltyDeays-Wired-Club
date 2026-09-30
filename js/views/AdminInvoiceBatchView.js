@@ -912,6 +912,106 @@ export function randomizeLainTemplate() {
   setActiveLainTemplate(rnd);
 }
 
+export function openLainPreviewModal(idx) {
+  const templates = getLainTemplates();
+  const safeIdx = Math.max(0, Math.min((templates.length || 74) - 1, Number(idx) | 0));
+  const t = templates[safeIdx];
+  if (!t) return;
+
+  setActiveLainTemplate(safeIdx);
+
+  const modal = document.getElementById("modal-lain-preview");
+  if (!modal) return;
+
+  const badgeSeries = document.getElementById("lain-preview-badge-series");
+  const badgeLayer = document.getElementById("lain-preview-badge-layer");
+  const badgeSn = document.getElementById("lain-preview-badge-sn");
+  const counter = document.getElementById("lain-preview-index-counter");
+  const boxHeader = document.getElementById("lain-preview-box-header");
+  const boxProtocol = document.getElementById("lain-preview-box-protocol");
+  const boxSpec1 = document.getElementById("lain-preview-box-spec1");
+  const boxSpec2 = document.getElementById("lain-preview-box-spec2");
+  const svgContainer = document.getElementById("lain-preview-svg-container");
+  const titleEl = document.getElementById("lain-preview-title");
+  const subEl = document.getElementById("lain-preview-sub");
+  const kanjiEl = document.getElementById("lain-preview-kanji");
+  const quoteEl = document.getElementById("lain-preview-quote");
+
+  if (badgeSeries) {
+    badgeSeries.textContent = t.series || "COLECCIÓN LAIN";
+    badgeSeries.style.background = (t.series && t.series.includes("SERIE 3")) ? "#b45309" : ((t.series && t.series.includes("SERIE 2")) ? "#4338ca" : "#0f172a");
+  }
+  if (badgeLayer) badgeLayer.textContent = t.layer;
+  if (badgeSn) badgeSn.textContent = t.sn || ("MD-LAIN-9807-" + String(safeIdx + 1).padStart(3, "0"));
+  if (counter) counter.textContent = `${safeIdx + 1} / ${templates.length || 74}`;
+
+  if (boxHeader) boxHeader.textContent = `● ${t.layer}`;
+  if (boxProtocol) boxProtocol.textContent = t.protocol ? `PROTOCOL: ${t.protocol}` : "";
+  if (boxSpec1) boxSpec1.textContent = t.spec1 || t.chip || "";
+  if (boxSpec2) boxSpec2.textContent = t.spec2 || "SANCTIFIED";
+
+  if (svgContainer) {
+    svgContainer.innerHTML = t.svg || "<div style='color:#94a3b8; padding:20px; font-size:12px;'>No SVG preview available</div>";
+  }
+
+  if (titleEl) titleEl.textContent = t.title || t.name;
+  if (subEl) subEl.textContent = t.sub || "";
+  if (kanjiEl) {
+    kanjiEl.textContent = t.kanji || "";
+    kanjiEl.style.color = (t.series && t.series.includes("SERIE 3")) ? "#b45309" : "var(--accent)";
+  }
+  if (quoteEl) {
+    quoteEl.textContent = t.quote ? `"${t.quote.replace(/^"|"$/g, '')}"` : "—";
+  }
+
+  modal.style.display = "flex";
+}
+
+export function previewNextLainTemplate() {
+  const allowed = getAllowedLainIndices();
+  const currentIdx = typeof window !== "undefined" && window.activeLainTemplateIdx !== undefined && window.activeLainTemplateIdx !== null ? window.activeLainTemplateIdx : 0;
+  const curPos = allowed.indexOf(currentIdx);
+  const nextPos = (curPos + 1 + allowed.length) % allowed.length;
+  openLainPreviewModal(allowed[nextPos]);
+}
+
+export function previewPrevLainTemplate() {
+  const allowed = getAllowedLainIndices();
+  const currentIdx = typeof window !== "undefined" && window.activeLainTemplateIdx !== undefined && window.activeLainTemplateIdx !== null ? window.activeLainTemplateIdx : 0;
+  const curPos = allowed.indexOf(currentIdx);
+  const prevPos = (curPos - 1 + allowed.length) % allowed.length;
+  openLainPreviewModal(allowed[prevPos]);
+}
+
+export function confirmLainPreviewSelection() {
+  if (typeof closeModal === "function") {
+    closeModal("modal-lain-preview");
+  } else if (typeof window !== "undefined" && typeof window.closeModal === "function") {
+    window.closeModal("modal-lain-preview");
+  } else {
+    const modal = document.getElementById("modal-lain-preview");
+    if (modal) modal.style.display = "none";
+  }
+}
+
+if (typeof window !== "undefined" && !window._lainPreviewKeydownBound) {
+  window._lainPreviewKeydownBound = true;
+  window.addEventListener("keydown", (e) => {
+    const modal = document.getElementById("modal-lain-preview");
+    if (!modal || modal.style.display === "none") return;
+    if (e.key === "ArrowRight") {
+      e.preventDefault();
+      previewNextLainTemplate();
+    } else if (e.key === "ArrowLeft") {
+      e.preventDefault();
+      previewPrevLainTemplate();
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      confirmLainPreviewSelection();
+    }
+  });
+}
+
 export function renderLainTemplateGrid() {
   const grid = document.getElementById("lain-template-grid");
   if (!grid) return;
@@ -930,14 +1030,20 @@ export function renderLainTemplateGrid() {
     const tile = document.createElement("div");
     if (isHaibane) tile.style.borderColor = '#d97706';
     tile.className = "lain-template-tile" + (isFixed ? " is-active" : "");
-    tile.title = t.layer + " — " + t.title + " (click para fijar / doble click para desactivar)";
+    tile.title = t.layer + " — " + t.title + " (click para ver diseño y fijar / doble click para desactivar)";
     tile.innerHTML =
-      '<div class="lain-template-layer">' + t.layer + '</div>' +
+      '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2px;">' +
+        '<span class="lain-template-layer">' + t.layer + '</span>' +
+        '<span class="lain-template-preview-badge">👁 VER</span>' +
+      '</div>' +
       '<div class="lain-template-title">' + t.title + '</div>' +
       '<div class="lain-template-sub">' + (t.sub || '') + '</div>' +
       '<div class="lain-template-kanji">' + (t.kanji || '') + '</div>';
-    tile.onclick = () => setActiveLainTemplate(t.idx);
-    tile.ondblclick = () => setActiveLainTemplate(null);
+    tile.onclick = () => openLainPreviewModal(t.idx);
+    tile.ondblclick = (e) => {
+      e.stopPropagation();
+      setActiveLainTemplate(null);
+    };
     tiles.push(tile);
   });
 

@@ -1283,6 +1283,89 @@
     </div>
   </div>
 
+  <!-- MODAL: PREVISUALIZACIÓN DE DISEÑO LAIN / REVERSO (COPLAND OS 21.0) -->
+  <div id="modal-lain-preview" class="modal-overlay" style="display: none;">
+    <div class="modal-content lain-card modal-compact-mobile" style="max-width: 680px; text-align: left; padding: 1.5rem; max-height: 92vh; overflow-y: auto;">
+      <div class="modal-scanline-holder"><div class="modal-scanline-bar"></div></div>
+      <div class="tech-corner top-left">+</div>
+      <div class="tech-corner top-right">+</div>
+      <div class="tech-corner bottom-left">+</div>
+      <div class="tech-corner bottom-right">+</div>
+      <button class="modal-close-btn" onclick="closeModal('modal-lain-preview')" aria-label="Cerrar">&times;</button>
+
+      <div class="lain-modal-header" style="margin-bottom: 0.8rem;">
+        <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; flex-wrap: wrap; gap: 6px;">
+          <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+            <span id="lain-preview-badge-series" class="badge-navi" style="background:#0f172a; color:#38bdf8;">SERIE 3 · HAIBANE RENMEI</span>
+            <span id="lain-preview-badge-layer" class="badge-layer">LAYER: 46</span>
+            <span id="lain-preview-badge-sn" style="font-family: var(--font-mono); font-size: 0.65rem; color: var(--gray-600); font-weight: 700;">MD-HAIBANE-0210-046</span>
+          </div>
+          <span id="lain-preview-index-counter" style="font-family: var(--font-mono); font-size: 0.72rem; font-weight: 800; color: #4338ca; background: #eef2ff; border: 1px solid #c7d2fe; padding: 2px 8px; border-radius: 4px;">46 / 74</span>
+        </div>
+      </div>
+
+      <!-- CONTENEDOR DEL ARTE VECTORIAL SVG (PREVIEW CHASSIS) -->
+      <div style="background: #f8fafc; border: 1.5px solid var(--dark); border-radius: 6px; padding: 12px; margin-bottom: 0.85rem; box-shadow: 3px 3px 0px var(--dark); position: relative;">
+        <!-- Cabecera simulada del cuadro -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-family: var(--font-mono); font-size: 0.68rem; font-weight: 800; color: #64748b; border-bottom: 1px dashed #cbd5e1; padding-bottom: 4px;">
+          <span id="lain-preview-box-header">● LAYER: 46</span>
+          <span id="lain-preview-box-protocol">PROTOCOL: SPROUT-v2.1</span>
+        </div>
+        
+        <!-- Contenedor SVG -->
+        <div id="lain-preview-svg-container" style="width: 100%; aspect-ratio: 280 / 115; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 4px; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+          <!-- SVG inyectado aquí -->
+        </div>
+
+        <!-- Pie simulado del cuadro -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px; font-family: var(--font-mono); font-size: 0.62rem; font-weight: 700; color: #94a3b8; border-top: 1px dashed #cbd5e1; padding-top: 4px;">
+          <span id="lain-preview-box-spec1">SPAN: 1.4 METERS</span>
+          <span id="lain-preview-box-spec2">NATURAL ASH</span>
+        </div>
+      </div>
+
+      <!-- TÍTULO, SUBTÍTULO Y KANJI -->
+      <div style="margin-bottom: 0.65rem;">
+        <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 8px;">
+          <h3 id="lain-preview-title" style="font-size: 1.15rem; font-weight: 900; color: var(--dark); margin: 0; font-family: var(--font-mono);">
+            ASH WINGS // EMERGENCE
+          </h3>
+          <span id="lain-preview-kanji" style="font-family: 'Noto Sans JP', sans-serif; font-size: 0.85rem; font-weight: 700; color: #b45309;">
+            灰羽・背中の疼き
+          </span>
+        </div>
+        <div id="lain-preview-sub" style="font-size: 0.75rem; color: var(--gray-600); margin-top: 2px;">
+          OLD HOME · SANCTIFIED DORMITORY
+        </div>
+      </div>
+
+      <!-- CITA FILOSÓFICA (QUOTE BOX) -->
+      <div id="lain-preview-quote-box" style="background: #fefce8; border-left: 3px solid #f59e0b; padding: 0.6rem 0.85rem; border-radius: 4px; margin-bottom: 1rem; font-size: 0.78rem; color: #78350f; font-style: italic; line-height: 1.4;">
+        <span id="lain-preview-quote">"Pain and warmth at once... the ash feathers begin to grow."</span>
+      </div>
+
+      <!-- BOTONES DE ACCIÓN Y NAVEGACIÓN -->
+      <div style="display: flex; gap: 0.5rem; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+        <div style="display: flex; gap: 0.4rem;">
+          <button type="button" class="copland-bar-btn copland-bar-btn-slate" onclick="previewPrevLainTemplate()" title="Anterior (← flecha izquierda)">
+            ◀ ANTERIOR
+          </button>
+          <button type="button" class="copland-bar-btn copland-bar-btn-slate" onclick="previewNextLainTemplate()" title="Siguiente (→ flecha derecha)">
+            SIGUIENTE ▶
+          </button>
+        </div>
+        <div style="display: flex; gap: 0.4rem; align-items: center;">
+          <button type="button" class="btn-secondary" onclick="closeModal('modal-lain-preview')" style="padding: 0.45rem 0.85rem; font-size: 0.8rem;">
+            Cerrar
+          </button>
+          <button type="button" id="btn-lain-preview-select" class="btn-primary" onclick="confirmLainPreviewSelection()" style="padding: 0.45rem 1rem; font-size: 0.8rem; background: #059669; border-color: #047857;">
+            ⚡ USAR ESTE DISEÑO
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL: AGREGAR PRODUCTO AL CATÁLOGO CON CALCULADORA DE FLETE & RENTABILIDAD (COPLAND OS 21.0) -->
   <div id="modal-new-product" class="modal-overlay" style="display: none;">
     <div class="modal-content lain-card" style="max-width: 640px; text-align: left; padding: 1.6rem; position: relative; overflow: hidden; max-height: 92vh; overflow-y: auto;">
@@ -2429,14 +2512,20 @@
           const tile = document.createElement("div");
           if (isHaibane) tile.style.borderColor = '#d97706';
           tile.className = "lain-template-tile" + (isFixed ? " is-active" : "");
-          tile.title = t.layer + " — " + t.title + " (click para fijar / doble click para desactivar)";
+          tile.title = t.layer + " — " + t.title + " (click para ver diseño y fijar / doble click para desactivar)";
           tile.innerHTML =
-            '<div class="lain-template-layer">' + t.layer + '</div>' +
+            '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2px;">' +
+              '<span class="lain-template-layer">' + t.layer + '</span>' +
+              '<span class="lain-template-preview-badge">👁 VER</span>' +
+            '</div>' +
             '<div class="lain-template-title">' + t.title + '</div>' +
-            '<div class="lain-template-sub">' + t.sub + '</div>' +
-            '<div class="lain-template-kanji">' + t.kanji + '</div>';
-          tile.onclick = () => window.setActiveLainTemplate(t.idx);
-          tile.ondblclick = () => window.setActiveLainTemplate(null);
+            '<div class="lain-template-sub">' + (t.sub || '') + '</div>' +
+            '<div class="lain-template-kanji">' + (t.kanji || '') + '</div>';
+          tile.onclick = () => window.openLainPreviewModal(t.idx);
+          tile.ondblclick = (e) => {
+            e.stopPropagation();
+            window.setActiveLainTemplate(null);
+          };
           tiles.push(tile);
         });
         // Añadir tile modo AUTOMÁTICO (null) adaptativo por serie
@@ -2506,6 +2595,86 @@
         }
       }
 
+      window.openLainPreviewModal = function openLainPreviewModal(idx) {
+        const templates = getTemplates();
+        const safeIdx = Math.max(0, Math.min((templates.length || 74) - 1, Number(idx) | 0));
+        const t = templates[safeIdx];
+        if (!t) return;
+
+        window.setActiveLainTemplate(safeIdx);
+
+        const modal = document.getElementById("modal-lain-preview");
+        if (!modal) return;
+
+        const badgeSeries = document.getElementById("lain-preview-badge-series");
+        const badgeLayer = document.getElementById("lain-preview-badge-layer");
+        const badgeSn = document.getElementById("lain-preview-badge-sn");
+        const counter = document.getElementById("lain-preview-index-counter");
+        const boxHeader = document.getElementById("lain-preview-box-header");
+        const boxProtocol = document.getElementById("lain-preview-box-protocol");
+        const boxSpec1 = document.getElementById("lain-preview-box-spec1");
+        const boxSpec2 = document.getElementById("lain-preview-box-spec2");
+        const svgContainer = document.getElementById("lain-preview-svg-container");
+        const titleEl = document.getElementById("lain-preview-title");
+        const subEl = document.getElementById("lain-preview-sub");
+        const kanjiEl = document.getElementById("lain-preview-kanji");
+        const quoteEl = document.getElementById("lain-preview-quote");
+
+        if (badgeSeries) {
+          badgeSeries.textContent = t.series || "COLECCIÓN LAIN";
+          badgeSeries.style.background = (t.series && t.series.includes("SERIE 3")) ? "#b45309" : ((t.series && t.series.includes("SERIE 2")) ? "#4338ca" : "#0f172a");
+        }
+        if (badgeLayer) badgeLayer.textContent = t.layer;
+        if (badgeSn) badgeSn.textContent = t.sn || ("MD-LAIN-9807-" + String(safeIdx + 1).padStart(3, "0"));
+        if (counter) counter.textContent = (safeIdx + 1) + " / " + (templates.length || 74);
+
+        if (boxHeader) boxHeader.textContent = "● " + t.layer;
+        if (boxProtocol) boxProtocol.textContent = t.protocol ? ("PROTOCOL: " + t.protocol) : "";
+        if (boxSpec1) boxSpec1.textContent = t.spec1 || t.chip || "";
+        if (boxSpec2) boxSpec2.textContent = t.spec2 || "SANCTIFIED";
+
+        if (svgContainer) {
+          svgContainer.innerHTML = t.svg || "<div style='color:#94a3b8; padding:20px; font-size:12px;'>No SVG preview available</div>";
+        }
+
+        if (titleEl) titleEl.textContent = t.title || t.name;
+        if (subEl) subEl.textContent = t.sub || "";
+        if (kanjiEl) {
+          kanjiEl.textContent = t.kanji || "";
+          kanjiEl.style.color = (t.series && t.series.includes("SERIE 3")) ? "#b45309" : "var(--accent)";
+        }
+        if (quoteEl) {
+          quoteEl.textContent = t.quote ? ('"' + t.quote.replace(/^"|"$/g, '') + '"') : "—";
+        }
+
+        modal.style.display = "flex";
+      };
+
+      window.previewNextLainTemplate = function previewNextLainTemplate() {
+        const allowed = getAllowedIndices();
+        const currentIdx = (window.activeLainTemplateIdx === null || window.activeLainTemplateIdx === undefined) ? 0 : window.activeLainTemplateIdx;
+        const curPos = allowed.indexOf(currentIdx);
+        const nextPos = (curPos + 1 + allowed.length) % allowed.length;
+        window.openLainPreviewModal(allowed[nextPos]);
+      };
+
+      window.previewPrevLainTemplate = function previewPrevLainTemplate() {
+        const allowed = getAllowedIndices();
+        const currentIdx = (window.activeLainTemplateIdx === null || window.activeLainTemplateIdx === undefined) ? 0 : window.activeLainTemplateIdx;
+        const curPos = allowed.indexOf(currentIdx);
+        const prevPos = (curPos - 1 + allowed.length) % allowed.length;
+        window.openLainPreviewModal(allowed[prevPos]);
+      };
+
+      window.confirmLainPreviewSelection = function confirmLainPreviewSelection() {
+        if (typeof window.closeModal === "function") {
+          window.closeModal("modal-lain-preview");
+        } else {
+          const modal = document.getElementById("modal-lain-preview");
+          if (modal) modal.style.display = "none";
+        }
+      };
+
       window.setActiveLainTemplate = function setActiveLainTemplate(idx) {
         window.activeLainTemplateIdx = (idx === null || idx === undefined) ? null : Math.max(0, Math.min((getTemplates().length || 74) - 1, Number(idx) | 0));
         if (typeof window.renderLainTemplateGrid === "function") {
@@ -2556,6 +2725,6 @@
     })();
   </script>
 
-  <script type="module" src="./js/admin-app.js?v=2.8.3"></script>
+  <script type="module" src="./js/admin-app.js?v=2.8.4"></script>
 </body>
 </html>

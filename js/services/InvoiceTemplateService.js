@@ -71,11 +71,18 @@ export class InvoiceTemplateService {
         idx,
         id: idx,
         layer: item.layer,
-        series: item.series || (idx < 24 ? 'SERIE 1' : 'SERIE 2'),
+        series: item.series || (idx < 24 ? 'SERIE 1' : (idx < 44 ? 'SERIE 2' : 'SERIE 3')),
         name: item.name || (item.layer + ' · ' + item.title),
         title: item.title,
         sub: item.sub,
-        kanji: item.kanji
+        kanji: item.kanji,
+        quote: item.quote,
+        protocol: item.protocol,
+        chip: item.chip,
+        spec1: item.spec1,
+        spec2: item.spec2,
+        sn: item.sn,
+        svg: item.svg
       }));
     }
     return getDigitalExclusiveDesigns().map((item, idx) => ({
