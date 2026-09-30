@@ -3,6 +3,7 @@ import { AdminViewModel } from "./viewmodels/AdminViewModel.js";
 import { InvoiceTemplateService } from "./services/InvoiceTemplateService.js";
 import { FirestoreService } from "./services/FirestoreService.js";
 import { injectEnvironmentBadge, isProduction } from "./config/env.js";
+import { parseProductDescription } from "./models/RewardModel.js";
 
 import {
   initAdminViews,
@@ -332,6 +333,25 @@ function renderCatalogTable(catalog) {
       ? `<div style="font-size:0.72rem; font-family:var(--font-mono); color:var(--dark); margin-top:3px;">Precio: $${(p.priceUsd || 0).toFixed(2)} · <span style="color:#dc2626; font-weight:800;">Cobrar: $${(p.cashToPayUsd || 0).toFixed(2)} USD</span></div>`
       : "";
 
+    const parsed = parseProductDescription(p.description);
+    const descDisplay = parsed.hasSpecs
+      ? `
+        <div class="admin-table-desc-wrap">
+          <div class="admin-table-desc-intro">${parsed.intro}</div>
+          <details class="admin-table-specs-details">
+            <summary class="admin-table-specs-summary">
+              <span>📋 Ver especificaciones (${parsed.specs.length})</span>
+            </summary>
+            <div class="admin-table-specs-drawer">
+              <ul class="admin-table-specs-list">
+                ${parsed.specs.map(s => `<li><span class="spec-dot">•</span> <span>${s}</span></li>`).join("")}
+              </ul>
+            </div>
+          </details>
+        </div>
+      `
+      : `<div style="font-size:0.8rem; color:var(--gray-700); line-height: 1.4;">${p.description || "-"}</div>`;
+
     return `
       <tr>
         <td>
@@ -344,10 +364,16 @@ function renderCatalogTable(catalog) {
         </td>
         <td>${costDisplay}</td>
         <td><strong>${p.stock}</strong> un.</td>
-        <td style="font-size:0.8rem; color:var(--gray-700);">${p.description || "-"}</td>
+        <td style="max-width: 380px;">${descDisplay}</td>
         <td style="text-align: right; white-space: nowrap;">
-          <button class="btn-outline-sm" style="color:#0284c7; border-color:#bae6fd; font-size:0.75rem; padding: 3px 8px; border-radius:3px; cursor:pointer; margin-right:4px;" onclick="openEditProductModal('${p.id}')">✏️ Editar</button>
-          <button class="btn-outline-sm" style="color:var(--accent); border-color:#fca5a5; font-size:0.75rem; padding: 3px 8px; border-radius:3px; cursor:pointer;" onclick="removeProductAdmin('${p.id}')">Eliminar</button>
+          <div style="display: inline-flex; align-items: center; gap: 6px; justify-content: flex-end;">
+            <button type="button" class="catalog-action-btn btn-edit" onclick="openEditProductModal('${p.id}')" title="Editar producto ${p.id}">
+              <span class="btn-icon">✏️</span> <span>Editar</span>
+            </button>
+            <button type="button" class="catalog-action-btn btn-delete" onclick="removeProductAdmin('${p.id}')" title="Eliminar producto ${p.id}">
+              <span class="btn-icon">🗑️</span> <span>Eliminar</span>
+            </button>
+          </div>
         </td>
       </tr>
     `;

@@ -18,6 +18,7 @@ import {
   copyMemberCode,
   // 2. Catálogo y Canje
   renderCatalog,
+  toggleRewardSpecs,
   confirmRedeem,
   updateConfirmCalculation,
   onPointsSliderChange,
@@ -311,6 +312,7 @@ document.addEventListener("DOMContentLoaded", () => {
   window.submitAdminAssignFromScan = submitAdminAssignFromScan;
 
   window.confirmRedeem = confirmRedeem;
+  window.toggleRewardSpecs = toggleRewardSpecs;
   window.executeRedeem = executeRedeem;
   window.closeRedeemModal = closeRedeemModal;
   window.onPointsSliderChange = onPointsSliderChange;

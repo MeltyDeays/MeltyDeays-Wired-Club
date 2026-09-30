@@ -7,7 +7,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <link rel="stylesheet" href="./styles.css?v=2.9.0">
+  <link rel="stylesheet" href="./styles.css?v=2.9.1">
   
   <!-- Limpieza inmediata de cachés viejos residuales antes de cargar módulos -->
   <script>
@@ -1645,8 +1645,14 @@
         </div>
 
         <div class="form-group" style="grid-column: span 2; margin-top: 0.4rem; margin-bottom: 0;">
-          <label class="form-label" style="height: 18px; line-height: 18px; margin-bottom: 4px;">📝 DESCRIPCIÓN TÉCNICA (OPCIONAL)</label>
-          <input type="text" id="prod-desc" class="form-input" placeholder="Ej: Sensor PixArt 3395, peso 49g, tri-mode 2.4GHz/BT/Cable" style="height: 38px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+            <label class="form-label" style="height: 18px; line-height: 18px; margin-bottom: 0;">📝 DESCRIPCIÓN TÉCNICA Y ESPECIFICACIONES</label>
+            <span style="font-size: 0.72rem; color: var(--gray-500); font-family: var(--font-mono);">Multilínea · Viñetas automáticas</span>
+          </div>
+          <textarea id="prod-desc" class="form-input" rows="5" placeholder="Escribe la descripción o especificaciones del artículo...&#10;Puedes usar saltos de línea o viñetas (•, - o emojis) para cada característica:&#10;• Joysticks Hall Effect con tecnología magnética anti-drift&#10;• Batería recargable de 800 mAh (hasta 14 hrs continuas)&#10;• Conexión Bluetooth inalámbrica o cable USB-C" style="min-height: 110px; max-height: 240px; line-height: 1.5; resize: vertical; font-family: var(--font-mono); font-size: 0.82rem; padding: 10px; border: 1.5px solid var(--dark); border-radius: 4px;"></textarea>
+          <div style="font-size: 0.73rem; color: var(--gray-600); margin-top: 4px; display: flex; align-items: center; gap: 4px; font-family: var(--font-mono);">
+            <span>💡</span> <span><strong>Formato automático:</strong> Cada línea con viñeta (•) o emoji se mostrará como un punto de especificación expandible en el catálogo.</span>
+          </div>
         </div>
       </div>
 
@@ -2726,6 +2732,6 @@
     })();
   </script>
 
-  <script type="module" src="./js/admin-app.js?v=2.9.0"></script>
+  <script type="module" src="./js/admin-app.js?v=2.9.1"></script>
 </body>
 </html>

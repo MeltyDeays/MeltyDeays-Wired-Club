@@ -937,6 +937,104 @@
   flex: 1;
 }
 
+/* Especificaciones Técnicas y Puntos Expandibles (Client Catalog) */
+.reward-desc-wrap {
+  margin-bottom: 0.65rem;
+  flex: 1;
+}
+
+.reward-desc-intro {
+  font-size: 0.79rem;
+  color: var(--gray-700);
+  line-height: 1.42;
+  margin-bottom: 0.4rem;
+}
+
+.reward-specs-box {
+  margin-top: 0.35rem;
+}
+
+.reward-specs-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 5px 9px;
+  background: #f8fafc;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 5px;
+  font-family: var(--font-mono);
+  font-size: 0.73rem;
+  font-weight: 700;
+  color: #0369a1;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 1px 1px 0px rgba(0, 0, 0, 0.05);
+}
+
+.reward-specs-toggle-btn:hover {
+  background: #f0f9ff;
+  border-color: #0284c7;
+  color: #0284c7;
+}
+
+.reward-specs-toggle-btn.expanded {
+  background: #eff6ff;
+  border-color: #3b82f6;
+  color: #1d4ed8;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.reward-specs-dropdown {
+  background: #ffffff;
+  border: 1.5px solid #3b82f6;
+  border-top: none;
+  border-bottom-left-radius: 5px;
+  border-bottom-right-radius: 5px;
+  padding: 8px 10px;
+  max-height: 220px;
+  overflow-y: auto;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.reward-specs-ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.reward-specs-ul li {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 0.74rem;
+  line-height: 1.35;
+  color: #334155;
+  padding: 2px 0;
+  border-bottom: 1px dashed #f1f5f9;
+}
+
+.reward-specs-ul li:last-child {
+  border-bottom: none;
+}
+
+.spec-bullet {
+  color: #0284c7;
+  font-weight: 900;
+  font-size: 0.75rem;
+  line-height: 1.2;
+  flex-shrink: 0;
+}
+
+.spec-content {
+  flex: 1;
+  word-break: break-word;
+}
+
 .reward-footer, .product-meta {
   display: flex;
   justify-content: space-between;

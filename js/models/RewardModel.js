@@ -1,3 +1,94 @@
+export function parseProductDescription(rawText) {
+  if (!rawText || typeof rawText !== "string") {
+    return { intro: "", specs: [], hasSpecs: false, fullText: "" };
+  }
+
+  const trimmed = rawText.trim();
+  if (!trimmed) {
+    return { intro: "", specs: [], hasSpecs: false, fullText: "" };
+  }
+
+  // 1. Si contiene saltos de línea explícitos
+  if (trimmed.includes("\n")) {
+    const lines = trimmed.split("\n").map(l => l.trim()).filter(Boolean);
+    if (lines.length > 1) {
+      const intro = lines[0];
+      const specs = lines.slice(1).map(l => l.replace(/^[•\-\*▸✓✔]\s*/, ""));
+      return {
+        intro,
+        specs,
+        hasSpecs: specs.length > 0,
+        fullText: trimmed
+      };
+    }
+  }
+
+  // 2. Si es texto continuo con viñetas o emojis de especificación
+  const bulletPattern = /(?:^|\s)(?=[•▸✓✔]|\p{Extended_Pictographic}(?:\uFE0F)?|-(?=\s))/u;
+  const rawParts = trimmed.split(bulletPattern).map(p => p.trim()).filter(Boolean);
+
+  if (rawParts.length > 1) {
+    const parts = [];
+    for (let i = 0; i < rawParts.length; i++) {
+      const part = rawParts[i];
+      if (part.length <= 3 && parts.length > 0) {
+        parts[parts.length - 1] += " " + part;
+      } else {
+        parts.push(part);
+      }
+    }
+
+    if (parts.length > 1) {
+      const firstIsBullet = /^(?:[•▸✓✔-]|\p{Extended_Pictographic})/u.test(parts[0]);
+      let intro = "";
+      let specs = [];
+      if (!firstIsBullet) {
+        intro = parts[0];
+        specs = parts.slice(1);
+      } else {
+        intro = parts[0];
+        specs = parts.slice(1);
+      }
+      return {
+        intro,
+        specs,
+        hasSpecs: specs.length > 0,
+        fullText: trimmed
+      };
+    }
+  }
+
+  // 3. Párrafo largo continuo (>120 caracteres) sin viñetas
+  if (trimmed.length > 120) {
+    const firstPeriodIdx = trimmed.indexOf(". ");
+    if (firstPeriodIdx > 30 && firstPeriodIdx < 160) {
+      const intro = trimmed.slice(0, firstPeriodIdx + 1);
+      const remaining = trimmed.slice(firstPeriodIdx + 2).trim();
+      if (remaining) {
+        return {
+          intro,
+          specs: [remaining],
+          hasSpecs: true,
+          fullText: trimmed
+        };
+      }
+    }
+    return {
+      intro: trimmed.slice(0, 110) + "...",
+      specs: [trimmed],
+      hasSpecs: true,
+      fullText: trimmed
+    };
+  }
+
+  return {
+    intro: trimmed,
+    specs: [],
+    hasSpecs: false,
+    fullText: trimmed
+  };
+}
+
 /* Model: Recompensa / Producto del Catálogo */
 export class RewardModel {
   constructor(data = {}) {
@@ -14,6 +105,10 @@ export class RewardModel {
     this.description = data.description || "";
     this.category = data.category || "Gaming Hardware";
     this.updatedAt = data.updatedAt || data.updated_at || new Date().toISOString();
+  }
+
+  getParsedDescription() {
+    return parseProductDescription(this.description);
   }
 
   isAvailable() {

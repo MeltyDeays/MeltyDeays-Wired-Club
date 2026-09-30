@@ -1,6 +1,8 @@
 /**
  * Vista / Subcontrolador: Catálogo de Recompensas, Calculadora Dinámica de Canje y FX Retro (The Wired Club)
  */
+import { parseProductDescription } from "../../models/RewardModel.js";
+
 let vm = null;
 let showToast = () => {};
 let openAuthModal = () => {};
@@ -11,6 +13,30 @@ let showVoucherModal = (code) => {
 };
 let formatPrice = (usd) => `$${Number(usd || 0).toFixed(2)} USD`;
 let formatDualPrice = (usd) => `$${Number(usd || 0).toFixed(2)} USD`;
+
+export function toggleRewardSpecs(itemId) {
+  const drop = document.getElementById("specs-drop-" + itemId);
+  const btn = document.getElementById("specs-btn-" + itemId);
+  if (!drop || !btn) return;
+
+  const isHidden = drop.style.display === "none" || !drop.style.display;
+  if (isHidden) {
+    drop.style.display = "block";
+    btn.classList.add("expanded");
+    const label = btn.querySelector(".btn-specs-label");
+    const icon = btn.querySelector(".btn-specs-icon");
+    if (label) label.textContent = "✕ Ocultar especificaciones";
+    if (icon) icon.textContent = "▴";
+  } else {
+    drop.style.display = "none";
+    btn.classList.remove("expanded");
+    const count = drop.querySelectorAll("li").length;
+    const label = btn.querySelector(".btn-specs-label");
+    const icon = btn.querySelector(".btn-specs-icon");
+    if (label) label.textContent = `📋 Ver especificaciones (${count})`;
+    if (icon) icon.textContent = "▾";
+  }
+}
 
 export function initCustomerCatalogView(deps) {
   if (deps) {
@@ -196,6 +222,26 @@ export function renderCatalog(catalog, user) {
       )
       : `<div class="reward-cost">${item.pointsCost.toLocaleString()} <span>WP</span></div>`;
 
+    const parsed = parseProductDescription(item.description);
+    const descHtml = parsed.hasSpecs
+      ? `
+        <div class="reward-desc-wrap" id="desc-wrap-${item.id}">
+          <div class="reward-desc-intro">${parsed.intro}</div>
+          <div class="reward-specs-box">
+            <button type="button" class="reward-specs-toggle-btn" onclick="toggleRewardSpecs('${item.id}')" id="specs-btn-${item.id}">
+              <span class="btn-specs-label">📋 Ver especificaciones (${parsed.specs.length})</span>
+              <span class="btn-specs-icon">▾</span>
+            </button>
+            <div class="reward-specs-dropdown" id="specs-drop-${item.id}" style="display:none;">
+              <ul class="reward-specs-ul">
+                ${parsed.specs.map(s => `<li><span class="spec-bullet">▸</span><span class="spec-content">${s}</span></li>`).join("")}
+              </ul>
+            </div>
+          </div>
+        </div>
+      `
+      : `<div class="reward-desc">${parsed.intro || (isPartial ? 'Producto comercial con descuento tope en Wired Points.' : 'Recompensa oficial MeltyDeays.')}</div>`;
+
     return `
       <div class="reward-card">
         <div class="reward-img-wrap" style="${!item.imageUrl ? 'background: linear-gradient(135deg, #0d131f 0%, #17243b 100%); display:flex; align-items:center; justify-content:center;' : ''}">
@@ -208,7 +254,7 @@ export function renderCatalog(catalog, user) {
         </div>
         <div class="reward-body">
           <div class="reward-title">${item.title}</div>
-          <div class="reward-desc">${item.description || (isPartial ? 'Producto comercial con descuento tope en Wired Points.' : 'Recompensa oficial MeltyDeays.')}</div>
+          ${descHtml}
           ${partialBreakdown}
           <div class="reward-footer">
             ${costDisplay}
