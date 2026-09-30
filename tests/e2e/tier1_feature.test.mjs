@@ -448,6 +448,15 @@ export async function runTier1Tests() {
     expect(typeof win.closeProductSpecsModal).toBe('function', 'win.closeProductSpecsModal should be exposed');
     const specsModal = doc.getElementById('modal-product-specs');
     expect(specsModal).toBeTruthy('modal-product-specs should exist in DOM');
+
+    // 5. Test apertura modal de ficha técnica estructurada y cierre
+    win.openProductSpecsModal('PROD-A');
+    expect(specsModal.style.display).toBe('flex', 'Modal should be open with flex display');
+    const specsBody = doc.getElementById('modal-specs-body');
+    expect(specsBody.innerHTML).toContain('modal-product-hero', 'Modal should render product hero');
+    expect(specsBody.innerHTML).toContain('modal-spec-card', 'Modal should render structured spec cards');
+    win.closeProductSpecsModal();
+    expect(specsModal.style.display).toBe('none', 'Modal should be hidden after close');
   });
 
   return ctx.summary();

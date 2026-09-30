@@ -58,35 +58,144 @@ export function toggleRewardSpecs(itemId) {
   }
 }
 
+let lastRenderedCatalog = [];
+
 export function openProductSpecsModal(rewardId) {
-  if (!vm || !vm.catalog) return;
-  const item = vm.catalog.find(r => r.id === rewardId);
+  let item = null;
+  if (vm && vm.catalog) {
+    item = vm.catalog.find(r => r.id === rewardId);
+  }
+  if (!item && lastRenderedCatalog.length > 0) {
+    item = lastRenderedCatalog.find(r => r.id === rewardId);
+  }
+  if (!item && typeof window !== "undefined" && Array.isArray(window._lastRenderedCatalog)) {
+    item = window._lastRenderedCatalog.find(r => r.id === rewardId);
+  }
   if (!item) return;
 
   const modal = document.getElementById("modal-product-specs");
   const body = document.getElementById("modal-specs-body");
+  const footer = document.getElementById("modal-specs-footer");
   if (!modal || !body) return;
 
   const parsed = parseProductDescription(item.description);
+  const isPartial = item.rewardType === "PARTIAL_DISCOUNT" || (typeof item.isPartialDiscount === "function" && item.isPartialDiscount()) || (item.cashToPayUsd && item.cashToPayUsd > 0);
+  const maxPct = item.maxDiscountPercent || 0;
+
+  const emojiRegex = /^(\p{Extended_Pictographic}|[\uD83C-\uDBFF\uDC00-\uDFFF]|[\u2600-\u27BF])\s*/u;
+
+  const formattedSpecsHtml = parsed.specs.map(rawSpec => {
+    let text = rawSpec.trim().replace(/^[•\-\*▸►]\s*/, '').trim();
+    if (!text) return '';
+
+    const emojiMatch = text.match(emojiRegex);
+    let icon = null;
+    if (emojiMatch) {
+      icon = emojiMatch[1];
+      text = text.slice(emojiMatch[0].length).trim();
+    }
+
+    // Detectar si es un encabezado de sección (ej: "LO MÁS DESTACADO:")
+    const isSectionHeader = text.endsWith(':') && text.length < 40;
+    if (isSectionHeader) {
+      return `
+        <div class="modal-spec-section-header">
+          <span class="section-icon">${icon || '⚡'}</span>
+          <span class="section-title">${text.replace(/:$/, '')}</span>
+        </div>
+      `;
+    }
+
+    // Detectar si tiene estructura Clave: Valor
+    const colonIndex = text.indexOf(':');
+    if (colonIndex > 0 && colonIndex < 42) {
+      const key = text.slice(0, colonIndex).trim();
+      const val = text.slice(colonIndex + 1).trim();
+      return `
+        <div class="modal-spec-card">
+          <div class="spec-card-icon-box">${icon || '✦'}</div>
+          <div class="spec-card-content">
+            <div class="spec-card-key">${key}</div>
+            <div class="spec-card-val">${val}</div>
+          </div>
+        </div>
+      `;
+    }
+
+    // Característica simple
+    return `
+      <div class="modal-spec-card">
+        <div class="spec-card-icon-box">${icon || '▸'}</div>
+        <div class="spec-card-content">
+          <div class="spec-card-val bold">${text}</div>
+        </div>
+      </div>
+    `;
+  }).join("");
 
   body.innerHTML = `
-    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 0.85rem; padding-bottom: 0.85rem; border-bottom: 1.5px dashed var(--gray-300);">
-      ${item.imageUrl ? `<img src="${item.imageUrl}" style="width: 58px; height: 58px; object-fit: cover; border-radius: 6px; border: 1.5px solid var(--dark); flex-shrink: 0;">` : ''}
-      <div>
-        <h3 style="font-size: 1.05rem; font-weight: 900; color: var(--dark); margin: 0 0 3px 0; line-height: 1.25;">${item.title}</h3>
-        <div style="font-family: var(--font-mono); font-size: 0.74rem; color: #0284c7; font-weight: 800;">${parsed.specs.length} Especificaciones Técnicas</div>
+    <div class="modal-product-hero">
+      ${item.imageUrl ? `
+        <img src="${item.imageUrl}" alt="${item.title}" class="hero-thumb" onerror="this.onerror=null; this.src=''; this.parentElement.style.background='#0d131f';">
+      ` : `
+        <div class="hero-thumb hero-fallback">
+          <span>${isPartial ? '🏷️' : '🎁'}</span>
+        </div>
+      `}
+      <div class="hero-details">
+        <h3 class="hero-title">${item.title}</h3>
+        <div class="hero-badges-row">
+          <span class="hero-badge count">📋 ${parsed.specs.length} Especificaciones</span>
+          ${isPartial 
+            ? `<span class="hero-badge discount">🏷️ Hasta ${maxPct}% OFF</span>` 
+            : `<span class="hero-badge points">⚡ ${item.pointsCost.toLocaleString()} WP</span>`
+          }
+        </div>
       </div>
     </div>
-    ${parsed.intro ? `<div style="font-size: 0.82rem; color: var(--gray-700); line-height: 1.42; margin-bottom: 0.85rem; background: #f8fafc; padding: 7px 10px; border-radius: 4px; border: 1px solid #e2e8f0;">${parsed.intro}</div>` : ''}
-    <ul class="reward-specs-ul" style="gap: 7px;">
-      ${parsed.specs.map(s => `
-        <li style="padding: 4px 0; font-size: 0.82rem; line-height: 1.4; border-bottom: 1px dashed #e2e8f0;">
-          <span class="spec-bullet" style="font-size: 0.85rem; color: #0284c7;">▸</span>
-          <span class="spec-content" style="color: #1e293b;">${s}</span>
-        </li>
-      `).join("")}
-    </ul>
+
+    ${parsed.intro ? `
+      <div class="modal-intro-callout">
+        <div class="callout-icon">✨</div>
+        <div class="callout-text">${parsed.intro}</div>
+      </div>
+    ` : ''}
+
+    <div class="modal-specs-list-title">
+      <span>CARACTERÍSTICAS & FICHA TÉCNICA</span>
+    </div>
+
+    <div class="modal-specs-cards-container">
+      ${formattedSpecsHtml}
+    </div>
   `;
+
+  if (footer) {
+    const isOut = item.stock <= 0;
+    let actionBtn = "";
+    if (!isOut) {
+      if (isPartial) {
+        actionBtn = `
+          <button type="button" class="btn-primary" style="background: linear-gradient(135deg, #d97706, #b45309); border-color: var(--dark); padding: 0.5rem 1.1rem; font-size: 0.78rem; display: flex; align-items: center; gap: 6px;" onclick="closeProductSpecsModal(); confirmRedeem('${item.id}');">
+            <span>🏷️</span> <span>Canjear en Tienda</span>
+          </button>
+        `;
+      } else {
+        actionBtn = `
+          <button type="button" class="btn-primary" style="padding: 0.5rem 1.1rem; font-size: 0.78rem; display: flex; align-items: center; gap: 6px;" onclick="closeProductSpecsModal(); confirmRedeem('${item.id}');">
+            <span>⚡</span> <span>Canjear Ahora</span>
+          </button>
+        `;
+      }
+    }
+
+    footer.innerHTML = `
+      <button type="button" class="btn-secondary" style="padding: 0.5rem 1.1rem; font-size: 0.78rem;" onclick="closeProductSpecsModal()">
+        ✕ Cerrar
+      </button>
+      ${actionBtn}
+    `;
+  }
 
   modal.style.display = "flex";
 }
@@ -131,6 +240,8 @@ let selectedPointsToApply = 0;
 let currentRedeemReward = null;
 
 export function renderCatalog(catalog, user) {
+  lastRenderedCatalog = Array.isArray(catalog) ? catalog : [];
+  if (typeof window !== "undefined") window._lastRenderedCatalog = lastRenderedCatalog;
   const container = document.getElementById("catalog-container");
   if (!container) return;
 
@@ -292,12 +403,76 @@ export function renderCatalog(catalog, user) {
       }
     }
 
-    const costDisplay = isPartial
-      ? (user && userPts > 0 && userPts < maxCapPts
-        ? `<div class="reward-cost" style="color: #b45309; font-size: 0.86rem;">${appliedPts} <span style="font-size: 0.64rem; color: #d97706; font-weight: 800;">WP (TOPE ${maxCapPts})</span></div>`
-        : `<div class="reward-cost" style="color: #b45309; font-size: 0.86rem;">${item.pointsCost.toLocaleString()} <span style="font-size: 0.64rem; color: #d97706; font-weight: 800;">WP (TOPE)</span></div>`
-      )
-      : `<div class="reward-cost">${item.pointsCost.toLocaleString()} <span>WP</span></div>`;
+    let footerHtml = "";
+    if (isPartial) {
+      if (isOut) {
+        footerHtml = `
+          <div class="reward-footer reward-footer-partial">
+            <button type="button" class="btn-redeem btn-redeem-partial out" disabled>
+              <div class="btn-redeem-content">
+                <span class="btn-redeem-icon">🔒</span>
+                <span class="btn-redeem-text">AGOTADO TEMPORALMENTE</span>
+              </div>
+            </button>
+          </div>
+        `;
+      } else if (!user) {
+        footerHtml = `
+          <div class="reward-footer reward-footer-partial">
+            <button type="button" class="btn-redeem btn-redeem-partial shop-btn active-canje" onclick="confirmRedeem('${item.id}')">
+              <div class="btn-redeem-content">
+                <span class="btn-redeem-icon">🛒</span>
+                <span class="btn-redeem-text">COMPRAR EN TIENDA</span>
+              </div>
+              <div class="btn-redeem-pts-badge">HASTA ${maxPct}% OFF</div>
+            </button>
+          </div>
+        `;
+      } else if (userPts >= maxCapPts) {
+        footerHtml = `
+          <div class="reward-footer reward-footer-partial">
+            <button type="button" class="btn-redeem btn-redeem-partial active-canje" onclick="confirmRedeem('${item.id}')">
+              <div class="btn-redeem-content">
+                <span class="btn-redeem-icon">🏷️</span>
+                <span class="btn-redeem-text">APLICAR DESCUENTO (${maxPct}%)</span>
+              </div>
+              <div class="btn-redeem-pts-badge">${maxCapPts} WP (TOPE)</div>
+            </button>
+          </div>
+        `;
+      } else if (userPts > 0) {
+        footerHtml = `
+          <div class="reward-footer reward-footer-partial">
+            <button type="button" class="btn-redeem btn-redeem-partial active-canje" onclick="confirmRedeem('${item.id}')">
+              <div class="btn-redeem-content">
+                <span class="btn-redeem-icon">🏷️</span>
+                <span class="btn-redeem-text">APLICAR DESCUENTO (${formattedAppliedPct}%)</span>
+              </div>
+              <div class="btn-redeem-pts-badge">${appliedPts} WP</div>
+            </button>
+          </div>
+        `;
+      } else {
+        footerHtml = `
+          <div class="reward-footer reward-footer-partial">
+            <button type="button" class="btn-redeem btn-redeem-partial shop-btn active-canje" onclick="confirmRedeem('${item.id}')">
+              <div class="btn-redeem-content">
+                <span class="btn-redeem-icon">🛒</span>
+                <span class="btn-redeem-text">COMPRAR EN TIENDA</span>
+              </div>
+              <div class="btn-redeem-pts-badge">0 WP (HASTA ${maxPct}% OFF)</div>
+            </button>
+          </div>
+        `;
+      }
+    } else {
+      footerHtml = `
+        <div class="reward-footer">
+          <div class="reward-cost">${item.pointsCost.toLocaleString()} <span>WP</span></div>
+          ${btnHtml}
+        </div>
+      `;
+    }
 
     const parsed = parseProductDescription(item.description);
     const descHtml = parsed.hasSpecs
@@ -348,10 +523,7 @@ export function renderCatalog(catalog, user) {
           <div class="reward-title" title="${item.title}">${item.title}</div>
           ${descHtml}
           ${partialBreakdown}
-          <div class="reward-footer">
-            ${costDisplay}
-            ${btnHtml}
-          </div>
+          ${footerHtml}
         </div>
       </div>
     `;
