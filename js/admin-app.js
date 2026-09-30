@@ -122,6 +122,7 @@ import {
   clearProductImageUpload,
   previewProductImageFromUrl,
   openNewProductModal,
+  openEditProductModal,
   saveProductAdmin,
   removeProductAdmin,
   filterLainSeries,
@@ -340,7 +341,8 @@ function renderCatalogTable(catalog) {
         <td>${costDisplay}</td>
         <td><strong>${p.stock}</strong> un.</td>
         <td style="font-size:0.8rem; color:var(--gray-700);">${p.description || "-"}</td>
-        <td style="text-align: right;">
+        <td style="text-align: right; white-space: nowrap;">
+          <button class="btn-outline-sm" style="color:#0284c7; border-color:#bae6fd; font-size:0.75rem; padding: 3px 8px; border-radius:3px; cursor:pointer; margin-right:4px;" onclick="openEditProductModal('${p.id}')">✏️ Editar</button>
           <button class="btn-outline-sm" style="color:var(--accent); border-color:#fca5a5; font-size:0.75rem; padding: 3px 8px; border-radius:3px; cursor:pointer;" onclick="removeProductAdmin('${p.id}')">Eliminar</button>
         </td>
       </tr>
@@ -481,6 +483,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Catálogo de Premios y Productos
   window.openNewProductModal = openNewProductModal;
+  window.openEditProductModal = openEditProductModal;
   window.saveProductAdmin = saveProductAdmin;
   window.removeProductAdmin = removeProductAdmin;
   window.handleProductImageFile = handleProductImageFile;

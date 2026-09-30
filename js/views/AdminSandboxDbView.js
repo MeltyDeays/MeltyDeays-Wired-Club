@@ -711,6 +711,9 @@ function renderDraftTable() {
                     </span>
                   </td>
                   <td style="text-align: right; white-space: nowrap;">
+                    <button type="button" class="btn-secondary btn-compact" style="margin-right: 6px; font-weight: 800; border-color: #0284c7; color: #0369a1;" onclick="openEditProductModal('${p.id}')">
+                      ✏️ Editar
+                    </button>
                     <button type="button" class="btn-danger btn-compact" style="background: #fef2f2; border: 1.5px solid #ef4444; color: #b91c1c; font-weight: 800; gap: 4px;" onclick="deleteSingleReward('${p.id}', '${(p.title || '').replace(/'/g, "\\'")}')">
                       ✕ Eliminar Producto
                     </button>

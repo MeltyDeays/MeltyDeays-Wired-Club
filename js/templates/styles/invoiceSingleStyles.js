@@ -189,21 +189,26 @@ export function getInvoiceSingleStyles(dims = { name: 'Carta (Letter)', widthMm:
     .single-digital-invoice-page {
       width: 8.5in !important;
       max-width: 8.5in !important;
+      height: 11in !important;
       min-height: 11in !important;
+      max-height: 11in !important;
       margin: 20px auto !important;
       background: #ffffff !important;
       box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45) !important;
       box-sizing: border-box !important;
       position: relative !important;
       padding: 0 !important;
+      display: flex !important;
+      flex-direction: column !important;
     }
 
     .single-page-invoice {
       box-sizing: border-box !important;
       width: 100% !important;
       max-width: 100% !important;
-      min-height: 11in !important;
       height: 100% !important;
+      min-height: 100% !important;
+      max-height: 11in !important;
       margin: 0 !important;
       padding: 0.35in 0.45in 0.30in 0.45in !important;
       overflow: hidden !important;
@@ -217,6 +222,7 @@ export function getInvoiceSingleStyles(dims = { name: 'Carta (Letter)', widthMm:
       background-size: 8px 8px !important;
       position: relative !important;
       box-shadow: none !important;
+      flex: 1 1 auto !important;
     }
 
     /* ENCABEZADO */
@@ -428,10 +434,10 @@ export function getInvoiceSingleStyles(dims = { name: 'Carta (Letter)', widthMm:
       color: #ffffff !important;
     }
 
-    /* TABLA DE ARTICULOS */
     .single-page-invoice .table-box {
       margin: 8px 0 10px 0 !important;
       flex-grow: 1 !important;
+      flex: 1 1 auto !important;
       display: flex !important;
       flex-direction: column !important;
     }
@@ -440,6 +446,7 @@ export function getInvoiceSingleStyles(dims = { name: 'Carta (Letter)', widthMm:
       border-collapse: collapse !important;
       border: 1.5px solid #0f172a !important;
       height: 100% !important;
+      flex: 1 1 auto !important;
       background: #ffffff !important;
       box-shadow: 0 1px 3px rgba(0,0,0,0.08) !important;
       table-layout: fixed !important;
@@ -837,8 +844,9 @@ export function getInvoiceSingleStyles(dims = { name: 'Carta (Letter)', widthMm:
       box-sizing: border-box !important;
       width: 100% !important;
       max-width: 100% !important;
-      min-height: 11in !important;
       height: 100% !important;
+      min-height: 100% !important;
+      max-height: 11in !important;
       margin: 0 !important;
       padding: 0.35in 0.45in 0.30in 0.45in !important;
       display: flex !important;
@@ -853,6 +861,7 @@ export function getInvoiceSingleStyles(dims = { name: 'Carta (Letter)', widthMm:
       page-break-inside: avoid !important;
       break-inside: avoid !important;
       box-shadow: none !important;
+      flex: 1 1 auto !important;
     }
     .single-page-lain-card .lain-header {
       border-bottom: 2px solid #0f172a !important;
@@ -900,8 +909,8 @@ export function getInvoiceSingleStyles(dims = { name: 'Carta (Letter)', widthMm:
       box-shadow: 2px 2px 0px rgba(15, 23, 42, 0.12) !important;
       overflow: hidden !important;
       margin: 5px 0 !important;
-      flex: 1.3 1 auto !important;
-      min-height: 220px !important;
+      flex: 2 1 auto !important;
+      min-height: 280px !important;
       box-sizing: border-box !important;
     }
     .single-page-lain-card .hero-schematic-section .figure-hud-header {
@@ -949,8 +958,8 @@ export function getInvoiceSingleStyles(dims = { name: 'Carta (Letter)', widthMm:
     .single-page-lain-card .hero-svg-container {
       flex: 1 1 auto !important;
       width: 100% !important;
-      height: 240px !important;
-      min-height: 220px !important;
+      height: auto !important;
+      min-height: 260px !important;
       display: flex !important;
       align-items: center !important;
       justify-content: center !important;
@@ -1301,9 +1310,10 @@ export function getInvoiceSingleStyles(dims = { name: 'Carta (Letter)', widthMm:
         box-shadow: none !important;
         margin: 0 !important;
         padding: 0 !important;
-        width: 100% !important;
-        height: 100% !important;
-        min-height: 100% !important;
+        width: 8.5in !important;
+        height: 11in !important;
+        min-height: 11in !important;
+        max-height: 11in !important;
         page-break-inside: avoid !important;
         break-inside: avoid !important;
       }
@@ -1317,8 +1327,10 @@ export function getInvoiceSingleStyles(dims = { name: 'Carta (Letter)', widthMm:
       }
       .single-page-invoice,
       .single-page-lain-card {
+        width: 100% !important;
         min-height: 100% !important;
         height: 100% !important;
+        max-height: 11in !important;
         border: 1.5px solid #0f172a !important;
         page-break-inside: avoid !important;
         break-inside: avoid !important;

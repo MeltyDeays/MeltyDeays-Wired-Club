@@ -71,11 +71,86 @@ export async function printFromModal() {
 export function openNewProductModal() {
   const modal = document.getElementById("modal-new-product");
   if (!modal) return;
+  const editIdEl = document.getElementById("prod-edit-id");
+  if (editIdEl) editIdEl.value = "";
+  const titleEl = document.getElementById("modal-product-title");
+  if (titleEl) titleEl.textContent = "📦 + AGREGAR PRODUCTO AL CATÁLOGO";
+  const btnSubmit = document.getElementById("btn-save-product-submit");
+  if (btnSubmit) btnSubmit.textContent = "⚡ GUARDAR EN CATÁLOGO";
+
+  const titleInput = document.getElementById("prod-title");
+  if (titleInput) titleInput.value = "";
+  const costInput = document.getElementById("prod-cost");
+  if (costInput) costInput.value = "";
+  const stockInput = document.getElementById("prod-stock");
+  if (stockInput) stockInput.value = "1";
+  const imgInput = document.getElementById("prod-img");
+  if (imgInput) imgInput.value = "";
+  const descInput = document.getElementById("prod-desc");
+  if (descInput) descInput.value = "";
+  clearProductImageUpload();
+
   modal.style.display = "flex";
   setProductPublicationMode("FREE_REWARD");
   setTimeout(() => {
-    const input = document.getElementById("prod-title");
-    if (input) input.focus();
+    if (titleInput) titleInput.focus();
+  }, 100);
+}
+
+export function openEditProductModal(productId) {
+  const modal = document.getElementById("modal-new-product");
+  if (!modal) return;
+  const product = (vm.catalog || []).find(p => p.id === productId);
+  if (!product) {
+    showToast("⚠️ No se encontró el producto a editar.", "error");
+    return;
+  }
+
+  const editIdEl = document.getElementById("prod-edit-id");
+  if (editIdEl) editIdEl.value = product.id;
+  const titleEl = document.getElementById("modal-product-title");
+  if (titleEl) titleEl.textContent = "📦 ✏️ EDITAR PRODUCTO DEL CATÁLOGO";
+  const btnSubmit = document.getElementById("btn-save-product-submit");
+  if (btnSubmit) btnSubmit.textContent = "💾 ACTUALIZAR PRODUCTO";
+
+  const isPartial = product.rewardType === "PARTIAL_DISCOUNT" || (typeof product.isPartialDiscount === "function" && product.isPartialDiscount());
+  setProductPublicationMode(isPartial ? "PARTIAL_DISCOUNT" : "FREE_REWARD");
+
+  const titleInput = document.getElementById("prod-title");
+  if (titleInput) titleInput.value = product.title || "";
+  const costInput = document.getElementById("prod-cost");
+  if (costInput) costInput.value = product.pointsCost != null ? product.pointsCost : "";
+  const stockInput = document.getElementById("prod-stock");
+  if (stockInput) stockInput.value = product.stock != null ? product.stock : 1;
+  const descInput = document.getElementById("prod-desc");
+  if (descInput) descInput.value = product.description || "";
+
+  if (isPartial) {
+    const priceInput = document.getElementById("calc-sale-prod-price-usd");
+    if (priceInput) priceInput.value = (product.priceUsd || 0).toFixed(2);
+    const discInput = document.getElementById("calc-sale-prod-discount-pct");
+    if (discInput) discInput.value = product.maxDiscountPct || 5;
+    const prodPriceHidden = document.getElementById("prod-price-usd");
+    if (prodPriceHidden) prodPriceHidden.value = product.priceUsd || 0;
+    const prodMaxPctHidden = document.getElementById("prod-max-discount-pct");
+    if (prodMaxPctHidden) prodMaxPctHidden.value = product.maxDiscountPct || 5;
+    const prodMaxUsdHidden = document.getElementById("prod-max-discount-usd");
+    if (prodMaxUsdHidden) prodMaxUsdHidden.value = product.maxDiscountUsd || 0;
+    const prodCashHidden = document.getElementById("prod-cash-to-pay-usd");
+    if (prodCashHidden) prodCashHidden.value = product.cashToPayUsd || 0;
+  }
+
+  if (product.imageUrl) {
+    previewProductImageFromUrl(product.imageUrl);
+    const imgInput = document.getElementById("prod-img");
+    if (imgInput) imgInput.value = product.imageUrl;
+  } else {
+    clearProductImageUpload();
+  }
+
+  modal.style.display = "flex";
+  setTimeout(() => {
+    if (titleInput) titleInput.focus();
   }, 100);
 }
 
@@ -349,8 +424,10 @@ export async function saveProductAdmin() {
     return;
   }
 
+  const editId = (document.getElementById("prod-edit-id")?.value || "").trim();
+
   try {
-    await vm.addReward({
+    const rewardPayload = {
       title,
       rewardType,
       priceUsd,
@@ -361,8 +438,15 @@ export async function saveProductAdmin() {
       stock,
       imageUrl,
       description
-    });
+    };
+    if (editId) {
+      rewardPayload.id = editId;
+    }
+
+    await vm.addReward(rewardPayload);
     closeModal("modal-new-product");
+    const editInput = document.getElementById("prod-edit-id");
+    if (editInput) editInput.value = "";
     document.getElementById("prod-title").value = "";
     document.getElementById("prod-cost").value = "";
     document.getElementById("prod-stock").value = "1";
@@ -376,7 +460,7 @@ export async function saveProductAdmin() {
     const pill = document.getElementById("prod-commercial-summary-pill");
     if (pill) pill.style.display = "none";
     clearProductImageUpload();
-    showToast("✓ Producto registrado con éxito en el catálogo.", "success");
+    showToast(editId ? "✓ Producto actualizado con éxito en el catálogo." : "✓ Producto registrado con éxito en el catálogo.", "success");
   } catch (err) {
     showToast("❌ " + err.message, "error");
   }
