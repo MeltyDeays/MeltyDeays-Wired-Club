@@ -244,7 +244,17 @@ export class Physical4x1Builder {
     const item = configs[idx];
     const isHaibane = (item.series && item.series.startsWith('SERIE 3')) || (idx >= 44);
     item.layer = item.layer || ('LAYER: ' + String(idx + 1).padStart(2, '0'));
-    const tokenCode = tok ? (tok.tokenCode || tok.token_code || tok.code || item.sn) : item.sn;
+    const rawCode = tok ? (tok.tokenCode || tok.token_code || tok.code || "") : "";
+    const isValidToken = Boolean(
+      rawCode &&
+      typeof rawCode === "string" &&
+      /^WP-2026-F/i.test(rawCode.trim()) &&
+      !rawCode.includes("BLANK") &&
+      !rawCode.includes("DIGITAL") &&
+      rawCode !== "undefined" &&
+      rawCode !== "null"
+    );
+    const tokenCode = isValidToken ? rawCode.trim() : "";
     const pin = tok ? (tok.securityPin || tok.security_pin || "••••") : "••••";
     const folioStr = tok ? ("F" + (tok.invoiceFolio || tok.invoice_folio || tok.folio || "0000")) : "0000";
 
@@ -307,9 +317,9 @@ export class Physical4x1Builder {
       '          <div class="reward-qr-frame">',
       '            <span class="qr-reticle-tl">⌜</span><span class="qr-reticle-tr">⌝</span>',
       '            <span class="qr-reticle-bl">⌞</span><span class="qr-reticle-br">⌟</span>',
-      '            <div class="qr-canvas-box" id="print-qr-' + slotId + '"></div>',
+      '            <div class="qr-canvas-box" id="print-qr-' + slotId + '">' + (isValidToken ? '' : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#f1f5f9;border-radius:3px;font-size:9px;color:#94a3b8;font-weight:800;text-align:center;">SIN QR</div>') + '</div>',
       '          </div>',
-      '          <div class="reward-pin-tag">PIN: <strong>' + pin + '</strong></div>',
+      '          <div class="reward-pin-tag">' + (isValidToken ? ('PIN: <strong>' + pin + '</strong>') : 'PIN: <strong>----</strong>') + '</div>',
       '          <div class="reward-sub">ESCANEA CON TU SMARTPHONE PARA ACREDITAR TUS PUNTOS</div>',
       '        </div>',
       '      </div>',
@@ -333,9 +343,9 @@ export class Physical4x1Builder {
       '      <div class="lain-footer">',
       '        <div class="barcode-wrapper">',
       '          <div class="vector-barcode">',
-      '            ' + Physical4x1Builder.getFullWidthBarcodeSvg(tokenCode),
+      '            ' + Physical4x1Builder.getFullWidthBarcodeSvg(tokenCode || "SIN TOKEN"),
       '          </div>',
-      '          <div class="serial-code">CÓDIGO: ' + tokenCode + '</div>',
+      '          <div class="serial-code">CÓDIGO: ' + (tokenCode || "SIN ASIGNAR") + '</div>',
       '        </div>',
       '        <div class="lain-seal-stamp">',
       '          <span class="stamp-org">TACHIBANA LABS</span>',
@@ -349,12 +359,7 @@ export class Physical4x1Builder {
 
   static generatePrintDocument(tokens, paperDims, mode = "both", autoPrint = true) {
     const dims = paperDims || { name: 'Carta (Letter)', widthMm: 215.9, heightMm: 279.4, cssSize: 'letter portrait' };
-    const allTokens = (tokens && tokens.length > 0) ? tokens : [
-      { tokenCode: "WP-2026-F0104-A98B", invoiceFolio: "0104", pointsValue: 0, securityPin: "4891" },
-      { tokenCode: "WP-2026-F0105-C34D", invoiceFolio: "0105", pointsValue: 0, securityPin: "7124" },
-      { tokenCode: "WP-2026-F0106-E56F", invoiceFolio: "0106", pointsValue: 0, securityPin: "8390" },
-      { tokenCode: "WP-2026-F0107-G78H", invoiceFolio: "0107", pointsValue: 0, securityPin: "1923" }
-    ];
+    const allTokens = (Array.isArray(tokens) && tokens.length > 0) ? [...tokens] : [];
 
     const totalSheets = Math.ceil(allTokens.length / 4);
     let pagesHtml = '';
@@ -363,7 +368,13 @@ export class Physical4x1Builder {
     for (let s = 0; s < totalSheets; s++) {
       const batch = allTokens.slice(s * 4, s * 4 + 4);
       while (batch.length < 4) {
-        batch.push({ tokenCode: "WP-BLANK-" + s + "-" + batch.length, invoiceFolio: String(Number(batch[batch.length - 1]?.invoiceFolio || "0000") + 1).padStart(4, "0"), pointsValue: 0, securityPin: "----" });
+        batch.push({
+          tokenCode: "",
+          invoiceFolio: "",
+          pointsValue: 0,
+          securityPin: "----",
+          isBlank: true
+        });
       }
 
       const sheetNum = s + 1;
@@ -486,15 +497,39 @@ export class Physical4x1Builder {
       function renderAllQrs() {
         tokens.forEach((tok, idx) => {
           const el = document.getElementById("print-qr-" + idx);
+          if (!el) return;
+
           const code = tok ? (tok.tokenCode || tok.token_code || tok.code || "") : "";
-          if (el && typeof QRCode !== "undefined" && code && code !== "undefined") {
+          const folio = tok ? (tok.invoiceFolio || tok.invoice_folio || tok.folio || "") : "";
+          const pin = tok ? (tok.securityPin || tok.security_pin || "") : "";
+
+          const isValidToken = Boolean(
+            code &&
+            typeof code === "string" &&
+            /^WP-2026-F/i.test(code.trim()) &&
+            !code.includes("BLANK") &&
+            !code.includes("DIGITAL") &&
+            code !== "undefined" &&
+            code !== "null"
+          );
+
+          if (!isValidToken) {
+            el.innerHTML = '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#f1f5f9;border-radius:3px;font-size:9px;color:#94a3b8;font-weight:800;text-align:center;padding:4px;">SIN QR</div>';
+            return;
+          }
+
+          if (typeof QRCode !== "undefined") {
             el.innerHTML = "";
+            let claimUrl = "https://meltydeays-wired-club.vercel.app/?claim=" + encodeURIComponent(code.trim());
+            if (folio) claimUrl += "&folio=" + encodeURIComponent(folio);
+            if (pin && pin !== "----") claimUrl += "&pin=" + encodeURIComponent(pin);
+
             new QRCode(el, {
-              text: "https://meltydeays-wired-club.vercel.app/?claim=" + encodeURIComponent(code),
-              width: 78, height: 78,
+              text: claimUrl,
+              width: 140, height: 140,
               colorDark: "#0f172a",
               colorLight: "#ffffff",
-              correctLevel: QRCode.CorrectLevel.M
+              correctLevel: QRCode.CorrectLevel.H
             });
           }
         });

@@ -130,7 +130,8 @@ export async function runTier1Tests() {
       'openSingleDigitalInvoiceModal', 'submitSingleDigitalInvoice',
       'openSalePointsCalculatorModal', 'openNewUserModal', 'saveNewUserAdmin',
       'openNewProductModal', 'saveProductAdmin', 'openPrintSheetModal',
-      'generateBatchAdmin', 'verifyVoucherAdmin', 'closeModal'
+      'generateBatchAdmin', 'verifyVoucherAdmin', 'closeModal',
+      'openReleaseInvoiceModal', 'executeConfirmReleaseInvoice'
     ];
 
     const missingAdminHandlers = [];

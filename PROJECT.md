@@ -1,56 +1,53 @@
-# Project: Sales & Loyalty Platform Refactoring Remediation & Audit
+# Project: MeltyDeays Invoice QR Synchronization, Optical WhatsApp QR & High-Contrast Typography
 
 ## Architecture
-- Client Application (`index.html`): MVVM pattern with CustomerViewModel (`js/viewmodels/CustomerViewModel.js`), modular views (`js/views/customer/*.js`), templates (`js/templates/customer-templates.js`), services (`js/services/FirestoreService.js`, `CurrencyService.js`). Entry script is `js/app.js` (`type="module"`).
-- Admin NOC Terminal (`admin.html`): MVVM pattern with AdminViewModel (`js/viewmodels/AdminViewModel.js`), admin views (`js/views/Admin*.js`), services (`InvoiceTemplateService.js`, `FirestoreService.js`). Entry script is `js/admin-app.js` (`type="module"`).
-- Styles (`css/`): Modular CSS broken into base, modals, panels, and layouts.
+- Client Application (`index.html`): MVVM pattern with CustomerViewModel (`js/viewmodels/CustomerViewModel.js`), customer views (`js/views/customer/`), templates, and services (`FirestoreService.js`).
+- Admin NOC Terminal (`admin.html`): MVVM pattern with AdminViewModel (`js/viewmodels/AdminViewModel.js`), admin views (`js/views/Admin*.js`), invoice template services (`InvoiceTemplateService.js`).
+- Document Builders (`js/templates/builders/`):
+  - `Physical4x1Builder.js`: 4x1 physical invoice batch print builder. Enforces QR code rendering, barcode vector SVG, and printable layout.
+  - `SingleDigitalInvoiceBuilder.js`: Single-page digital invoice and collectible card builder.
+- Stylesheets (`js/templates/styles/`):
+  - `invoice4x1Styles.js`: CSS layout and typography for physical 4x1 invoices.
+  - `invoiceSingleStyles.js`: CSS layout and typography for single-page digital invoices.
+- Test Infrastructure (`tests/`):
+  - `tests/e2e/runner.mjs`: E2E suite runner executing Tiers 1-4 tests (25 tests).
+  - `tests/adversarial_customer_portal_gen2.mjs`: Adversarial stress tests (20 tests).
 
 ## Feature Inventory
 | # | Feature / Bug | Description | Milestone | Source | Status |
 |---|---------------|-------------|-----------|--------|:------:|
-| 1 | Admin ESM Blocker | Fix `saveProductAdmin` export mismatch in `AdminInvoiceBatchView.js:262` and `./views/index.js` | M_CORE | Survey 1, 3 | DONE |
-| 2 | Admin Subview Dependencies | Import `setProductPublicationMode`, `recalculateProductDiscount`, declare `activeProductMode` in `AdminInvoiceBatchView.js` | M_CORE | Survey 3 | DONE |
-| 3 | Query String Imports | Remove query string from `InvoiceTemplateService.js?v=2.7.5` import in `admin-app.js` | M_CORE | Survey 1 | DONE |
-| 4 | Currency Reactivity | Add `setPreferredCurrency` alias/method in `CustomerViewModel.js` pointing to `setCurrency` | M_CORE | Survey 2 | DONE |
-| 5 | Customer Auth Normalization | Import `FirestoreService` in `CustomerAuthView.js` for phone normalization | M_CORE | Survey 1, 2 | DONE |
-| 6 | Customer Claim Render Cleanup | Remove 6 residual undeclared `render(vm)` calls in `CustomerClaimView.js` and use `vm.notify()` | M_CORE | Survey 1, 2 | DONE |
-| 7 | Customer Claim Dynamic Import | Fix broken relative import path `./services/FirestoreService.js` to `../../services/FirestoreService.js` in `CustomerClaimView.js:217` | M_CORE | Survey 1, 2 | DONE |
-| 8 | Customer Voucher Render Cleanup | Remove residual undeclared `render(vm)` call in `CustomerVouchersView.js:551` | M_CORE | Survey 1, 2 | DONE |
-| 9 | Customer Catalog Voucher Modal | Inject/pass `showVoucherModal` to `CustomerCatalogView.js` dependencies | M_CORE | Survey 1, 2 | DONE |
-| 10 | Admin Invoice Modal Close | Inject/import `closeModal` in `AdminInvoiceModalView.js:389` | M_CORE | Survey 1, 3 | DONE |
-| 11 | Admin PIN Unlock Verification | Verify `submitAdminPin` with PIN `110805`, transition from `#admin-auth-lock` to `#admin-main-panel` | M_CORE | Survey 3 | DONE |
-| 12 | Admin Tab Navigation | Verify `switchAdminTab` across Mostrador, Socios, Facturas, Catálogo, Historial | M_CORE | Survey 3 | DONE |
-| 13 | Admin Modal Operations | Verify Socios registration, Digital Invoice 1-Page, Calc WP navbar utilities | M_CORE | Survey 3 | DONE |
-| 14 | Modal CSS Syntax Fix | Balance missing closing braces in `css/modals/base.css` (`.lain-toggle-group` and `@keyframes modalHoloSweep`) | M_CORE | Survey 3 | DONE |
-| 15 | Cross-Portal Style & View Audit | Verify all 515 CSS classes and 43+ inline customer handlers and 127 admin handlers | M_CORE | Survey 2, 3 | DONE |
-| 16 | E2E Testing Suite (Tiers 1-4) | Comprehensive test suite covering syntax, modules, customer flows, and admin flows | E2E Track | Survey 1, 2, 3 | DONE |
-| 17 | Final E2E Pass & Hardening | 100% pass of Tiers 1-4 tests, followed by Tier 5 adversarial coverage hardening | M_FINAL | Survey 1, 2, 3 | DONE |
+| 1 | Eliminación de Tokens Ficticios en Physical4x1Builder | Eliminar fallbacks a tokens estáticos F0104-F0107 y tokens de relleno `WP-BLANK-*`. Validar tokens activos persistidos. | M_INVOICE_QR | Survey 1, 3 | PLANNED |
+| 2 | Eliminación de Tokens Ficticios en SingleDigitalInvoiceBuilder | Eliminar fabricación de tokens sintéticos `-DIGITAL`. Requerir token canónico `WP-2026-F...` activo en BD. | M_INVOICE_QR | Survey 1, 3 | PLANNED |
+| 3 | URL Canónica de Contingencia y CorrectLevel.H | Garantizar que todo QR generado codifique obligatoriamente `https://meltydeays-wired-club.vercel.app/?claim=${code}&folio=${folio}&pin=${pin}` con `QRCode.CorrectLevel.H`. Bloquear emisión de QRs con `claim=undefined`, `null` o sin token. | M_INVOICE_QR | Survey 1, 3 | PLANNED |
+| 4 | Sincronización en Utilitarios Admin (CopyLink, TestUrl, WhatsApp) | Actualizar enlaces de contingencia en `AdminInvoiceBatchView.js` y `AdminInvoiceModalView.js` para incluir siempre `&folio=` y `&pin=`. | M_INVOICE_QR | Survey 1 | PLANNED |
+| 5 | Ampliación Óptica de QR de WhatsApp en Factura Física | Incrementar `.qr-frame` en `invoice4x1Styles.js` de 30px a 52px con padding 3.5px, borde 1.5px sólido, fondo blanco puro `#FFFFFF` y quiet zone. | M_INVOICE_QR | Survey 2, 3 | PLANNED |
+| 6 | Optimización Óptica de QR en Factura Digital | Ajustar `.single-page-invoice .qr-frame` en `invoiceSingleStyles.js` a 54px con padding 3.5px, borde 1.5px, fondo blanco y renderizado pixelado/crisp-edges. | M_INVOICE_QR | Survey 2 | PLANNED |
+| 7 | Rediseño de Alto Contraste de .serial-code en Factura Física | Actualizar `.serial-code` en `invoice4x1Styles.js` a `font-size: 8.5px`, `font-weight: 800`, `color: #000000`, `letter-spacing: 0.5px`, fondo `#FFFFFF`, con gap 2.5px y sin truncamiento ni colapso de sello. | M_INVOICE_QR | Survey 2, 3 | PLANNED |
+| 8 | Rediseño de Alto Contraste de .serial-code en Factura Digital | Actualizar `.compact-barcode .serial-code` en `invoiceSingleStyles.js` a `font-size: 8.5px`, `font-weight: 800`, `color: #000000`, `max-width: 340px`, fondo `#FFFFFF`. | M_INVOICE_QR | Survey 2, 3 | PLANNED |
+| 9 | Fortalecimiento de Pruebas E2E y Adversariales | Fortalecer aserciones en `tests/adversarial_customer_portal_gen2.mjs` (ADV-5.2, ADV-6.4, ADV-6.6) y `tests/e2e/tier4_realworld.test.mjs` para verificar R1, R2 y R3 manteniendo 25/25 y 20/20 pruebas aprobadas. | M_INVOICE_QR | Survey 3 | PLANNED |
 
 ## Milestones
 | # | Name | Scope | Dependencies | Status | Output |
 |---|------|-------|-------------|:------:|--------|
-| M_CORE | Comprehensive Code & Style Remediation | All R1, R2, R3, R4 fixes in JS modules, views, viewmodels, and CSS | none | DONE | 10 files remediated, verified by Reviewers & Challengers |
-| E2E | E2E Testing Track | Design opaque-box test runner & Tiers 1-4 test cases -> TEST_READY.md | none | DONE | `TEST_INFRA.md`, `TEST_READY.md`, 20/20 tests passing |
-| M_FINAL | Final E2E Pass & Adversarial Hardening | Phase 1: 100% pass of E2E suite (Tiers 1-4). Phase 2: Tier 5 adversarial tests | M_CORE, E2E | DONE | Adversarial suites (Customer: 13/13, Admin: 19/19), Auditor: CLEAN |
+| M_INVOICE_QR | Invoice QR Synchronization, Optical WhatsApp QR & High-Contrast Typography | All Features 1-9 across builders, styles, admin views, and test suites | none | IN_PROGRESS | Remediated files, 25/25 E2E pass, 20/20 Adversarial pass, Reviewers/Challengers APPROVE, Auditor CLEAN |
 
 ## Interface Contracts
-### Admin Views ↔ admin-app.js
-- `AdminInvoiceBatchView.js` MUST export `saveProductAdmin` (function) and `saveNewProduct` (alias).
-- `AdminCatalogCalculatorView.js` exports `setProductPublicationMode`, `recalculateProductDiscount`, `activeProductMode`.
+### Builders ↔ QR Code Rendering
+- `Physical4x1Builder`: URL template MUST be `https://meltydeays-wired-club.vercel.app/?claim=${code}&folio=${folio}&pin=${pin}`.
+- `SingleDigitalInvoiceBuilder`: URL template MUST be `https://meltydeays-wired-club.vercel.app/?claim=${code}&folio=${folio}&pin=${pin}`.
+- `QRCode.CorrectLevel`: MUST strictly use `QRCode.CorrectLevel.H`.
+- Emitting any QR with `claim=undefined`, `claim=null`, or synthetic unpersisted token is strictly rejected.
 
-### Customer Views ↔ CustomerViewModel.js
-- `CustomerViewModel.js` provides `setPreferredCurrency(curr)` as an alias for `setCurrency(curr)`.
-- `CustomerAuthView.js` imports `FirestoreService` from `../../services/FirestoreService.js`.
-- `CustomerClaimView.js` imports `FirestoreService` from `../../services/FirestoreService.js`.
-- `CustomerCatalogView.js` receives `showVoucherModal` in `initCustomerCatalogView(deps)`.
+### CSS ↔ DOM Layout
+- `.qr-frame`: width and height MUST be >= 48px, background `#ffffff`, defined solid border.
+- `.serial-code`: font-size MUST be >= 8px, font-family `'JetBrains Mono', monospace`, font-weight >= 800, color `#000000`, background `#ffffff`.
 
 ## Code Layout
-- `js/app.js`: Customer portal entrypoint
-- `js/admin-app.js`: Admin terminal entrypoint
-- `js/viewmodels/`: MVVM ViewModels (`CustomerViewModel.js`, `AdminViewModel.js`)
-- `js/views/customer/`: Customer modular views (`CustomerAuthView.js`, `CustomerCatalogView.js`, `CustomerClaimView.js`, `CustomerVouchersView.js`, `index.js`)
-- `js/views/`: Admin modular views (`AdminInvoiceBatchView.js`, `AdminInvoiceModalView.js`, `AdminVouchersView.js`, `AdminCatalogCalculatorView.js`, `index.js`)
-- `js/services/`: Shared services (`FirestoreService.js`, `CurrencyService.js`, `InvoiceTemplateService.js`)
-- `js/templates/`: UI HTML templates
-- `css/`: Stylesheets (`modals/base.css`, etc.)
-- `tests/e2e/`: Automated E2E test suite
+- `js/templates/builders/Physical4x1Builder.js`: Owned by Worker M_INVOICE_QR
+- `js/templates/builders/SingleDigitalInvoiceBuilder.js`: Owned by Worker M_INVOICE_QR
+- `js/templates/styles/invoice4x1Styles.js`: Owned by Worker M_INVOICE_QR
+- `js/templates/styles/invoiceSingleStyles.js`: Owned by Worker M_INVOICE_QR
+- `js/views/AdminInvoiceBatchView.js`: Owned by Worker M_INVOICE_QR
+- `js/views/AdminInvoiceModalView.js`: Owned by Worker M_INVOICE_QR
+- `tests/adversarial_customer_portal_gen2.mjs`: Owned by Worker M_INVOICE_QR
+- `tests/e2e/tier4_realworld.test.mjs`: Owned by Worker M_INVOICE_QR

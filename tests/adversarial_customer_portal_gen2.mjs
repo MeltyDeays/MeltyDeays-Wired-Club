@@ -654,6 +654,143 @@ export async function runAdversarialCustomerPortalTests() {
     expect(digitalHtml.includes("claim=WP-2026-F0005-DIGI5")).toBeTruthy("Digital invoice must include correct token_code URL");
   });
 
+  // ========================================================
+  // CATEGORY 6: INVOICE FOLIO RESOLUTION & CLAIM RESILIENCE (#4)
+  // ========================================================
+
+  await ctx.test("ADV-6.1: FirestoreService.getTokenByFolio resolves folio #4 across all format variations", async () => {
+    const { FirestoreService } = await import("../js/services/FirestoreService.js");
+    
+    // Configurar token para folio 0004
+    await FirestoreService.saveToken({
+      token_code: "WP-2026-F0004-A0CB",
+      invoice_folio: "0004",
+      points_value: 120,
+      security_pin: "9545",
+      status: "ACTIVE"
+    });
+
+    const variations = ["4", "0004", "F0004", "#MD-2026-0004", "MD-2026-0004", "MD-0004", "#0004"];
+    for (const v of variations) {
+      const tok = await FirestoreService.getTokenByFolio(v);
+      expect(tok).toBeTruthy(`getTokenByFolio must find token for variation: ${v}`);
+      expect(tok.token_code).toBe("WP-2026-F0004-A0CB");
+      expect(tok.invoice_folio).toBe("0004");
+    }
+
+    // Direct getToken fallback to folio
+    const directTok = await FirestoreService.getToken("0004");
+    expect(directTok).toBeTruthy("getToken with folio should resolve token");
+    expect(directTok.token_code).toBe("WP-2026-F0004-A0CB");
+  });
+
+  await ctx.test("ADV-6.2: CustomerViewModel.claimToken successfully claims invoice #4 via folio string and PIN", async () => {
+    const { CustomerViewModel } = await import("../js/viewmodels/CustomerViewModel.js");
+    const { FirestoreService } = await import("../js/services/FirestoreService.js");
+
+    const vm = new CustomerViewModel();
+    await vm.init();
+
+    // Crear y autenticar usuario
+    const user = await FirestoreService.saveUser({
+      uid: "user-folio4-test",
+      displayName: "Bryan Bermudez",
+      phone: "58438412",
+      wiredPoints: 50
+    });
+    vm.currentUser = new (await import("../js/models/UserModel.js")).UserModel(user);
+
+    // Actualizar token 0004 con 150 puntos
+    await FirestoreService.saveToken({
+      token_code: "WP-2026-F0004-A0CB",
+      invoice_folio: "0004",
+      points_value: 150,
+      security_pin: "9545",
+      status: "ACTIVE"
+    });
+
+    // Reclamar pasando "4" en vez del token completo
+    const res = await vm.claimToken("4", "9545", false);
+    expect(res.success).toBeTruthy();
+    expect(res.pointsAdded).toBe(150);
+    expect(res.newBalance).toBe(200);
+
+    // Verificar en BD que quedó marcado como CLAIMED
+    const updated = await FirestoreService.getToken("WP-2026-F0004-A0CB");
+    expect(updated.status).toBe("CLAIMED");
+  });
+
+  await ctx.test("ADV-6.3: handleClientQrScanned resolves folio formats and WhatsApp links seamlessly", async () => {
+    const { doc, win } = setupTestEnvironment('index.html');
+    const { handleClientQrScanned } = await import("../js/views/customer/CustomerClaimView.js");
+    const { FirestoreService } = await import("../js/services/FirestoreService.js");
+    const { vm } = await import("../js/app.js");
+
+    // Token activo en BD para folio 0004
+    await FirestoreService.saveToken({
+      token_code: "WP-2026-F0004-SCANTEST",
+      invoice_folio: "0004",
+      points_value: 80,
+      security_pin: "9545",
+      status: "ACTIVE"
+    });
+
+    // Escanear código con formato #MD-2026-0004
+    await handleClientQrScanned("#MD-2026-0004");
+    if (vm) {
+      expect(vm.pendingClaimToken).toBe("WP-2026-F0004-SCANTEST");
+    }
+
+    // Escanear enlace WhatsApp
+    await handleClientQrScanned("https://wa.me/50558438412");
+    expect(true).toBeTruthy("Escaneo de WhatsApp manejado sin excepción");
+  });
+
+  await ctx.test("ADV-6.4: SingleDigitalInvoiceBuilder includes print-qr-digital-front on invoice front page", async () => {
+    const { InvoiceTemplateService } = await import("../js/services/InvoiceTemplateService.js");
+
+    const inv = {
+      folio: "0004",
+      token_code: "WP-2026-F0004-A0CB",
+      pointsValue: 200,
+      clientName: "Bryan Bermudez",
+      clientPhone: "58438412"
+    };
+
+    const docHtml = InvoiceTemplateService.generateSingleDigitalInvoiceDocument(inv, null, false);
+    expect(docHtml.includes('id="print-qr-digital-front"')).toBeTruthy("Front page must contain print-qr-digital-front");
+    expect(docHtml.includes('id="print-qr-digital-back"')).toBeTruthy("Back page must contain print-qr-digital-back");
+    expect(docHtml.includes('qr-badge-wired')).toBeTruthy("Front page must display qr-badge-wired tag");
+  });
+
+  await ctx.test("ADV-6.5: handleClientQrScanned recovers from physical tickets with claim=undefined gracefully", async () => {
+    const { doc } = setupTestEnvironment('index.html');
+    const { handleClientQrScanned } = await import("../js/views/customer/CustomerClaimView.js");
+    
+    // Simular escaneo de ticket físico impreso previo con ?claim=undefined
+    await handleClientQrScanned("https://meltydeays-wired-club.vercel.app/?claim=undefined");
+    const modal = doc.getElementById("modal-manual-claim");
+    expect(modal).toBeTruthy("modal-manual-claim must exist");
+    expect(modal.style.display).toBe("flex", "Manual claim modal must open automatically when physical claim=undefined QR is scanned");
+  });
+
+  await ctx.test("ADV-6.6: Physical4x1Builder generates high-res QRs (140x140, CorrectLevel.H) with complete URL parameters", async () => {
+    const { InvoiceTemplateService } = await import("../js/services/InvoiceTemplateService.js");
+
+    const tokens = [
+      { tokenCode: "WP-2026-F0005-TESTPHYS", invoiceFolio: "0005", securityPin: "6608", pointsValue: 100 },
+      { tokenCode: "WP-2026-F0006-TESTPHYS", invoiceFolio: "0006", securityPin: "1234", pointsValue: 50 },
+      { tokenCode: "WP-2026-F0007-TESTPHYS", invoiceFolio: "0007", securityPin: "5678", pointsValue: 75 },
+      { tokenCode: "WP-2026-F0008-TESTPHYS", invoiceFolio: "0008", securityPin: "9999", pointsValue: 200 }
+    ];
+
+    const html = InvoiceTemplateService.generatePrintDocument(tokens, null, "both", false);
+    expect(html.includes("width: 140, height: 140")).toBeTruthy("Physical QRs must be rendered with 140x140 for crisp print quality");
+    expect(html.includes("QRCode.CorrectLevel.H")).toBeTruthy("Physical QRs must use high error correction (CorrectLevel.H)");
+    expect(html.includes("folio=")).toBeTruthy("Physical QR claim URL must include folio query parameter");
+    expect(html.includes("pin=")).toBeTruthy("Physical QR claim URL must include pin query parameter");
+  });
+
   return ctx.summary();
 }
 

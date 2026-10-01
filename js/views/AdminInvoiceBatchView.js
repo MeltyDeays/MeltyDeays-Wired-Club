@@ -538,16 +538,11 @@ export function updatePreviewSheetDimensions() {
   if (label) label.textContent = dims.name + ": " + dims.widthMm + " mm × " + dims.heightMm + " mm";
 
   const mode = currentPreviewMode || document.getElementById("print-duplex-mode")?.value || "both";
-  const tokensToRender = (currentSheetTokens && currentSheetTokens.length >= 4)
+  const tokensToRender = (currentSheetTokens && currentSheetTokens.length > 0)
     ? currentSheetTokens.slice(0, 4)
-    : (vm && vm.tokens && vm.tokens.length >= 4
+    : (vm && vm.tokens && vm.tokens.length > 0
         ? vm.tokens.slice(0, 4)
-        : [
-            { tokenCode: "WP-2026-F0104-A98B", invoiceFolio: "0104", pointsValue: 0, securityPin: "4891" },
-            { tokenCode: "WP-2026-F0105-C34D", invoiceFolio: "0105", pointsValue: 0, securityPin: "7124" },
-            { tokenCode: "WP-2026-F0106-E56F", invoiceFolio: "0106", pointsValue: 0, securityPin: "8390" },
-            { tokenCode: "WP-2026-F0107-G78H", invoiceFolio: "0107", pointsValue: 0, securityPin: "1923" }
-          ]);
+        : []);
 
   const iframe = document.getElementById("sheet-preview-iframe");
   if (iframe) {
@@ -559,9 +554,9 @@ export function updatePreviewSheetDimensions() {
 export function downloadPrintSheetHtml() {
   const dims = getSelectedPaperDimensions("preview");
   const mode = currentPreviewMode || document.getElementById("print-duplex-mode")?.value || "both";
-  const tokensToRender = (currentSheetTokens && currentSheetTokens.length >= 4)
+  const tokensToRender = (currentSheetTokens && currentSheetTokens.length > 0)
     ? currentSheetTokens.slice(0, 4)
-    : (vm && vm.tokens && vm.tokens.length >= 4 ? vm.tokens.slice(0, 4) : []);
+    : (vm && vm.tokens && vm.tokens.length > 0 ? vm.tokens.slice(0, 4) : []);
 
   const docHtml = InvoiceTemplateService.generatePrintDocument(tokensToRender, dims, mode, false);
   const blob = new Blob([docHtml], { type: "text/html;charset=utf-8" });
@@ -628,7 +623,9 @@ export function viewSingleTokenQr(tokenCode, invoiceFolio, pointsValue, security
     return;
   }
 
-  currentSingleTokenUrl = "https://meltydeays-wired-club.vercel.app/?claim=" + encodeURIComponent(cleanCode);
+  currentSingleTokenUrl = "https://meltydeays-wired-club.vercel.app/?claim=" + encodeURIComponent(cleanCode) +
+    (invoiceFolio ? "&folio=" + encodeURIComponent(invoiceFolio) : "") +
+    (securityPin ? "&pin=" + encodeURIComponent(securityPin) : "");
 
   document.getElementById("single-qr-folio").textContent = "Factura #MD-2026-" + invoiceFolio;
   document.getElementById("single-qr-points").textContent = pointsValue > 0 ? pointsValue + " WP" : "Sin Asignar (0 WP)";
@@ -743,7 +740,11 @@ export function executeTokenOptCopyLink() {
   if (selectedTokenForActions) {
     const code = selectedTokenForActions.tokenCode || selectedTokenForActions.token_code;
     if (!code) { showToast("Código no disponible", "error"); return; }
-    const url = "https://meltydeays-wired-club.vercel.app/?claim=" + encodeURIComponent(code);
+    const folio = selectedTokenForActions.invoiceFolio || selectedTokenForActions.invoice_folio || selectedTokenForActions.folio || "";
+    const pin = selectedTokenForActions.securityPin || selectedTokenForActions.security_pin || "";
+    let url = "https://meltydeays-wired-club.vercel.app/?claim=" + encodeURIComponent(code);
+    if (folio) url += "&folio=" + encodeURIComponent(folio);
+    if (pin && pin !== "----") url += "&pin=" + encodeURIComponent(pin);
     if (navigator.clipboard) {
       navigator.clipboard.writeText(url).then(() => {
         showToast("✓ Enlace de auto-reclamo copiado al portapapeles", "success");
@@ -756,7 +757,11 @@ export function executeTokenOptTestUrl() {
   if (selectedTokenForActions) {
     const code = selectedTokenForActions.tokenCode || selectedTokenForActions.token_code;
     if (!code) { showToast("Código no disponible", "error"); return; }
-    const url = "https://meltydeays-wired-club.vercel.app/?claim=" + encodeURIComponent(code);
+    const folio = selectedTokenForActions.invoiceFolio || selectedTokenForActions.invoice_folio || selectedTokenForActions.folio || "";
+    const pin = selectedTokenForActions.securityPin || selectedTokenForActions.security_pin || "";
+    let url = "https://meltydeays-wired-club.vercel.app/?claim=" + encodeURIComponent(code);
+    if (folio) url += "&folio=" + encodeURIComponent(folio);
+    if (pin && pin !== "----") url += "&pin=" + encodeURIComponent(pin);
     window.open(url, "_blank");
   }
 }
@@ -799,33 +804,112 @@ export function executeTokenOptEditInvoice() {
   }
 }
 
-export async function executeTokenOptDelete() {
+export function executeTokenOptDelete() {
   if (!selectedTokenForActions) return;
   const token = selectedTokenForActions;
   closeModal("modal-token-actions");
+  openReleaseInvoiceModal(token.tokenCode || token.token_code, token.invoiceFolio || token.invoice_folio || token.folio);
+}
 
-  if (!confirm(`🗑️ ¿Eliminar definitivamente la factura #MD-2026-${token.invoiceFolio} (${token.tokenCode})?\n\nEl folio #${token.invoiceFolio} quedará libre para volverse a generar de inmediato.`)) {
+export function openReleaseInvoiceModal(tokenCode, folio) {
+  if (!tokenCode && !folio) return;
+
+  const tokens = (vm && vm.tokens) ? vm.tokens : [];
+  let token = tokens.find(t => (t.tokenCode === tokenCode || t.token_code === tokenCode));
+  if (!token && folio) {
+    const rawFolio = String(folio).replace(/^#?(MD-\d{4}-)?0*/i, "");
+    token = tokens.find(t => {
+      const tf = String(t.invoiceFolio || t.invoice_folio || t.folio || "").replace(/^#?(MD-\d{4}-)?0*/i, "");
+      return tf === rawFolio;
+    });
+  }
+
+  const resolvedCode = tokenCode || (token ? (token.tokenCode || token.token_code) : "");
+  const resolvedFolio = folio || (token ? (token.invoiceFolio || token.invoice_folio || token.folio) : "");
+  const paddedFolio = String(resolvedFolio || "0000").padStart(4, "0");
+  const pts = token ? Number(token.pointsValue !== undefined ? token.pointsValue : (token.points_value || 0)) : 0;
+  const isClaimed = Boolean(token && (token.isClaimed || token.is_claimed || token.claimedBy));
+
+  const modal = document.getElementById("modal-release-invoice");
+  if (modal) {
+    const folioBadge = document.getElementById("release-invoice-folio-badge");
+    const codeBadge = document.getElementById("release-invoice-code-badge");
+    const pointsBadge = document.getElementById("release-invoice-points-badge");
+    const statusBadge = document.getElementById("release-invoice-status-badge");
+    const targetCode = document.getElementById("release-invoice-target-code");
+    const targetFolio = document.getElementById("release-invoice-target-folio");
+    const confirmBtn = document.getElementById("btn-confirm-release-invoice");
+
+    if (folioBadge) folioBadge.textContent = `#MD-2026-${paddedFolio}`;
+    if (codeBadge) codeBadge.textContent = resolvedCode || `WP-2026-F${paddedFolio}...`;
+    if (pointsBadge) {
+      pointsBadge.innerHTML = pts > 0
+        ? `<strong style="color:#059669;">⚡ ${pts} WP</strong>`
+        : `<span style="color:#64748b;">0 WP (Sin puntos asignados)</span>`;
+    }
+    if (statusBadge) {
+      statusBadge.innerHTML = isClaimed
+        ? `<span class="badge-status-claimed" style="background:#fee2e2; color:#b91c1c; border:1px solid #f87171; padding:2px 8px; border-radius:4px; font-weight:800; font-size:0.72rem;">✓ RECLAMADA</span>`
+        : `<span class="badge-status-unclaimed" style="background:#ecfdf5; color:#047857; border:1px solid #6ee7b7; padding:2px 8px; border-radius:4px; font-weight:800; font-size:0.72rem;">● SIN RECLAMAR</span>`;
+    }
+    if (targetCode) targetCode.value = resolvedCode;
+    if (targetFolio) targetFolio.value = paddedFolio;
+    if (confirmBtn) {
+      confirmBtn.innerHTML = `<span>🗑️</span> <span>SÍ, LIBERAR FOLIO #${paddedFolio}</span>`;
+    }
+
+    modal.style.display = "flex";
     return;
   }
 
-  showToast(`Eliminando factura #${token.invoiceFolio}...`, "info");
+  // Fallback para entornos sin modal en el DOM (headless o pruebas)
+  const statusLabel = isClaimed ? "RECLAMADA" : "SIN RECLAMAR";
+  const ptsLabel = pts > 0 ? `${pts} WP` : "0 WP";
+  const fallbackMsg =
+    `🗑️ ¿DESEAS LIBERAR EL FOLIO #${paddedFolio}?\n\n` +
+    `• Factura: #MD-2026-${paddedFolio}\n` +
+    `• Código Token: ${resolvedCode}\n` +
+    `• Puntos: ${ptsLabel} (${statusLabel})\n\n` +
+    `Esta acción eliminará el registro de la base de datos y dejará el folio #${paddedFolio} libre de inmediato para que puedas volver a generar o imprimir una factura nueva con este mismo número.\n\n` +
+    `¿Confirmar liberación del folio #${paddedFolio}?`;
+
+  const safeConfirm = (typeof window !== "undefined" && typeof window.confirm === "function") ? window.confirm : (typeof confirm === "function" ? confirm : () => true);
+  if (safeConfirm(fallbackMsg)) {
+    executeConfirmReleaseInvoice(resolvedCode, paddedFolio);
+  }
+}
+
+export async function executeConfirmReleaseInvoice(directCode, directFolio) {
+  const codeEl = document.getElementById("release-invoice-target-code");
+  const folioEl = document.getElementById("release-invoice-target-folio");
+
+  const tokenCode = directCode || (codeEl ? codeEl.value : "");
+  const folio = directFolio || (folioEl ? folioEl.value : "");
+
+  closeModal("modal-release-invoice");
+  if (!tokenCode && !folio) return;
+
+  showToast(`Liberando folio #${folio}...`, "info");
   try {
-    await vm.deleteToken(token.tokenCode);
-    const nextFolio = vm.getNextAvailableFolio();
-    const folioEl = document.getElementById("lot-start-folio");
-    if (folioEl) {
-      delete folioEl.dataset.userEdited;
-      folioEl.value = nextFolio;
+    if (vm && typeof vm.deleteToken === "function") {
+      await vm.deleteToken(tokenCode);
+      const nextFolio = vm.getNextAvailableFolio();
+      const lotFolioInput = document.getElementById("lot-start-folio");
+      if (lotFolioInput) {
+        delete lotFolioInput.dataset.userEdited;
+        lotFolioInput.value = nextFolio;
+      }
+      const helper = document.getElementById("lot-folio-helper");
+      if (helper) {
+        helper.innerHTML = `Siguiente folio libre detectado: <strong>#${String(nextFolio).padStart(4, "0")}</strong> (folio liberado disponible)`;
+      }
+      if (typeof renderTokensTable === "function") renderTokensTable(vm.tokens);
+      if (typeof renderAdmin === "function") renderAdmin(vm);
+      if (typeof window.renderSandboxDbView === "function") window.renderSandboxDbView();
+      showToast(`✓ Factura #MD-2026-${folio} eliminada. Folio #${folio} liberado exitosamente.`, "success");
     }
-    const helper = document.getElementById("lot-folio-helper");
-    if (helper) {
-      helper.innerHTML = `Siguiente folio libre detectado: <strong>#${String(nextFolio).padStart(4, "0")}</strong> (folio liberado disponible)`;
-    }
-    renderTokensTable(vm.tokens);
-    if (typeof renderAdmin === "function") renderAdmin(vm);
-    showToast(`✓ Factura #MD-2026-${token.invoiceFolio} eliminada. Folio liberado.`, "success");
   } catch (err) {
-    showToast("❌ Error al eliminar factura: " + err.message, "error");
+    showToast("❌ Error al liberar folio: " + err.message, "error");
   }
 }
 

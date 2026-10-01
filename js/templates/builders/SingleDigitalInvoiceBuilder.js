@@ -55,12 +55,26 @@ export class SingleDigitalInvoiceBuilder {
     const totalUsd = currency === "NIO" ? (totalNum / rateNio).toFixed(2) : totalNum.toFixed(2);
 
     const rawCode = data.tokenCode || data.token_code || (data.token && (data.token.tokenCode || data.token.token_code)) || "";
-    const hasPoints = Boolean(rawCode && (data.pointsValue > 0 || data.pointsValue === 0));
+    const isValidToken = Boolean(
+      rawCode &&
+      typeof rawCode === "string" &&
+      /^WP-2026-F/i.test(rawCode.trim()) &&
+      !rawCode.includes("DIGITAL") &&
+      !rawCode.includes("BLANK") &&
+      rawCode !== "undefined" &&
+      rawCode !== "null"
+    );
+    const tokenCode = isValidToken ? rawCode.trim() : "";
     const pointsVal = Number(data.pointsValue || 0);
-    const tokenCode = rawCode || ("WP-2026-F" + formattedFolio + "-DIGITAL");
+    const hasPoints = Boolean(isValidToken && (pointsVal > 0 || pointsVal === 0));
     const securityPin = data.securityPin || data.security_pin || (data.token && (data.token.securityPin || data.token.security_pin)) || "----";
     const warrantyText = data.warrantyText || "30 DÍAS CALENDARIO (DEFECTOS DE FÁBRICA)";
-    const claimUrl = "https://meltydeays-wired-club.vercel.app/?claim=" + encodeURIComponent(tokenCode);
+    let claimUrl = "";
+    if (isValidToken) {
+      claimUrl = "https://meltydeays-wired-club.vercel.app/?claim=" + encodeURIComponent(tokenCode);
+      if (formattedFolio) claimUrl += "&folio=" + encodeURIComponent(formattedFolio);
+      if (securityPin && securityPin !== "----") claimUrl += "&pin=" + encodeURIComponent(securityPin);
+    }
 
     // Filas de artículos (mínimo 8 filas para estructura oficial idéntica al talonario)
     let rowsHtml = "";
@@ -249,12 +263,14 @@ export class SingleDigitalInvoiceBuilder {
         <div class="contact-qr-group">
           <div class="qr-col">
             <div class="qr-frame">
-              <img src="${QR_CATALOG_BASE64}" 
-                alt="QR WhatsApp" 
-                class="qr-img" 
-                onerror="this.onerror=null;this.src='${QR_CATALOG_BASE64}';">
+              <div class="qr-canvas-box" id="print-qr-digital-front" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;">
+                <img src="${QR_CATALOG_BASE64}" 
+                  alt="QR MeltyDeays" 
+                  class="qr-img" 
+                  onerror="this.onerror=null;this.src='${QR_CATALOG_BASE64}';">
+              </div>
             </div>
-            <span class="qr-badge-wa">📱 WHATSAPP</span>
+            <span class="qr-badge-wired" id="qr-badge-front-tag">⚡ PUNTOS WIRED</span>
           </div>
           <div class="contact-meta">
             <div class="contact-row">
@@ -302,11 +318,21 @@ export class SingleDigitalInvoiceBuilder {
     const formattedFolio = String(data.folio || "0001").padStart(4, "0");
     const pointsVal = Number(data.pointsValue || 0);
     const rawCode = data.tokenCode || data.token_code || (data.token && (data.token.tokenCode || data.token.token_code)) || "";
+    const isValidToken = Boolean(
+      rawCode &&
+      typeof rawCode === "string" &&
+      /^WP-2026-F/i.test(rawCode.trim()) &&
+      !rawCode.includes("DIGITAL") &&
+      !rawCode.includes("BLANK") &&
+      rawCode !== "undefined" &&
+      rawCode !== "null"
+    );
     const tok = {
-      tokenCode: rawCode || ("WP-2026-F" + formattedFolio + "-DIGITAL"),
-      securityPin: data.securityPin || data.security_pin || (data.token && (data.token.securityPin || data.token.security_pin)) || "4891",
+      tokenCode: isValidToken ? rawCode.trim() : "",
+      securityPin: data.securityPin || data.security_pin || (data.token && (data.token.securityPin || data.token.security_pin)) || "----",
       invoiceFolio: formattedFolio,
-      pointsValue: pointsVal
+      pointsValue: pointsVal,
+      isValidToken
     };
     const configs = getDigitalExclusiveDesigns();
     const folioNum = parseInt(data.folio, 10);
@@ -416,10 +442,14 @@ export class SingleDigitalInvoiceBuilder {
 
         <!-- PIN Y TOKEN DE SEGURIDAD -->
         <div class="reward-pin-tag centered-pin-tag">
-          TOKEN: <strong>${tok.tokenCode}</strong> · PIN DE SEGURIDAD: <strong>${tok.securityPin}</strong>
+          ${tok.isValidToken
+            ? `TOKEN: <strong>${tok.tokenCode}</strong> · PIN DE SEGURIDAD: <strong>${tok.securityPin}</strong>`
+            : `TOKEN: <strong>SIN REGISTRO EN BD</strong> · PIN DE SEGURIDAD: <strong>----</strong>`}
         </div>
         <div class="reward-sub centered-reward-sub">
-          Escanea el código para acreditar tus puntos en <strong>meltydeays-wired-club.vercel.app</strong>
+          ${tok.isValidToken
+            ? `Escanea el código para acreditar tus puntos en <strong>meltydeays-wired-club.vercel.app</strong>`
+            : `Factura sin token de fidelización activo en base de datos.`}
         </div>
       </div>
 
@@ -455,10 +485,10 @@ export class SingleDigitalInvoiceBuilder {
       <div class="lain-footer compact-footer">
         <div class="barcode-wrapper compact-barcode">
           <div class="vector-barcode">
-            ${Physical4x1Builder.getFullWidthBarcodeSvg(tok.tokenCode)}
+            ${Physical4x1Builder.getFullWidthBarcodeSvg(tok.tokenCode || "SIN TOKEN")}
           </div>
           <div class="barcode-info-row">
-            <span class="serial-code">SERIAL: ${tok.tokenCode}</span>
+            <span class="serial-code">SERIAL: ${tok.tokenCode || "SIN TOKEN"}</span>
           </div>
         </div>
         <div class="lain-seal-stamp">
@@ -476,9 +506,23 @@ export class SingleDigitalInvoiceBuilder {
     const inv = invoiceData || {};
     const formattedFolio = String(inv.folio || "0001").padStart(4, "0");
     const rawTokenCode = inv.tokenCode || inv.token_code || (inv.token && (inv.token.tokenCode || inv.token.token_code)) || "";
-    const claimUrl = (rawTokenCode && rawTokenCode !== "undefined" && rawTokenCode !== "null")
-      ? ("https://meltydeays-wired-club.vercel.app/?claim=" + encodeURIComponent(rawTokenCode))
-      : ("https://meltydeays-wired-club.vercel.app/?claim=WP-2026-F" + formattedFolio + "-DIGITAL");
+    const rawPin = inv.securityPin || inv.security_pin || (inv.token && (inv.token.securityPin || inv.token.security_pin)) || "";
+    const isValidToken = Boolean(
+      rawTokenCode &&
+      typeof rawTokenCode === "string" &&
+      /^WP-2026-F/i.test(rawTokenCode.trim()) &&
+      !rawTokenCode.includes("DIGITAL") &&
+      !rawTokenCode.includes("BLANK") &&
+      rawTokenCode !== "undefined" &&
+      rawTokenCode !== "null"
+    );
+    const cleanTokenCode = isValidToken ? rawTokenCode.trim() : "";
+    let claimUrl = "";
+    if (isValidToken) {
+      claimUrl = "https://meltydeays-wired-club.vercel.app/?claim=" + encodeURIComponent(cleanTokenCode);
+      if (formattedFolio) claimUrl += "&folio=" + encodeURIComponent(formattedFolio);
+      if (rawPin && rawPin !== "----") claimUrl += "&pin=" + encodeURIComponent(rawPin);
+    }
     const configs = getDigitalExclusiveDesigns();
     const folioNum = parseInt(inv.folio, 10);
     let chosenIdx = 0;
@@ -602,7 +646,7 @@ export class SingleDigitalInvoiceBuilder {
         "\u00a1Hola " + clientName + "! \ud83d\udc4b Gracias por tu compra en MeltyDeays STORE." + nl + nl +
         "\ud83e\uddfe Factura Oficial: #MD-2026-" + folio + nl +
         "\ud83d\udcb0 Total: " + totalFormatted + nl +
-        (claimUrl.includes("WP-") ? ("\u26a1 Puntos Wired Club para reclamar: " + claimUrl + nl) : "") +
+        ((claimUrl && claimUrl.includes("claim=WP-2026-F")) ? ("\u26a1 Puntos Wired Club para reclamar: " + claimUrl + nl) : "") +
         "\ud83d\udee1\ufe0f Garant\u00eda oficial MeltyDeays por defectos de f\u00e1brica." + nl + nl +
         "\u00a1Agradecemos tu confianza!"
       );
@@ -620,32 +664,63 @@ export class SingleDigitalInvoiceBuilder {
 
     function renderBackQr() {
       const qrBackEl = document.getElementById("print-qr-digital-back");
-      if (!qrBackEl) return;
-      if (!claimUrl || !claimUrl.includes("claim=") || claimUrl.endsWith("claim=") || claimUrl.toLowerCase().includes("claim=" + "undefined") || claimUrl.toLowerCase().includes("claim=" + "null")) {
-        qrBackEl.innerHTML = '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#f1f5f9;border-radius:3px;font-size:9px;color:#94a3b8;font-weight:800;">SIN QR</div>';
+      const qrFrontEl = document.getElementById("print-qr-digital-front");
+      const isValidClaim = Boolean(
+        claimUrl &&
+        claimUrl.includes("claim=WP-2026-F") &&
+        !claimUrl.includes("DIGITAL") &&
+        !claimUrl.includes("BLANK") &&
+        !claimUrl.toLowerCase().includes("claim=" + "undefined") &&
+        !claimUrl.toLowerCase().includes("claim=" + "null")
+      );
+
+      if (!isValidClaim) {
+        if (qrBackEl) {
+          qrBackEl.innerHTML = '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#f1f5f9;border-radius:3px;font-size:9px;color:#94a3b8;font-weight:800;text-align:center;padding:4px;">SIN QR<br><span style="font-size:7px;font-weight:600;">(TOKEN NO REGISTRADO)</span></div>';
+        }
+        if (qrFrontEl) {
+          qrFrontEl.innerHTML = '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#f1f5f9;border-radius:3px;font-size:8px;color:#94a3b8;font-weight:800;text-align:center;">SIN REGISTRO EN BD</div>';
+        }
         return;
       }
-      qrBackEl.innerHTML = "";
+
       if (typeof QRCode !== "undefined") {
         try {
-          new QRCode(qrBackEl, {
-            text: claimUrl,
-            width: 120,
-            height: 120,
-            colorDark: "#0f172a",
-            colorLight: "#ffffff",
-            correctLevel: QRCode.CorrectLevel.M
-          });
+          if (qrFrontEl) {
+            qrFrontEl.innerHTML = "";
+            new QRCode(qrFrontEl, {
+              text: claimUrl,
+              width: 52,
+              height: 52,
+              colorDark: "#0f172a",
+              colorLight: "#ffffff",
+              correctLevel: QRCode.CorrectLevel.H
+            });
+          }
+          if (qrBackEl) {
+            qrBackEl.innerHTML = "";
+            new QRCode(qrBackEl, {
+              text: claimUrl,
+              width: 120,
+              height: 120,
+              colorDark: "#0f172a",
+              colorLight: "#ffffff",
+              correctLevel: QRCode.CorrectLevel.H
+            });
+          }
           const ensureClean = () => {
-            const imgs = qrBackEl.querySelectorAll("img");
-            const canvas = qrBackEl.querySelector("canvas");
-            if (canvas && canvas.width > 0) {
-              imgs.forEach(i => i.remove());
-              canvas.style.cssText = "width:100%!important;height:100%!important;display:block!important;object-fit:contain;";
-            } else if (imgs.length > 0 && imgs[0].src && imgs[0].src.length > 10) {
-              for (let i = 1; i < imgs.length; i++) imgs[i].remove();
-              imgs[0].style.cssText = "width:100%!important;height:100%!important;display:block!important;object-fit:contain;";
-            }
+            [qrFrontEl, qrBackEl].forEach(el => {
+              if (!el) return;
+              const imgs = el.querySelectorAll("img");
+              const canvas = el.querySelector("canvas");
+              if (canvas && canvas.width > 0) {
+                imgs.forEach(i => i.remove());
+                canvas.style.cssText = "width:100%!important;height:100%!important;display:block!important;object-fit:contain;";
+              } else if (imgs.length > 0 && imgs[0].src && imgs[0].src.length > 10) {
+                for (let i = 1; i < imgs.length; i++) imgs[i].remove();
+                imgs[0].style.cssText = "width:100%!important;height:100%!important;display:block!important;object-fit:contain;";
+              }
+            });
           };
           ensureClean();
           setTimeout(ensureClean, 30);
@@ -653,12 +728,18 @@ export class SingleDigitalInvoiceBuilder {
           return;
         } catch(e) {}
       }
-      const fallbackImg = document.createElement("img");
-      fallbackImg.src = "https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=" + encodeURIComponent(claimUrl) + "&color=0f172a&bgcolor=ffffff";
-      fallbackImg.alt = "QR Wired Points";
-      fallbackImg.style.cssText = "width:100%;height:100%;display:block;object-fit:contain;";
-      fallbackImg.onerror = function() { this.onerror = null; this.src = qrCatalogBase64; };
-      qrBackEl.appendChild(fallbackImg);
+
+      const targets = [ { el: qrFrontEl, size: "100x100" }, { el: qrBackEl, size: "160x160" } ];
+      targets.forEach(target => {
+        if (!target.el) return;
+        target.el.innerHTML = "";
+        const fallbackImg = document.createElement("img");
+        fallbackImg.src = "https://api.qrserver.com/v1/create-qr-code/?size=" + target.size + "&data=" + encodeURIComponent(claimUrl) + "&color=0f172a&bgcolor=ffffff";
+        fallbackImg.alt = "QR Wired Points";
+        fallbackImg.style.cssText = "width:100%;height:100%;display:block;object-fit:contain;";
+        fallbackImg.onerror = function() { this.onerror = null; this.src = qrCatalogBase64; };
+        target.el.appendChild(fallbackImg);
+      });
     }
 
     function switchLainDesign(idx) {

@@ -187,11 +187,11 @@ export function getInvoice4x1Styles(dims = { name: 'Carta (Letter)', widthMm: 21
     .contact-qr-group { display: flex; align-items: center; gap: 6px; }
     .qr-col { display: flex; flex-direction: column; align-items: center; gap: 2px; flex-shrink: 0; }
     .qr-frame {
-      width: 30px; height: 30px; padding: 1px; background: #ffffff;
-      border: 1.2px solid var(--dark); border-radius: 3px;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.1); display: flex; align-items: center; justify-content: center;
+      width: 52px; height: 52px; padding: 3.5px; background: #ffffff;
+      border: 1.5px solid var(--dark); border-radius: 3px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.1); display: flex; align-items: center; justify-content: center; box-sizing: border-box; flex-shrink: 0;
     }
-    .qr-img { width: 100%; height: 100%; object-fit: contain; image-rendering: pixelated; }
+    .qr-img { width: 100%; height: 100%; object-fit: contain; image-rendering: -webkit-optimize-contrast; image-rendering: crisp-edges; image-rendering: pixelated; }
     .qr-badge-wa {
       background: linear-gradient(135deg, #16a34a, #059669); color: #ffffff;
       font-size: 5.2px; font-weight: 800; padding: 1px 3.5px; border-radius: 2px;
@@ -745,7 +745,7 @@ export function getInvoice4x1Styles(dims = { name: 'Carta (Letter)', widthMm: 21
       border-top: 1px dashed #cbd5e1; padding-top: 2.5px;
       gap: 4px;
     }
-    .barcode-wrapper { display: flex; flex-direction: column; gap: 1px; flex: 1 1 auto; min-width: 0; max-width: 72%; }
+    .barcode-wrapper { display: flex; flex-direction: column; gap: 2.5px; flex: 1 1 auto; min-width: 0; max-width: 74%; }
     .vector-barcode {
       display: flex; align-items: stretch; height: 13px; background: #fff;
       padding: 1px 2px; border: 1px solid #cbd5e1; border-radius: 2px;
@@ -753,11 +753,17 @@ export function getInvoice4x1Styles(dims = { name: 'Carta (Letter)', widthMm: 21
     .b-line { background: #0f172a; display: inline-block; }
     .b-w1 { width: 1px; } .b-w2 { width: 2px; } .b-w3 { width: 3px; } .b-w4 { width: 4.5px; }
     .b-gap { width: 1.5px; display: inline-block; } .b-g2 { width: 3px; }
-    .serial-code { font-family: 'JetBrains Mono', monospace; font-size: 5.5px; font-weight: 800; color: #475569; letter-spacing: 0.4px; overflow-wrap: anywhere; word-break: break-all; white-space: normal; max-width: 100%; line-height: 1.15; hyphens: auto; }
+    .serial-code {
+      font-family: 'JetBrains Mono', monospace; font-size: 8.5px; font-weight: 800;
+      color: #000000; letter-spacing: 0.5px; background: #ffffff;
+      padding: 1.5px 4.5px; border: 1px solid #cbd5e1; border-radius: 2px;
+      overflow-wrap: anywhere; word-break: break-all; white-space: normal;
+      max-width: 100%; line-height: 1.2; box-sizing: border-box; display: inline-block;
+    }
     .lain-seal-stamp {
       border: 1px dashed #4f46e5; border-radius: 3px; padding: 1px 4.5px;
       display: flex; flex-direction: column; align-items: center;
-      background: #eef2ff; line-height: 1; gap: 1px;
+      background: #eef2ff; line-height: 1; gap: 1px; flex-shrink: 0;
     }
     .stamp-org { font-family: 'JetBrains Mono', monospace; font-size: 4.5px; font-weight: 900; color: #312e81; letter-spacing: 0.3px; }
     .stamp-auth { font-size: 4.5px; font-weight: 800; color: #4f46e5; }
@@ -815,6 +821,10 @@ export function getInvoice4x1Styles(dims = { name: 'Carta (Letter)', widthMm: 21
         white-space: normal !important;
         word-break: break-all !important;
         overflow-wrap: anywhere !important;
+        color: #000000 !important;
+        background: #ffffff !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
       }
       .lain-footer {
         overflow: visible !important;

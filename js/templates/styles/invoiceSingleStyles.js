@@ -706,18 +706,18 @@ export function getInvoiceSingleStyles(dims = { name: 'Carta (Letter)', widthMm:
       gap: 2.5px !important;
     }
     .single-page-invoice .qr-frame {
-      width: 52px !important;
-      height: 52px !important;
-      border: 1.2px solid #0f172a !important;
+      width: 54px !important;
+      height: 54px !important;
+      border: 1.5px solid #0f172a !important;
       border-radius: 3px !important;
-      padding: 2px !important;
+      padding: 3.5px !important;
       background: #ffffff !important;
-      box-shadow: 1px 1px 0px rgba(0,0,0,0.08) !important;
+      box-shadow: 1px 1px 0px rgba(0,0,0,0.08) !important; box-sizing: border-box !important; display: flex !important; align-items: center !important; justify-content: center !important; flex-shrink: 0 !important;
     }
     .single-page-invoice .qr-img {
       width: 100% !important;
       height: 100% !important;
-      display: block !important;
+      display: block !important; object-fit: contain !important; image-rendering: -webkit-optimize-contrast !important; image-rendering: crisp-edges !important; image-rendering: pixelated !important;
     }
     .single-page-invoice .qr-badge-wa {
       font-family: 'JetBrains Mono', monospace !important;
@@ -1247,12 +1247,12 @@ export function getInvoiceSingleStyles(dims = { name: 'Carta (Letter)', widthMm:
       margin-top: auto !important;
     }
     .single-page-lain-card .compact-barcode {
-      width: 28% !important;
-      max-width: 200px !important;
+      width: auto !important; min-width: 220px !important;
+      max-width: 340px !important;
       display: flex !important;
       flex-direction: column !important;
       align-items: flex-start !important;
-      gap: 1.5px !important;
+      gap: 2.5px !important;
     }
     .single-page-lain-card .compact-barcode .vector-barcode {
       width: 100% !important;
@@ -1277,10 +1277,10 @@ export function getInvoiceSingleStyles(dims = { name: 'Carta (Letter)', widthMm:
     }
     .single-page-lain-card .compact-barcode .serial-code {
       font-family: 'JetBrains Mono', monospace !important;
-      font-size: 6.8px !important;
+      font-size: 8.5px !important;
       font-weight: 800 !important;
-      color: #334155 !important;
-      letter-spacing: 0.3px !important;
+      color: #000000 !important;
+      letter-spacing: 0.5px !important; background: #ffffff !important; padding: 1.5px 5px !important; border: 1px solid #cbd5e1 !important; border-radius: 2px !important; display: inline-block !important; box-sizing: border-box !important; overflow-wrap: anywhere !important; word-break: break-all !important; white-space: normal !important; line-height: 1.2 !important;
     }
     .single-page-lain-card .barcode-security-tag {
       font-family: 'JetBrains Mono', monospace !important;
@@ -1290,7 +1290,7 @@ export function getInvoiceSingleStyles(dims = { name: 'Carta (Letter)', widthMm:
       letter-spacing: 0.3px !important;
     }
     .single-page-lain-card .lain-seal-stamp {
-      padding: 3px 8px !important;
+      padding: 3px 8px !important; flex-shrink: 0 !important;
     }
     .single-page-lain-card .stamp-org { font-size: 6.5px !important; }
     .single-page-lain-card .stamp-auth { font-size: 6.5px !important; }

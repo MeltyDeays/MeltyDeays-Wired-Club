@@ -140,6 +140,8 @@ import {
   confirmLainPreviewSelection,
   // 6. Consola Sandbox DB & Borrado Selectivo
   executeTokenOptDelete,
+  openReleaseInvoiceModal,
+  executeConfirmReleaseInvoice,
   renderSandboxDbView,
   setSandboxDraftTab,
   filterSandboxDrafts,
@@ -762,6 +764,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Consola Sandbox DB & Borrado Selectivo
   window.executeTokenOptDelete = executeTokenOptDelete;
+  window.openReleaseInvoiceModal = openReleaseInvoiceModal;
+  window.executeConfirmReleaseInvoice = executeConfirmReleaseInvoice;
   window.renderSandboxDbView = renderSandboxDbView;
   window.setSandboxDraftTab = setSandboxDraftTab;
   window.filterSandboxDrafts = filterSandboxDrafts;

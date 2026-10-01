@@ -291,16 +291,90 @@ export class FirestoreService {
 
   // Tokens de Factura
   static async getToken(tokenCode) {
+    if (!tokenCode) return null;
+    const clean = String(tokenCode).trim();
     if (db) {
       try {
-        const doc = await db.collection(getCollectionName("qr_tokens")).doc(tokenCode).get();
+        const doc = await db.collection(getCollectionName("qr_tokens")).doc(clean).get();
         if (doc.exists) return doc.data();
       } catch (e) {
         console.warn("Firestore getToken fallback:", e.message);
       }
     }
     const snap = engine.getSnapshot();
-    return snap.tokens[tokenCode] || null;
+    if (snap.tokens && snap.tokens[clean]) return snap.tokens[clean];
+
+    // Fallback: Si no coincide por doc ID directo, buscar por folio
+    return await this.getTokenByFolio(clean);
+  }
+
+  static async getTokenByFolio(folio) {
+    if (!folio) return null;
+    const raw = String(folio).trim();
+    let cleanDigits = raw;
+    if (cleanDigits.includes("-")) {
+      const parts = cleanDigits.split("-");
+      cleanDigits = parts[parts.length - 1];
+    }
+    cleanDigits = cleanDigits.replace(/[^0-9]/g, "").trim();
+    const padded = cleanDigits ? cleanDigits.padStart(4, "0") : "";
+    const unpadded = cleanDigits ? String(parseInt(cleanDigits, 10)) : "";
+
+    const snap = engine.getSnapshot();
+    const localTokens = Object.values(snap.tokens || {});
+    const matchLocal = localTokens.find(t => {
+      const f = String(t.invoice_folio || t.invoiceFolio || "").trim();
+      const code = String(t.token_code || t.tokenCode || "").trim().toUpperCase();
+      return (padded && f === padded) ||
+             (cleanDigits && f === cleanDigits) ||
+             (unpadded && f === unpadded) ||
+             (padded && code.includes("-F" + padded + "-")) ||
+             (cleanDigits && code.includes("-F" + cleanDigits + "-"));
+    });
+    if (matchLocal) return matchLocal;
+
+    if (db) {
+      try {
+        const col = db.collection(getCollectionName("qr_tokens"));
+        // 1. Búsqueda por invoice_folio o invoiceFolio exacto (con y sin padding)
+        const candidates = [padded, cleanDigits, unpadded].filter(Boolean);
+        for (const val of candidates) {
+          const q1 = await col.where("invoice_folio", "==", val).limit(1).get().catch(() => ({ empty: true }));
+          if (q1 && !q1.empty) return q1.docs[0].data();
+          const q2 = await col.where("invoiceFolio", "==", val).limit(1).get().catch(() => ({ empty: true }));
+          if (q2 && !q2.empty) return q2.docs[0].data();
+        }
+
+        // 2. Búsqueda por prefijo de Document ID (ej: WP-2026-F0004- / WP-2026-F0005-)
+        if (padded && typeof firebase !== "undefined" && firebase.firestore && firebase.firestore.FieldPath) {
+          const prefix = `WP-2026-F${padded}-`;
+          const qPref = await col.where(firebase.firestore.FieldPath.documentId(), ">=", prefix)
+                                 .where(firebase.firestore.FieldPath.documentId(), "<=", prefix + "\uf8ff")
+                                 .limit(1).get().catch(() => ({ empty: true }));
+          if (qPref && !qPref.empty) return qPref.docs[0].data();
+        }
+
+        // 3. Fallback en tokens recientes (inspección directa si no hay índice compuesto)
+        const snapRecent = await col.orderBy("created_at", "desc").limit(100).get().catch(() => null);
+        if (snapRecent && !snapRecent.empty) {
+          const found = snapRecent.docs.find(d => {
+            const data = d.data();
+            const f = String(data.invoice_folio || data.invoiceFolio || "").trim();
+            const id = d.id || "";
+            return (padded && f === padded) ||
+                   (cleanDigits && f === cleanDigits) ||
+                   (unpadded && f === unpadded) ||
+                   (padded && id.includes("-F" + padded + "-")) ||
+                   (cleanDigits && id.includes("-F" + cleanDigits + "-"));
+          });
+          if (found) return found.data();
+        }
+      } catch (e) {
+        console.warn("Firestore getTokenByFolio error:", e.message);
+      }
+    }
+
+    return null;
   }
 
   static async fetchTokens() {

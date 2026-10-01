@@ -86,17 +86,32 @@ export class CustomerViewModel {
       }
     }
 
-    // 3. Revisar si hay un token de reclamo en la URL (?claim=WP-XXXX)
+    // 3. Revisar si hay un token de reclamo en la URL (?claim=WP-XXXX, ?folio=4, &pin=6608)
     const urlParams = new URLSearchParams(window.location.search);
-    const claimCode = urlParams.get("claim");
-    if (claimCode) {
-      let cleanClaim = claimCode.trim().toUpperCase();
-      if (cleanClaim === "UNDEFINED" || cleanClaim === "NULL" || cleanClaim.length < 5 || !cleanClaim.startsWith("WP-")) {
+    const pinParam = urlParams.get("pin");
+    let claimCode = urlParams.get("claim");
+    let folioCode = urlParams.get("folio");
+
+    if (claimCode && (claimCode.trim().toUpperCase() === "UNDEFINED" || claimCode.trim().toUpperCase() === "NULL")) {
+      claimCode = null;
+    }
+
+    const effectiveClaim = claimCode || folioCode;
+    if (effectiveClaim) {
+      let cleanClaim = effectiveClaim.trim().toUpperCase();
+
+      if (cleanClaim && !cleanClaim.startsWith("WP-")) {
         const match = (window.location.search || window.location.href).match(/WP-[A-Z0-9-]+/i);
-        cleanClaim = match ? match[0].toUpperCase() : null;
+        if (match) {
+          cleanClaim = match[0].toUpperCase();
+        } else {
+          const tok = await FirestoreService.getTokenByFolio(cleanClaim);
+          if (tok) cleanClaim = (tok.token_code || tok.tokenCode || "").toUpperCase();
+          else cleanClaim = null;
+        }
       }
 
-      if (cleanClaim && cleanClaim !== "UNDEFINED" && cleanClaim !== "NULL" && cleanClaim.length >= 5 && cleanClaim.startsWith("WP-")) {
+      if (cleanClaim && cleanClaim.length >= 5 && cleanClaim.startsWith("WP-")) {
         try {
           const cleanUrl = window.location.pathname + window.location.hash;
           window.history.replaceState({}, document.title, cleanUrl);
@@ -110,7 +125,20 @@ export class CustomerViewModel {
 
         if (!alreadyProcessed) {
           this.pendingClaimToken = cleanClaim;
+          if (pinParam) this.pendingClaimPin = pinParam.trim();
         }
+      }
+    } else if (urlParams.has("claim") && urlParams.get("claim") === "undefined") {
+      // Cliente abrió link de factura física previa con claim=undefined
+      if (typeof window !== "undefined") {
+        setTimeout(() => {
+          const modal = document.getElementById("modal-manual-claim");
+          if (modal) modal.style.display = "flex";
+          if (pinParam) {
+            const pInput = document.getElementById("manual-input-pin");
+            if (pInput) pInput.value = pinParam.trim();
+          }
+        }, 400);
       }
     }
 
@@ -305,13 +333,16 @@ export class CustomerViewModel {
   }
 
   async claimPendingToken() {
-    if (!this.pendingClaimToken || this.pendingClaimToken === "UNDEFINED" || this.pendingClaimToken === "NULL" || !this.pendingClaimToken.startsWith("WP-")) {
+    if (!this.pendingClaimToken || this.pendingClaimToken === "UNDEFINED" || this.pendingClaimToken === "NULL") {
       this.pendingClaimToken = null;
+      this.pendingClaimPin = null;
       throw new Error("No hay ninguna factura pendiente para acreditar.");
     }
     const tokenToClaim = this.pendingClaimToken;
-    const res = await this.claimToken(tokenToClaim, null, true);
+    const pinToClaim = this.pendingClaimPin || null;
+    const res = await this.claimToken(tokenToClaim, pinToClaim, !pinToClaim);
     this.pendingClaimToken = null;
+    this.pendingClaimPin = null;
     return res;
   }
 
@@ -320,14 +351,25 @@ export class CustomerViewModel {
       throw new Error("Debes iniciar sesión con tu WhatsApp para acreditar puntos.");
     }
 
-    const cleanToken = (tokenCode || "").trim().toUpperCase();
-    if (!cleanToken || cleanToken === "UNDEFINED" || cleanToken === "NULL" || cleanToken.length < 5 || !cleanToken.startsWith("WP-")) {
-      throw new Error("El código de factura es inválido o no tiene el formato correcto.");
+    const cleanInput = (tokenCode || "").trim().toUpperCase();
+    if (!cleanInput || cleanInput === "UNDEFINED" || cleanInput === "NULL") {
+      throw new Error("El código o número de factura es inválido.");
     }
 
-    const rawToken = await FirestoreService.getToken(cleanToken);
+    let rawToken = null;
+    let cleanToken = cleanInput;
+
+    if (cleanInput.startsWith("WP-")) {
+      rawToken = await FirestoreService.getToken(cleanInput);
+    } else {
+      rawToken = await FirestoreService.getTokenByFolio(cleanInput);
+      if (rawToken) {
+        cleanToken = (rawToken.token_code || rawToken.tokenCode || "").trim().toUpperCase();
+      }
+    }
+
     if (!rawToken) {
-      throw new Error("El código [" + cleanToken + "] no existe en el sistema.");
+      throw new Error("La factura [" + cleanInput + "] no existe en el sistema.");
     }
 
     const token = new TokenModel(rawToken);
@@ -340,7 +382,7 @@ export class CustomerViewModel {
     }
 
     // Si NO proviene de escaneo directo (ingreso manual con teclado), se exige validación estricta de PIN
-    if (!isDirectScan && token.securityPin) {
+    if (!isDirectScan && token.securityPin && token.securityPin !== "----" && token.securityPin !== "••••") {
       if (!pin || token.securityPin !== pin.trim()) {
         throw new Error("El PIN de seguridad impreso en la factura es incorrecto.");
       }

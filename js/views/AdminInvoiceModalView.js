@@ -351,7 +351,7 @@ async function submitSingleDigitalInvoice(action = 'print') {
       warrantyText,
       notes: notesText,
       selectedLainDesignIdx,
-      tokenCode: pointsVal > 0 ? ("WP-2026-F" + folio + "-PREVIEW") : null
+      tokenCode: currentSingleInvoiceTokenCode || null
     };
 
     const printDims = getSelectedPaperDimensions("preview");
@@ -428,12 +428,25 @@ async function submitSingleDigitalInvoice(action = 'print') {
       if (rawPhone.length === 8) rawPhone = '505' + rawPhone;
       const tokCode = (result && result.token && (result.token.tokenCode || result.token.token_code)) ||
                       (result && result.invoicePayload && (result.invoicePayload.tokenCode || result.invoicePayload.token_code)) || "";
-      const claimUrl = (tokCode && tokCode !== "undefined" && tokCode !== "null")
-        ? ("https://meltydeays-wired-club.vercel.app/?claim=" + encodeURIComponent(tokCode))
-        : "";
+      const resFolio = (result && result.invoicePayload && result.invoicePayload.folio) || folio || "";
+      const resPin = (result && result.token && (result.token.securityPin || result.token.security_pin)) ||
+                     (result && result.invoicePayload && (result.invoicePayload.securityPin || result.invoicePayload.security_pin)) || pin || "";
+      const isValidClaim = Boolean(
+        tokCode &&
+        typeof tokCode === "string" &&
+        /^WP-2026-F/i.test(tokCode.trim()) &&
+        !tokCode.includes("DIGITAL") &&
+        !tokCode.includes("BLANK")
+      );
+      let claimUrl = "";
+      if (isValidClaim) {
+        claimUrl = "https://meltydeays-wired-club.vercel.app/?claim=" + encodeURIComponent(tokCode.trim());
+        if (resFolio) claimUrl += "&folio=" + encodeURIComponent(resFolio);
+        if (resPin && resPin !== "----") claimUrl += "&pin=" + encodeURIComponent(resPin);
+      }
       const textMsg = encodeURIComponent(
         `¡Hola ${clientName}! 👋 Gracias por tu compra en MeltyDeays STORE.\n\n` +
-        `🧾 Factura Electrónica: #MD-2026-${result.invoicePayload.folio}\n` +
+        `🧾 Factura Electrónica: #MD-2026-${resFolio}\n` +
         `💰 Total Facturado: ${currency === "NIO" ? "C$" : "$"} ${total.toFixed(2)}\n` +
         (pointsVal > 0 && claimUrl ? `⚡ Puntos Wired Points acreditados: +${pointsVal} WP\n📲 Reclama tus puntos aquí: ${claimUrl}\n` : "") +
         `🛡️ Garantía oficial MeltyDeays: ${warrantyText}\n\n` +

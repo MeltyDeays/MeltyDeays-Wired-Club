@@ -186,10 +186,23 @@ export async function executeSeedDevData() {
 // ----------------------------------------------------
 
 export async function deleteSingleToken(tokenCode, folio) {
-  if (!safeConfirm(`🗑️ ¿Eliminar definitivamente la factura #MD-2026-${folio} (${tokenCode})?\n\nEl folio #${folio} quedará libre para volverse a generar de inmediato.`)) {
+  if (typeof window !== "undefined" && typeof window.openReleaseInvoiceModal === "function") {
+    window.openReleaseInvoiceModal(tokenCode, folio);
     return;
   }
-  showToast(`Eliminando factura #${folio}...`, "info");
+
+  const paddedFolio = String(folio || "0000").padStart(4, "0");
+  const fallbackMsg =
+    `🗑️ ¿DESEAS LIBERAR EL FOLIO #${paddedFolio}?\n\n` +
+    `• Factura: #MD-2026-${paddedFolio}\n` +
+    `• Código Token: ${tokenCode}\n\n` +
+    `Esta acción eliminará el registro de la base de datos y dejará el folio #${paddedFolio} libre de inmediato para que puedas volver a generar o imprimir una factura nueva con este mismo número.\n\n` +
+    `¿Confirmar liberación del folio #${paddedFolio}?`;
+
+  if (!safeConfirm(fallbackMsg)) {
+    return;
+  }
+  showToast(`Liberando folio #${paddedFolio}...`, "info");
   try {
     await vm.deleteToken(tokenCode);
 
@@ -208,7 +221,7 @@ export async function deleteSingleToken(tokenCode, folio) {
     renderSandboxDbView();
     if (typeof renderTokensTable === "function") renderTokensTable(vm.tokens);
     if (typeof renderAdmin === "function") renderAdmin(vm);
-    showToast(`✓ Factura #MD-2026-${folio} eliminada. Folio liberado para emisión.`, "success");
+    showToast(`✓ Factura #MD-2026-${paddedFolio} eliminada. Folio #${paddedFolio} liberado exitosamente.`, "success");
   } catch (err) {
     showToast("❌ Error al eliminar factura: " + err.message, "error");
   }

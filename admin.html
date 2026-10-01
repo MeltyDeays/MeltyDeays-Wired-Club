@@ -2177,6 +2177,71 @@
     </div>
   </div>
 
+  <!-- MODAL: ELIMINAR FACTURA Y LIBERAR FOLIO [ESTILO LAIN-LIKE / NEOBRUTALISTA] -->
+  <div id="modal-release-invoice" class="modal-overlay" style="display: none;">
+    <div class="modal-content lain-card modal-compact-mobile" style="max-width: 480px; text-align: left; padding: 1.6rem; border: 2px solid #ef4444; box-shadow: 0 0 25px rgba(239, 68, 68, 0.25);">
+      <div class="tech-corner top-left">+</div>
+      <div class="tech-corner top-right">+</div>
+      <div class="tech-corner bottom-left">+</div>
+      <div class="tech-corner bottom-right">+</div>
+      <button class="modal-close-btn" onclick="closeModal('modal-release-invoice')" aria-label="Cerrar">&times;</button>
+
+      <div class="lain-modal-header" style="border-bottom-color: #ef4444;">
+        <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+          <span class="badge-navi" style="background: #fee2e2; color: #b91c1c; border-color: #f87171;">
+            FACTURACIÓN // LIBERACIÓN DE CORRELATIVO
+          </span>
+          <span style="font-family: var(--font-mono); font-size: 0.68rem; color: #ef4444; font-weight: 800;">
+            FOLIO_RECYCLE
+          </span>
+        </div>
+      </div>
+
+      <h3 style="font-size: 1.22rem; font-weight: 900; color: #991b1b; margin: 0 0 0.45rem 0; font-family: var(--font-mono); word-break: break-word;">
+        🗑️ ¿LIBERAR FOLIO Y ELIMINAR FACTURA?
+      </h3>
+      <p style="font-size: 0.84rem; color: var(--gray-700); line-height: 1.45; margin-bottom: 0.85rem;">
+        Esta factura será removida de la base de datos y su folio volverá a estar disponible para emitir una nueva factura limpia:
+      </p>
+
+      <!-- TARJETA DE DETALLE DE LA FACTURA -->
+      <div style="background: #fff1f2; border: 1.5px solid #fecdd3; border-radius: 6px; padding: 0.85rem; margin-bottom: 0.85rem; font-family: var(--font-mono);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.45rem;">
+          <span style="font-size: 0.72rem; color: #9f1239; font-weight: 800;">Nº FACTURA:</span>
+          <strong id="release-invoice-folio-badge" style="font-size: 1.15rem; color: #881337; font-weight: 900;">#MD-2026-0000</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.45rem; gap: 0.5rem;">
+          <span style="font-size: 0.72rem; color: #9f1239; font-weight: 800; white-space: nowrap;">CÓDIGO TOKEN:</span>
+          <code id="release-invoice-code-badge" style="font-size: 0.75rem; background: #ffffff; padding: 2px 6px; border-radius: 3px; border: 1px solid #fbcfe8; color: #1e293b; font-weight: 800; word-break: break-all;">WP-2026-F...</code>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.45rem;">
+          <span style="font-size: 0.72rem; color: #9f1239; font-weight: 800;">PUNTOS CARGADOS:</span>
+          <span id="release-invoice-points-badge" style="font-size: 0.82rem; font-weight: 800; color: #047857;">-</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-size: 0.72rem; color: #9f1239; font-weight: 800;">ESTADO ACTUAL:</span>
+          <span id="release-invoice-status-badge" style="font-size: 0.78rem; font-weight: 800;">-</span>
+        </div>
+      </div>
+
+      <!-- CALLOUT INFORMATIVO DEL BENEFICIO -->
+      <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-left: 3.5px solid #16a34a; border-radius: 4px; padding: 0.65rem 0.75rem; margin-bottom: 1.15rem; font-size: 0.78rem; color: #14532d; line-height: 1.4;">
+        <strong style="display: block; margin-bottom: 2px;">⚡ El folio quedará libre de inmediato:</strong>
+        Podrás reemitir o volver a generar esta factura con el mismo número de folio en el lote o de forma individual, sin saltos en la numeración.
+      </div>
+
+      <input type="hidden" id="release-invoice-target-code">
+      <input type="hidden" id="release-invoice-target-folio">
+
+      <div class="modal-actions-responsive" style="display: flex; gap: 0.65rem; justify-content: flex-end;">
+        <button type="button" class="btn-secondary" onclick="closeModal('modal-release-invoice')">CANCELAR</button>
+        <button type="button" class="btn-primary" id="btn-confirm-release-invoice" style="background: #dc2626; border-color: #991b1b; padding: 0.55rem 1.15rem; font-weight: 900;" onclick="executeConfirmReleaseInvoice()">
+          🗑️ SÍ, LIBERAR FOLIO
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL: DESPACHO Y ENTREGA DE VALE EN MOSTRADOR [ESTILO COPLAND OS 21.0] -->
   <div id="modal-deliver-voucher" class="modal-overlay" style="display: none;">
     <div class="modal-content lain-card" style="max-width: 540px; text-align: left; padding: 1.6rem; position: relative; overflow: hidden;">
@@ -2817,6 +2882,6 @@
     })();
   </script>
 
-  <script type="module" src="./js/admin-app.js?v=2.9.7"></script>
+  <script type="module" src="./js/admin-app.js?v=2.9.10"></script>
 </body>
 </html>

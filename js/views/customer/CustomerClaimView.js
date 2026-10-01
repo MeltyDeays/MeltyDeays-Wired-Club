@@ -30,18 +30,30 @@ export function closeClaimModal() {
 }
 
 export async function submitManualClaim() {
-  const token = document.getElementById("manual-input-token").value;
-  const pin = document.getElementById("manual-input-pin").value;
+  const tokenInput = document.getElementById("manual-input-token");
+  const pinInput = document.getElementById("manual-input-pin");
+  const token = tokenInput ? tokenInput.value : "";
+  const pin = pinInput ? pinInput.value : "";
 
   if (!token) {
-    showToast("Ingresa el código de la factura", "error");
+    showToast("Ingresa el número de factura o código de puntos.", "error");
+    return;
+  }
+
+  if (!vm.currentUser) {
+    vm.pendingClaimToken = token.trim().toUpperCase();
+    vm.pendingClaimPin = (pin || "").trim();
+    closeClaimModal();
+    openAuthModal("login", "Inicia sesión con tu WhatsApp para acreditar los puntos de tu factura.");
     return;
   }
 
   try {
+    showToast("Verificando factura...", "info");
     const res = await vm.claimToken(token.trim().toUpperCase(), pin);
     closeClaimModal();
     showToast("¡Éxito! +" + res.pointsAdded + " WP acreditados. Saldo: " + res.newBalance + " WP", "success");
+    if (vm && typeof vm.notify === "function") vm.notify();
   } catch (err) {
     showToast(err.message || "Error al acreditar factura", "error");
   }
@@ -91,7 +103,15 @@ export async function handleClientQrScanned(decodedText) {
   stopClientCameraScanner();
   let raw = (decodedText || "").trim();
   let tokenCode = "";
+  let detectedPin = null;
 
+  // 1. Detección de PIN en parámetros URL (?pin=6608)
+  if (raw.includes("pin=")) {
+    const pinMatch = raw.match(/pin=([0-9A-Za-z]+)/i);
+    if (pinMatch) detectedPin = pinMatch[1];
+  }
+
+  // 2. Detección de código de reclamo (?claim=WP-...)
   if (raw.includes("claim=")) {
     const candidate = raw.split("claim=")[1].split("&")[0];
     if (candidate && candidate.toLowerCase() !== "undefined" && candidate.toLowerCase() !== "null") {
@@ -108,14 +128,73 @@ export async function handleClientQrScanned(decodedText) {
     if (match) tokenCode = match[0];
   }
 
+  // 3. Detección de enlace WhatsApp (QR de contacto)
+  if (!tokenCode && (raw.includes("wa.me") || raw.includes("whatsapp.com") || raw.includes("api.whatsapp.com"))) {
+    showToast("📱 Has escaneado el contacto de WhatsApp. Para tus puntos, ingresa el número de tu factura (ej. #0004) y tu PIN.", "info");
+    openClaimModal();
+    return;
+  }
+
+  // 4. Si no es WP-, intentar extraer y resolver por número de folio (#MD-2026-0004, 0004, 4, F0004, ?folio=4)
+  let detectedFolio = null;
+  if (!tokenCode) {
+    if (raw.includes("factura_meltydeays_")) {
+      const m = raw.match(/factura_meltydeays_(?:MD-2026-)?([0-9]+)/i);
+      if (m) detectedFolio = m[1];
+    } else if (raw.includes("folio=")) {
+      const m = raw.match(/folio=([0-9]+)/i);
+      if (m) detectedFolio = m[1];
+    } else if (/^(?:#?MD-2026-|#?MD-|F|FACTURA\s*#?)\s*0*([0-9]{1,5})$/i.test(raw)) {
+      const m = raw.match(/^(?:#?MD-2026-|#?MD-|F|FACTURA\s*#?)\s*0*([0-9]{1,5})$/i);
+      if (m) detectedFolio = m[1];
+    } else if (/^0*([0-9]{1,5})$/.test(raw)) {
+      detectedFolio = raw.match(/^0*([0-9]{1,5})$/)[1];
+    } else if (raw.includes("-")) {
+      const parts = raw.split("-");
+      const last = parts[parts.length - 1].replace(/[^0-9]/g, "").trim();
+      if (last && last.length <= 5) detectedFolio = last;
+    }
+
+    if (detectedFolio) {
+      try {
+        const { FirestoreService } = await import("../../services/FirestoreService.js");
+        const matchedToken = await FirestoreService.getTokenByFolio(detectedFolio);
+        if (matchedToken) {
+          tokenCode = matchedToken.token_code || matchedToken.tokenCode || "";
+        }
+      } catch (e) {
+        console.warn("Error resolviendo folio escaneado:", e);
+      }
+    }
+  }
+
   tokenCode = (tokenCode || "").trim().toUpperCase();
 
+  // 5. Manejo inteligente para facturas físicas y URLs MeltyDeays
   if (!tokenCode || tokenCode === "UNDEFINED" || tokenCode === "NULL" || tokenCode.length < 5 || !tokenCode.startsWith("WP-")) {
-    showToast("El código escaneado no corresponde a una factura MeltyDeays válida.", "error");
+    const isMeltyUrl = raw.toLowerCase().includes("meltydeays") || raw.toLowerCase().includes("vercel.app") || raw.toLowerCase().includes("claim=");
+    if (isMeltyUrl) {
+      showToast("📄 Factura física MeltyDeays detectada. Ingresa tu número de factura (ej. #0004) y tu PIN para acreditar tus puntos.", "info");
+      const modal = document.getElementById("modal-manual-claim");
+      if (modal) modal.style.display = "flex";
+      if (detectedPin) {
+        const pinInput = document.getElementById("manual-input-pin");
+        if (pinInput) pinInput.value = detectedPin;
+      }
+      const tokenInput = document.getElementById("manual-input-token");
+      if (tokenInput) {
+        if (detectedFolio) tokenInput.value = detectedFolio;
+        tokenInput.focus();
+      }
+      return;
+    }
+    showToast("El código escaneado no corresponde a una factura MeltyDeays válida. Puedes ingresar el folio (#0004) y PIN manualmente.", "error");
+    openClaimModal();
     return;
   }
 
   vm.pendingClaimToken = tokenCode;
+  if (detectedPin) vm.pendingClaimPin = detectedPin;
 
   if (!vm.currentUser) {
     showToast(`⚡ Factura detectada [${tokenCode}]. Inicia sesión o regístrate para acreditar tus puntos.`, "info");
@@ -124,10 +203,10 @@ export async function handleClientQrScanned(decodedText) {
     return;
   }
 
-  // Usuario autenticado: acreditar de inmediato sin pedir PIN
+  // Usuario autenticado: acreditar de inmediato
   try {
     showToast("Acreditando puntos de tu factura...", "info");
-    const res = await vm.claimToken(tokenCode, null, true);
+    const res = await vm.claimToken(tokenCode, detectedPin, true);
     showToast(`¡Puntos acreditados con éxito! +${res.pointsAdded} WP. Saldo: ${res.newBalance} WP`, "success");
     dismissClaimBanner();
     if (vm && typeof vm.notify === 'function') vm.notify();

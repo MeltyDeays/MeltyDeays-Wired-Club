@@ -13,6 +13,23 @@ export class TokenModel {
     this.claimedAt = data.claimedAt || data.claimed_at || null;
     this.createdAt = data.createdAt || data.created_at || new Date().toISOString();
     this.invoiceData = data.invoiceData || data.invoice_data || null;
+
+    if (this.pointsValue <= 0 && this.invoiceData) {
+      const invPts = Number(this.invoiceData.pointsValue !== undefined ? this.invoiceData.pointsValue : (this.invoiceData.points_value !== undefined ? this.invoiceData.points_value : 0));
+      if (invPts > 0) {
+        this.pointsValue = invPts;
+        if (this.status === "PENDING_ASSIGNMENT") this.status = "ACTIVE";
+      } else if (this.invoiceData.total && Number(this.invoiceData.total) > 0) {
+        const rateNio = 37.0;
+        const curr = this.invoiceData.currency || "USD";
+        const tot = Number(this.invoiceData.total);
+        const totUsd = curr === "USD" ? tot : (tot / rateNio);
+        this.pointsValue = Math.floor(totUsd * 10);
+        if (this.pointsValue > 0 && this.status === "PENDING_ASSIGNMENT") {
+          this.status = "ACTIVE";
+        }
+      }
+    }
   }
 
   isPendingAssignment() {
