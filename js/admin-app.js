@@ -842,4 +842,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Badge visual en entorno de pruebas (SANDBOX)
   injectEnvironmentBadge();
+
+  // Soporte universal para cerrar modales con tecla Escape
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      const activeModals = document.querySelectorAll(".modal-overlay");
+      activeModals.forEach(m => {
+        if (m.style.display !== "none" && m.style.display !== "") {
+          m.style.display = "none";
+        }
+      });
+    }
+  });
 });

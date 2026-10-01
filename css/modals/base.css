@@ -11,7 +11,9 @@
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  padding: 1rem;
+  padding: 1rem 0.5rem;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .modal-content {
@@ -26,6 +28,7 @@
   text-align: center;
   background-image: radial-gradient(var(--dot-color) 0.85px, transparent 0.85px);
   background-size: 8px 8px;
+  margin: auto;
 }
 
 /* ESQUINAS TÉCNICAS Y MODALES ESTILO LAIN / COPLAND OS */
