@@ -127,6 +127,9 @@ import {
   onAdminClaimUserSelectChange,
   onAdminClaimUserSearchInput,
   onAdminClaimPointsChange,
+  selectAdminClaimUser,
+  setAdminClaimPointsPreset,
+  toggleAdminClaimSelectMode,
   handleInvoiceBtnClick,
   handleProductImageFile,
   clearProductImageUpload,
@@ -677,6 +680,9 @@ document.addEventListener("DOMContentLoaded", () => {
   window.onAdminClaimUserSelectChange = onAdminClaimUserSelectChange;
   window.onAdminClaimUserSearchInput = onAdminClaimUserSearchInput;
   window.onAdminClaimPointsChange = onAdminClaimPointsChange;
+  window.selectAdminClaimUser = selectAdminClaimUser;
+  window.setAdminClaimPointsPreset = setAdminClaimPointsPreset;
+  window.toggleAdminClaimSelectMode = toggleAdminClaimSelectMode;
   window.executeTokenOptQr = executeTokenOptQr;
   window.executeTokenOptCopyLink = executeTokenOptCopyLink;
   window.executeTokenOptTestUrl = executeTokenOptTestUrl;

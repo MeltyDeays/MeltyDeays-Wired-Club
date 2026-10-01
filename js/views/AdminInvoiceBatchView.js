@@ -703,6 +703,11 @@ export function openTokenActionsModal(tokenCode) {
     `;
   }
 
+  const pointsGroup = document.getElementById("token-actions-points-group");
+  if (pointsGroup) {
+    pointsGroup.style.display = token.isClaimed() ? "none" : "block";
+  }
+
   const btnClaimCust = document.getElementById("btn-token-opt-claim-customer");
   if (btnClaimCust) {
     btnClaimCust.style.display = token.isClaimed() ? "none" : "inline-flex";
@@ -713,7 +718,14 @@ export function openTokenActionsModal(tokenCode) {
       btnAssign.style.display = "none";
     } else {
       btnAssign.style.display = "inline-flex";
-      btnAssign.innerHTML = `<span>⚡</span> <strong>${token.isPendingAssignment() ? 'Cargar Puntos de Venta' : 'Modificar Puntos Asignados'}</strong>`;
+      const isPending = token.isPendingAssignment();
+      btnAssign.innerHTML = `
+        <span style="font-size: 1.15rem; margin-right: 2px;">⚡</span>
+        <span style="display: flex; flex-direction: column; text-align: left;">
+          <strong style="line-height: 1.2;">${isPending ? 'Cargar Puntos WP' : 'Modificar Puntos'}</strong>
+          <small style="font-size: 0.68rem; opacity: 0.85; font-weight: normal; margin-top: 2px;">${isPending ? 'Caja / Mostrador' : `${token.pointsValue} WP asignados`}</small>
+        </span>
+      `;
     }
   }
 
@@ -723,7 +735,7 @@ export function openTokenActionsModal(tokenCode) {
   const hasInvData = !!(token.invoiceData && token.invoiceData.items && token.invoiceData.items.length > 0);
   if (btnViewInvoice) {
     btnViewInvoice.style.display = "inline-flex";
-    if (btnViewLabel) btnViewLabel.textContent = hasInvData ? "Ver Factura Digital (Datos Guardados)" : "Generar / Ver Factura Digital (1 Página Completa)";
+    if (btnViewLabel) btnViewLabel.textContent = hasInvData ? "Ver Factura Digital (Datos Guardados)" : "Generar Factura Digital (Pág. Completa)";
   }
   if (btnEditInvoice) {
     btnEditInvoice.style.display = hasInvData ? "inline-flex" : "none";
@@ -807,7 +819,8 @@ export async function openAdminClaimCustomerModal(tokenCode) {
 
 export function populateAdminClaimUsersList(filterText = "") {
   const select = document.getElementById("admin-claim-user-select");
-  if (!select) return;
+  const cardList = document.getElementById("admin-claim-user-card-list");
+  const countBadge = document.getElementById("admin-claim-users-count");
 
   const query = (filterText || "").trim().toLowerCase();
   let users = (vm && vm.users) ? [...vm.users] : [];
@@ -817,7 +830,11 @@ export function populateAdminClaimUsersList(filterText = "") {
 
   users.sort((a, b) => (a.displayName || "").localeCompare(b.displayName || ""));
 
-  let html = `<option value="">-- Selecciona un cliente registrado (${users.length} disponibles) --</option>`;
+  let optionsHtml = `<option value="">-- Selecciona un cliente registrado (${users.length} disponibles) --</option>`;
+  let cardsHtml = "";
+  let matchedCount = 0;
+
+  const currentSelectedUid = select ? select.value : "";
 
   users.forEach(u => {
     const name = u.displayName || u.display_name || "Socio";
@@ -833,12 +850,104 @@ export function populateAdminClaimUsersList(filterText = "") {
       if (!match) return;
     }
 
-    html += `<option value="${u.uid}">
+    matchedCount++;
+    const isSelected = (u.uid === currentSelectedUid);
+
+    optionsHtml += `<option value="${u.uid}">
       ${name} ${phone ? `(📞 ${phone})` : ''} — Saldo: ${pts} WP [${memberCode || u.uid}]
     </option>`;
+
+    // Initials for avatar
+    const parts = name.trim().split(/\s+/);
+    const initials = parts.length > 1
+      ? (parts[0][0] + parts[1][0]).toUpperCase()
+      : name.slice(0, 2).toUpperCase();
+
+    const safeName = String(name).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const safePhone = phone ? `+505 ${phone}` : 'Sin teléfono';
+    const safeCode = memberCode || (u.uid ? u.uid.slice(0, 8) : 'SOCIO');
+
+    cardsHtml += `
+      <div class="admin-claim-user-card ${isSelected ? 'selected' : ''}" data-uid="${u.uid}" onclick="selectAdminClaimUser('${u.uid}')">
+        <div class="admin-claim-user-avatar">${initials}</div>
+        <div class="admin-claim-user-info">
+          <div class="admin-claim-user-name-row">
+            <span class="admin-claim-user-name">${safeName}</span>
+            <span class="admin-claim-user-code">${safeCode}</span>
+          </div>
+          <div class="admin-claim-user-meta-row">
+            <span class="admin-claim-user-phone">📞 ${safePhone}</span>
+            <span class="admin-claim-user-badge-pts">${pts.toLocaleString()} WP</span>
+          </div>
+        </div>
+        <div class="admin-claim-user-check">
+          <span>✓</span>
+        </div>
+      </div>
+    `;
   });
 
-  select.innerHTML = html;
+  if (select) {
+    select.innerHTML = optionsHtml;
+    if (currentSelectedUid) {
+      select.value = currentSelectedUid;
+    }
+  }
+
+  if (countBadge) {
+    countBadge.textContent = `${matchedCount} disponible${matchedCount === 1 ? '' : 's'}`;
+  }
+
+  if (cardList) {
+    if (matchedCount === 0) {
+      cardList.innerHTML = `
+        <div style="text-align: center; padding: 1.5rem 0.5rem; color: #64748b; font-size: 0.8rem; font-family: var(--font-mono);">
+          <span>🔍 No se encontraron socios que coincidan con la búsqueda.</span>
+        </div>
+      `;
+    } else {
+      cardList.innerHTML = cardsHtml;
+    }
+  }
+}
+
+export function selectAdminClaimUser(uid) {
+  const select = document.getElementById("admin-claim-user-select");
+  if (select) {
+    select.value = uid;
+  }
+  onAdminClaimUserSelectChange();
+}
+
+export function setAdminClaimPointsPreset(val, isIncrement = false) {
+  const pointsInput = document.getElementById("admin-claim-points-input");
+  if (!pointsInput) return;
+  let curr = parseInt(pointsInput.value, 10) || 0;
+  if (isIncrement) {
+    curr += val;
+  } else {
+    curr = val;
+  }
+  if (curr < 1) curr = 1;
+  pointsInput.value = curr;
+  onAdminClaimPointsChange();
+}
+
+export function toggleAdminClaimSelectMode() {
+  const select = document.getElementById("admin-claim-user-select");
+  const cardList = document.getElementById("admin-claim-user-card-list");
+  const toggleBtn = document.getElementById("admin-claim-toggle-mode-btn");
+  if (!select || !cardList) return;
+  const isSelectHidden = select.style.display === "none";
+  if (isSelectHidden) {
+    select.style.display = "block";
+    cardList.style.display = "none";
+    if (toggleBtn) toggleBtn.textContent = "Ver tarjetas";
+  } else {
+    select.style.display = "none";
+    cardList.style.display = "flex";
+    if (toggleBtn) toggleBtn.textContent = "Ver desplegable";
+  }
 }
 
 export function onAdminClaimUserSearchInput(evt) {
@@ -861,18 +970,29 @@ export function onAdminClaimUserSelectChange() {
   const newPtsEl = document.getElementById("admin-claim-preview-new-pts");
   const btnConfirm = document.getElementById("btn-confirm-admin-claim");
 
-  if (!select || !select.value) {
+  const selectedUid = select ? select.value : "";
+
+  // Highlight card in visual list if present
+  const allCards = document.querySelectorAll("#admin-claim-user-card-list .admin-claim-user-card");
+  allCards.forEach(c => {
+    if (c.getAttribute("data-uid") === selectedUid) {
+      c.classList.add("selected");
+    } else {
+      c.classList.remove("selected");
+    }
+  });
+
+  if (!select || !selectedUid) {
     if (preview) preview.style.display = "none";
     if (btnConfirm) btnConfirm.disabled = true;
     return;
   }
 
-  const uid = select.value;
   let users = (vm && vm.users) ? vm.users : [];
   if (users.length === 0 && typeof FirestoreService !== "undefined" && FirestoreService.getAllUsers) {
     users = FirestoreService.getAllUsers();
   }
-  const user = users.find(u => u.uid === uid);
+  const user = users.find(u => u.uid === selectedUid);
   if (!user) {
     if (preview) preview.style.display = "none";
     if (btnConfirm) btnConfirm.disabled = true;
