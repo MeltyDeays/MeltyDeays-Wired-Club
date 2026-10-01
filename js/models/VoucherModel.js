@@ -9,6 +9,7 @@ export class VoucherModel {
     this.rewardId = data.rewardId || data.reward_id || "";
     this.rewardTitle = data.rewardTitle || data.reward_title || "";
     this.rewardType = data.rewardType || data.reward_type || "FREE_REWARD";
+    this.imageUrl = data.imageUrl || data.image_url || data.rewardImageUrl || data.reward_image_url || "";
     this.pointsSpent = Number(data.pointsSpent || data.points_spent || data.pointsCost || data.points_cost || 0);
     this.pointsCost = this.pointsSpent;
     this.priceUsd = Number(data.priceUsd || data.price_usd || 0);
@@ -125,6 +126,8 @@ export class VoucherModel {
       reward_id: this.rewardId,
       reward_title: this.rewardTitle,
       reward_type: this.rewardType,
+      image_url: this.imageUrl,
+      imageUrl: this.imageUrl,
       points_spent: this.pointsSpent,
       points_cost: this.pointsSpent,
       price_usd: this.priceUsd,

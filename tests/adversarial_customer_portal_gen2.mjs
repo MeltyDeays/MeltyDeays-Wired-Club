@@ -504,9 +504,14 @@ export async function runAdversarialCustomerPortalTests() {
     const midDb = JSON.parse(localStorage.getItem('dev_wired_club_mvvm_db_v2') || localStorage.getItem('wired_club_mvvm_db_v2'));
     expect(midDb.rewards['rew-cyber-drink'].stock).toBe(24);
 
-    // Verify WhatsApp button links to official store phone
+    // Verify WhatsApp button links to official store phone and contains structured message with image
     const waBtn = doc.getElementById('btn-whatsapp-voucher');
     expect(waBtn.href).toContain('50558438412', 'WhatsApp notification must target official store phone 50558438412');
+    const decodedWa = decodeURIComponent(waBtn.href);
+    expect(decodedWa).toContain(vCode, 'WhatsApp notification must contain voucher code');
+    expect(decodedWa).toContain('Cyber Energy Drink', 'WhatsApp notification must contain product title');
+    expect(decodedWa).toContain('Foto del Producto', 'WhatsApp notification must contain product photo label');
+    expect(decodedWa).toContain('https://images.unsplash.com', 'WhatsApp notification must contain product image link');
 
     // Close voucher modal
     win.closeVoucherModal();

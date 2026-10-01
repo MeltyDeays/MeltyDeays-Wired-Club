@@ -465,6 +465,7 @@ export class CustomerViewModel {
       rewardId: reward.id,
       rewardTitle: reward.title,
       rewardType: reward.rewardType || (isPartial ? "PARTIAL_DISCOUNT" : "FREE_REWARD"),
+      imageUrl: reward.imageUrl || reward.image_url || "",
       pointsSpent: pointsSpent,
       priceUsd: reward.priceUsd || 0,
       discountUsd: discountUsd,

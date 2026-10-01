@@ -387,15 +387,107 @@ export function showVoucherModal(voucherCode) {
     if (waBtn) {
       waBtn.style.display = "flex";
       const phone = "50558438412";
+
+      const rewardObj = (vm?.catalog || []).find(r => r.id === voucher.rewardId) ||
+        (typeof window !== "undefined" && window._lastRenderedCatalog?.find(r => r.id === voucher.rewardId));
+      const rawImg = voucher.imageUrl || voucher.image_url || voucher.rewardImageUrl || voucher.reward_image_url || rewardObj?.imageUrl || rewardObj?.image_url || "";
+      let fullImageUrl = "";
+      if (rawImg && !rawImg.startsWith("data:")) {
+        if (rawImg.startsWith("http://") || rawImg.startsWith("https://")) {
+          fullImageUrl = rawImg;
+        } else if (typeof window !== "undefined" && window.location?.origin) {
+          fullImageUrl = window.location.origin + (rawImg.startsWith("/") ? "" : "/") + rawImg;
+        }
+      }
+
+      const ptsSpent = Number(voucher.pointsSpent || voucher.pointsCost || 0);
       let textMsg = "";
+
       if (!isCommercial) {
-        textMsg = encodeURIComponent(`Hola MeltyDeays! He canjeado mi vale [${voucher.voucherCode}] por "${voucher.rewardTitle}". Mi nombre es ${voucher.userName || "Cliente"}. Quisiera coordinar la entrega.`);
+        const msgLines = [
+          `🎁 *CANJE DE RECOMPENSA · WIRED CLUB*`,
+          `━━━━━━━━━━━━━━━━━━━━━━`,
+          `👋 *¡Hola MeltyDeays!*`,
+          ``,
+          `He canjeado exitosamente una recompensa con mis Wired Points:`,
+          ``,
+          `🎫 *Código:* \`${voucher.voucherCode}\``,
+          `🛍️ *Artículo:* *${voucher.rewardTitle}*`,
+          `👤 *Socio:* ${voucher.userName || "Cliente"}`,
+          `⭐ *Puntos canjeados:* ${ptsSpent.toLocaleString()} WP`,
+          `💵 *Costo:* ¡Gratis! (0.00)`,
+          ``,
+          `🛡️ *Premio de fidelidad:* Se entrega probado personalmente en mostrador.`,
+          ...(fullImageUrl ? [``, `🖼️ *Foto del Producto:*`, fullImageUrl] : []),
+          `━━━━━━━━━━━━━━━━━━━━━━`,
+          `Quisiera coordinar la entrega física de mi producto. ¡Muchas gracias!`
+        ];
+        textMsg = encodeURIComponent(msgLines.join("\n"));
       } else if (isPaid) {
-        textMsg = encodeURIComponent(`Hola MeltyDeays! Ya tengo mi vale [${voucher.voucherCode}] pagado (${formatDualPricePlain(voucher.cashToPayUsd)}) para "${voucher.rewardTitle}". Mi nombre es ${voucher.userName || "Cliente"}. Quisiera coordinar la entrega física.`);
+        const msgLines = [
+          `✅ *COMPROBANTE DE COMPRA PAGADA · MELTYDEAYS*`,
+          `━━━━━━━━━━━━━━━━━━━━━━`,
+          `👋 *¡Hola MeltyDeays!*`,
+          ``,
+          `Ya he realizado el pago de mi vale y deseo coordinar la entrega física:`,
+          ``,
+          `🎫 *Código:* \`${voucher.voucherCode}\``,
+          `🛍️ *Artículo:* *${voucher.rewardTitle}*`,
+          `👤 *Socio:* ${voucher.userName || "Cliente"}`,
+          `💰 *Monto Abonado:* *${formatDualPricePlain(voucher.cashToPayUsd)}*`,
+          `💵 *Estado de Pago:* CONFIRMADO`,
+          ``,
+          `🛡️ *Garantía:* 30 días de soporte técnico oficial amparada por tu compra.`,
+          ...(fullImageUrl ? [``, `🖼️ *Foto del Producto:*`, fullImageUrl] : []),
+          `━━━━━━━━━━━━━━━━━━━━━━`,
+          `Adjunto mi comprobante para agendar retiro en tienda. ¡Saludos!`
+        ];
+        textMsg = encodeURIComponent(msgLines.join("\n"));
       } else if (voucher.discountUsd > 0) {
-        textMsg = encodeURIComponent(`Hola MeltyDeays! He generado mi vale [${voucher.voucherCode}] con descuento de -${formatPrice(voucher.discountUsd)} en "${voucher.rewardTitle}". Saldo a abonar: ${formatDualPricePlain(voucher.cashToPayUsd)}. Mi nombre es ${voucher.userName || "Cliente"}.`);
+        const msgLines = [
+          `🎟️ *VALE DE DESCUENTO PENDIENTE · MELTYDEAYS*`,
+          `━━━━━━━━━━━━━━━━━━━━━━`,
+          `👋 *¡Hola MeltyDeays!*`,
+          ``,
+          `He generado un vale de canje con mis puntos Wired Club:`,
+          ``,
+          `🎫 *Código:* \`${voucher.voucherCode}\``,
+          `🛍️ *Artículo:* *${voucher.rewardTitle}*`,
+          `👤 *Socio:* ${voucher.userName || "Cliente"}`,
+          ``,
+          `📊 *DETALLE ECONÓMICO:*`,
+          `🏷️ *Descuento aplicado:* -${formatDualPricePlain(voucher.discountUsd)} (${ptsSpent.toLocaleString()} WP)`,
+          `💵 *Saldo a abonar en mostrador:* *${formatDualPricePlain(voucher.cashToPayUsd)}*`,
+          ``,
+          `⏱️ *Plazo de reserva:* 3 días para coordinar el abono y retiro`,
+          `🛡️ *Garantía:* 30 días de soporte técnico oficial tras concretar compra`,
+          ...(fullImageUrl ? [``, `🖼️ *Foto del Producto:*`, fullImageUrl] : []),
+          `━━━━━━━━━━━━━━━━━━━━━━`,
+          `Quisiera coordinar el abono y retiro de mi artículo. ¡Muchas gracias!`
+        ];
+        textMsg = encodeURIComponent(msgLines.join("\n"));
       } else {
-        textMsg = encodeURIComponent(`Hola MeltyDeays! He generado mi reserva de compra [${voucher.voucherCode}] para "${voucher.rewardTitle}". Saldo a abonar: ${formatDualPricePlain(voucher.cashToPayUsd)}. Mi nombre es ${voucher.userName || "Cliente"}.`);
+        const msgLines = [
+          `🛒 *RESERVA DE COMPRA EN TIENDA · MELTYDEAYS*`,
+          `━━━━━━━━━━━━━━━━━━━━━━`,
+          `👋 *¡Hola MeltyDeays!*`,
+          ``,
+          `He generado una reserva de compra en mostrador:`,
+          ``,
+          `🎫 *Código:* \`${voucher.voucherCode}\``,
+          `🛍️ *Artículo:* *${voucher.rewardTitle}*`,
+          `👤 *Socio:* ${voucher.userName || "Cliente"}`,
+          ``,
+          `📊 *DETALLE DE PAGO:*`,
+          `💵 *Total a abonar en mostrador:* *${formatDualPricePlain(voucher.cashToPayUsd)}*`,
+          ``,
+          `⏱️ *Plazo de reserva:* 3 días para concretar el pago`,
+          `🛡️ *Garantía:* 30 días de garantía técnica comercial`,
+          ...(fullImageUrl ? [``, `🖼️ *Foto del Producto:*`, fullImageUrl] : []),
+          `━━━━━━━━━━━━━━━━━━━━━━`,
+          `Quisiera coordinar el abono y retiro de mi artículo. ¡Muchas gracias!`
+        ];
+        textMsg = encodeURIComponent(msgLines.join("\n"));
       }
       waBtn.href = `https://wa.me/${phone}?text=${textMsg}`;
     }

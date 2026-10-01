@@ -1095,6 +1095,7 @@ export class FirestoreService {
         description: "Superficie de microfibra de alta precisión con costuras reforzadas y base de goma antideslizante (Demo).",
         pointsCost: 150,
         stock: 5,
+        imageUrl: "https://images.unsplash.com/photo-1616440347437-b1c73416efc2?auto=format&fit=crop&w=600&q=80",
         rewardType: "FREE_REWARD",
         status: "ACTIVE"
       },
@@ -1104,6 +1105,7 @@ export class FirestoreService {
         description: "Set de 4 teclas artesanales PBT sublimadas con estética retro tech (Demo).",
         pointsCost: 300,
         stock: 3,
+        imageUrl: "https://images.unsplash.com/photo-1595225476474-87563907a212?auto=format&fit=crop&w=600&q=80",
         rewardType: "FREE_REWARD",
         status: "ACTIVE"
       },
@@ -1117,6 +1119,7 @@ export class FirestoreService {
         maxDiscountUsd: 20.0,
         maxDiscountPct: 57,
         stock: 2,
+        imageUrl: "https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?auto=format&fit=crop&w=600&q=80",
         rewardType: "PARTIAL_DISCOUNT",
         status: "ACTIVE"
       }
