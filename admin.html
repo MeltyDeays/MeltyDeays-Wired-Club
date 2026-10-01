@@ -7,7 +7,8 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <link rel="stylesheet" href="./styles.css?v=2.9.13">
+  <link rel="stylesheet" href="./styles.css?v=2.9.14">
+  <link rel="stylesheet" href="./css/admin.css?v=2.9.14">
   
   <!-- Limpieza inmediata de cachés viejos residuales antes de cargar módulos -->
   <script>
@@ -1313,8 +1314,7 @@
   <!-- MODAL: MENÚ DE OPCIONES DE FACTURA / TOKEN (BOTÓN ...) -->
   <!-- MODAL: MENÚ DE OPCIONES DE FACTURA / TOKEN (BOTÓN ...) [REDISEÑO COPLAND OS 21.0] -->
   <div id="modal-token-actions" class="modal-overlay" style="display: none;">
-    <div class="modal-content lain-card modal-compact-mobile token-actions-modal-card">
-      <div class="modal-scanline-holder"><div class="modal-scanline-bar"></div></div>
+    <div class="modal-content lain-card modal-compact-mobile token-actions-modal-card" style="max-width: 580px; width: 95vw; padding: 1.6rem; border: 2px solid #0284c7; box-shadow: 0 10px 40px rgba(2, 132, 199, 0.22); background: #ffffff !important; position: relative;">
       <div class="tech-corner top-left">+</div>
       <div class="tech-corner top-right">+</div>
       <div class="tech-corner bottom-left">+</div>
@@ -1337,7 +1337,7 @@
       </div>
 
       <!-- FICHA DE IDENTIDAD DE LA FACTURA -->
-      <div class="token-actions-id-banner">
+      <div class="token-actions-id-banner" style="background: linear-gradient(135deg, #090d16 0%, #172033 100%) !important; border: 1.5px solid #1e293b !important; border-radius: 8px !important; padding: 0.95rem 1.1rem !important; margin-bottom: 1.15rem !important; color: #f8fafc !important; font-family: var(--font-mono) !important; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35) !important;">
         <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap; margin-bottom: 0.45rem;">
           <div>
             <div style="font-size: 0.68rem; color: #94a3b8; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;">Folio Correlativo</div>
@@ -1453,7 +1453,6 @@
   <!-- MODAL: PREVISUALIZACIÓN DE DISEÑO LAIN / REVERSO (COPLAND OS 21.0) -->
   <div id="modal-lain-preview" class="modal-overlay" style="display: none;">
     <div class="modal-content lain-card modal-compact-mobile" style="max-width: 680px; text-align: left; padding: 1.5rem; max-height: 92vh; overflow-y: auto;">
-      <div class="modal-scanline-holder"><div class="modal-scanline-bar"></div></div>
       <div class="tech-corner top-left">+</div>
       <div class="tech-corner top-right">+</div>
       <div class="tech-corner bottom-left">+</div>
@@ -2326,8 +2325,7 @@
 
   <!-- MODAL: ASIGNACIÓN Y RECLAMO ADMINISTRATIVO DIRECTO DE FACTURA (RESPALDO QR) [COPLAND OS 21.0] -->
   <div id="modal-admin-claim-customer" class="modal-overlay" style="display: none;">
-    <div class="modal-content lain-card admin-claim-modal-card">
-      <div class="modal-scanline-holder"><div class="modal-scanline-bar"></div></div>
+    <div class="modal-content lain-card admin-claim-modal-card" style="max-width: 620px; width: 95vw; padding: 1.6rem; border: 2px solid #4f46e5; box-shadow: 0 20px 45px rgba(15, 23, 42, 0.4), 0 0 25px rgba(79, 70, 229, 0.2); background: #ffffff !important; position: relative;">
       <div class="tech-corner top-left">+</div>
       <div class="tech-corner top-right">+</div>
       <div class="tech-corner bottom-left">+</div>
@@ -2349,7 +2347,7 @@
       </div>
 
       <!-- FICHA DE IDENTIDAD DE LA FACTURA -->
-      <div class="admin-claim-id-banner">
+      <div class="admin-claim-id-banner" style="background: linear-gradient(135deg, #090d16 0%, #172033 100%) !important; border: 1.5px solid #1e293b !important; border-radius: 8px !important; padding: 0.95rem 1.1rem !important; margin-bottom: 0.95rem !important; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35) !important;">
         <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap; margin-bottom: 0.45rem;">
           <div>
             <div style="font-size: 0.68rem; color: #94a3b8; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;">Factura & Folio Oficial</div>
@@ -2642,7 +2640,6 @@
   <!-- MODAL: CALCULADORA DE PUNTOS POR VENTA EN FACTURA (REGULADOR DE RETORNO) -->
   <div id="modal-sale-calculator" class="modal-overlay" style="display: none;">
     <div class="modal-content lain-card" style="max-width: 660px; text-align: left; padding: 1.6rem; position: relative; max-height: 92vh; overflow-y: auto; overflow-x: hidden;">
-      <div class="modal-scanline-holder"><div class="modal-scanline-bar"></div></div>
       <div class="tech-corner top-left">+</div>
       <div class="tech-corner top-right">+</div>
       <div class="tech-corner bottom-left">+</div>
@@ -3105,6 +3102,6 @@
     })();
   </script>
 
-  <script type="module" src="./js/admin-app.js?v=2.9.13"></script>
+  <script type="module" src="./js/admin-app.js?v=2.9.14"></script>
 </body>
 </html>
