@@ -334,27 +334,27 @@
         <div class="confirm-redeem-col-summary">
           <!-- RESUMEN FINANCIERO -->
           <div id="confirm-type-callout" style="display: none; background: #fffbeb; border: 1.5px solid #f59e0b; border-radius: 4px; padding: 0.75rem 0.85rem; font-family: var(--font-mono); font-size: 0.75rem; color: #78350f;">
-            <div style="font-weight: 900; margin-bottom: 6px; display: flex; align-items: baseline; justify-content: space-between; gap: 6px; color: #b45309;">
-              <span style="white-space: nowrap;">🏷️ VENTA CON DESCUENTO (<span id="confirm-type-pct">5% OFF</span>)</span>
-              <span id="confirm-type-price" style="color: var(--dark); font-weight: 800; text-align: right; white-space: nowrap;">$0.00 USD</span>
+            <div class="confirm-callout-row" style="font-weight: 900; margin-bottom: 6px; display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 4px 8px; color: #b45309;">
+              <span style="display: inline-block; word-break: break-word;">🏷️ VENTA CON DESCUENTO (<span id="confirm-type-pct">5% OFF</span>)</span>
+              <span id="confirm-type-price" style="color: var(--dark); font-weight: 800; text-align: right; margin-left: auto; white-space: nowrap;">$0.00 USD</span>
             </div>
-            <div style="font-size: 0.72rem; color: #92400e; margin-bottom: 4px; display: flex; justify-content: space-between; align-items: center; white-space: nowrap;">
+            <div class="confirm-callout-row" style="font-size: 0.72rem; color: #92400e; margin-bottom: 4px; display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 2px 8px;">
               <span>Descuento según puntos:</span>
-              <strong id="confirm-type-pct-calc" style="color: #059669;">0% de descuento / Máximo 5%</strong>
+              <strong id="confirm-type-pct-calc" class="confirm-callout-val" style="color: #059669;">0% de descuento / Máximo 5%</strong>
             </div>
-            <div style="font-size: 0.68rem; color: #78350f; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; white-space: nowrap;">
+            <div class="confirm-callout-row" style="font-size: 0.68rem; color: #78350f; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 2px 8px;">
               <span>Tope máximo de tienda:</span>
-              <strong id="confirm-type-max-disc" style="color: #b45309;">-$0.00 USD</strong>
+              <strong id="confirm-type-max-disc" class="confirm-callout-val" style="color: #b45309;">-$0.00 USD</strong>
             </div>
 
             <div style="font-size: 0.78rem; line-height: 1.35; border-top: 1px dashed #fcd34d; padding-top: 6px;">
-              <div style="display: flex; justify-content: space-between; align-items: center; white-space: nowrap;">
+              <div class="confirm-callout-row" style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 2px 8px;">
                 <span>Ahorro con tus puntos (<span id="confirm-calc-pct-label">0%</span>):</span>
-                <strong id="confirm-type-discount" style="color: #059669;">-$0.00 USD</strong>
+                <strong id="confirm-type-discount" class="confirm-callout-val" style="color: #059669;">-$0.00 USD</strong>
               </div>
-              <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 6px; margin-top: 4px;">
-                <strong style="color: #1e1b4b; white-space: nowrap;">Efectivo a pagar en tienda:</strong>
-                <strong id="confirm-type-cash" style="color: #dc2626; font-size: 0.92rem; text-align: right; white-space: nowrap;">$0.00 USD</strong>
+              <div class="confirm-callout-row" style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 4px 8px; margin-top: 4px;">
+                <strong style="color: #1e1b4b;">Efectivo a pagar en tienda:</strong>
+                <strong id="confirm-type-cash" class="confirm-callout-val" style="color: #dc2626; font-size: 0.92rem; text-align: right; margin-left: auto; white-space: nowrap;">$0.00 USD</strong>
               </div>
             </div>
             <div style="font-size: 0.68rem; color: #92400e; margin-top: 6px; line-height: 1.25;">

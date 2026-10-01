@@ -41,15 +41,24 @@
   width: 100%;
 }
 
-/* ========================================================
-   3. FORMATEO ANTI-ENCARAMAMIENTO & PRECIOS DUALES
-   ======================================================== */
 #confirm-type-price,
 #confirm-type-cash,
-#confirm-type-discount,
-#confirm-type-max-disc {
+#confirm-type-discount {
   white-space: nowrap !important;
   font-variant-numeric: tabular-nums;
+}
+
+#confirm-type-max-disc {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  word-break: break-word;
+}
+
+#confirm-type-callout {
+  box-sizing: border-box !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
 }
 
 #confirm-type-cash {
@@ -170,5 +179,21 @@
     box-sizing: border-box !important;
     padding: 0.75rem 1rem !important;
     font-size: 0.85rem !important;
+  }
+
+  #confirm-type-callout {
+    padding: 0.65rem 0.75rem !important;
+    font-size: 0.72rem !important;
+  }
+
+  #confirm-type-callout .confirm-callout-row {
+    flex-wrap: wrap !important;
+    gap: 2px 6px !important;
+  }
+
+  #confirm-type-callout .confirm-callout-val {
+    text-align: right !important;
+    margin-left: auto !important;
+    word-break: break-word !important;
   }
 }
