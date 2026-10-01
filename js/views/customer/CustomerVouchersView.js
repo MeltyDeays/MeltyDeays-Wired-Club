@@ -386,7 +386,7 @@ export function showVoucherModal(voucherCode) {
 
     if (waBtn) {
       waBtn.style.display = "flex";
-      const phone = "50588888888";
+      const phone = "50558438412";
       let textMsg = "";
       if (!isCommercial) {
         textMsg = encodeURIComponent(`Hola MeltyDeays! He canjeado mi vale [${voucher.voucherCode}] por "${voucher.rewardTitle}". Mi nombre es ${voucher.userName || "Cliente"}. Quisiera coordinar la entrega.`);

@@ -504,6 +504,10 @@ export async function runAdversarialCustomerPortalTests() {
     const midDb = JSON.parse(localStorage.getItem('dev_wired_club_mvvm_db_v2') || localStorage.getItem('wired_club_mvvm_db_v2'));
     expect(midDb.rewards['rew-cyber-drink'].stock).toBe(24);
 
+    // Verify WhatsApp button links to official store phone
+    const waBtn = doc.getElementById('btn-whatsapp-voucher');
+    expect(waBtn.href).toContain('50558438412', 'WhatsApp notification must target official store phone 50558438412');
+
     // Close voucher modal
     win.closeVoucherModal();
     expect(voucherModal.style.display).toBe('none');
