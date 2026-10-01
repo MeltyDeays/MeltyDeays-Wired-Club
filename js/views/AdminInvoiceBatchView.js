@@ -1076,6 +1076,20 @@ export function executeTokenOptQr() {
   }
 }
 
+export function executeTokenOptLainCard() {
+  if (!selectedTokenForActions) return;
+  const token = selectedTokenForActions;
+  let idx = 0;
+  if (token.invoiceData && typeof token.invoiceData.selectedLainDesignIdx === "number") {
+    idx = token.invoiceData.selectedLainDesignIdx;
+  } else if (token.invoiceFolio) {
+    const num = parseInt(String(token.invoiceFolio).replace(/\D/g, ""), 10);
+    if (!isNaN(num)) idx = num % 74;
+  }
+  closeModal("modal-token-actions");
+  openLainPreviewModal(idx);
+}
+
 export function executeTokenOptCopyLink() {
   if (selectedTokenForActions) {
     const code = selectedTokenForActions.tokenCode || selectedTokenForActions.token_code;

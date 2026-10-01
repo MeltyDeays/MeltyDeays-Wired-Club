@@ -116,6 +116,7 @@ import {
   openTokenActionsModal,
   executeTokenOptAssign,
   executeTokenOptQr,
+  executeTokenOptLainCard,
   executeTokenOptCopyLink,
   executeTokenOptTestUrl,
   executeTokenOptDigitalInvoice,
@@ -684,6 +685,7 @@ document.addEventListener("DOMContentLoaded", () => {
   window.setAdminClaimPointsPreset = setAdminClaimPointsPreset;
   window.toggleAdminClaimSelectMode = toggleAdminClaimSelectMode;
   window.executeTokenOptQr = executeTokenOptQr;
+  window.executeTokenOptLainCard = executeTokenOptLainCard;
   window.executeTokenOptCopyLink = executeTokenOptCopyLink;
   window.executeTokenOptTestUrl = executeTokenOptTestUrl;
   window.executeTokenOptDigitalInvoice = executeTokenOptDigitalInvoice;
