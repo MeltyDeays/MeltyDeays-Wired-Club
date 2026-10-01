@@ -683,14 +683,29 @@ export function openTokenActionsModal(tokenCode) {
   if (pinEl) pinEl.textContent = `PIN: ${token.securityPin || "••••"}`;
 
   if (statusRow) {
+    let claimedNotice = '';
+    if (token.isClaimed()) {
+      const uList = (vm && vm.users) ? vm.users : [];
+      const clUser = uList.find(u => u.uid === (token.claimedBy || token.claimed_by));
+      const clName = clUser ? (clUser.displayName || clUser.phone) : (token.claimedBy || token.claimed_by || "Cliente");
+      claimedNotice = `<div style="margin-top: 5px;"><span class="badge-navi" style="font-size: 0.72rem; padding: 2px 7px; background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5;">👤 Reclamada por: <strong>${clName}</strong></span></div>`;
+    }
     statusRow.innerHTML = `
-      <span class="badge-navi" style="font-size: 0.72rem; padding: 2px 7px; margin-right: 4px;">
-        ${token.pointsValue > 0 ? `⚡ ${token.pointsValue} WP` : '⏳ Sin Asignar (0 WP)'}
-      </span>
-      <span class="badge-navi" style="font-size: 0.72rem; padding: 2px 7px;">
-        ${token.isClaimed() ? '✔ RECLAMADO' : (token.isActive() ? '● SIN RECLAMAR' : '⏳ EN ESPERA DE VALOR')}
-      </span>
+      <div style="display: flex; gap: 4px; flex-wrap: wrap;">
+        <span class="badge-navi" style="font-size: 0.72rem; padding: 2px 7px;">
+          ${token.pointsValue > 0 ? `⚡ ${token.pointsValue} WP` : '⏳ Sin Asignar (0 WP)'}
+        </span>
+        <span class="badge-navi" style="font-size: 0.72rem; padding: 2px 7px;">
+          ${token.isClaimed() ? '✔ RECLAMADO' : (token.isActive() ? '● SIN RECLAMAR' : '⏳ EN ESPERA DE VALOR')}
+        </span>
+      </div>
+      ${claimedNotice}
     `;
+  }
+
+  const btnClaimCust = document.getElementById("btn-token-opt-claim-customer");
+  if (btnClaimCust) {
+    btnClaimCust.style.display = token.isClaimed() ? "none" : "inline-flex";
   }
 
   if (btnAssign) {
@@ -726,6 +741,211 @@ export function executeTokenOptAssign() {
   closeModal("modal-token-actions");
   if (selectedTokenForActions) {
     promptAssignPoints(selectedTokenForActions.tokenCode, selectedTokenForActions.invoiceFolio);
+  }
+}
+
+export function executeTokenOptClaimCustomer() {
+  closeModal("modal-token-actions");
+  if (selectedTokenForActions) {
+    openAdminClaimCustomerModal(selectedTokenForActions.tokenCode || selectedTokenForActions.token_code);
+  }
+}
+
+let activeClaimToken = null;
+
+export async function openAdminClaimCustomerModal(tokenCode) {
+  if (!tokenCode && selectedTokenForActions) {
+    tokenCode = selectedTokenForActions.tokenCode || selectedTokenForActions.token_code;
+  }
+  const tokens = (vm && vm.tokens) ? vm.tokens : [];
+  let token = tokens.find(t => (t.tokenCode === tokenCode || t.token_code === tokenCode));
+  if (!token && tokenCode && vm && typeof vm.verifyToken === "function") {
+    token = await vm.verifyToken(tokenCode);
+  }
+  if (!token) {
+    showToast("⚠️ Factura no encontrada.", "error");
+    return;
+  }
+  activeClaimToken = token;
+
+  const modal = document.getElementById("modal-admin-claim-customer");
+  if (!modal) return;
+
+  const folioStr = String(token.invoiceFolio || token.invoice_folio || "0000").padStart(4, "0");
+  const folioBadge = document.getElementById("admin-claim-folio-badge");
+  const codeBadge = document.getElementById("admin-claim-code-badge");
+  const pinBadge = document.getElementById("admin-claim-pin-badge");
+  const pointsInput = document.getElementById("admin-claim-points-input");
+  const statusNote = document.getElementById("admin-claim-status-note");
+
+  if (folioBadge) folioBadge.textContent = `#MD-2026-${folioStr}`;
+  if (codeBadge) codeBadge.textContent = token.tokenCode || token.token_code || "";
+  if (pinBadge) pinBadge.textContent = `PIN: ${token.securityPin || token.security_pin || "••••"}`;
+
+  const currentPts = Number(token.pointsValue !== undefined ? token.pointsValue : (token.points_value || 0));
+  if (pointsInput) {
+    pointsInput.value = currentPts > 0 ? currentPts : "";
+    pointsInput.placeholder = currentPts > 0 ? currentPts : "Ej. 50";
+  }
+
+  if (statusNote) {
+    if (currentPts > 0) {
+      statusNote.innerHTML = `<span style="color:#059669; font-weight:700;">⚡ Factura activa con ${currentPts} WP listos para transferir</span>`;
+    } else {
+      statusNote.innerHTML = `<span style="color:#d97706; font-weight:700;">⚠️ Factura sin puntos asignados (0 WP). Define los puntos a transferir al cliente.</span>`;
+    }
+  }
+
+  const searchInput = document.getElementById("admin-claim-user-search");
+  if (searchInput) searchInput.value = "";
+
+  populateAdminClaimUsersList("");
+  onAdminClaimUserSelectChange();
+
+  modal.style.display = "flex";
+}
+
+export function populateAdminClaimUsersList(filterText = "") {
+  const select = document.getElementById("admin-claim-user-select");
+  if (!select) return;
+
+  const query = (filterText || "").trim().toLowerCase();
+  let users = (vm && vm.users) ? [...vm.users] : [];
+  if (users.length === 0 && typeof FirestoreService !== "undefined" && FirestoreService.getAllUsers) {
+    users = FirestoreService.getAllUsers();
+  }
+
+  users.sort((a, b) => (a.displayName || "").localeCompare(b.displayName || ""));
+
+  let html = `<option value="">-- Selecciona un cliente registrado (${users.length} disponibles) --</option>`;
+
+  users.forEach(u => {
+    const name = u.displayName || u.display_name || "Socio";
+    const phone = u.phone || "";
+    const memberCode = u.memberCode || u.member_code || "";
+    const pts = Number(u.wiredPoints !== undefined ? u.wiredPoints : (u.wired_points || 0));
+
+    if (query) {
+      const match = name.toLowerCase().includes(query) ||
+                    phone.toLowerCase().includes(query) ||
+                    memberCode.toLowerCase().includes(query) ||
+                    (u.uid && u.uid.toLowerCase().includes(query));
+      if (!match) return;
+    }
+
+    html += `<option value="${u.uid}">
+      ${name} ${phone ? `(📞 ${phone})` : ''} — Saldo: ${pts} WP [${memberCode || u.uid}]
+    </option>`;
+  });
+
+  select.innerHTML = html;
+}
+
+export function onAdminClaimUserSearchInput(evt) {
+  const val = evt && evt.target ? evt.target.value : (document.getElementById("admin-claim-user-search")?.value || "");
+  populateAdminClaimUsersList(val);
+  onAdminClaimUserSelectChange();
+}
+
+export function onAdminClaimPointsChange() {
+  onAdminClaimUserSelectChange();
+}
+
+export function onAdminClaimUserSelectChange() {
+  const select = document.getElementById("admin-claim-user-select");
+  const preview = document.getElementById("admin-claim-customer-preview");
+  const nameEl = document.getElementById("admin-claim-preview-name");
+  const phoneEl = document.getElementById("admin-claim-preview-phone");
+  const currPtsEl = document.getElementById("admin-claim-preview-current-pts");
+  const addPtsEl = document.getElementById("admin-claim-preview-add-pts");
+  const newPtsEl = document.getElementById("admin-claim-preview-new-pts");
+  const btnConfirm = document.getElementById("btn-confirm-admin-claim");
+
+  if (!select || !select.value) {
+    if (preview) preview.style.display = "none";
+    if (btnConfirm) btnConfirm.disabled = true;
+    return;
+  }
+
+  const uid = select.value;
+  let users = (vm && vm.users) ? vm.users : [];
+  if (users.length === 0 && typeof FirestoreService !== "undefined" && FirestoreService.getAllUsers) {
+    users = FirestoreService.getAllUsers();
+  }
+  const user = users.find(u => u.uid === uid);
+  if (!user) {
+    if (preview) preview.style.display = "none";
+    if (btnConfirm) btnConfirm.disabled = true;
+    return;
+  }
+
+  const pointsInput = document.getElementById("admin-claim-points-input");
+  const ptsToAdd = Math.max(0, parseInt(pointsInput?.value, 10) || 0);
+  const currentPts = Number(user.wiredPoints !== undefined ? user.wiredPoints : (user.wired_points || 0));
+  const resultingPts = currentPts + ptsToAdd;
+
+  if (nameEl) nameEl.textContent = user.displayName || user.display_name || "Socio";
+  if (phoneEl) phoneEl.textContent = user.phone ? `📞 +505 ${user.phone}` : `ID: ${user.uid}`;
+  if (currPtsEl) currPtsEl.textContent = `${currentPts.toLocaleString()} WP`;
+  if (addPtsEl) addPtsEl.textContent = `+${ptsToAdd.toLocaleString()} WP`;
+  if (newPtsEl) newPtsEl.textContent = `${resultingPts.toLocaleString()} WP`;
+
+  if (preview) preview.style.display = "block";
+  if (btnConfirm) btnConfirm.disabled = (ptsToAdd <= 0);
+}
+
+export async function confirmAdminClaimCustomer() {
+  if (!activeClaimToken) {
+    showToast("⚠️ No hay ninguna factura seleccionada.", "error");
+    return;
+  }
+
+  const select = document.getElementById("admin-claim-user-select");
+  const selectedUid = select?.value;
+  if (!selectedUid) {
+    showToast("⚠️ Por favor selecciona un cliente de la lista.", "error");
+    return;
+  }
+
+  const pointsInput = document.getElementById("admin-claim-points-input");
+  const pts = parseInt(pointsInput?.value, 10);
+  if (isNaN(pts) || pts <= 0) {
+    showToast("⚠️ Ingresa una cantidad de puntos válida mayor a 0.", "error");
+    if (pointsInput) pointsInput.focus();
+    return;
+  }
+
+  const btnConfirm = document.getElementById("btn-confirm-admin-claim");
+  const originalBtnHtml = btnConfirm ? btnConfirm.innerHTML : "";
+  if (btnConfirm) {
+    btnConfirm.disabled = true;
+    btnConfirm.innerHTML = `<span>⏳</span> ASIGNANDO PUNTOS...`;
+  }
+
+  try {
+    const tokenCode = activeClaimToken.tokenCode || activeClaimToken.token_code;
+    const res = await vm.claimInvoiceForCustomer(
+      tokenCode,
+      selectedUid,
+      pts,
+      "Asignación administrativa de factura física"
+    );
+
+    closeModal("modal-admin-claim-customer");
+    const targetName = res.user.displayName || res.user.phone || "Cliente";
+    const folioStr = String(res.token.invoiceFolio || "0000").padStart(4, "0");
+    showToast(`✓ Factura #MD-2026-${folioStr} asignada y reclamada con éxito para ${targetName} (+${res.pointsAdded} WP).`, "success");
+
+    if (typeof renderTokensTable === "function") renderTokensTable(vm.tokens);
+    if (typeof renderAdmin === "function") renderAdmin(vm);
+  } catch (err) {
+    console.error("Error en confirmAdminClaimCustomer:", err);
+    showToast("❌ Error al asignar factura: " + err.message, "error");
+  } finally {
+    if (btnConfirm) {
+      btnConfirm.disabled = false;
+      btnConfirm.innerHTML = originalBtnHtml;
+    }
   }
 }
 

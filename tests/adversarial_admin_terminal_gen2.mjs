@@ -613,7 +613,9 @@ export async function runAdversarialAdminTerminalTests() {
       'modal-deliver-voucher',
       'modal-confirm-paid-voucher',
       'modal-camera-scanner',
-      'modal-sale-calculator'
+      'modal-sale-calculator',
+      'modal-release-invoice',
+      'modal-admin-claim-customer'
     ];
 
     for (const modalId of adminModals) {
@@ -680,6 +682,110 @@ export async function runAdversarialAdminTerminalTests() {
     console.log(`      ✓ 100% Bound on window: [${boundHandlers.length}/${globalFns.size}]`);
 
     expect(missingHandlers.length).toBe(0, `Missing admin window handlers: ${missingHandlers.join(', ')}`);
+  });
+
+  // =========================================================================
+  // 7. ASIGNACIÓN Y RECLAMO MANUAL DIRECTO DE FACTURAS A CLIENTES (RESPALDO QR)
+  // =========================================================================
+  await ctx.test('ADV-7.1: claimInvoiceForCustomer correctly assigns points, claims token for user, adds ledger entry, and enforces safety boundaries', async () => {
+    const { win } = setupTestEnvironment('admin.html');
+    const adminAppUrl = pathToFileURL(path.join(PROJECT_ROOT, 'js/admin-app.js')).href + `?t=${Date.now()}`;
+    await import(adminAppUrl);
+    win.document.dispatchEvent({ type: 'DOMContentLoaded' });
+
+    const { AdminViewModel } = await import(pathToFileURL(path.join(PROJECT_ROOT, 'js/viewmodels/AdminViewModel.js')).href + `?t=${Date.now()}`);
+    const { FirestoreService } = await import(pathToFileURL(path.join(PROJECT_ROOT, 'js/services/FirestoreService.js')).href + `?t=${Date.now()}`);
+    const { TokenModel } = await import(pathToFileURL(path.join(PROJECT_ROOT, 'js/models/TokenModel.js')).href + `?t=${Date.now()}`);
+
+    const vm = new AdminViewModel();
+    await vm.init();
+
+    // 1. Crear un token de prueba activo
+    const testFolio = 9999;
+    const testCode = 'WP-2026-F9999-TEST';
+    const initialPts = 75;
+    const token = new TokenModel({
+      token_code: testCode,
+      invoice_folio: testFolio,
+      points_value: initialPts,
+      status: 'ACTIVE'
+    });
+    await FirestoreService.saveToken(token.toJSON());
+
+    // 2. Obtener o crear un usuario de prueba
+    const users = await FirestoreService.fetchUsers();
+    let targetUser = users.find(u => u.phone === '58438412') || users[0];
+    if (!targetUser) {
+      targetUser = { uid: 'CLIENT-TEST-99', displayName: 'Cliente Test', phone: '88889999', wiredPoints: 100, lifetimePoints: 100 };
+      await FirestoreService.saveUser(targetUser);
+    }
+    const targetUid = targetUser.uid;
+    const prevPoints = Number(targetUser.wiredPoints || targetUser.wired_points || 0);
+
+    // 3. Ejecutar asignación y reclamo manual desde AdminViewModel
+    const res = await vm.claimInvoiceForCustomer(testCode, targetUid, 100, 'Reclamo de prueba por soporte');
+    expect(res.success).toBe(true, 'claimInvoiceForCustomer must return success: true');
+    expect(res.pointsAdded).toBe(100, 'Must apply specified points');
+    expect(res.newBalance).toBe(prevPoints + 100, 'Balance must increase by 100');
+
+    // 4. Verificar estado del token en base de datos
+    const savedTokenRaw = await FirestoreService.getToken(testCode);
+    expect(savedTokenRaw.status).toBe('CLAIMED', 'Token status must be CLAIMED');
+    expect(savedTokenRaw.claimed_by).toBe(targetUid, 'claimed_by must match targetUid');
+    expect(savedTokenRaw.points_value).toBe(100, 'points_value must match credited points');
+
+    // 5. Verificar transacción en el Ledger del cliente
+    const ledger = FirestoreService.getLedger(targetUid);
+    const lastEntry = ledger[0];
+    expect(lastEntry).toBeTruthy('Ledger entry must exist');
+    expect(lastEntry.type).toBe('CREDIT_INVOICE');
+    expect(lastEntry.delta).toBe(100);
+    expect(lastEntry.ref_id).toBe(testCode);
+
+    // 6. Verificar rechazo de doble reclamo
+    let doubleClaimFailed = false;
+    try {
+      await vm.claimInvoiceForCustomer(testCode, targetUid, 100);
+    } catch (e) {
+      doubleClaimFailed = true;
+      expect(e.message.toLowerCase().includes('ya fue reclamada')).toBe(true);
+    }
+    expect(doubleClaimFailed).toBe(true, 'Must reject claiming an already claimed invoice');
+
+    // 7. Verificar rechazo con puntos inválidos (0 o negativos)
+    const tokenZero = new TokenModel({
+      token_code: 'WP-2026-F9998-ZERO',
+      invoice_folio: 9998,
+      points_value: 0,
+      status: 'PENDING_ASSIGNMENT'
+    });
+    await FirestoreService.saveToken(tokenZero.toJSON());
+
+    let zeroPtsFailed = false;
+    try {
+      await vm.claimInvoiceForCustomer('WP-2026-F9998-ZERO', targetUid, 0);
+    } catch (e) {
+      zeroPtsFailed = true;
+    }
+    expect(zeroPtsFailed).toBe(true, 'Must reject claiming with 0 points');
+
+    // 8. Verificar apertura de modal y población de elementos en el DOM
+    await win.openAdminClaimCustomerModal(testCode);
+    const claimModal = win.document.getElementById('modal-admin-claim-customer');
+    expect(claimModal.style.display).toBe('flex', 'Modal must open with display flex');
+
+    const selectEl = win.document.getElementById('admin-claim-user-select');
+    expect(selectEl.innerHTML.includes(targetUid)).toBe(true, 'User select must contain target customer');
+
+    // Seleccionar cliente y disparar change
+    selectEl.value = targetUid;
+    win.onAdminClaimUserSelectChange();
+    const previewEl = win.document.getElementById('admin-claim-customer-preview');
+    expect(previewEl.style.display).toBe('block', 'Customer preview must show when user is selected');
+
+    // Cerrar modal
+    win.closeModal('modal-admin-claim-customer');
+    expect(claimModal.style.display).toBe('none', 'Modal must close cleanly');
   });
 
   return ctx.summary();

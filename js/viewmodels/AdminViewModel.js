@@ -330,6 +330,50 @@ export class AdminViewModel {
     return token;
   }
 
+  async claimInvoiceForCustomer(tokenCode, userUid, pointsOverride = null, reason = "Asignación administrativa de factura física") {
+    const token = await this.verifyToken(tokenCode);
+    if (!token) throw new Error("El código de factura [" + tokenCode + "] no existe.");
+    if (token.isClaimed()) {
+      throw new Error("Esta factura ya fue reclamada el " + new Date(token.claimedAt).toLocaleString());
+    }
+
+    let pts = pointsOverride !== null && pointsOverride !== undefined && !isNaN(pointsOverride)
+      ? Number(pointsOverride)
+      : token.pointsValue;
+
+    if (isNaN(pts) || pts <= 0) {
+      throw new Error("Debes indicar una cantidad de puntos válida mayor a 0.");
+    }
+
+    if (token.pointsValue !== pts || token.isPendingAssignment()) {
+      token.assignPoints(pts, "admin_melty");
+    }
+
+    const rawUser = await FirestoreService.getUser(userUid);
+    if (!rawUser) throw new Error("El cliente seleccionado no existe.");
+    const user = new UserModel(rawUser);
+
+    token.claim(user.uid);
+    await FirestoreService.saveToken(token.toJSON());
+
+    user.addPoints(pts);
+    await FirestoreService.saveUser(user.toJSON());
+
+    const entry = {
+      id: "TX-" + Date.now(),
+      type: "CREDIT_INVOICE",
+      delta: pts,
+      balance_after: user.wiredPoints,
+      ref_id: token.tokenCode,
+      note: `${reason} (Factura #MD-2026-${token.invoiceFolio || "0000"})`,
+      created_at: new Date().toISOString()
+    };
+    FirestoreService.addLedgerEntry(user.uid, entry);
+
+    await this.refreshData();
+    return { success: true, token, user, pointsAdded: pts, newBalance: user.wiredPoints };
+  }
+
   getNextAvailableFolio() {
     if (!this.tokens || this.tokens.length === 0) return 1;
     const existing = new Set(

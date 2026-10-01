@@ -753,6 +753,7 @@
 
   .confirm-redeem-actions button {
     width: 100% !important;
+    min-height: 44px !important;
     justify-content: center !important;
     text-align: center !important;
     white-space: normal !important;

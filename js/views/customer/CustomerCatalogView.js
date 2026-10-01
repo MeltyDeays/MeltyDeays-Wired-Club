@@ -626,6 +626,8 @@ export function confirmRedeem(rewardId) {
       }
     } else {
       typeCallout.style.display = "none";
+      if (controlsWrap) controlsWrap.style.display = "none";
+      if (zeroNote) zeroNote.style.display = "none";
     }
   }
 

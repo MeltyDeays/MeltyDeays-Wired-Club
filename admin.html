@@ -7,7 +7,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <link rel="stylesheet" href="./styles.css?v=2.9.7">
+  <link rel="stylesheet" href="./styles.css?v=2.9.11">
   
   <!-- Limpieza inmediata de cachés viejos residuales antes de cargar módulos -->
   <script>
@@ -1345,6 +1345,9 @@
         <button type="button" class="btn-secondary" id="btn-token-opt-edit-invoice" style="display: none; justify-content: flex-start; gap: 8px; padding: 0.65rem 0.9rem; font-size: 0.82rem; border-color: #059669; color: #047857; font-weight: 800; white-space: normal; text-align: left;" onclick="executeTokenOptEditInvoice()">
           <span>✏️</span> <strong>Modificar / Editar Datos de Factura</strong>
         </button>
+        <button type="button" class="btn-primary" id="btn-token-opt-claim-customer" style="justify-content: flex-start; gap: 8px; padding: 0.65rem 0.9rem; font-size: 0.82rem; background: linear-gradient(135deg, #4f46e5, #4338ca); border-color: #3730a3; white-space: normal; text-align: left;" onclick="executeTokenOptClaimCustomer()">
+          <span>👤</span> <strong>Asignar / Reclamar Factura a Cliente</strong>
+        </button>
         <button type="button" class="btn-primary" id="btn-token-opt-assign" style="justify-content: flex-start; gap: 8px; padding: 0.65rem 0.9rem; font-size: 0.82rem; white-space: normal; text-align: left;" onclick="executeTokenOptAssign()">
           <span>⚡</span> <strong>Cargar / Asignar Puntos WP</strong>
         </button>
@@ -2242,6 +2245,102 @@
     </div>
   </div>
 
+  <!-- MODAL: ASIGNACIÓN Y RECLAMO ADMINISTRATIVO DIRECTO DE FACTURA (RESPALDO QR) -->
+  <div id="modal-admin-claim-customer" class="modal-overlay" style="display: none;">
+    <div class="modal-content lain-card modal-compact-mobile" style="max-width: 520px; text-align: left; padding: 1.6rem; border: 2px solid #6366f1; box-shadow: 0 0 25px rgba(99, 102, 241, 0.25);">
+      <div class="modal-scanline-holder"><div class="modal-scanline-bar"></div></div>
+      <div class="tech-corner top-left">+</div>
+      <div class="tech-corner top-right">+</div>
+      <div class="tech-corner bottom-left">+</div>
+      <div class="tech-corner bottom-right">+</div>
+      <button class="modal-close-btn" onclick="closeModal('modal-admin-claim-customer')" aria-label="Cerrar">&times;</button>
+
+      <div class="lain-modal-header" style="border-bottom-color: #6366f1;">
+        <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+          <span class="badge-navi" style="background: #e0e7ff; color: #3730a3; border-color: #a5b4fc;">
+            ADMINISTRACIÓN // ASIGNACIÓN MANUAL
+          </span>
+          <span style="font-family: var(--font-mono); font-size: 0.68rem; color: #4f46e5; font-weight: 800;">
+            RECLAMO_RESPALDO_QR
+          </span>
+        </div>
+      </div>
+
+      <h3 style="font-size: 1.22rem; font-weight: 900; color: #312e81; margin: 0 0 0.45rem 0; font-family: var(--font-mono); word-break: break-word;">
+        👤 ASIGNAR FACTURA A CLIENTE REGISTRADO
+      </h3>
+      <p style="font-size: 0.84rem; color: var(--gray-700); line-height: 1.45; margin-bottom: 0.85rem;">
+        Si el cliente tuvo problemas para escanear el QR o hubo un error de lectura, puedes vincular y acreditar esta factura directamente a su cuenta.
+      </p>
+
+      <!-- TARJETA DE DETALLE DE LA FACTURA -->
+      <div style="background: #eef2ff; border: 1.5px solid #c7d2fe; border-radius: 6px; padding: 0.85rem; margin-bottom: 0.85rem; font-family: var(--font-mono);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.45rem;">
+          <span style="font-size: 0.72rem; color: #4338ca; font-weight: 800;">Nº FACTURA:</span>
+          <strong id="admin-claim-folio-badge" style="font-size: 1.15rem; color: #312e81; font-weight: 900;">#MD-2026-0000</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.45rem; gap: 0.5rem;">
+          <span style="font-size: 0.72rem; color: #4338ca; font-weight: 800; white-space: nowrap;">CÓDIGO TOKEN:</span>
+          <code id="admin-claim-code-badge" style="font-size: 0.75rem; background: #ffffff; padding: 2px 6px; border-radius: 3px; border: 1px solid #c7d2fe; color: #1e293b; font-weight: 800; word-break: break-all;">WP-2026-F...</code>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-size: 0.72rem; color: #4338ca; font-weight: 800;">SEGURIDAD:</span>
+          <span id="admin-claim-pin-badge" class="pin-badge">PIN: ••••</span>
+        </div>
+        <div id="admin-claim-status-note" style="margin-top: 0.5rem; font-size: 0.76rem;"></div>
+      </div>
+
+      <!-- PUNTOS A ACREDITAR -->
+      <div style="margin-bottom: 0.95rem;">
+        <label for="admin-claim-points-input" style="display: block; font-size: 0.78rem; font-weight: 800; color: #3730a3; margin-bottom: 0.35rem; font-family: var(--font-mono);">
+          ⚡ PUNTOS WIRED (WP) A ACREDITAR:
+        </label>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <input type="number" id="admin-claim-points-input" min="1" step="1" style="flex: 1; padding: 0.55rem 0.75rem; border: 1.5px solid #a5b4fc; border-radius: 6px; font-weight: 800; font-size: 1rem; color: #1e1b4b;" placeholder="Ej. 50" oninput="onAdminClaimPointsChange()">
+          <span style="font-size: 0.82rem; font-weight: 800; color: #4338ca; font-family: var(--font-mono);">WP</span>
+        </div>
+      </div>
+
+      <!-- SELECCIÓN DE CLIENTE -->
+      <div style="margin-bottom: 0.95rem;">
+        <label for="admin-claim-user-search" style="display: block; font-size: 0.78rem; font-weight: 800; color: #3730a3; margin-bottom: 0.35rem; font-family: var(--font-mono);">
+          🔍 BUSCAR CLIENTE REGISTRADO:
+        </label>
+        <input type="text" id="admin-claim-user-search" placeholder="Escribe nombre, teléfono o código (ej: 5843...)" style="width: 100%; box-sizing: border-box; padding: 0.5rem 0.75rem; border: 1.5px solid #cbd5e1; border-radius: 6px; font-size: 0.85rem; margin-bottom: 0.45rem;" oninput="onAdminClaimUserSearchInput(event)">
+        
+        <label for="admin-claim-user-select" style="display: block; font-size: 0.72rem; font-weight: 700; color: #64748b; margin-bottom: 0.25rem;">
+          Selecciona de la lista de socios:
+        </label>
+        <select id="admin-claim-user-select" style="width: 100%; box-sizing: border-box; padding: 0.55rem 0.75rem; border: 1.5px solid #a5b4fc; border-radius: 6px; font-size: 0.84rem; background: #ffffff;" onchange="onAdminClaimUserSelectChange()">
+          <option value="">-- Selecciona un cliente registrado --</option>
+        </select>
+      </div>
+
+      <!-- TARJETA PREVIEW DEL CLIENTE SELECCIONADO -->
+      <div id="admin-claim-customer-preview" style="display: none; background: #faf5ff; border: 1.5px solid #e9d5ff; border-radius: 6px; padding: 0.75rem; margin-bottom: 1.15rem; font-size: 0.8rem; font-family: var(--font-mono);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+          <span style="color: #6b21a8; font-weight: 800;" id="admin-claim-preview-name">Cliente</span>
+          <span style="color: #9333ea; font-size: 0.72rem; font-weight: 700;" id="admin-claim-preview-phone">📞 -</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; color: #4b5563; font-size: 0.75rem;">
+          <span>Saldo Actual: <strong id="admin-claim-preview-current-pts" style="color: #1f2937;">0 WP</strong></span>
+          <span>Acreditación: <strong id="admin-claim-preview-add-pts" style="color: #059669;">+0 WP</strong></span>
+        </div>
+        <div style="margin-top: 4px; padding-top: 4px; border-top: 1px dashed #d8b4fe; display: flex; justify-content: space-between; align-items: center; font-weight: 800;">
+          <span style="color: #581c87;">Nuevo Saldo Resultante:</span>
+          <span id="admin-claim-preview-new-pts" style="color: #7e22ce; font-size: 0.95rem;">0 WP</span>
+        </div>
+      </div>
+
+      <div class="modal-actions-responsive" style="display: flex; gap: 0.65rem; justify-content: flex-end;">
+        <button type="button" class="btn-secondary" onclick="closeModal('modal-admin-claim-customer')">CANCELAR</button>
+        <button type="button" class="btn-primary" id="btn-confirm-admin-claim" style="background: linear-gradient(135deg, #4f46e5, #4338ca); border-color: #3730a3; padding: 0.6rem 1.25rem; font-weight: 900;" onclick="confirmAdminClaimCustomer()">
+          <span>✓</span> ASIGNAR Y MARCAR RECLAMADA
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL: DESPACHO Y ENTREGA DE VALE EN MOSTRADOR [ESTILO COPLAND OS 21.0] -->
   <div id="modal-deliver-voucher" class="modal-overlay" style="display: none;">
     <div class="modal-content lain-card" style="max-width: 540px; text-align: left; padding: 1.6rem; position: relative; overflow: hidden;">
@@ -2882,6 +2981,6 @@
     })();
   </script>
 
-  <script type="module" src="./js/admin-app.js?v=2.9.10"></script>
+  <script type="module" src="./js/admin-app.js?v=2.9.11"></script>
 </body>
 </html>

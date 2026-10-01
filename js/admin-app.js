@@ -121,6 +121,12 @@ import {
   executeTokenOptDigitalInvoice,
   executeTokenOptViewInvoice,
   executeTokenOptEditInvoice,
+  executeTokenOptClaimCustomer,
+  openAdminClaimCustomerModal,
+  confirmAdminClaimCustomer,
+  onAdminClaimUserSelectChange,
+  onAdminClaimUserSearchInput,
+  onAdminClaimPointsChange,
   handleInvoiceBtnClick,
   handleProductImageFile,
   clearProductImageUpload,
@@ -665,6 +671,12 @@ document.addEventListener("DOMContentLoaded", () => {
   window.testSingleQrUrl = testSingleQrUrl;
   window.openTokenActionsModal = openTokenActionsModal;
   window.executeTokenOptAssign = executeTokenOptAssign;
+  window.executeTokenOptClaimCustomer = executeTokenOptClaimCustomer;
+  window.openAdminClaimCustomerModal = openAdminClaimCustomerModal;
+  window.confirmAdminClaimCustomer = confirmAdminClaimCustomer;
+  window.onAdminClaimUserSelectChange = onAdminClaimUserSelectChange;
+  window.onAdminClaimUserSearchInput = onAdminClaimUserSearchInput;
+  window.onAdminClaimPointsChange = onAdminClaimPointsChange;
   window.executeTokenOptQr = executeTokenOptQr;
   window.executeTokenOptCopyLink = executeTokenOptCopyLink;
   window.executeTokenOptTestUrl = executeTokenOptTestUrl;

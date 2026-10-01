@@ -1,0 +1,174 @@
+/**
+ * The Wired Club - MeltyDeays
+ * Modal Confirm Redeem (Canje y Compra) - Layout Ergonómico Dual
+ * Arquitectura: Desktop Panorámico 2 Columnas (880px) & Mobile Fluido (<768px)
+ */
+
+/* ========================================================
+   1. CONTENEDOR PRINCIPAL (#modal-confirm-redeem)
+   ======================================================== */
+.confirm-redeem-modal-container {
+  width: 95vw;
+  max-width: 480px;
+  max-height: 92vh;
+  box-sizing: border-box;
+  padding: 1.35rem 1.15rem !important;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  display: flex;
+  flex-direction: column;
+  transition: max-width 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+              padding 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ========================================================
+   2. GRID PRINCIPAL (LAYOUT MÓVIL POR DEFECTO: 1 COLUMNA)
+   ======================================================== */
+.confirm-redeem-body-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%;
+}
+
+.confirm-redeem-col-product,
+.confirm-redeem-col-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  min-width: 0;
+  width: 100%;
+}
+
+/* ========================================================
+   3. FORMATEO ANTI-ENCARAMAMIENTO & PRECIOS DUALES
+   ======================================================== */
+#confirm-type-price,
+#confirm-type-cash,
+#confirm-type-discount,
+#confirm-type-max-disc {
+  white-space: nowrap !important;
+  font-variant-numeric: tabular-nums;
+}
+
+#confirm-type-cash {
+  color: #dc2626 !important;
+  font-size: 0.96rem !important;
+  font-weight: 900 !important;
+  display: inline-flex !important;
+  align-items: baseline !important;
+  gap: 5px !important;
+  text-align: right !important;
+}
+
+#confirm-type-cash strong {
+  color: #dc2626;
+  font-weight: 900;
+}
+
+#confirm-type-cash span {
+  font-size: 0.76rem !important;
+  color: #64748b !important;
+  font-weight: 600 !important;
+  white-space: nowrap !important;
+}
+
+#confirm-type-price span {
+  font-size: 0.72rem !important;
+  color: #64748b !important;
+  font-weight: 600 !important;
+  white-space: nowrap !important;
+}
+
+/* ========================================================
+   4. DESKTOP PANORÁMICO (>=780px): 880px (2 COLUMNAS)
+   ======================================================== */
+@media (min-width: 780px) {
+  .confirm-redeem-modal-container {
+    max-width: 880px !important;
+    width: 880px !important;
+    padding: 1.6rem 2rem !important;
+    max-height: 90vh !important;
+    overflow-y: auto !important;
+  }
+
+  .confirm-redeem-body-grid {
+    display: grid !important;
+    grid-template-columns: 1.08fr 0.92fr !important;
+    gap: 1.6rem !important;
+    align-items: stretch !important;
+    margin-top: 0.35rem !important;
+  }
+
+  .confirm-redeem-col-product,
+  .confirm-redeem-col-summary {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.85rem !important;
+  }
+
+  .confirm-redeem-actions {
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: flex-end !important;
+    align-items: center !important;
+    gap: 0.75rem !important;
+    margin-top: auto !important;
+    padding-top: 0.75rem !important;
+  }
+
+  .confirm-redeem-actions button {
+    white-space: nowrap !important;
+  }
+
+  #btn-do-redeem {
+    min-height: 42px;
+    padding: 0.65rem 1.35rem !important;
+    font-size: 0.85rem !important;
+    font-weight: 900 !important;
+  }
+}
+
+/* ========================================================
+   5. MÓVILES (<768px): 1 COLUMNA, TOUCH >=44px, ORDEN INVERSO
+   ======================================================== */
+@media (max-width: 779.98px) {
+  .confirm-redeem-modal-container {
+    width: 95vw !important;
+    max-width: 95vw !important;
+    max-height: 92vh !important;
+    padding: 1.15rem 0.95rem !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  .confirm-redeem-body-grid {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.85rem !important;
+    margin-top: 0 !important;
+  }
+
+  .confirm-redeem-actions {
+    display: flex !important;
+    flex-direction: column-reverse !important;
+    gap: 0.6rem !important;
+    width: 100% !important;
+    margin-top: 0.75rem !important;
+  }
+
+  .confirm-redeem-actions button {
+    width: 100% !important;
+    min-height: 44px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    white-space: normal !important;
+    line-height: 1.25 !important;
+    box-sizing: border-box !important;
+    padding: 0.75rem 1rem !important;
+    font-size: 0.85rem !important;
+  }
+}
