@@ -131,7 +131,8 @@ export async function runTier1Tests() {
       'openSalePointsCalculatorModal', 'openNewUserModal', 'saveNewUserAdmin',
       'openNewProductModal', 'saveProductAdmin', 'openPrintSheetModal',
       'generateBatchAdmin', 'verifyVoucherAdmin', 'closeModal',
-      'openReleaseInvoiceModal', 'executeConfirmReleaseInvoice'
+      'openReleaseInvoiceModal', 'executeConfirmReleaseInvoice',
+      'handleAdminMarkSold', 'handleAdminDecrementStock', 'handleAdminRestock'
     ];
 
     const missingAdminHandlers = [];
@@ -593,6 +594,66 @@ export async function runTier1Tests() {
     // Limpiar todo
     adminWin.clearProductImageUpload();
     expect(countBadge?.textContent).toBe('0 FOTOS', 'Count badge should reset to 0 FOTOS on clear');
+  });
+
+  // Test 14: Unique vs Multi-unit stock lifecycle, 12-hour customer rule, and external sales
+  await ctx.test('T1.14: Unique vs Multi-stock lifecycle, external sold marking, and 12-hour customer catalog visibility rule', async () => {
+    const { RewardModel } = await import(pathToFileURL(path.join(PROJECT_ROOT, 'js/models/RewardModel.js')).href + `?t=${Date.now()}`);
+    const { AdminViewModel } = await import(pathToFileURL(path.join(PROJECT_ROOT, 'js/viewmodels/AdminViewModel.js')).href + `?t=${Date.now()}`);
+
+    // 1. Producto Único (stock: 1)
+    const uniqueProd = new RewardModel({
+      id: 'PROD-UNIQ-TEST',
+      title: 'Figura Única Coleccionable',
+      pointsCost: 500,
+      stock: 1,
+      rewardType: 'FREE_REWARD'
+    });
+
+    expect(uniqueProd.isUnique).toBe(true, 'Product with initial stock 1 should be flagged isUnique = true');
+    expect(uniqueProd.isAvailable()).toBe(true, 'Product with stock 1 should be available');
+    expect(uniqueProd.isVisibleToCustomer()).toBe(true, 'Available product should be visible to customer');
+
+    // Marcar como vendido externamente
+    uniqueProd.markAsSoldOut('VENTA_EXTERNA');
+    expect(uniqueProd.stock).toBe(0, 'Stock should be 0 after markAsSoldOut');
+    expect(uniqueProd.status).toBe('SOLD_OUT', 'Status should be SOLD_OUT');
+    expect(uniqueProd.soldOutReason).toBe('VENTA_EXTERNA', 'Reason should be VENTA_EXTERNA');
+    expect(uniqueProd.isSoldOut()).toBe(true, 'isSoldOut() should be true');
+
+    // Regla de 12 horas: Recién vendido (<12h) sigue visible con badge de vendido
+    expect(uniqueProd.isVisibleToCustomer()).toBe(true, 'Recently sold unique product (<12h) must remain visible in catalog');
+
+    // Regla de 12 horas: Vendido hace más de 12 horas (>12h) desaparece
+    uniqueProd.soldOutAt = new Date(Date.now() - (13 * 60 * 60 * 1000)).toISOString();
+    expect(uniqueProd.isVisibleToCustomer()).toBe(false, 'Sold out product older than 12h must NOT be visible to customer');
+
+    // 2. Producto Múltiple (stock: 3)
+    const multiProd = new RewardModel({
+      id: 'PROD-MULTI-STOCK',
+      title: 'Stickers Melty Pack',
+      pointsCost: 50,
+      stock: 3,
+      initialStock: 3,
+      rewardType: 'FREE_REWARD'
+    });
+
+    expect(multiProd.isUnique).toBe(false, 'Product with initial stock 3 should be isUnique = false');
+    multiProd.decrementStock(1);
+    expect(multiProd.stock).toBe(2, 'Stock should decrease to 2');
+    expect(multiProd.isAvailable()).toBe(true, 'Should still be available with stock 2');
+
+    multiProd.decrementStock(2);
+    expect(multiProd.stock).toBe(0, 'Stock should reach 0');
+    expect(multiProd.isSoldOut()).toBe(true, 'Should be sold out when stock is 0');
+    expect(multiProd.status).toBe('SOLD_OUT', 'Status should transition to SOLD_OUT');
+
+    // Reponer stock
+    multiProd.restock(5);
+    expect(multiProd.stock).toBe(5, 'Stock should be 5 after restock');
+    expect(multiProd.status).toBe('ACTIVE', 'Status should return to ACTIVE');
+    expect(multiProd.isSoldOut()).toBe(false, 'isSoldOut should be false after restock');
+    expect(multiProd.isVisibleToCustomer()).toBe(true, 'Restocked product should be visible to customer');
   });
 
   return ctx.summary();

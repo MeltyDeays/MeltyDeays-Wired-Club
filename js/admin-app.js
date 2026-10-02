@@ -150,6 +150,9 @@ import {
   openEditProductModal,
   saveProductAdmin,
   removeProductAdmin,
+  handleAdminMarkSold,
+  handleAdminDecrementStock,
+  handleAdminRestock,
   filterLainSeries,
   setActiveLainTemplate,
   cycleLainTemplate,
@@ -469,6 +472,14 @@ function renderCatalogTable(catalog) {
         </div>
       `;
 
+    const isSoldOut = (p.stock || 0) <= 0 || (typeof p.isSoldOut === "function" && p.isSoldOut()) || p.status === "SOLD_OUT";
+
+    const stockDisplay = isSoldOut
+      ? `<span style="background:#fee2e2; color:#991b1b; padding:2px 6px; border-radius:4px; font-size:0.7rem; font-weight:800; border:1px solid #fca5a5;">🔴 VENDIDO</span>`
+      : (p.stock === 1
+        ? `<span style="background:#ecfdf5; color:#065f46; padding:2px 6px; border-radius:4px; font-size:0.75rem; font-weight:800; border:1px solid #a7f3d0;">1 un. (ÚNICO)</span>`
+        : `<strong>${p.stock}</strong> un.`);
+
     return `
       <tr>
         <td>
@@ -485,10 +496,24 @@ function renderCatalogTable(catalog) {
           </div>
         </td>
         <td>${costDisplay}</td>
-        <td><strong>${p.stock}</strong> un.</td>
+        <td>${stockDisplay}</td>
         <td style="max-width: 380px;">${descDisplay}</td>
         <td style="text-align: right; white-space: nowrap;">
           <div style="display: inline-flex; align-items: center; gap: 6px; justify-content: flex-end;">
+            ${!isSoldOut ? `
+              <button type="button" class="catalog-action-btn btn-sold" onclick="handleAdminMarkSold('${p.id}', '${escapedTitle}')" title="Marcar como vendido externamente (Stock a 0)">
+                <span class="btn-icon">🏷️</span> <span>Vendido</span>
+              </button>
+              ${(p.stock || 0) > 1 ? `
+                <button type="button" class="catalog-action-btn btn-decrement" onclick="handleAdminDecrementStock('${p.id}', '${escapedTitle}')" title="Restar 1 unidad de stock">
+                  <span class="btn-icon">📉</span> <span>-1</span>
+                </button>
+              ` : ''}
+            ` : `
+              <button type="button" class="catalog-action-btn btn-restock" onclick="handleAdminRestock('${p.id}', 1, '${escapedTitle}')" title="Reponer 1 unidad">
+                <span class="btn-icon">➕</span> <span>+1 un.</span>
+              </button>
+            `}
             <button type="button" class="catalog-action-btn btn-edit" onclick="openEditProductModal('${p.id}')" title="Editar producto ${p.id}">
               <span class="btn-icon">✏️</span> <span>Editar</span>
             </button>
@@ -733,6 +758,9 @@ document.addEventListener("DOMContentLoaded", () => {
   window.openEditProductModal = openEditProductModal;
   window.saveProductAdmin = saveProductAdmin;
   window.removeProductAdmin = removeProductAdmin;
+  window.handleAdminMarkSold = handleAdminMarkSold;
+  window.handleAdminDecrementStock = handleAdminDecrementStock;
+  window.handleAdminRestock = handleAdminRestock;
   window.handleProductImageFile = handleProductImageFile;
   window.addProductImageUrl = addProductImageUrl;
   window.removeProductImageAt = removeProductImageAt;

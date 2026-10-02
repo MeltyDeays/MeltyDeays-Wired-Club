@@ -236,6 +236,39 @@ export class AdminViewModel {
     await this.refreshData();
   }
 
+  async markRewardSoldOut(rewardId, reason = "VENTA_EXTERNA") {
+    const raw = await FirestoreService.getReward(rewardId);
+    const reward = raw ? new RewardModel(raw) : (this.catalog || []).find(r => r.id === rewardId);
+    if (!reward) throw new Error("Producto no encontrado.");
+    reward.markAsSoldOut(reason);
+    await FirestoreService.saveReward(reward.toJSON());
+    await this.refreshData();
+    this.notify();
+    return reward;
+  }
+
+  async decrementRewardStock(rewardId, qty = 1) {
+    const raw = await FirestoreService.getReward(rewardId);
+    const reward = raw ? new RewardModel(raw) : (this.catalog || []).find(r => r.id === rewardId);
+    if (!reward) throw new Error("Producto no encontrado.");
+    reward.decrementStock(qty);
+    await FirestoreService.saveReward(reward.toJSON());
+    await this.refreshData();
+    this.notify();
+    return reward;
+  }
+
+  async restockReward(rewardId, qty = 1) {
+    const raw = await FirestoreService.getReward(rewardId);
+    const reward = raw ? new RewardModel(raw) : (this.catalog || []).find(r => r.id === rewardId);
+    if (!reward) throw new Error("Producto no encontrado.");
+    reward.restock(qty);
+    await FirestoreService.saveReward(reward.toJSON());
+    await this.refreshData();
+    this.notify();
+    return reward;
+  }
+
   async verifyVoucher(voucherCode) {
     const clean = (voucherCode || "").trim().toUpperCase();
     if (!clean) return null;

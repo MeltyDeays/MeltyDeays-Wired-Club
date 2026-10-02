@@ -1873,6 +1873,51 @@
   transform: translate(1px, 1px);
 }
 
+.catalog-action-btn.btn-sold {
+  background: #fff1f2;
+  color: #e11d48;
+  border: 1.5px solid #fb7185;
+  box-shadow: 2px 2px 0px rgba(225, 29, 72, 0.25);
+}
+
+.catalog-action-btn.btn-sold:hover {
+  background: #ffe4e6;
+  color: #be123c;
+  border-color: #e11d48;
+  box-shadow: 1px 1px 0px rgba(225, 29, 72, 0.4);
+  transform: translate(1px, 1px);
+}
+
+.catalog-action-btn.btn-decrement {
+  background: #fffbeb;
+  color: #d97706;
+  border: 1.5px solid #fcd34d;
+  box-shadow: 2px 2px 0px rgba(217, 119, 6, 0.25);
+}
+
+.catalog-action-btn.btn-decrement:hover {
+  background: #fef3c7;
+  color: #b45309;
+  border-color: #d97706;
+  box-shadow: 1px 1px 0px rgba(217, 119, 6, 0.4);
+  transform: translate(1px, 1px);
+}
+
+.catalog-action-btn.btn-restock {
+  background: #ecfdf5;
+  color: #059669;
+  border: 1.5px solid #6ee7b7;
+  box-shadow: 2px 2px 0px rgba(5, 150, 105, 0.25);
+}
+
+.catalog-action-btn.btn-restock:hover {
+  background: #d1fae5;
+  color: #047857;
+  border-color: #059669;
+  box-shadow: 1px 1px 0px rgba(5, 150, 105, 0.4);
+  transform: translate(1px, 1px);
+}
+
 /* Botón Neobrutalista: Borrar QR y Liberar Folio */
 .btn-release-folio {
   display: inline-flex;

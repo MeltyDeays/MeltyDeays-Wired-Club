@@ -113,7 +113,12 @@ export class RewardModel {
       this.cashToPayUsd = Number(data.cashToPayUsd || data.cash_to_pay_usd || 0);
     }
     this.pointsCost = Number(data.pointsCost || data.points_cost || 0);
-    this.stock = Number(data.stock || 0);
+    this.stock = Number(data.stock != null ? data.stock : 0);
+    this.initialStock = Number(data.initialStock || data.initial_stock || this.stock || 1);
+    this.isUnique = Boolean(data.isUnique || data.is_unique || (this.initialStock === 1));
+    this.status = data.status || (this.stock > 0 ? "ACTIVE" : "SOLD_OUT");
+    this.soldOutAt = data.soldOutAt || data.sold_out_at || (this.stock === 0 ? new Date().toISOString() : null);
+    this.soldOutReason = data.soldOutReason || data.sold_out_reason || "";
 
     // Soporte multi-imagen con retrocompatibilidad
     let imgs = [];
@@ -151,21 +156,60 @@ export class RewardModel {
   }
 
   isAvailable() {
-    return this.stock > 0;
+    return this.stock > 0 && this.status !== "SOLD_OUT";
+  }
+
+  isSoldOut() {
+    return this.stock <= 0 || this.status === "SOLD_OUT";
+  }
+
+  // Comprueba si debe ser visible en el catálogo de clientes:
+  // Si está agotado, solo permanece visible durante las primeras 12 horas desde que se agotó.
+  isVisibleToCustomer() {
+    if (this.stock > 0 && this.status !== "SOLD_OUT") {
+      return true;
+    }
+    if (!this.soldOutAt) {
+      return true;
+    }
+    const TWELVE_HOURS_MS = 12 * 60 * 60 * 1000;
+    const elapsed = Date.now() - new Date(this.soldOutAt).getTime();
+    return elapsed < TWELVE_HOURS_MS;
   }
 
   isPartialDiscount() {
     return this.rewardType === "PARTIAL_DISCOUNT";
   }
 
-  decrementStock() {
-    if (this.stock <= 0) throw new Error("Producto sin stock");
-    this.stock -= 1;
+  decrementStock(qty = 1) {
+    if (this.stock <= 0) throw new Error("Producto sin stock disponible");
+    const dec = Number(qty) || 1;
+    this.stock = Math.max(0, this.stock - dec);
+    if (this.stock === 0) {
+      this.status = "SOLD_OUT";
+      if (!this.soldOutAt) {
+        this.soldOutAt = new Date().toISOString();
+      }
+    }
     this.updatedAt = new Date().toISOString();
   }
 
-  incrementStock() {
-    this.stock += 1;
+  markAsSoldOut(reason = "VENTA_EXTERNA") {
+    this.stock = 0;
+    this.status = "SOLD_OUT";
+    this.soldOutAt = new Date().toISOString();
+    this.soldOutReason = reason;
+    this.updatedAt = new Date().toISOString();
+  }
+
+  restock(qty = 1) {
+    const add = Number(qty) || 1;
+    this.stock = Math.max(0, this.stock + add);
+    if (this.stock > 0) {
+      this.status = "ACTIVE";
+      this.soldOutAt = null;
+      this.soldOutReason = "";
+    }
     this.updatedAt = new Date().toISOString();
   }
 
@@ -181,6 +225,12 @@ export class RewardModel {
       cash_to_pay_usd: this.cashToPayUsd,
       points_cost: this.pointsCost,
       stock: this.stock,
+      initial_stock: this.initialStock,
+      is_unique: this.isUnique,
+      status: this.status,
+      sold_out_at: this.soldOutAt,
+      soldOutAt: this.soldOutAt,
+      sold_out_reason: this.soldOutReason,
       image_url: this.imageUrl,
       imageUrl: this.imageUrl,
       images: this.images,

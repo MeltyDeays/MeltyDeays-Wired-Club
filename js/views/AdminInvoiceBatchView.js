@@ -567,6 +567,38 @@ export async function removeProductAdmin(id) {
   }
 }
 
+export async function handleAdminMarkSold(rewardId, title) {
+  const cleanTitle = title || rewardId;
+  if (!confirm(`¿Marcar "${cleanTitle}" como vendido externamente (Stock a 0)?\n\nEl producto se marcará como VENDIDO y desaparecerá del catálogo de clientes en 12 horas.`)) {
+    return;
+  }
+  try {
+    await vm.markRewardSoldOut(rewardId, "VENTA_EXTERNA");
+    showToast(`✓ "${cleanTitle}" marcado como vendido.`, "success");
+  } catch (err) {
+    showToast("❌ Error al marcar producto: " + err.message, "error");
+  }
+}
+
+export async function handleAdminDecrementStock(rewardId, title) {
+  try {
+    await vm.decrementRewardStock(rewardId, 1);
+    showToast(`✓ Se restó 1 unidad de "${title || rewardId}".`, "info");
+  } catch (err) {
+    showToast("❌ " + err.message, "error");
+  }
+}
+
+export async function handleAdminRestock(rewardId, qty = 1, title = "") {
+  try {
+    const amount = Number(qty) || 1;
+    await vm.restockReward(rewardId, amount);
+    showToast(`✓ Se repuso stock (+${amount}) para "${title || rewardId}".`, "success");
+  } catch (err) {
+    showToast("❌ Error al reponer stock: " + err.message, "error");
+  }
+}
+
 export function toggleCustomPaperInputs() {
   const select = document.getElementById("lot-paper-size");
   const customBox = document.getElementById("custom-paper-fields");

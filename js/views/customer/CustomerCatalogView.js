@@ -491,12 +491,25 @@ let selectedPointsToApply = 0;
 let currentRedeemReward = null;
 
 export function renderCatalog(catalog, user) {
-  lastRenderedCatalog = Array.isArray(catalog) ? catalog : [];
-  if (typeof window !== "undefined") window._lastRenderedCatalog = lastRenderedCatalog;
+  const rawList = Array.isArray(catalog) ? catalog : [];
+  const visibleCatalog = rawList.filter(item => {
+    if (typeof item.isVisibleToCustomer === "function") {
+      return item.isVisibleToCustomer();
+    }
+    if (item.stock > 0 && item.status !== "SOLD_OUT") return true;
+    if (item.soldOutAt) {
+      const TWELVE_HOURS_MS = 12 * 60 * 60 * 1000;
+      return (Date.now() - new Date(item.soldOutAt).getTime()) < TWELVE_HOURS_MS;
+    }
+    return true;
+  });
+
+  lastRenderedCatalog = visibleCatalog;
+  if (typeof window !== "undefined") window._lastRenderedCatalog = visibleCatalog;
   const container = document.getElementById("catalog-container");
   if (!container) return;
 
-  if (catalog.length === 0) {
+  if (visibleCatalog.length === 0) {
     container.innerHTML = `
       <div class="cyber-empty-box">
         <div class="empty-icon-wrap">
@@ -520,8 +533,8 @@ export function renderCatalog(catalog, user) {
     return;
   }
 
-  container.innerHTML = catalog.map(item => {
-    const isOut = item.stock <= 0;
+  container.innerHTML = visibleCatalog.map(item => {
+    const isOut = item.stock <= 0 || item.status === "SOLD_OUT";
     const canAfford = user && user.wiredPoints >= item.pointsCost;
     const isPartial = item.rewardType === "PARTIAL_DISCOUNT" || (typeof item.isPartialDiscount === "function" && item.isPartialDiscount());
     const userPts = user ? (user.wiredPoints || 0) : 0;
@@ -789,7 +802,7 @@ export function renderCatalog(catalog, user) {
             `
             : `<div style="text-align:center; padding:1rem;"><span style="font-size:2.2rem;">${isPartial ? '🏷️' : '🎁'}</span><div style="font-family:var(--font-mono); font-size:0.68rem; color:#38bdf8; margin-top:4px;">${isPartial ? 'SALE_DISCOUNT' : 'TECH_REWARD'}</div></div>`
           }
-          <div class="stock-tag ${isOut ? 'out' : ''}">${isOut ? 'AGOTADO' : item.stock + ' DISP.'}</div>
+          <div class="stock-tag ${isOut ? 'out' : ''}">${isOut ? 'VENDIDO' : (item.stock === 1 ? '1 DISP. (ÚNICO)' : item.stock + ' DISP.')}</div>
         </div>
         <div class="reward-body">
           <div class="reward-title" title="${item.title}">${item.title}</div>

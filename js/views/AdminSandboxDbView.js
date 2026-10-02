@@ -980,13 +980,21 @@ function renderDraftTable() {
           <tbody>
             ${catalog.map(p => {
               const isPartial = p.rewardType === "PARTIAL_DISCOUNT" || (typeof p.isPartialDiscount === "function" && p.isPartialDiscount());
+              const isSoldOut = (p.stock || 0) <= 0 || (typeof p.isSoldOut === "function" && p.isSoldOut()) || p.status === "SOLD_OUT";
+              const escapedTitle = (p.title || "").replace(/'/g, "\\'");
+
+              const stockDisplay = isSoldOut
+                ? `<span style="background:#fee2e2; color:#991b1b; padding:2px 6px; border-radius:4px; font-size:0.7rem; font-weight:800; border:1px solid #fca5a5;">🔴 VENDIDO</span>`
+                : (p.stock === 1
+                  ? `<span style="background:#ecfdf5; color:#065f46; padding:2px 6px; border-radius:4px; font-size:0.75rem; font-weight:800; border:1px solid #a7f3d0;">1 u. (ÚNICO)</span>`
+                  : `<strong>${p.stock}</strong> u.`);
 
               return `
                 <tr>
                   <td><code>${p.id}</code></td>
                   <td><strong>${p.title}</strong></td>
                   <td>⚡ ${p.pointsCost || 0} WP</td>
-                  <td>${p.stock || 0} u.</td>
+                  <td>${stockDisplay}</td>
                   <td>
                     <span class="badge-navi" style="font-size:0.7rem; ${isPartial ? 'background:#eef2ff; color:#4338ca;' : 'background:#ecfdf5; color:#065f46;'}">
                       ${isPartial ? 'COPAGO' : '100% PUNTOS'}
@@ -994,10 +1002,24 @@ function renderDraftTable() {
                   </td>
                   <td style="text-align: right; white-space: nowrap;">
                     <div style="display: inline-flex; align-items: center; gap: 6px; justify-content: flex-end;">
+                      ${!isSoldOut ? `
+                        <button type="button" class="catalog-action-btn btn-sold" onclick="handleAdminMarkSold('${p.id}', '${escapedTitle}')" title="Marcar como vendido externamente">
+                          <span class="btn-icon">🏷️</span> <span>Vendido</span>
+                        </button>
+                        ${(p.stock || 0) > 1 ? `
+                          <button type="button" class="catalog-action-btn btn-decrement" onclick="handleAdminDecrementStock('${p.id}', '${escapedTitle}')" title="Restar 1 unidad de stock">
+                            <span class="btn-icon">📉</span> <span>-1</span>
+                          </button>
+                        ` : ''}
+                      ` : `
+                        <button type="button" class="catalog-action-btn btn-restock" onclick="handleAdminRestock('${p.id}', 1, '${escapedTitle}')" title="Reponer 1 unidad">
+                          <span class="btn-icon">➕</span> <span>+1 u.</span>
+                        </button>
+                      `}
                       <button type="button" class="catalog-action-btn btn-edit" onclick="openEditProductModal('${p.id}')">
                         <span class="btn-icon">✏️</span> <span>Editar</span>
                       </button>
-                      <button type="button" class="catalog-action-btn btn-delete" onclick="deleteSingleReward('${p.id}', '${(p.title || '').replace(/'/g, "\\'")}')">
+                      <button type="button" class="catalog-action-btn btn-delete" onclick="deleteSingleReward('${p.id}', '${escapedTitle}')">
                         <span class="btn-icon">🗑️</span> <span>Eliminar</span>
                       </button>
                     </div>
