@@ -275,6 +275,12 @@ function updateSpecsModalImage() {
   });
 }
 
+export function openLightboxFromSpecs() {
+  if (!currentSpecsItem) return;
+  const escapedTitle = (currentSpecsItem.title || "").replace(/'/g, "\\'");
+  openImageLightbox(currentSpecsItem.id, currentSpecsImgIndex, escapedTitle);
+}
+
 export function openProductSpecsModal(rewardId, imgIdx = 0) {
   let item = null;
   if (vm && vm.catalog) {
@@ -318,9 +324,9 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
         <div class="specs-carousel-stage">
           ${hasMultiple ? `<span id="specs-carousel-counter" class="specs-carousel-counter">[ 0${currentSpecsImgIndex + 1} / 0${productImages.length} ]</span>` : ''}
           ${hasMultiple ? `<button type="button" class="specs-carousel-btn prev" onclick="specsModalPrevImage()" aria-label="Foto anterior">‹</button>` : ''}
-          <img id="specs-carousel-img" src="${mainHeroImg}" alt="${item.title}" onclick="openImageLightbox('${item.id}', currentSpecsImgIndex, '${escapedTitle}')" title="Clic para ver en pantalla completa" onerror="this.onerror=null; this.src=''; this.parentElement.style.background='#0d131f';">
+          <img id="specs-carousel-img" src="${mainHeroImg}" alt="${item.title}" onclick="openLightboxFromSpecs()" title="Clic para ver en pantalla completa" onerror="this.onerror=null; this.src=''; this.parentElement.style.background='#0d131f';">
           ${hasMultiple ? `<button type="button" class="specs-carousel-btn next" onclick="specsModalNextImage()" aria-label="Foto siguiente">›</button>` : ''}
-          <button type="button" class="specs-carousel-expand-btn" onclick="openImageLightbox('${item.id}', currentSpecsImgIndex, '${escapedTitle}')" title="Ver en pantalla completa">
+          <button type="button" class="specs-carousel-expand-btn" onclick="openLightboxFromSpecs()" title="Ver en pantalla completa">
             <span>⛶</span> <span>AMPLIAR</span>
           </button>
         </div>

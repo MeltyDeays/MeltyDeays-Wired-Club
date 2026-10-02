@@ -24,6 +24,7 @@ import {
   specsModalNextImage,
   specsModalPrevImage,
   setSpecsModalImageIndex,
+  openLightboxFromSpecs,
   openImageLightbox,
   closeImageLightbox,
   lightboxNextImage,
@@ -340,6 +341,7 @@ document.addEventListener("DOMContentLoaded", () => {
   window.specsModalNextImage = specsModalNextImage;
   window.specsModalPrevImage = specsModalPrevImage;
   window.setSpecsModalImageIndex = setSpecsModalImageIndex;
+  window.openLightboxFromSpecs = openLightboxFromSpecs;
   window.openImageLightbox = openImageLightbox;
   window.closeImageLightbox = closeImageLightbox;
   window.lightboxNextImage = lightboxNextImage;
