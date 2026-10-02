@@ -1824,24 +1824,33 @@
         </div>
 
         <div class="form-group" style="grid-column: span 2; margin-top: 0.4rem; margin-bottom: 0;">
-          <label class="form-label" style="height: 18px; line-height: 18px; margin-bottom: 4px;">🖼️ IMAGEN DEL PRODUCTO (ARCHIVO LOCAL O URL)</label>
-          <div class="prod-img-upload-row" style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
-            <input type="file" id="prod-file-input" accept="image/*" style="display: none;" onchange="handleProductImageFile(this)">
-            <button type="button" class="btn-secondary" style="font-size: 0.8rem; padding: 0.45rem 0.85rem;" onclick="document.getElementById('prod-file-input').click()">
-              📁 Subir desde mi PC (Gratis)
-            </button>
-            <span style="font-size: 0.75rem; color: var(--gray-500); font-family: var(--font-mono);">O pega URL web:</span>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+            <label class="form-label" style="height: 18px; line-height: 18px; margin-bottom: 0;">🖼️ FOTOS DEL ARTÍCULO (MÚLTIPLES IMÁGENES / GALERÍA)</label>
+            <span id="prod-images-count-badge" class="badge-navi" style="background: #eef2ff; color: #4338ca; border: 1px solid #c7d2fe; font-size: 0.65rem; padding: 1px 6px;">0 FOTOS</span>
           </div>
-          <input type="text" id="prod-img" class="form-input" placeholder="https://... o sube una imagen con el botón" style="margin-top: 0.45rem; height: 38px;" oninput="previewProductImageFromUrl(this.value)">
+          <div class="prod-img-upload-row" style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+            <input type="file" id="prod-file-input" accept="image/*" multiple style="display: none;" onchange="handleProductImageFile(this)">
+            <button type="button" class="btn-secondary" style="font-size: 0.8rem; padding: 0.45rem 0.85rem; font-weight: 800; background: #ecfdf5; color: #065f46; border-color: #059669;" onclick="document.getElementById('prod-file-input').click()">
+              📁 + Subir Fotos desde mi PC (Múltiples)
+            </button>
+            <button type="button" class="btn-secondary" style="font-size: 0.75rem; padding: 0.45rem 0.65rem; color: #dc2626;" onclick="clearProductImageUpload()" id="btn-clear-all-images" style="display: none;">
+              🗑️ Quitar Todas
+            </button>
+          </div>
+          
+          <div style="display: flex; gap: 0.45rem; margin-top: 0.45rem; align-items: center;">
+            <input type="text" id="prod-img" class="form-input" placeholder="O pega URL web (https://...) y presiona Enter o Añadir" style="height: 36px; font-size: 0.82rem;" onkeydown="if(event.key==='Enter'){event.preventDefault(); addProductImageUrl();}">
+            <button type="button" class="btn-secondary" style="padding: 0.45rem 0.85rem; font-size: 0.78rem; font-weight: 800; white-space: nowrap; height: 36px;" onclick="addProductImageUrl()">
+              + Añadir URL
+            </button>
+          </div>
 
-          <!-- Contenedor Preview -->
-          <div id="prod-img-preview-box" style="display: none; margin-top: 0.55rem; align-items: center; gap: 0.75rem; background: #f8fafc; border: 1px dashed var(--gray-300); padding: 0.5rem; border-radius: 4px;">
-            <img id="prod-img-preview" src="" alt="Vista previa" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px; border: 1px solid var(--dark);">
-            <div style="flex: 1;">
-              <div id="prod-img-name" style="font-size: 0.75rem; font-weight: 700; color: var(--dark); word-break: break-all;">imagen.jpg</div>
-              <div id="prod-img-size" style="font-size: 0.68rem; color: var(--gray-500); font-family: var(--font-mono);">Compresión Base64 sin costo</div>
-            </div>
-            <button type="button" class="btn-secondary" style="padding: 2px 6px; font-size: 0.7rem; color: #dc2626;" onclick="clearProductImageUpload()">✕ Quitar</button>
+          <!-- Contenedor Visual de la Galería Multi-Imagen -->
+          <div id="prod-images-container" class="admin-multi-img-grid" style="display: none;">
+            <!-- Renderizado dinámico de miniaturas con acciones -->
+          </div>
+          <div id="prod-images-helper" style="font-size: 0.72rem; color: var(--gray-600); margin-top: 4px; font-family: var(--font-mono); display: none;">
+            💡 <strong>La primera imagen es la PORTADA.</strong> Pasa el ratón sobre cualquier foto para marcarla como Portada o eliminarla.
           </div>
         </div>
 
@@ -3136,6 +3145,41 @@
       }
     })();
   </script>
+
+  <!-- MODAL: VISOR DE IMAGEN EN PANTALLA COMPLETA (LIGHTBOX / GALERÍA) -->
+  <div id="modal-image-lightbox" class="modal-overlay image-lightbox-overlay" style="display: none;" onclick="if(event.target===this) closeImageLightbox()">
+    <div class="image-lightbox-container">
+      <div class="tech-corner top-left">+</div>
+      <div class="tech-corner top-right">+</div>
+      <div class="tech-corner bottom-left">+</div>
+      <div class="tech-corner bottom-right">+</div>
+
+      <div class="image-lightbox-header">
+        <div class="image-lightbox-meta">
+          <span class="lightbox-badge-kicker">WIRED GALLERY // FULL_VIEW</span>
+          <h4 id="lightbox-title" class="lightbox-title">Título del Producto</h4>
+        </div>
+        <div class="image-lightbox-controls">
+          <span id="lightbox-counter" class="lightbox-counter-badge">1 / 1</span>
+          <button type="button" class="lightbox-btn-close" onclick="closeImageLightbox()" aria-label="Cerrar visor">&times;</button>
+        </div>
+      </div>
+      
+      <div class="image-lightbox-stage">
+        <button type="button" id="lightbox-prev-btn" class="lightbox-nav-btn prev" onclick="lightboxPrevImage()" aria-label="Foto anterior">‹</button>
+        
+        <div class="image-lightbox-viewport" id="lightbox-viewport" onclick="toggleLightboxZoom(event)">
+          <img id="lightbox-main-img" src="" alt="Imagen completa" class="lightbox-img">
+          <div class="lightbox-zoom-hint">🔍 Clic para zoom</div>
+        </div>
+        
+        <button type="button" id="lightbox-next-btn" class="lightbox-nav-btn next" onclick="lightboxNextImage()" aria-label="Foto siguiente">›</button>
+      </div>
+
+      <!-- Carrusel de Miniaturas inferiores -->
+      <div id="lightbox-thumbnails-bar" class="lightbox-thumbnails-bar"></div>
+    </div>
+  </div>
 
   <script type="module" src="./js/admin-app.js?v=2.9.15"></script>
 </body>

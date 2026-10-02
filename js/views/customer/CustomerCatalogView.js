@@ -60,6 +60,155 @@ export function toggleRewardSpecs(itemId) {
 
 let lastRenderedCatalog = [];
 
+// ==========================================
+// CONTROLADOR DE LIGHTBOX (PANTALLA COMPLETA & GALERÍA)
+// ==========================================
+let currentLightboxImages = [];
+let currentLightboxIndex = 0;
+let currentLightboxTitle = "";
+let isLightboxZoomed = false;
+
+export function openImageLightbox(rewardIdOrImages, index = 0, customTitle = "") {
+  let images = [];
+  let title = customTitle || "Visor de Producto";
+
+  if (Array.isArray(rewardIdOrImages)) {
+    images = rewardIdOrImages.filter(Boolean);
+  } else if (typeof rewardIdOrImages === "string") {
+    let item = null;
+    if (vm && vm.catalog) {
+      item = vm.catalog.find(r => r.id === rewardIdOrImages);
+    }
+    if (!item && lastRenderedCatalog.length > 0) {
+      item = lastRenderedCatalog.find(r => r.id === rewardIdOrImages);
+    }
+    if (!item && typeof window !== "undefined" && Array.isArray(window._lastRenderedCatalog)) {
+      item = window._lastRenderedCatalog.find(r => r.id === rewardIdOrImages);
+    }
+
+    if (item) {
+      title = item.title || title;
+      images = typeof item.getImages === "function" 
+        ? item.getImages() 
+        : (Array.isArray(item.images) && item.images.length ? item.images : (item.imageUrl ? [item.imageUrl] : []));
+    } else if (rewardIdOrImages.startsWith("http") || rewardIdOrImages.startsWith("data:image")) {
+      images = [rewardIdOrImages];
+    }
+  }
+
+  if (!images || images.length === 0) {
+    showToast("⚠️ No hay imágenes disponibles para este producto.", "info");
+    return;
+  }
+
+  currentLightboxImages = images;
+  currentLightboxIndex = Math.max(0, Math.min(index, images.length - 1));
+  currentLightboxTitle = title;
+  isLightboxZoomed = false;
+
+  const modal = document.getElementById("modal-image-lightbox");
+  if (!modal) return;
+
+  modal.style.display = "flex";
+  renderLightboxView();
+}
+
+export function closeImageLightbox() {
+  const modal = document.getElementById("modal-image-lightbox");
+  if (modal) modal.style.display = "none";
+  isLightboxZoomed = false;
+  const imgEl = document.getElementById("lightbox-main-img");
+  if (imgEl) imgEl.classList.remove("zoomed");
+}
+
+export function lightboxNextImage() {
+  if (currentLightboxImages.length <= 1) return;
+  currentLightboxIndex = (currentLightboxIndex + 1) % currentLightboxImages.length;
+  isLightboxZoomed = false;
+  renderLightboxView();
+}
+
+export function lightboxPrevImage() {
+  if (currentLightboxImages.length <= 1) return;
+  currentLightboxIndex = (currentLightboxIndex - 1 + currentLightboxImages.length) % currentLightboxImages.length;
+  isLightboxZoomed = false;
+  renderLightboxView();
+}
+
+export function setLightboxImageIndex(idx) {
+  if (idx >= 0 && idx < currentLightboxImages.length) {
+    currentLightboxIndex = idx;
+    isLightboxZoomed = false;
+    renderLightboxView();
+  }
+}
+
+export function toggleLightboxZoom(e) {
+  const imgEl = document.getElementById("lightbox-main-img");
+  if (!imgEl) return;
+  isLightboxZoomed = !isLightboxZoomed;
+  if (isLightboxZoomed) {
+    imgEl.classList.add("zoomed");
+  } else {
+    imgEl.classList.remove("zoomed");
+  }
+}
+
+function renderLightboxView() {
+  const titleEl = document.getElementById("lightbox-product-title");
+  const counterEl = document.getElementById("lightbox-counter");
+  const imgEl = document.getElementById("lightbox-main-img");
+  const prevBtn = document.getElementById("lightbox-prev-btn");
+  const nextBtn = document.getElementById("lightbox-next-btn");
+  const thumbsContainer = document.getElementById("lightbox-thumbs-container");
+
+  if (titleEl) titleEl.textContent = currentLightboxTitle;
+  if (counterEl) {
+    counterEl.textContent = `${currentLightboxIndex + 1} / ${currentLightboxImages.length}`;
+    counterEl.style.display = currentLightboxImages.length > 1 ? "inline-block" : "none";
+  }
+
+  if (imgEl) {
+    imgEl.classList.remove("zoomed");
+    imgEl.src = currentLightboxImages[currentLightboxIndex] || "";
+    imgEl.alt = `${currentLightboxTitle} - Foto ${currentLightboxIndex + 1}`;
+  }
+
+  const showNav = currentLightboxImages.length > 1;
+  if (prevBtn) prevBtn.style.display = showNav ? "flex" : "none";
+  if (nextBtn) nextBtn.style.display = showNav ? "flex" : "none";
+
+  if (thumbsContainer) {
+    if (!showNav) {
+      thumbsContainer.style.display = "none";
+      thumbsContainer.innerHTML = "";
+    } else {
+      thumbsContainer.style.display = "flex";
+      thumbsContainer.innerHTML = currentLightboxImages.map((src, i) => `
+        <div class="lightbox-thumb ${i === currentLightboxIndex ? 'active' : ''}" onclick="setLightboxImageIndex(${i})">
+          <img src="${src}" alt="Min ${i + 1}">
+        </div>
+      `).join("");
+    }
+  }
+}
+
+// Atajos de teclado para el visor
+if (typeof document !== "undefined" && typeof document.addEventListener === "function") {
+  document.addEventListener("keydown", (e) => {
+    const modal = document.getElementById("modal-image-lightbox");
+    if (!modal || modal.style.display !== "flex") return;
+
+    if (e.key === "Escape") {
+      closeImageLightbox();
+    } else if (e.key === "ArrowRight") {
+      lightboxNextImage();
+    } else if (e.key === "ArrowLeft") {
+      lightboxPrevImage();
+    }
+  });
+}
+
 export function openProductSpecsModal(rewardId) {
   let item = null;
   if (vm && vm.catalog) {
@@ -82,6 +231,12 @@ export function openProductSpecsModal(rewardId) {
   const isPartial = item.rewardType === "PARTIAL_DISCOUNT" || (typeof item.isPartialDiscount === "function" && item.isPartialDiscount()) || (item.cashToPayUsd && item.cashToPayUsd > 0);
   const maxPct = item.maxDiscountPercent || 0;
 
+  const productImages = typeof item.getImages === "function"
+    ? item.getImages()
+    : (Array.isArray(item.images) && item.images.length ? item.images : (item.imageUrl ? [item.imageUrl] : []));
+
+  const mainHeroImg = productImages[0] || item.imageUrl || "";
+
   const emojiRegex = /^(\p{Extended_Pictographic}|[\uD83C-\uDBFF\uDC00-\uDFFF]|[\u2600-\u27BF])\s*/u;
 
   const formattedSpecsHtml = parsed.specs.map(rawSpec => {
@@ -95,7 +250,6 @@ export function openProductSpecsModal(rewardId) {
       text = text.slice(emojiMatch[0].length).trim();
     }
 
-    // Detectar si es un encabezado de sección (ej: "LO MÁS DESTACADO:")
     const isSectionHeader = text.endsWith(':') && text.length < 40;
     if (isSectionHeader) {
       return `
@@ -106,7 +260,6 @@ export function openProductSpecsModal(rewardId) {
       `;
     }
 
-    // Detectar si tiene estructura Clave: Valor
     const colonIndex = text.indexOf(':');
     if (colonIndex > 0 && colonIndex < 42) {
       const key = text.slice(0, colonIndex).trim();
@@ -122,7 +275,6 @@ export function openProductSpecsModal(rewardId) {
       `;
     }
 
-    // Característica simple
     return `
       <div class="modal-spec-card">
         <div class="spec-card-icon-box">${icon || '▸'}</div>
@@ -133,10 +285,24 @@ export function openProductSpecsModal(rewardId) {
     `;
   }).join("");
 
+  const galleryHtml = productImages.length > 1 ? `
+    <div class="specs-gallery-thumbs-row">
+      ${productImages.map((src, idx) => `
+        <div class="specs-thumb-card" onclick="openImageLightbox('${item.id}', ${idx})" title="Ver foto ${idx + 1} en pantalla completa">
+          <img src="${src}" alt="Foto ${idx + 1}">
+          <span class="specs-thumb-overlay">🔍</span>
+        </div>
+      `).join("")}
+    </div>
+  ` : "";
+
   body.innerHTML = `
     <div class="modal-product-hero">
-      ${item.imageUrl ? `
-        <img src="${item.imageUrl}" alt="${item.title}" class="hero-thumb" onerror="this.onerror=null; this.src=''; this.parentElement.style.background='#0d131f';">
+      ${mainHeroImg ? `
+        <div class="hero-thumb-wrapper" style="position: relative; cursor: pointer;" onclick="openImageLightbox('${item.id}', 0)" title="Clic para ampliar foto">
+          <img src="${mainHeroImg}" alt="${item.title}" class="hero-thumb" onerror="this.onerror=null; this.src=''; this.parentElement.style.background='#0d131f';">
+          <span class="hero-zoom-badge">🔍 AMPLIAR</span>
+        </div>
       ` : `
         <div class="hero-thumb hero-fallback">
           <span>${isPartial ? '🏷️' : '🎁'}</span>
@@ -146,6 +312,7 @@ export function openProductSpecsModal(rewardId) {
         <h3 class="hero-title">${item.title}</h3>
         <div class="hero-badges-row">
           <span class="hero-badge count">📋 ${parsed.specs.length} Especificaciones</span>
+          ${productImages.length > 1 ? `<span class="hero-badge" style="background: rgba(14, 165, 233, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3);">📸 ${productImages.length} Fotos</span>` : ''}
           ${isPartial 
             ? `<span class="hero-badge discount">🏷️ Hasta ${maxPct}% OFF</span>` 
             : `<span class="hero-badge points">⚡ ${item.pointsCost.toLocaleString()} WP</span>`
@@ -153,6 +320,8 @@ export function openProductSpecsModal(rewardId) {
         </div>
       </div>
     </div>
+
+    ${galleryHtml}
 
     ${parsed.intro ? `
       <div class="modal-intro-callout">
@@ -509,14 +678,32 @@ export function renderCatalog(catalog, user) {
         </div>
       `;
 
+    const itemImages = typeof item.getImages === "function"
+      ? item.getImages()
+      : (Array.isArray(item.images) && item.images.length ? item.images : (item.imageUrl ? [item.imageUrl] : []));
+    const mainCover = itemImages[0] || item.imageUrl || "";
+    const hasMultipleImgs = itemImages.length > 1;
+    const escapedTitle = (item.title || "").replace(/'/g, "\\'");
+
     return `
       <div class="reward-card">
-        <div class="reward-img-wrap" style="${!item.imageUrl ? 'background: linear-gradient(135deg, #0d131f 0%, #17243b 100%); display:flex; align-items:center; justify-content:center;' : ''}">
+        <div class="reward-img-wrap" style="${!mainCover ? 'background: linear-gradient(135deg, #0d131f 0%, #17243b 100%); display:flex; align-items:center; justify-content:center;' : ''}">
           ${modeBadge}
-          ${item.imageUrl
-        ? `<img src="${item.imageUrl}" alt="${item.title}" class="reward-img" onerror="this.onerror=null; this.src=''; this.parentElement.style.background='#0d131f';">`
-        : `<div style="text-align:center; padding:1rem;"><span style="font-size:2.2rem;">${isPartial ? '🏷️' : '🎁'}</span><div style="font-family:var(--font-mono); font-size:0.68rem; color:#38bdf8; margin-top:4px;">${isPartial ? 'SALE_DISCOUNT' : 'TECH_REWARD'}</div></div>`
-      }
+          ${hasMultipleImgs ? `
+            <div class="reward-img-count-badge" onclick="event.stopPropagation(); openImageLightbox('${item.id}', 0, '${escapedTitle}')" title="Ver las ${itemImages.length} fotos">
+              📸 ${itemImages.length} FOTOS
+            </div>
+          ` : ''}
+          ${mainCover
+            ? `
+              <img src="${mainCover}" alt="${item.title}" class="reward-img" onclick="openImageLightbox('${item.id}', 0, '${escapedTitle}')" title="Clic para ampliar foto" onerror="this.onerror=null; this.src=''; this.parentElement.style.background='#0d131f';">
+              <div class="reward-img-zoom-overlay" onclick="openImageLightbox('${item.id}', 0, '${escapedTitle}')">
+                <span class="zoom-icon">🔍</span>
+                <span>Ver foto completa</span>
+              </div>
+            `
+            : `<div style="text-align:center; padding:1rem;"><span style="font-size:2.2rem;">${isPartial ? '🏷️' : '🎁'}</span><div style="font-family:var(--font-mono); font-size:0.68rem; color:#38bdf8; margin-top:4px;">${isPartial ? 'SALE_DISCOUNT' : 'TECH_REWARD'}</div></div>`
+          }
           <div class="stock-tag ${isOut ? 'out' : ''}">${isOut ? 'AGOTADO' : item.stock + ' DISP.'}</div>
         </div>
         <div class="reward-body">

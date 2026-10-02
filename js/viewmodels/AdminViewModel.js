@@ -203,6 +203,13 @@ export class AdminViewModel {
     const stock = Number(productData.stock);
     if (isNaN(stock) || stock < 0) throw new Error("El stock no puede ser negativo.");
 
+    let imgs = [];
+    if (Array.isArray(productData.images)) {
+      imgs = productData.images.filter(x => typeof x === "string" && x.trim());
+    } else if (productData.imageUrl) {
+      imgs = [String(productData.imageUrl).trim()];
+    }
+
     const reward = new RewardModel({
       id: productData.id || ("REW-" + Math.random().toString(36).substring(2, 8).toUpperCase()),
       title,
@@ -213,7 +220,8 @@ export class AdminViewModel {
       cashToPayUsd: Number(productData.cashToPayUsd) || 0,
       pointsCost: cost,
       stock,
-      imageUrl: (productData.imageUrl || "").trim(),
+      imageUrl: imgs[0] || (productData.imageUrl || "").trim(),
+      images: imgs,
       description: (productData.description || "").trim()
     });
 

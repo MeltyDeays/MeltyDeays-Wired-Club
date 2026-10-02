@@ -106,10 +106,36 @@ export class RewardModel {
     this.cashToPayUsd = Number(data.cashToPayUsd || data.cash_to_pay_usd || 0);
     this.pointsCost = Number(data.pointsCost || data.points_cost || 0);
     this.stock = Number(data.stock || 0);
-    this.imageUrl = data.imageUrl || data.image_url || "";
+
+    // Soporte multi-imagen con retrocompatibilidad
+    let imgs = [];
+    if (Array.isArray(data.images)) {
+      imgs = data.images.filter(x => typeof x === "string" && x.trim());
+    } else if (Array.isArray(data.image_urls)) {
+      imgs = data.image_urls.filter(x => typeof x === "string" && x.trim());
+    } else if (typeof data.images === "string" && data.images.trim()) {
+      imgs = [data.images.trim()];
+    }
+    const singleUrl = (data.imageUrl || data.image_url || "").trim();
+    if (imgs.length === 0 && singleUrl) {
+      imgs = [singleUrl];
+    }
+    this.images = imgs;
+    this.imageUrl = imgs[0] || singleUrl || "";
+
     this.description = data.description || "";
     this.category = data.category || "Gaming Hardware";
     this.updatedAt = data.updatedAt || data.updated_at || new Date().toISOString();
+  }
+
+  getImages() {
+    if (Array.isArray(this.images) && this.images.length > 0) {
+      return this.images;
+    }
+    if (this.imageUrl) {
+      return [this.imageUrl];
+    }
+    return [];
   }
 
   getParsedDescription() {
@@ -148,6 +174,8 @@ export class RewardModel {
       points_cost: this.pointsCost,
       stock: this.stock,
       image_url: this.imageUrl,
+      imageUrl: this.imageUrl,
+      images: this.images,
       description: this.description,
       category: this.category,
       updated_at: this.updatedAt

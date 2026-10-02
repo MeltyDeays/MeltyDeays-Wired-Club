@@ -460,5 +460,71 @@ export async function runTier1Tests() {
     expect(specsModal.style.display).toBe('none', 'Modal should be hidden after close');
   });
 
+  // Test 13: Multi-image Product Support & Lightbox Full-screen Viewer
+  await ctx.test('T1.13: Multi-image product support and Lightbox full-screen viewer function smoothly', async () => {
+    const { doc, win } = setupTestEnvironment('index.html');
+    const appUrl = pathToFileURL(path.join(PROJECT_ROOT, 'js/app.js')).href + `?t=${Date.now()}`;
+    await import(appUrl);
+    win.document.dispatchEvent({ type: 'DOMContentLoaded' });
+
+    expect(typeof win.openImageLightbox).toBe('function', 'win.openImageLightbox should be exposed');
+    expect(typeof win.closeImageLightbox).toBe('function', 'win.closeImageLightbox should be exposed');
+    expect(typeof win.lightboxNextImage).toBe('function', 'win.lightboxNextImage should be exposed');
+    expect(typeof win.lightboxPrevImage).toBe('function', 'win.lightboxPrevImage should be exposed');
+    expect(typeof win.setLightboxImageIndex).toBe('function', 'win.setLightboxImageIndex should be exposed');
+    expect(typeof win.toggleLightboxZoom).toBe('function', 'win.toggleLightboxZoom should be exposed');
+
+    const multiImgProduct = {
+      id: 'PROD-MULTI',
+      title: 'Teclado Mecánico RGB Wired',
+      description: 'Teclado profesional con switches intercambiables.',
+      pointsCost: 500,
+      stock: 5,
+      imageUrl: 'https://images.unsplash.com/photo-1.jpg',
+      images: [
+        'https://images.unsplash.com/photo-1.jpg',
+        'https://images.unsplash.com/photo-2.jpg',
+        'https://images.unsplash.com/photo-3.jpg'
+      ]
+    };
+
+    const catalogViewUrl = pathToFileURL(path.join(PROJECT_ROOT, 'js/views/customer/CustomerCatalogView.js')).href + `?t=${Date.now()}`;
+    const { renderCatalog } = await import(catalogViewUrl);
+    renderCatalog([multiImgProduct], null);
+
+    const catalogHtml = doc.getElementById('catalog-container')?.innerHTML || '';
+    expect(catalogHtml).toContain('reward-img-count-badge', 'Should render photo count badge for multi-image product');
+    expect(catalogHtml).toContain('3 FOTOS', 'Should indicate 3 photos available');
+    expect(catalogHtml).toContain('reward-img-zoom-overlay', 'Should render zoom overlay on hoverable image wrap');
+
+    const lightboxModal = doc.getElementById('modal-image-lightbox');
+    expect(lightboxModal).toBeTruthy('modal-image-lightbox should exist');
+
+    // 1. Abrir Lightbox
+    win.openImageLightbox('PROD-MULTI', 0);
+    expect(lightboxModal.style.display).toBe('flex', 'Lightbox should open with flex display');
+    const counterEl = doc.getElementById('lightbox-counter');
+    expect(counterEl?.textContent).toBe('1 / 3', 'Counter should display 1 / 3 on initial image');
+
+    // 2. Navegación siguiente
+    win.lightboxNextImage();
+    expect(counterEl?.textContent).toBe('2 / 3', 'Counter should update to 2 / 3');
+
+    // 3. Selección directa por índice
+    win.setLightboxImageIndex(2);
+    expect(counterEl?.textContent).toBe('3 / 3', 'Counter should update to 3 / 3');
+
+    // 4. Zoom toggle
+    const mainImg = doc.getElementById('lightbox-main-img');
+    win.toggleLightboxZoom();
+    expect(mainImg?.classList.contains('zoomed')).toBe(true, 'Main image should have zoomed class');
+    win.toggleLightboxZoom();
+    expect(mainImg?.classList.contains('zoomed')).toBe(false, 'Main image should remove zoomed class');
+
+    // 5. Cerrar Lightbox
+    win.closeImageLightbox();
+    expect(lightboxModal.style.display).toBe('none', 'Lightbox should be hidden on close');
+  });
+
   return ctx.summary();
 }

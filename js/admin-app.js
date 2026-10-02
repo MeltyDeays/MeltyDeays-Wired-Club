@@ -4,6 +4,14 @@ import { InvoiceTemplateService } from "./services/InvoiceTemplateService.js";
 import { FirestoreService } from "./services/FirestoreService.js";
 import { injectEnvironmentBadge, isProduction } from "./config/env.js";
 import { parseProductDescription } from "./models/RewardModel.js";
+import {
+  openImageLightbox,
+  closeImageLightbox,
+  lightboxNextImage,
+  lightboxPrevImage,
+  setLightboxImageIndex,
+  toggleLightboxZoom
+} from "./views/customer/CustomerCatalogView.js";
 
 import {
   initAdminViews,
@@ -133,6 +141,9 @@ import {
   toggleAdminClaimSelectMode,
   handleInvoiceBtnClick,
   handleProductImageFile,
+  addProductImageUrl,
+  removeProductImageAt,
+  setProductMainImage,
   clearProductImageUpload,
   previewProductImageFromUrl,
   openNewProductModal,
@@ -442,15 +453,36 @@ function renderCatalogTable(catalog) {
       `
       : `<div style="font-size:0.8rem; color:var(--gray-700); line-height: 1.4;">${p.description || "-"}</div>`;
 
+    const pImages = typeof p.getImages === "function" ? p.getImages() : (Array.isArray(p.images) && p.images.length ? p.images : (p.imageUrl ? [p.imageUrl] : []));
+    const pCover = pImages[0] || p.imageUrl || "";
+    const escapedTitle = (p.title || "").replace(/'/g, "\\'");
+    const pThumbHtml = pCover
+      ? `
+        <div style="position: relative; width: 44px; height: 44px; flex-shrink: 0; cursor: pointer; border-radius: 4px; overflow: hidden; border: 1px solid var(--gray-300); background: #0f172a;" onclick="openImageLightbox('${p.id}', 0, '${escapedTitle}')" title="Clic para ver foto completa">
+          <img src="${pCover}" alt="${p.title}" style="width: 100%; height: 100%; object-fit: cover;">
+          ${pImages.length > 1 ? `<span style="position: absolute; bottom: 0; right: 0; background: rgba(15,23,42,0.9); color: #38bdf8; font-size: 0.55rem; font-weight: 800; padding: 1px 3px; border-radius: 2px 0 0 0;">${pImages.length}📷</span>` : ''}
+        </div>
+      `
+      : `
+        <div style="width: 44px; height: 44px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: var(--gray-100); border-radius: 4px; border: 1px solid var(--gray-300); font-size: 1.2rem;">
+          ${isPartial ? '🏷️' : '🎁'}
+        </div>
+      `;
+
     return `
       <tr>
         <td>
-          <div style="display:flex; align-items:center; gap:6px; margin-bottom:2px;">
-            ${typeBadge}
-            <strong style="color:var(--dark);">${p.title}</strong>
+          <div style="display: flex; align-items: flex-start; gap: 10px;">
+            ${pThumbHtml}
+            <div>
+              <div style="display:flex; align-items:center; gap:6px; margin-bottom:2px;">
+                ${typeBadge}
+                <strong style="color:var(--dark);">${p.title}</strong>
+              </div>
+              <div style="font-size:0.72rem; color:var(--gray-500); font-family:var(--font-mono);">${p.id}</div>
+              ${priceInfo}
+            </div>
           </div>
-          <div style="font-size:0.72rem; color:var(--gray-500); font-family:var(--font-mono);">${p.id}</div>
-          ${priceInfo}
         </td>
         <td>${costDisplay}</td>
         <td><strong>${p.stock}</strong> un.</td>
@@ -702,8 +734,17 @@ document.addEventListener("DOMContentLoaded", () => {
   window.saveProductAdmin = saveProductAdmin;
   window.removeProductAdmin = removeProductAdmin;
   window.handleProductImageFile = handleProductImageFile;
+  window.addProductImageUrl = addProductImageUrl;
+  window.removeProductImageAt = removeProductImageAt;
+  window.setProductMainImage = setProductMainImage;
   window.clearProductImageUpload = clearProductImageUpload;
   window.previewProductImageFromUrl = previewProductImageFromUrl;
+  window.openImageLightbox = openImageLightbox;
+  window.closeImageLightbox = closeImageLightbox;
+  window.lightboxNextImage = lightboxNextImage;
+  window.lightboxPrevImage = lightboxPrevImage;
+  window.setLightboxImageIndex = setLightboxImageIndex;
+  window.toggleLightboxZoom = toggleLightboxZoom;
   window.filterCatalogAdmin = filterCatalogAdmin;
   window.filterCatalogByType = filterCatalogByType;
   window.sortCatalogAdmin = sortCatalogAdmin;

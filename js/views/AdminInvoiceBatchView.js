@@ -140,13 +140,12 @@ export function openEditProductModal(productId) {
     if (prodCashHidden) prodCashHidden.value = product.cashToPayUsd || 0;
   }
 
-  if (product.imageUrl) {
-    previewProductImageFromUrl(product.imageUrl);
-    const imgInput = document.getElementById("prod-img");
-    if (imgInput) imgInput.value = product.imageUrl;
-  } else {
-    clearProductImageUpload();
-  }
+  const productImages = typeof product.getImages === "function" 
+    ? product.getImages() 
+    : (Array.isArray(product.images) && product.images.length ? [...product.images] : (product.imageUrl ? [product.imageUrl] : []));
+
+  currentProductImages = [...productImages];
+  renderProductImagesPreview();
 
   modal.style.display = "flex";
   setTimeout(() => {
@@ -298,106 +297,177 @@ export async function executePurgeAllDb() {
   }
 }
 
-let currentProductBase64 = null;
+let currentProductImages = [];
 
 export function handleProductImageFile(input) {
-  if (!input.files || !input.files[0]) return;
-  const file = input.files[0];
+  if (!input.files || input.files.length === 0) return;
+  const files = Array.from(input.files).filter(f => f.type.startsWith("image/"));
 
-  if (!file.type.startsWith("image/")) {
-    showToast("⚠️ Selecciona un archivo de imagen válido (JPG, PNG, WebP).", "error");
+  if (files.length === 0) {
+    showToast("⚠️ Selecciona archivos de imagen válidos (JPG, PNG, WebP).", "error");
     return;
   }
 
-  showToast("Optimizando y convirtiendo imagen a Base64 gratuito...", "info");
+  showToast(`Optimizando ${files.length} imagen(es)...`, "info");
 
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    const img = new Image();
-    img.onload = () => {
-      const maxDim = 500;
-      let width = img.width;
-      let height = img.height;
+  let processedCount = 0;
+  files.forEach(file => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const maxDim = 800;
+        let width = img.width;
+        let height = img.height;
 
-      if (width > maxDim || height > maxDim) {
-        if (width > height) {
-          height = Math.round((height * maxDim) / width);
-          width = maxDim;
-        } else {
-          width = Math.round((width * maxDim) / height);
-          height = maxDim;
+        if (width > maxDim || height > maxDim) {
+          if (width > height) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          } else {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
         }
-      }
 
-      const canvas = document.createElement("canvas");
-      canvas.width = width;
-      canvas.height = height;
-      const ctx = canvas.getContext("2d");
-      ctx.drawImage(img, 0, 0, width, height);
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, width, height);
 
-      const base64Data = canvas.toDataURL("image/jpeg", 0.78);
-      currentProductBase64 = base64Data;
+        const base64Data = canvas.toDataURL("image/jpeg", 0.78);
+        currentProductImages.push(base64Data);
+        processedCount++;
 
-      const previewBox = document.getElementById("prod-img-preview-box");
-      const previewImg = document.getElementById("prod-img-preview");
-      const nameEl = document.getElementById("prod-img-name");
-      const sizeEl = document.getElementById("prod-img-size");
-      const imgInput = document.getElementById("prod-img");
-
-      if (previewImg) previewImg.src = base64Data;
-      if (nameEl) nameEl.textContent = file.name;
-      const approxKb = Math.round(base64Data.length * 0.75 / 1024);
-      if (sizeEl) sizeEl.textContent = `✓ Optimizado (${width}×${height}px · ~${approxKb} KB en Base64)`;
-      if (previewBox) previewBox.style.display = "flex";
-      if (imgInput) imgInput.value = base64Data;
-
-      showToast("✓ Imagen optimizada y lista para guardar en la base de datos.", "success");
+        if (processedCount === files.length) {
+          renderProductImagesPreview();
+          showToast(`✓ ${files.length} imagen(es) optimizada(s) y agregada(s).`, "success");
+        }
+      };
+      img.src = e.target.result;
     };
-    img.src = e.target.result;
-  };
-  reader.readAsDataURL(file);
+    reader.readAsDataURL(file);
+  });
+
+  input.value = "";
+}
+
+export function addProductImageUrl() {
+  const input = document.getElementById("prod-img-url-input");
+  const url = (input?.value || "").trim();
+  if (!url) {
+    showToast("⚠️ Ingresa una URL de imagen válida.", "error");
+    return;
+  }
+  if (!url.startsWith("http://") && !url.startsWith("https://") && !url.startsWith("data:image")) {
+    showToast("⚠️ La URL debe iniciar con https:// o http://", "error");
+    return;
+  }
+  currentProductImages.push(url);
+  if (input) input.value = "";
+  renderProductImagesPreview();
+  showToast("✓ Imagen agregada desde URL.", "success");
+}
+
+export function removeProductImageAt(index) {
+  if (index >= 0 && index < currentProductImages.length) {
+    currentProductImages.splice(index, 1);
+    renderProductImagesPreview();
+    showToast("Imagen eliminada de la lista.", "info");
+  }
+}
+
+export function setProductMainImage(index) {
+  if (index > 0 && index < currentProductImages.length) {
+    const [item] = currentProductImages.splice(index, 1);
+    currentProductImages.unshift(item);
+    renderProductImagesPreview();
+    showToast("✓ Imagen designada como portada principal.", "success");
+  }
+}
+
+export function renderProductImagesPreview() {
+  const grid = document.getElementById("admin-multi-img-grid");
+  const counter = document.getElementById("prod-img-counter");
+  const previewBox = document.getElementById("prod-img-preview-box");
+  const hiddenImgInput = document.getElementById("prod-img");
+
+  if (hiddenImgInput) {
+    hiddenImgInput.value = currentProductImages[0] || "";
+  }
+
+  if (counter) {
+    counter.textContent = currentProductImages.length === 1 
+      ? "1 imagen cargada" 
+      : `${currentProductImages.length} imágenes cargadas`;
+  }
+
+  if (!grid) return;
+
+  if (currentProductImages.length === 0) {
+    if (previewBox) previewBox.style.display = "none";
+    grid.innerHTML = "";
+    return;
+  }
+
+  if (previewBox) previewBox.style.display = "block";
+
+  grid.innerHTML = currentProductImages.map((imgSrc, idx) => {
+    const isMain = idx === 0;
+    const isBase64 = imgSrc.startsWith("data:image");
+    const sourceLabel = isBase64 ? "Base64" : "URL Remota";
+    return `
+      <div class="admin-img-card ${isMain ? 'is-main' : ''}">
+        ${isMain ? '<span class="admin-img-badge-main">⭐ PORTADA</span>' : `<span class="admin-img-badge-order">#${idx + 1}</span>`}
+        <img src="${imgSrc}" alt="Foto ${idx + 1}" onclick="if (typeof openImageLightbox === 'function') openImageLightbox(${JSON.stringify(currentProductImages).replace(/"/g, '&quot;')}, ${idx}, 'Vista Previa Admin')">
+        <div class="admin-img-actions">
+          ${!isMain ? `<button type="button" class="admin-btn-set-main" onclick="setProductMainImage(${idx})" title="Convertir en portada principal">⭐ Portada</button>` : `<span style="font-size: 0.65rem; color: #10b981; font-weight: 700; align-self: center;">${sourceLabel}</span>`}
+          <button type="button" class="admin-btn-del-img" onclick="removeProductImageAt(${idx})" title="Eliminar imagen">✕</button>
+        </div>
+      </div>
+    `;
+  }).join("");
 }
 
 export function clearProductImageUpload() {
-  currentProductBase64 = null;
+  currentProductImages = [];
   const fileInput = document.getElementById("prod-file-input");
   if (fileInput) fileInput.value = "";
+  const urlInput = document.getElementById("prod-img-url-input");
+  if (urlInput) urlInput.value = "";
   const imgInput = document.getElementById("prod-img");
   if (imgInput) imgInput.value = "";
-  const previewBox = document.getElementById("prod-img-preview-box");
-  if (previewBox) previewBox.style.display = "none";
+  renderProductImagesPreview();
 }
 
 export function previewProductImageFromUrl(url) {
-  const val = (url || "").trim();
-  const previewBox = document.getElementById("prod-img-preview-box");
-  const previewImg = document.getElementById("prod-img-preview");
-  const nameEl = document.getElementById("prod-img-name");
-  const sizeEl = document.getElementById("prod-img-size");
-
-  if (!val) {
-    if (previewBox) previewBox.style.display = "none";
+  if (!url) {
+    clearProductImageUpload();
     return;
   }
-
-  if (val.startsWith("data:image")) {
-    currentProductBase64 = val;
+  if (Array.isArray(url)) {
+    currentProductImages = [...url];
   } else {
-    currentProductBase64 = null;
+    currentProductImages = [url];
   }
-
-  if (previewImg) previewImg.src = val;
-  if (nameEl) nameEl.textContent = val.startsWith("data:") ? "Imagen Base64" : "Imagen Remota";
-  if (sizeEl) sizeEl.textContent = val.startsWith("data:") ? "Almacenamiento Local" : "URL Externa";
-  if (previewBox) previewBox.style.display = "flex";
+  renderProductImagesPreview();
 }
 
 export async function saveProductAdmin() {
   const title = (document.getElementById("prod-title").value || "").trim();
   const pointsCost = parseInt(document.getElementById("prod-cost").value, 10);
   const stock = parseInt(document.getElementById("prod-stock").value, 10) || 1;
-  const imageUrl = currentProductBase64 || (document.getElementById("prod-img").value || "").trim();
   const description = (document.getElementById("prod-desc").value || "").trim();
+
+  // Multi-imágenes
+  const pendingUrl = (document.getElementById("prod-img-url-input")?.value || "").trim();
+  if (pendingUrl && !currentProductImages.includes(pendingUrl)) {
+    currentProductImages.push(pendingUrl);
+  }
+
+  const images = [...currentProductImages];
+  const imageUrl = images[0] || (document.getElementById("prod-img")?.value || "").trim();
 
   const activeProductMode = document.getElementById("prod-reward-type")?.value || "FREE_REWARD";
   let rewardType = (document.getElementById("prod-reward-type")?.value) || activeProductMode || "FREE_REWARD";
@@ -437,6 +507,7 @@ export async function saveProductAdmin() {
       pointsCost,
       stock,
       imageUrl,
+      images,
       description
     };
     if (editId) {

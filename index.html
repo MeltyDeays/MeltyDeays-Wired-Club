@@ -639,6 +639,41 @@
     </div>
   </div>
 
+  <!-- MODAL: VISOR DE IMAGEN EN PANTALLA COMPLETA (LIGHTBOX / GALERÍA) -->
+  <div id="modal-image-lightbox" class="modal-overlay image-lightbox-overlay" style="display: none;" onclick="if(event.target===this) closeImageLightbox()">
+    <div class="image-lightbox-container">
+      <div class="tech-corner top-left">+</div>
+      <div class="tech-corner top-right">+</div>
+      <div class="tech-corner bottom-left">+</div>
+      <div class="tech-corner bottom-right">+</div>
+
+      <div class="image-lightbox-header">
+        <div class="image-lightbox-meta">
+          <span class="lightbox-badge-kicker">WIRED GALLERY // FULL_VIEW</span>
+          <h4 id="lightbox-title" class="lightbox-title">Título del Producto</h4>
+        </div>
+        <div class="image-lightbox-controls">
+          <span id="lightbox-counter" class="lightbox-counter-badge">1 / 1</span>
+          <button type="button" class="lightbox-btn-close" onclick="closeImageLightbox()" aria-label="Cerrar visor">&times;</button>
+        </div>
+      </div>
+      
+      <div class="image-lightbox-stage">
+        <button type="button" id="lightbox-prev-btn" class="lightbox-nav-btn prev" onclick="lightboxPrevImage()" aria-label="Foto anterior">‹</button>
+        
+        <div class="image-lightbox-viewport" id="lightbox-viewport" onclick="toggleLightboxZoom(event)">
+          <img id="lightbox-main-img" src="" alt="Imagen completa" class="lightbox-img">
+          <div class="lightbox-zoom-hint">🔍 Clic para zoom</div>
+        </div>
+        
+        <button type="button" id="lightbox-next-btn" class="lightbox-nav-btn next" onclick="lightboxNextImage()" aria-label="Foto siguiente">›</button>
+      </div>
+
+      <!-- Carrusel de Miniaturas inferiores -->
+      <div id="lightbox-thumbnails-bar" class="lightbox-thumbnails-bar"></div>
+    </div>
+  </div>
+
   <!-- CONTENEDOR TOAST FLOTANTE -->
   <div id="toast-container" class="toast-container"></div>
 

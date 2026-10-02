@@ -21,6 +21,12 @@ import {
   toggleRewardSpecs,
   openProductSpecsModal,
   closeProductSpecsModal,
+  openImageLightbox,
+  closeImageLightbox,
+  lightboxNextImage,
+  lightboxPrevImage,
+  setLightboxImageIndex,
+  toggleLightboxZoom,
   confirmRedeem,
   updateConfirmCalculation,
   onPointsSliderChange,
@@ -328,6 +334,12 @@ document.addEventListener("DOMContentLoaded", () => {
   window.toggleRewardSpecs = toggleRewardSpecs;
   window.openProductSpecsModal = openProductSpecsModal;
   window.closeProductSpecsModal = closeProductSpecsModal;
+  window.openImageLightbox = openImageLightbox;
+  window.closeImageLightbox = closeImageLightbox;
+  window.lightboxNextImage = lightboxNextImage;
+  window.lightboxPrevImage = lightboxPrevImage;
+  window.setLightboxImageIndex = setLightboxImageIndex;
+  window.toggleLightboxZoom = toggleLightboxZoom;
   window.executeRedeem = executeRedeem;
   window.closeRedeemModal = closeRedeemModal;
   window.onPointsSliderChange = onPointsSliderChange;
