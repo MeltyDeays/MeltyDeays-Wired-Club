@@ -458,6 +458,24 @@ export async function runTier1Tests() {
     expect(specsBody.innerHTML).toContain('modal-spec-card', 'Modal should render structured spec cards');
     win.closeProductSpecsModal();
     expect(specsModal.style.display).toBe('none', 'Modal should be hidden after close');
+
+    // 6. Test porcentaje de descuento comercial en modal de especificaciones (Tope 30%)
+    const partialItem = {
+      id: 'PROD-DISC-30',
+      title: 'Audífonos Bluetooth TWS',
+      description: 'Audífonos con cancelación de ruido.\n• Tecnología ENC\n• Sonido HiFi',
+      rewardType: 'PARTIAL_DISCOUNT',
+      pointsCost: 142,
+      priceUsd: 9.46,
+      maxDiscountPct: 30,
+      maxDiscountUsd: 2.84,
+      cashToPayUsd: 6.62,
+      stock: 1
+    };
+    renderCatalog([partialItem], null);
+    win.openProductSpecsModal('PROD-DISC-30');
+    expect(specsBody.innerHTML).toContain('Hasta 30% OFF', 'Modal should render 30% OFF badge accurately matching maxDiscountPct');
+    win.closeProductSpecsModal();
   });
 
   // Test 13: Multi-image Product Support & Lightbox Full-screen Viewer

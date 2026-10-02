@@ -229,7 +229,7 @@ export function openProductSpecsModal(rewardId) {
 
   const parsed = parseProductDescription(item.description);
   const isPartial = item.rewardType === "PARTIAL_DISCOUNT" || (typeof item.isPartialDiscount === "function" && item.isPartialDiscount()) || (item.cashToPayUsd && item.cashToPayUsd > 0);
-  const maxPct = item.maxDiscountPercent || 0;
+  const maxPct = Number(item.maxDiscountPct || item.max_discount_pct || item.maxDiscountPercent || (isPartial ? 5 : 0));
 
   const productImages = typeof item.getImages === "function"
     ? item.getImages()
