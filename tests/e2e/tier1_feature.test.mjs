@@ -524,6 +524,40 @@ export async function runTier1Tests() {
     // 5. Cerrar Lightbox
     win.closeImageLightbox();
     expect(lightboxModal.style.display).toBe('none', 'Lightbox should be hidden on close');
+
+    // 6. Test Admin Multi-Image URL Input & Management
+    const { doc: adminDoc, win: adminWin } = setupTestEnvironment('admin.html');
+    const adminAppUrl = pathToFileURL(path.join(PROJECT_ROOT, 'js/admin-app.js')).href + `?t=${Date.now()}`;
+    await import(adminAppUrl);
+    adminWin.document.dispatchEvent({ type: 'DOMContentLoaded' });
+
+    expect(typeof adminWin.addProductImageUrl).toBe('function', 'adminWin.addProductImageUrl should be exposed');
+    expect(typeof adminWin.removeProductImageAt).toBe('function', 'adminWin.removeProductImageAt should be exposed');
+    expect(typeof adminWin.setProductMainImage).toBe('function', 'adminWin.setProductMainImage should be exposed');
+    expect(typeof adminWin.clearProductImageUpload).toBe('function', 'adminWin.clearProductImageUpload should be exposed');
+
+    adminWin.openNewProductModal();
+    const prodImgInput = adminDoc.getElementById('prod-img');
+    expect(prodImgInput).toBeTruthy('prod-img input must exist in admin modal');
+
+    // Añadir URL 1
+    prodImgInput.value = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS39rNbqYmv4__ive_eIyVLsFhLqKtG9uFn1S5HSox29Q&s=10';
+    adminWin.addProductImageUrl();
+    const countBadge = adminDoc.getElementById('prod-images-count-badge');
+    expect(countBadge?.textContent).toBe('1 FOTO', 'Count badge should show 1 FOTO after adding URL 1');
+
+    // Añadir URL 2
+    prodImgInput.value = 'https://img.kwcdn.com/local-goods-image/2066d91894/86df2331-cac4-48da-b7eb-9463e767abb3_860x860.jpeg.format.jpg?imageView2/2/w/800/q/70/format/avif';
+    adminWin.addProductImageUrl();
+    expect(countBadge?.textContent).toBe('2 FOTOS', 'Count badge should show 2 FOTOS after adding URL 2');
+
+    // Reordenar portada
+    adminWin.setProductMainImage(1);
+    expect(countBadge?.textContent).toBe('2 FOTOS', 'Should maintain 2 FOTOS after setting main image');
+
+    // Limpiar todo
+    adminWin.clearProductImageUpload();
+    expect(countBadge?.textContent).toBe('0 FOTOS', 'Count badge should reset to 0 FOTOS on clear');
   });
 
   return ctx.summary();

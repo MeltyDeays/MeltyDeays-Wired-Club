@@ -144,6 +144,9 @@ export function openEditProductModal(productId) {
     ? product.getImages() 
     : (Array.isArray(product.images) && product.images.length ? [...product.images] : (product.imageUrl ? [product.imageUrl] : []));
 
+  const imgInput = document.getElementById("prod-img") || document.getElementById("prod-img-url-input");
+  if (imgInput) imgInput.value = "";
+
   currentProductImages = [...productImages];
   renderProductImagesPreview();
 
@@ -354,7 +357,7 @@ export function handleProductImageFile(input) {
 }
 
 export function addProductImageUrl() {
-  const input = document.getElementById("prod-img-url-input");
+  const input = document.getElementById("prod-img") || document.getElementById("prod-img-url-input");
   const url = (input?.value || "").trim();
   if (!url) {
     showToast("⚠️ Ingresa una URL de imagen válida.", "error");
@@ -362,6 +365,10 @@ export function addProductImageUrl() {
   }
   if (!url.startsWith("http://") && !url.startsWith("https://") && !url.startsWith("data:image")) {
     showToast("⚠️ La URL debe iniciar con https:// o http://", "error");
+    return;
+  }
+  if (currentProductImages.includes(url)) {
+    showToast("⚠️ Esta imagen ya ha sido agregada a la lista.", "info");
     return;
   }
   currentProductImages.push(url);
@@ -388,10 +395,12 @@ export function setProductMainImage(index) {
 }
 
 export function renderProductImagesPreview() {
-  const grid = document.getElementById("admin-multi-img-grid");
-  const counter = document.getElementById("prod-img-counter");
+  const grid = document.getElementById("prod-images-container") || document.getElementById("admin-multi-img-grid");
+  const counter = document.getElementById("prod-images-count-badge") || document.getElementById("prod-img-counter");
+  const helper = document.getElementById("prod-images-helper");
+  const btnClear = document.getElementById("btn-clear-all-images");
   const previewBox = document.getElementById("prod-img-preview-box");
-  const hiddenImgInput = document.getElementById("prod-img");
+  const hiddenImgInput = document.getElementById("prod-img-hidden") || document.getElementById("prod-img-preview-value");
 
   if (hiddenImgInput) {
     hiddenImgInput.value = currentProductImages[0] || "";
@@ -399,28 +408,38 @@ export function renderProductImagesPreview() {
 
   if (counter) {
     counter.textContent = currentProductImages.length === 1 
-      ? "1 imagen cargada" 
-      : `${currentProductImages.length} imágenes cargadas`;
+      ? "1 FOTO" 
+      : `${currentProductImages.length} FOTOS`;
+  }
+
+  if (btnClear) {
+    btnClear.style.display = currentProductImages.length > 0 ? "inline-block" : "none";
+  }
+
+  if (helper) {
+    helper.style.display = currentProductImages.length > 0 ? "block" : "none";
   }
 
   if (!grid) return;
 
   if (currentProductImages.length === 0) {
+    grid.style.display = "none";
     if (previewBox) previewBox.style.display = "none";
     grid.innerHTML = "";
     return;
   }
 
+  grid.style.display = "grid";
   if (previewBox) previewBox.style.display = "block";
 
   grid.innerHTML = currentProductImages.map((imgSrc, idx) => {
     const isMain = idx === 0;
     const isBase64 = imgSrc.startsWith("data:image");
-    const sourceLabel = isBase64 ? "Base64" : "URL Remota";
+    const sourceLabel = isBase64 ? "Base64" : "URL";
     return `
       <div class="admin-img-card ${isMain ? 'is-main' : ''}">
         ${isMain ? '<span class="admin-img-badge-main">⭐ PORTADA</span>' : `<span class="admin-img-badge-order">#${idx + 1}</span>`}
-        <img src="${imgSrc}" alt="Foto ${idx + 1}" onclick="if (typeof openImageLightbox === 'function') openImageLightbox(${JSON.stringify(currentProductImages).replace(/"/g, '&quot;')}, ${idx}, 'Vista Previa Admin')">
+        <img src="${imgSrc}" alt="Foto ${idx + 1}" onclick="if (typeof openImageLightbox === 'function') openImageLightbox(${JSON.stringify(currentProductImages).replace(/"/g, '&quot;')}, ${idx}, 'Vista Previa Admin')" onerror="this.onerror=null; this.src=''; this.parentElement.style.opacity=0.6;">
         <div class="admin-img-actions">
           ${!isMain ? `<button type="button" class="admin-btn-set-main" onclick="setProductMainImage(${idx})" title="Convertir en portada principal">⭐ Portada</button>` : `<span style="font-size: 0.65rem; color: #10b981; font-weight: 700; align-self: center;">${sourceLabel}</span>`}
           <button type="button" class="admin-btn-del-img" onclick="removeProductImageAt(${idx})" title="Eliminar imagen">✕</button>
@@ -434,10 +453,8 @@ export function clearProductImageUpload() {
   currentProductImages = [];
   const fileInput = document.getElementById("prod-file-input");
   if (fileInput) fileInput.value = "";
-  const urlInput = document.getElementById("prod-img-url-input");
+  const urlInput = document.getElementById("prod-img") || document.getElementById("prod-img-url-input");
   if (urlInput) urlInput.value = "";
-  const imgInput = document.getElementById("prod-img");
-  if (imgInput) imgInput.value = "";
   renderProductImagesPreview();
 }
 
@@ -460,14 +477,16 @@ export async function saveProductAdmin() {
   const stock = parseInt(document.getElementById("prod-stock").value, 10) || 1;
   const description = (document.getElementById("prod-desc").value || "").trim();
 
-  // Multi-imágenes
-  const pendingUrl = (document.getElementById("prod-img-url-input")?.value || "").trim();
-  if (pendingUrl && !currentProductImages.includes(pendingUrl)) {
-    currentProductImages.push(pendingUrl);
+  // Multi-imágenes: auto-capturar URL pendiente si quedó en el input sin presionar el botón
+  const pendingUrl = ((document.getElementById("prod-img")?.value || document.getElementById("prod-img-url-input")?.value) || "").trim();
+  if (pendingUrl && (pendingUrl.startsWith("http://") || pendingUrl.startsWith("https://") || pendingUrl.startsWith("data:image"))) {
+    if (!currentProductImages.includes(pendingUrl)) {
+      currentProductImages.push(pendingUrl);
+    }
   }
 
   const images = [...currentProductImages];
-  const imageUrl = images[0] || (document.getElementById("prod-img")?.value || "").trim();
+  const imageUrl = images[0] || (pendingUrl && !pendingUrl.includes(" ") ? pendingUrl : "");
 
   const activeProductMode = document.getElementById("prod-reward-type")?.value || "FREE_REWARD";
   let rewardType = (document.getElementById("prod-reward-type")?.value) || activeProductMode || "FREE_REWARD";
