@@ -460,7 +460,7 @@ function renderCatalogTable(catalog) {
       ? `
         <div style="position: relative; width: 44px; height: 44px; flex-shrink: 0; cursor: pointer; border-radius: 4px; overflow: hidden; border: 1px solid var(--gray-300); background: #0f172a;" onclick="openImageLightbox('${p.id}', 0, '${escapedTitle}')" title="Clic para ver foto completa">
           <img src="${pCover}" alt="${p.title}" style="width: 100%; height: 100%; object-fit: cover;">
-          ${pImages.length > 1 ? `<span style="position: absolute; bottom: 0; right: 0; background: rgba(15,23,42,0.9); color: #38bdf8; font-size: 0.55rem; font-weight: 800; padding: 1px 3px; border-radius: 2px 0 0 0;">${pImages.length}📷</span>` : ''}
+          ${pImages.length > 1 ? `<span style="position: absolute; bottom: 0; right: 0; background: rgba(15,23,42,0.92); color: #38bdf8; font-family: var(--font-mono); font-size: 0.55rem; font-weight: 800; padding: 1px 3px; border-radius: 2px 0 0 0; border-top: 1px solid #0284c7; border-left: 1px solid #0284c7;">[0${pImages.length}]</span>` : ''}
         </div>
       `
       : `

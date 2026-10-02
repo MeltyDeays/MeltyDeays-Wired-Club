@@ -511,9 +511,9 @@ export async function runTier1Tests() {
     renderCatalog([multiImgProduct], null);
 
     const catalogHtml = doc.getElementById('catalog-container')?.innerHTML || '';
-    expect(catalogHtml).toContain('reward-img-count-badge', 'Should render photo count badge for multi-image product');
-    expect(catalogHtml).toContain('3 FOTOS', 'Should indicate 3 photos available');
-    expect(catalogHtml).toContain('reward-img-zoom-overlay', 'Should render zoom overlay on hoverable image wrap');
+    expect(catalogHtml).toContain('reward-multi-photos-badge', 'Should render photo count badge for multi-image product');
+    expect(catalogHtml).toContain('[ 03 FRAMES ]', 'Should indicate 3 frames available with Lain style');
+    expect(catalogHtml).toContain('reward-img-action-overlay', 'Should render zoom overlay on hoverable image wrap');
 
     const lightboxModal = doc.getElementById('modal-image-lightbox');
     expect(lightboxModal).toBeTruthy('modal-image-lightbox should exist');
@@ -521,6 +521,8 @@ export async function runTier1Tests() {
     // 1. Abrir Lightbox
     win.openImageLightbox('PROD-MULTI', 0);
     expect(lightboxModal.style.display).toBe('flex', 'Lightbox should open with flex display');
+    const titleEl = doc.getElementById('lightbox-title');
+    expect(titleEl?.textContent).toBe('Teclado Mecánico RGB Wired', 'Lightbox title must show actual product title');
     const counterEl = doc.getElementById('lightbox-counter');
     expect(counterEl?.textContent).toBe('1 / 3', 'Counter should display 1 / 3 on initial image');
 

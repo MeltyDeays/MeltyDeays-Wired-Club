@@ -70,7 +70,7 @@ let isLightboxZoomed = false;
 
 export function openImageLightbox(rewardIdOrImages, index = 0, customTitle = "") {
   let images = [];
-  let title = customTitle || "Visor de Producto";
+  let title = customTitle || "";
 
   if (Array.isArray(rewardIdOrImages)) {
     images = rewardIdOrImages.filter(Boolean);
@@ -94,6 +94,10 @@ export function openImageLightbox(rewardIdOrImages, index = 0, customTitle = "")
     } else if (rewardIdOrImages.startsWith("http") || rewardIdOrImages.startsWith("data:image")) {
       images = [rewardIdOrImages];
     }
+  }
+
+  if (!title) {
+    title = "Artículo The Wired Club";
   }
 
   if (!images || images.length === 0) {
@@ -155,14 +159,17 @@ export function toggleLightboxZoom(e) {
 }
 
 function renderLightboxView() {
-  const titleEl = document.getElementById("lightbox-product-title");
+  const titleEl = document.getElementById("lightbox-title") || document.getElementById("lightbox-product-title");
   const counterEl = document.getElementById("lightbox-counter");
   const imgEl = document.getElementById("lightbox-main-img");
   const prevBtn = document.getElementById("lightbox-prev-btn");
   const nextBtn = document.getElementById("lightbox-next-btn");
-  const thumbsContainer = document.getElementById("lightbox-thumbs-container");
+  const thumbsContainer = document.getElementById("lightbox-thumbnails-bar") || document.getElementById("lightbox-thumbs-container");
 
-  if (titleEl) titleEl.textContent = currentLightboxTitle;
+  if (titleEl) {
+    titleEl.textContent = currentLightboxTitle;
+    titleEl.title = currentLightboxTitle;
+  }
   if (counterEl) {
     counterEl.textContent = `${currentLightboxIndex + 1} / ${currentLightboxImages.length}`;
     counterEl.style.display = currentLightboxImages.length > 1 ? "inline-block" : "none";
@@ -171,7 +178,7 @@ function renderLightboxView() {
   if (imgEl) {
     imgEl.classList.remove("zoomed");
     imgEl.src = currentLightboxImages[currentLightboxIndex] || "";
-    imgEl.alt = `${currentLightboxTitle} - Foto ${currentLightboxIndex + 1}`;
+    imgEl.alt = `${currentLightboxTitle} - Frame ${currentLightboxIndex + 1}`;
   }
 
   const showNav = currentLightboxImages.length > 1;
@@ -185,8 +192,8 @@ function renderLightboxView() {
     } else {
       thumbsContainer.style.display = "flex";
       thumbsContainer.innerHTML = currentLightboxImages.map((src, i) => `
-        <div class="lightbox-thumb ${i === currentLightboxIndex ? 'active' : ''}" onclick="setLightboxImageIndex(${i})">
-          <img src="${src}" alt="Min ${i + 1}">
+        <div class="lightbox-thumb-item ${i === currentLightboxIndex ? 'active' : ''}" onclick="setLightboxImageIndex(${i})" title="Frame ${i + 1}">
+          <img src="${src}" alt="Frame ${i + 1}">
         </div>
       `).join("");
     }
@@ -285,12 +292,14 @@ export function openProductSpecsModal(rewardId) {
     `;
   }).join("");
 
+  const escapedTitle = (item.title || "").replace(/'/g, "\\'");
+
   const galleryHtml = productImages.length > 1 ? `
     <div class="specs-gallery-thumbs-row">
       ${productImages.map((src, idx) => `
-        <div class="specs-thumb-card" onclick="openImageLightbox('${item.id}', ${idx})" title="Ver foto ${idx + 1} en pantalla completa">
-          <img src="${src}" alt="Foto ${idx + 1}">
-          <span class="specs-thumb-overlay">🔍</span>
+        <div class="specs-thumb-card" onclick="openImageLightbox('${item.id}', ${idx}, '${escapedTitle}')" title="Ver frame ${idx + 1} en pantalla completa">
+          <img src="${src}" alt="Frame ${idx + 1}">
+          <span class="specs-thumb-overlay">⛶</span>
         </div>
       `).join("")}
     </div>
@@ -299,9 +308,9 @@ export function openProductSpecsModal(rewardId) {
   body.innerHTML = `
     <div class="modal-product-hero">
       ${mainHeroImg ? `
-        <div class="hero-thumb-wrapper" style="position: relative; cursor: pointer;" onclick="openImageLightbox('${item.id}', 0)" title="Clic para ampliar foto">
+        <div class="hero-thumb-wrapper" style="position: relative; cursor: pointer;" onclick="openImageLightbox('${item.id}', 0, '${escapedTitle}')" title="Clic para ampliar imagen">
           <img src="${mainHeroImg}" alt="${item.title}" class="hero-thumb" onerror="this.onerror=null; this.src=''; this.parentElement.style.background='#0d131f';">
-          <span class="hero-zoom-badge">🔍 AMPLIAR</span>
+          <span class="hero-zoom-badge">⛶ AMPLIAR</span>
         </div>
       ` : `
         <div class="hero-thumb hero-fallback">
@@ -312,7 +321,7 @@ export function openProductSpecsModal(rewardId) {
         <h3 class="hero-title">${item.title}</h3>
         <div class="hero-badges-row">
           <span class="hero-badge count">📋 ${parsed.specs.length} Especificaciones</span>
-          ${productImages.length > 1 ? `<span class="hero-badge" style="background: rgba(14, 165, 233, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3);">📸 ${productImages.length} Fotos</span>` : ''}
+          ${productImages.length > 1 ? `<span class="hero-badge" style="background: rgba(14, 165, 233, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); font-family: var(--font-mono); font-weight: 800;">[ 0${productImages.length} FRAMES ]</span>` : ''}
           ${isPartial 
             ? `<span class="hero-badge discount">🏷️ Hasta ${maxPct}% OFF</span>` 
             : `<span class="hero-badge points">⚡ ${item.pointsCost.toLocaleString()} WP</span>`
@@ -690,16 +699,19 @@ export function renderCatalog(catalog, user) {
         <div class="reward-img-wrap" style="${!mainCover ? 'background: linear-gradient(135deg, #0d131f 0%, #17243b 100%); display:flex; align-items:center; justify-content:center;' : ''}">
           ${modeBadge}
           ${hasMultipleImgs ? `
-            <div class="reward-img-count-badge" onclick="event.stopPropagation(); openImageLightbox('${item.id}', 0, '${escapedTitle}')" title="Ver las ${itemImages.length} fotos">
-              📸 ${itemImages.length} FOTOS
+            <div class="reward-multi-photos-badge" onclick="event.stopPropagation(); openImageLightbox('${item.id}', 0, '${escapedTitle}')" title="Inspeccionar galería de ${itemImages.length} imágenes">
+              <span style="display:inline-block; width:5px; height:5px; border-radius:50%; background:#38bdf8; box-shadow: 0 0 6px #38bdf8;"></span>
+              <span>[ 0${itemImages.length} FRAMES ]</span>
             </div>
           ` : ''}
           ${mainCover
             ? `
-              <img src="${mainCover}" alt="${item.title}" class="reward-img" onclick="openImageLightbox('${item.id}', 0, '${escapedTitle}')" title="Clic para ampliar foto" onerror="this.onerror=null; this.src=''; this.parentElement.style.background='#0d131f';">
-              <div class="reward-img-zoom-overlay" onclick="openImageLightbox('${item.id}', 0, '${escapedTitle}')">
-                <span class="zoom-icon">🔍</span>
-                <span>Ver foto completa</span>
+              <img src="${mainCover}" alt="${item.title}" class="reward-img" onclick="openImageLightbox('${item.id}', 0, '${escapedTitle}')" title="Clic para ampliar imagen" onerror="this.onerror=null; this.src=''; this.parentElement.style.background='#0d131f';">
+              <div class="reward-img-action-overlay" onclick="openImageLightbox('${item.id}', 0, '${escapedTitle}')">
+                <div class="reward-img-expand-badge">
+                  <span style="font-size:0.85rem; line-height:1;">⛶</span>
+                  <span>AMPLIAR // WIRED_VIEW</span>
+                </div>
               </div>
             `
             : `<div style="text-align:center; padding:1rem;"><span style="font-size:2.2rem;">${isPartial ? '🏷️' : '🎁'}</span><div style="font-family:var(--font-mono); font-size:0.68rem; color:#38bdf8; margin-top:4px;">${isPartial ? 'SALE_DISCOUNT' : 'TECH_REWARD'}</div></div>`
