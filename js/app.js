@@ -21,6 +21,9 @@ import {
   toggleRewardSpecs,
   openProductSpecsModal,
   closeProductSpecsModal,
+  specsModalNextImage,
+  specsModalPrevImage,
+  setSpecsModalImageIndex,
   openImageLightbox,
   closeImageLightbox,
   lightboxNextImage,
@@ -334,6 +337,9 @@ document.addEventListener("DOMContentLoaded", () => {
   window.toggleRewardSpecs = toggleRewardSpecs;
   window.openProductSpecsModal = openProductSpecsModal;
   window.closeProductSpecsModal = closeProductSpecsModal;
+  window.specsModalNextImage = specsModalNextImage;
+  window.specsModalPrevImage = specsModalPrevImage;
+  window.setSpecsModalImageIndex = setSpecsModalImageIndex;
   window.openImageLightbox = openImageLightbox;
   window.closeImageLightbox = closeImageLightbox;
   window.lightboxNextImage = lightboxNextImage;

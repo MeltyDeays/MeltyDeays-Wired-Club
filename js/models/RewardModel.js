@@ -100,10 +100,18 @@ export class RewardModel {
     this.id = data.id || data.reward_id || "";
     this.title = data.title || "";
     this.rewardType = data.rewardType || data.reward_type || "FREE_REWARD"; // "FREE_REWARD" | "PARTIAL_DISCOUNT"
-    this.priceUsd = Number(data.priceUsd || data.price_usd || 0);
-    this.maxDiscountPct = Number(data.maxDiscountPct || data.max_discount_pct || 0);
-    this.maxDiscountUsd = Number(data.maxDiscountUsd || data.max_discount_usd || 0);
-    this.cashToPayUsd = Number(data.cashToPayUsd || data.cash_to_pay_usd || 0);
+    if (this.rewardType !== "PARTIAL_DISCOUNT") {
+      this.rewardType = "FREE_REWARD";
+      this.priceUsd = 0;
+      this.maxDiscountPct = 0;
+      this.maxDiscountUsd = 0;
+      this.cashToPayUsd = 0;
+    } else {
+      this.priceUsd = Number(data.priceUsd || data.price_usd || 0);
+      this.maxDiscountPct = Number(data.maxDiscountPct || data.max_discount_pct || 0);
+      this.maxDiscountUsd = Number(data.maxDiscountUsd || data.max_discount_usd || 0);
+      this.cashToPayUsd = Number(data.cashToPayUsd || data.cash_to_pay_usd || 0);
+    }
     this.pointsCost = Number(data.pointsCost || data.points_cost || 0);
     this.stock = Number(data.stock || 0);
 

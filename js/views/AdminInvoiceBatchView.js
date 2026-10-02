@@ -492,14 +492,13 @@ export async function saveProductAdmin() {
   const imageUrl = images[0] || (pendingUrl && !pendingUrl.includes(" ") ? pendingUrl : "");
 
   const activeProductMode = document.getElementById("prod-reward-type")?.value || "FREE_REWARD";
-  let rewardType = (document.getElementById("prod-reward-type")?.value) || activeProductMode || "FREE_REWARD";
-  let priceUsd = parseFloat(document.getElementById("prod-price-usd")?.value) || 0;
-  let maxDiscountPct = parseFloat(document.getElementById("prod-max-discount-pct")?.value) || 0;
-  let maxDiscountUsd = parseFloat(document.getElementById("prod-max-discount-usd")?.value) || 0;
-  let cashToPayUsd = parseFloat(document.getElementById("prod-cash-to-pay-usd")?.value) || 0;
+  let rewardType = activeProductMode === "PARTIAL_DISCOUNT" ? "PARTIAL_DISCOUNT" : "FREE_REWARD";
+  let priceUsd = 0;
+  let maxDiscountPct = 0;
+  let maxDiscountUsd = 0;
+  let cashToPayUsd = 0;
 
-  if (activeProductMode === "PARTIAL_DISCOUNT" || rewardType === "PARTIAL_DISCOUNT") {
-    rewardType = "PARTIAL_DISCOUNT";
+  if (rewardType === "PARTIAL_DISCOUNT") {
     const calc = recalculateProductDiscount();
     priceUsd = calc.salePrice;
     maxDiscountPct = calc.discountPct;

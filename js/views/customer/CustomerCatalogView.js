@@ -216,7 +216,66 @@ if (typeof document !== "undefined" && typeof document.addEventListener === "fun
   });
 }
 
-export function openProductSpecsModal(rewardId) {
+let currentSpecsItem = null;
+let currentSpecsImgIndex = 0;
+
+export function specsModalNextImage() {
+  if (!currentSpecsItem) return;
+  const imgs = typeof currentSpecsItem.getImages === "function" 
+    ? currentSpecsItem.getImages() 
+    : (Array.isArray(currentSpecsItem.images) && currentSpecsItem.images.length ? currentSpecsItem.images : (currentSpecsItem.imageUrl ? [currentSpecsItem.imageUrl] : []));
+  if (imgs.length <= 1) return;
+  currentSpecsImgIndex = (currentSpecsImgIndex + 1) % imgs.length;
+  updateSpecsModalImage();
+}
+
+export function specsModalPrevImage() {
+  if (!currentSpecsItem) return;
+  const imgs = typeof currentSpecsItem.getImages === "function" 
+    ? currentSpecsItem.getImages() 
+    : (Array.isArray(currentSpecsItem.images) && currentSpecsItem.images.length ? currentSpecsItem.images : (currentSpecsItem.imageUrl ? [currentSpecsItem.imageUrl] : []));
+  if (imgs.length <= 1) return;
+  currentSpecsImgIndex = (currentSpecsImgIndex - 1 + imgs.length) % imgs.length;
+  updateSpecsModalImage();
+}
+
+export function setSpecsModalImageIndex(idx) {
+  if (!currentSpecsItem) return;
+  const imgs = typeof currentSpecsItem.getImages === "function" 
+    ? currentSpecsItem.getImages() 
+    : (Array.isArray(currentSpecsItem.images) && currentSpecsItem.images.length ? currentSpecsItem.images : (currentSpecsItem.imageUrl ? [currentSpecsItem.imageUrl] : []));
+  if (idx >= 0 && idx < imgs.length) {
+    currentSpecsImgIndex = idx;
+    updateSpecsModalImage();
+  }
+}
+
+function updateSpecsModalImage() {
+  if (!currentSpecsItem) return;
+  const imgs = typeof currentSpecsItem.getImages === "function" 
+    ? currentSpecsItem.getImages() 
+    : (Array.isArray(currentSpecsItem.images) && currentSpecsItem.images.length ? currentSpecsItem.images : (currentSpecsItem.imageUrl ? [currentSpecsItem.imageUrl] : []));
+  const mainImgEl = document.getElementById("specs-carousel-img");
+  const counterEl = document.getElementById("specs-carousel-counter");
+  const thumbs = document.querySelectorAll(".specs-carousel-thumb");
+  
+  if (mainImgEl && imgs[currentSpecsImgIndex]) {
+    mainImgEl.src = imgs[currentSpecsImgIndex];
+    mainImgEl.alt = `${currentSpecsItem.title} - Frame ${currentSpecsImgIndex + 1}`;
+  }
+  if (counterEl) {
+    counterEl.textContent = `[ 0${currentSpecsImgIndex + 1} / 0${imgs.length} ]`;
+  }
+  thumbs.forEach((th, i) => {
+    if (i === currentSpecsImgIndex) {
+      th.classList.add("active");
+    } else {
+      th.classList.remove("active");
+    }
+  });
+}
+
+export function openProductSpecsModal(rewardId, imgIdx = 0) {
   let item = null;
   if (vm && vm.catalog) {
     item = vm.catalog.find(r => r.id === rewardId);
@@ -229,20 +288,54 @@ export function openProductSpecsModal(rewardId) {
   }
   if (!item) return;
 
+  currentSpecsItem = item;
+  currentSpecsImgIndex = Math.max(0, imgIdx);
+
   const modal = document.getElementById("modal-product-specs");
   const body = document.getElementById("modal-specs-body");
   const footer = document.getElementById("modal-specs-footer");
   if (!modal || !body) return;
 
   const parsed = parseProductDescription(item.description);
-  const isPartial = item.rewardType === "PARTIAL_DISCOUNT" || (typeof item.isPartialDiscount === "function" && item.isPartialDiscount()) || (item.cashToPayUsd && item.cashToPayUsd > 0);
+  const isPartial = item.rewardType === "PARTIAL_DISCOUNT" || (typeof item.isPartialDiscount === "function" && item.isPartialDiscount());
   const maxPct = Number(item.maxDiscountPct || item.max_discount_pct || item.maxDiscountPercent || (isPartial ? 5 : 0));
 
   const productImages = typeof item.getImages === "function"
     ? item.getImages()
     : (Array.isArray(item.images) && item.images.length ? item.images : (item.imageUrl ? [item.imageUrl] : []));
 
-  const mainHeroImg = productImages[0] || item.imageUrl || "";
+  if (currentSpecsImgIndex >= productImages.length) {
+    currentSpecsImgIndex = 0;
+  }
+  const mainHeroImg = productImages[currentSpecsImgIndex] || item.imageUrl || "";
+  const escapedTitle = (item.title || "").replace(/'/g, "\\'");
+
+  let carouselHtml = "";
+  if (productImages.length > 0) {
+    const hasMultiple = productImages.length > 1;
+    carouselHtml = `
+      <div class="specs-carousel-wrapper">
+        <div class="specs-carousel-stage">
+          ${hasMultiple ? `<span id="specs-carousel-counter" class="specs-carousel-counter">[ 0${currentSpecsImgIndex + 1} / 0${productImages.length} ]</span>` : ''}
+          ${hasMultiple ? `<button type="button" class="specs-carousel-btn prev" onclick="specsModalPrevImage()" aria-label="Foto anterior">‹</button>` : ''}
+          <img id="specs-carousel-img" src="${mainHeroImg}" alt="${item.title}" onclick="openImageLightbox('${item.id}', currentSpecsImgIndex, '${escapedTitle}')" title="Clic para ver en pantalla completa" onerror="this.onerror=null; this.src=''; this.parentElement.style.background='#0d131f';">
+          ${hasMultiple ? `<button type="button" class="specs-carousel-btn next" onclick="specsModalNextImage()" aria-label="Foto siguiente">›</button>` : ''}
+          <button type="button" class="specs-carousel-expand-btn" onclick="openImageLightbox('${item.id}', currentSpecsImgIndex, '${escapedTitle}')" title="Ver en pantalla completa">
+            <span>⛶</span> <span>AMPLIAR</span>
+          </button>
+        </div>
+        ${hasMultiple ? `
+          <div class="specs-carousel-pagination">
+            ${productImages.map((src, idx) => `
+              <div class="specs-carousel-thumb ${idx === currentSpecsImgIndex ? 'active' : ''}" onclick="setSpecsModalImageIndex(${idx})" title="Frame ${idx + 1}">
+                <img src="${src}" alt="Miniatura ${idx + 1}">
+              </div>
+            `).join("")}
+          </div>
+        ` : ''}
+      </div>
+    `;
+  }
 
   const emojiRegex = /^(\p{Extended_Pictographic}|[\uD83C-\uDBFF\uDC00-\uDFFF]|[\u2600-\u27BF])\s*/u;
 
@@ -292,49 +385,23 @@ export function openProductSpecsModal(rewardId) {
     `;
   }).join("");
 
-  const escapedTitle = (item.title || "").replace(/'/g, "\\'");
-
-  const galleryHtml = productImages.length > 1 ? `
-    <div class="specs-gallery-thumbs-row">
-      ${productImages.map((src, idx) => `
-        <div class="specs-thumb-card" onclick="openImageLightbox('${item.id}', ${idx}, '${escapedTitle}')" title="Ver frame ${idx + 1} en pantalla completa">
-          <img src="${src}" alt="Frame ${idx + 1}">
-          <span class="specs-thumb-overlay">⛶</span>
-        </div>
-      `).join("")}
-    </div>
-  ` : "";
-
   body.innerHTML = `
-    <div class="modal-product-hero">
-      ${mainHeroImg ? `
-        <div class="hero-thumb-wrapper" style="position: relative; cursor: pointer;" onclick="openImageLightbox('${item.id}', 0, '${escapedTitle}')" title="Clic para ampliar imagen">
-          <img src="${mainHeroImg}" alt="${item.title}" class="hero-thumb" onerror="this.onerror=null; this.src=''; this.parentElement.style.background='#0d131f';">
-          <span class="hero-zoom-badge">⛶ AMPLIAR</span>
-        </div>
-      ` : `
-        <div class="hero-thumb hero-fallback">
-          <span>${isPartial ? '🏷️' : '🎁'}</span>
-        </div>
-      `}
-      <div class="hero-details">
-        <h3 class="hero-title">${item.title}</h3>
-        <div class="hero-badges-row">
-          <span class="hero-badge count">📋 ${parsed.specs.length} Especificaciones</span>
-          ${productImages.length > 1 ? `<span class="hero-badge" style="background: rgba(14, 165, 233, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); font-family: var(--font-mono); font-weight: 800;">[ 0${productImages.length} FRAMES ]</span>` : ''}
-          ${isPartial 
-            ? `<span class="hero-badge discount">🏷️ Hasta ${maxPct}% OFF</span>` 
-            : `<span class="hero-badge points">⚡ ${item.pointsCost.toLocaleString()} WP</span>`
-          }
-        </div>
+    ${carouselHtml}
+
+    <div class="modal-product-hero specs-header-info">
+      <h3 class="specs-header-title">${item.title}</h3>
+      <div class="specs-badges-bar">
+        <span class="specs-badge-item count">📋 ${parsed.specs.length} Especificaciones</span>
+        ${productImages.length > 1 ? `<span class="specs-badge-item frames">[ 0${productImages.length} FRAMES ]</span>` : ''}
+        ${isPartial 
+          ? `<span class="specs-badge-item discount">🏷️ Hasta ${maxPct}% OFF</span>` 
+          : `<span class="specs-badge-item points">⚡ ${item.pointsCost.toLocaleString()} WP</span>`
+        }
       </div>
     </div>
 
-    ${galleryHtml}
-
     ${parsed.intro ? `
       <div class="modal-intro-callout">
-        <div class="callout-icon">✨</div>
         <div class="callout-text">${parsed.intro}</div>
       </div>
     ` : ''}
@@ -739,7 +806,7 @@ export function confirmRedeem(rewardId) {
   const reward = vm.catalog.find(r => r.id === rewardId);
   if (!reward) return;
 
-  const isPartial = reward.rewardType === "PARTIAL_DISCOUNT" || (typeof reward.isPartialDiscount === "function" && reward.isPartialDiscount()) || (reward.cashToPayUsd && reward.cashToPayUsd > 0);
+  const isPartial = reward.rewardType === "PARTIAL_DISCOUNT" || (typeof reward.isPartialDiscount === "function" && reward.isPartialDiscount());
 
   // Si es canje 100% gratuito en puntos, sí bloquea si no tiene saldo suficiente
   if (!isPartial && vm.currentUser.wiredPoints < reward.pointsCost) {
@@ -855,7 +922,7 @@ export function confirmRedeem(rewardId) {
 export function updateConfirmCalculation() {
   if (!currentRedeemReward) return;
   const reward = currentRedeemReward;
-  const isPartial = reward.rewardType === "PARTIAL_DISCOUNT" || (typeof reward.isPartialDiscount === "function" && reward.isPartialDiscount()) || (reward.cashToPayUsd && reward.cashToPayUsd > 0);
+  const isPartial = reward.rewardType === "PARTIAL_DISCOUNT" || (typeof reward.isPartialDiscount === "function" && reward.isPartialDiscount());
   const userPts = vm.currentUser ? (vm.currentUser.wiredPoints || 0) : 0;
 
   let deductPts = 0;

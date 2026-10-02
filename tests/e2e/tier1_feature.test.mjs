@@ -545,7 +545,22 @@ export async function runTier1Tests() {
     win.closeImageLightbox();
     expect(lightboxModal.style.display).toBe('none', 'Lightbox should be hidden on close');
 
-    // 6. Test Admin Multi-Image URL Input & Management
+    // 6. Test Specs Modal Carousel
+    win.openProductSpecsModal('PROD-MULTI', 0);
+    const specsBodyMulti = doc.getElementById('modal-specs-body');
+    expect(specsBodyMulti?.innerHTML).toContain('specs-carousel-wrapper', 'Specs modal must render specs carousel');
+    expect(specsBodyMulti?.innerHTML).toContain('specs-carousel-counter', 'Specs modal must render frame counter');
+    const specsCounter = doc.getElementById('specs-carousel-counter');
+    expect(specsCounter?.textContent).toBe('[ 01 / 03 ]', 'Initial frame in specs modal should be [ 01 / 03 ]');
+
+    win.specsModalNextImage();
+    expect(specsCounter?.textContent).toBe('[ 02 / 03 ]', 'Next image should update specs frame counter to [ 02 / 03 ]');
+
+    win.setSpecsModalImageIndex(2);
+    expect(specsCounter?.textContent).toBe('[ 03 / 03 ]', 'Setting index 2 should update specs frame counter to [ 03 / 03 ]');
+    win.closeProductSpecsModal();
+
+    // 7. Test Admin Multi-Image URL Input & Management
     const { doc: adminDoc, win: adminWin } = setupTestEnvironment('admin.html');
     const adminAppUrl = pathToFileURL(path.join(PROJECT_ROOT, 'js/admin-app.js')).href + `?t=${Date.now()}`;
     await import(adminAppUrl);

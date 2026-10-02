@@ -210,14 +210,15 @@ export class AdminViewModel {
       imgs = [String(productData.imageUrl).trim()];
     }
 
+    const isPartial = productData.rewardType === "PARTIAL_DISCOUNT";
     const reward = new RewardModel({
       id: productData.id || ("REW-" + Math.random().toString(36).substring(2, 8).toUpperCase()),
       title,
-      rewardType: productData.rewardType || "FREE_REWARD",
-      priceUsd: Number(productData.priceUsd) || 0,
-      maxDiscountPct: Number(productData.maxDiscountPct) || 0,
-      maxDiscountUsd: Number(productData.maxDiscountUsd) || 0,
-      cashToPayUsd: Number(productData.cashToPayUsd) || 0,
+      rewardType: isPartial ? "PARTIAL_DISCOUNT" : "FREE_REWARD",
+      priceUsd: isPartial ? (Number(productData.priceUsd) || 0) : 0,
+      maxDiscountPct: isPartial ? (Number(productData.maxDiscountPct) || 0) : 0,
+      maxDiscountUsd: isPartial ? (Number(productData.maxDiscountUsd) || 0) : 0,
+      cashToPayUsd: isPartial ? (Number(productData.cashToPayUsd) || 0) : 0,
       pointsCost: cost,
       stock,
       imageUrl: imgs[0] || (productData.imageUrl || "").trim(),
