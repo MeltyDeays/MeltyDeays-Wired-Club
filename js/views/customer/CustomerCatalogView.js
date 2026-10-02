@@ -807,72 +807,76 @@ export function renderCatalog(catalog, user) {
           ${isOut ? `
             <div class="reward-sold-stamp-container">
               <div class="reward-sold-stamp">
-                <svg class="sold-seal-svg" viewBox="0 0 200 200" width="145" height="145">
+                <svg class="sold-seal-svg" viewBox="0 0 240 240" width="160" height="160">
                   <defs>
                     <linearGradient id="haibaneGold-${item.id}" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stop-color="#fef08a" />
-                      <stop offset="45%" stop-color="#f59e0b" />
-                      <stop offset="100%" stop-color="#b45309" />
+                      <stop offset="0%" stop-color="#fffbeb" />
+                      <stop offset="35%" stop-color="#fbbf24" />
+                      <stop offset="80%" stop-color="#d97706" />
+                      <stop offset="100%" stop-color="#92400e" />
                     </linearGradient>
-                    <linearGradient id="charcoalGrad-${item.id}" x1="0%" y1="0%" x2="0%" y2="100%">
-                      <stop offset="0%" stop-color="#475569" />
-                      <stop offset="40%" stop-color="#1e293b" />
-                      <stop offset="100%" stop-color="#090d16" />
+                    <linearGradient id="wingGradL-${item.id}" x1="100%" y1="0%" x2="0%" y2="100%">
+                      <stop offset="0%" stop-color="#334155" />
+                      <stop offset="60%" stop-color="#1e293b" />
+                      <stop offset="100%" stop-color="#0f172a" />
                     </linearGradient>
-                    <linearGradient id="ribbonGrad-${item.id}" x1="0%" y1="0%" x2="100%" y2="0%">
-                      <stop offset="0%" stop-color="#090d16" />
-                      <stop offset="15%" stop-color="#1e293b" />
+                    <linearGradient id="wingGradR-${item.id}" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stop-color="#334155" />
+                      <stop offset="60%" stop-color="#1e293b" />
+                      <stop offset="100%" stop-color="#0f172a" />
+                    </linearGradient>
+                    <linearGradient id="plaqueGrad-${item.id}" x1="0%" y1="0%" x2="0%" y2="100%">
+                      <stop offset="0%" stop-color="#1e293b" />
                       <stop offset="50%" stop-color="#0f172a" />
-                      <stop offset="85%" stop-color="#1e293b" />
-                      <stop offset="100%" stop-color="#090d16" />
+                      <stop offset="100%" stop-color="#020617" />
                     </linearGradient>
-                    <filter id="sealShadow-${item.id}" x="-25%" y="-25%" width="150%" height="150%">
-                      <feDropShadow dx="0" dy="5" stdDeviation="6" flood-color="#000000" flood-opacity="0.85" />
-                    </filter>
                   </defs>
 
-                  <g filter="url(#sealShadow-${item.id})">
-                    <!-- WINGS (Left and Right Charcoal Feathers - 灰羽) -->
-                    <!-- Left Wing -->
-                    <path d="M95 105 C75 92 48 65 24 50 C22 65 34 82 46 95 C30 88 18 80 10 92 C22 105 38 114 55 118 C38 118 26 122 24 132 C38 140 60 138 76 130 C64 137 48 145 46 153 C64 157 85 145 94 134 Z" fill="url(#charcoalGrad-${item.id})" stroke="url(#haibaneGold-${item.id})" stroke-width="1.3" />
-                    <path d="M85 108 C68 98 48 78 32 68 C35 78 46 90 56 100 C44 96 34 92 28 100 C38 108 50 114 65 116 Z" fill="#334155" opacity="0.6" />
+                  <g>
+                    <!-- MAJESTIC CHARCOAL WINGS (灰羽 - Charcoal Feather Plumage) -->
+                    <!-- Left Wing Outer Feathers -->
+                    <path d="M112 125 C88 110 52 75 22 52 C20 70 34 92 50 108 C32 100 16 92 8 105 C20 120 42 132 62 136 C44 136 30 142 28 154 C44 164 70 162 88 152 C74 160 56 170 54 180 C76 185 100 172 112 156 Z" fill="url(#wingGradL-${item.id})" stroke="url(#haibaneGold-${item.id})" stroke-width="1.8" stroke-linejoin="round" />
+                    <!-- Left Wing Inner Covert Feathers -->
+                    <path d="M104 128 C82 115 60 90 40 76 C44 88 58 104 70 116 C54 110 42 106 36 116 C48 126 64 132 82 134 Z" fill="#475569" stroke="#d97706" stroke-width="1" opacity="0.85" />
 
-                    <!-- Right Wing -->
-                    <path d="M105 105 C125 92 152 65 176 50 C178 65 166 82 154 95 C170 88 182 80 190 92 C178 105 162 114 145 118 C162 118 174 122 176 132 C162 140 140 138 124 130 C136 137 152 145 154 153 C136 157 115 145 106 134 Z" fill="url(#charcoalGrad-${item.id})" stroke="url(#haibaneGold-${item.id})" stroke-width="1.3" />
-                    <path d="M115 108 C132 98 152 78 168 68 C165 78 154 90 144 100 C156 96 166 92 172 100 C162 108 150 114 135 116 Z" fill="#334155" opacity="0.6" />
+                    <!-- Right Wing Outer Feathers -->
+                    <path d="M128 125 C152 110 188 75 218 52 C220 70 206 92 190 108 C208 100 224 92 232 105 C220 120 198 132 178 136 C196 136 210 142 212 154 C196 164 170 162 152 152 C166 160 184 170 186 180 C164 185 140 172 128 156 Z" fill="url(#wingGradR-${item.id})" stroke="url(#haibaneGold-${item.id})" stroke-width="1.8" stroke-linejoin="round" />
+                    <!-- Right Wing Inner Covert Feathers -->
+                    <path d="M136 128 C158 115 180 90 200 76 C196 88 182 104 170 116 C186 110 198 106 204 116 C192 126 176 132 158 134 Z" fill="#475569" stroke="#d97706" stroke-width="1" opacity="0.85" />
 
-                    <!-- HALO (Golden Ring of Glie hovering at top) -->
-                    <ellipse cx="100" cy="38" rx="36" ry="10" fill="none" stroke="url(#haibaneGold-${item.id})" stroke-width="2.6" />
-                    <ellipse cx="100" cy="38" rx="36" ry="10" fill="none" stroke="#ffffff" stroke-width="1" stroke-dasharray="8 4" opacity="0.75" />
-                    <!-- Halo radiance rays -->
-                    <line x1="100" y1="22" x2="100" y2="26" stroke="#fef08a" stroke-width="1.5" />
-                    <line x1="80" y1="26" x2="82" y2="29" stroke="#fef08a" stroke-width="1.2" />
-                    <line x1="120" y1="26" x2="118" y2="29" stroke="#fef08a" stroke-width="1.2" />
+                    <!-- SACRED HALO OF GLIE (Hovering Top Golden Nimbus) -->
+                    <ellipse cx="120" cy="40" rx="46" ry="12" fill="none" stroke="#92400e" stroke-width="4.5" />
+                    <ellipse cx="120" cy="40" rx="46" ry="12" fill="none" stroke="url(#haibaneGold-${item.id})" stroke-width="2.8" />
+                    <ellipse cx="120" cy="40" rx="46" ry="12" fill="none" stroke="#ffffff" stroke-width="1.2" stroke-dasharray="8 4" opacity="0.9" />
+                    <!-- Radiance Aura Beams -->
+                    <line x1="120" y1="20" x2="120" y2="26" stroke="#fef08a" stroke-width="2" stroke-linecap="round" />
+                    <line x1="94" y1="25" x2="98" y2="29" stroke="#fef08a" stroke-width="1.6" stroke-linecap="round" />
+                    <line x1="146" y1="25" x2="142" y2="29" stroke="#fef08a" stroke-width="1.6" stroke-linecap="round" />
 
-                    <!-- CENTRAL CIRCULAR DISC (Old Home Sanctuary Seal) -->
-                    <circle cx="100" cy="100" r="56" fill="#090d16" stroke="url(#haibaneGold-${item.id})" stroke-width="2" />
-                    <circle cx="100" cy="100" r="50" fill="#111827" stroke="#d97706" stroke-width="1.2" stroke-dasharray="4 2" />
-                    <circle cx="100" cy="100" r="44" fill="none" stroke="#475569" stroke-width="0.8" />
+                    <!-- CENTRAL SANCTUARY MEDALLION (Old Home Commune Seal) -->
+                    <circle cx="120" cy="120" r="66" fill="#090d16" stroke="url(#haibaneGold-${item.id})" stroke-width="2.6" />
+                    <circle cx="120" cy="120" r="58" fill="#111827" stroke="#d97706" stroke-width="1.6" />
+                    <circle cx="120" cy="120" r="52" fill="#1e293b" stroke="#64748b" stroke-width="1" stroke-dasharray="4 2" />
 
                     <!-- Top Inscription: 灰羽連盟 (Haibane Renmei Kanji) -->
-                    <text x="100" y="75" text-anchor="middle" fill="#fbbf24" font-family="'Cinzel', 'Noto Serif JP', 'Georgia', serif" font-size="12" font-weight="800" letter-spacing="3.5">灰羽連盟</text>
-                    <!-- Little feather symbol under Kanji -->
-                    <path d="M96 81 C98 79 102 79 104 81 C101 83 99 83 96 81 Z" fill="#fef08a" />
+                    <text x="120" y="90" text-anchor="middle" fill="#fef08a" font-family="'Cinzel', 'Noto Serif JP', 'Georgia', 'Times New Roman', serif" font-size="14" font-weight="900" letter-spacing="4">灰羽連盟</text>
+                    <!-- Sacred feather emblem under Kanji -->
+                    <path d="M115 97 C118 94 122 94 125 97 C121 99 119 99 115 97 Z" fill="#fbbf24" />
 
-                    <!-- Bottom Inscription: GLIE COMMUNE -->
-                    <text x="100" y="136" text-anchor="middle" fill="#fbbf24" font-family="'Cinzel', 'Georgia', serif" font-size="7.5" font-weight="800" letter-spacing="2">✦ GLIE · RETIRED ✦</text>
-                    <text x="100" y="146" text-anchor="middle" fill="#64748b" font-family="monospace" font-size="6" font-weight="700" letter-spacing="1">WALL OF GLIE // PASSED</text>
+                    <!-- Bottom Inscription: GLIE COMMUNE ARCHIVE -->
+                    <text x="120" y="162" text-anchor="middle" fill="#fbbf24" font-family="'Cinzel', 'Trajan Pro', 'Georgia', serif" font-size="9" font-weight="800" letter-spacing="2.5">✦ GLIE · RETIRED ✦</text>
+                    <text x="120" y="174" text-anchor="middle" fill="#94a3b8" font-family="'Courier New', monospace" font-size="7.5" font-weight="800" letter-spacing="1.5">WALL OF GLIE // PASSED</text>
 
-                    <!-- CENTER CARTOUCHE / BANNER (VENDIDO) -->
-                    <rect x="6" y="86" width="188" height="34" rx="4" fill="url(#ribbonGrad-${item.id})" stroke="url(#haibaneGold-${item.id})" stroke-width="1.8" />
-                    <rect x="9" y="89" width="182" height="28" rx="2" fill="none" stroke="#d97706" stroke-width="0.8" stroke-dasharray="4 2" opacity="0.8" />
+                    <!-- CENTER PLAQUE / BANNER (VENDIDO) -->
+                    <rect x="6" y="101" width="228" height="42" rx="4" fill="url(#plaqueGrad-${item.id})" stroke="url(#haibaneGold-${item.id})" stroke-width="2.2" />
+                    <rect x="10" y="105" width="220" height="34" rx="2" fill="none" stroke="#d97706" stroke-width="1" stroke-dasharray="4 2" opacity="0.9" />
                     
-                    <!-- Gold edge ornamental diamonds -->
-                    <polygon points="16,103 13,100 16,97 19,100" fill="#fbbf24" />
-                    <polygon points="184,103 181,100 184,97 187,100" fill="#fbbf24" />
+                    <!-- Decorative Golden Diamonds on edges -->
+                    <polygon points="20,122 15,118 20,114 25,118" fill="#fef08a" />
+                    <polygon points="220,122 215,118 220,114 225,118" fill="#fef08a" />
 
-                    <!-- Main Bold Text: VENDIDO -->
-                    <text x="100" y="108.5" text-anchor="middle" fill="#fef08a" font-family="'Cinzel', 'Times New Roman', 'Trajan Pro', 'Georgia', serif" font-size="18.5" font-weight="900" letter-spacing="4.5">VENDIDO</text>
+                    <!-- Main Bold Inscription: VENDIDO -->
+                    <text x="120" y="129" text-anchor="middle" fill="#ffffff" font-family="'Impact', 'Arial Black', 'Cinzel', 'Trajan Pro', sans-serif" font-size="22" font-weight="900" letter-spacing="5">VENDIDO</text>
                   </g>
                 </svg>
               </div>
