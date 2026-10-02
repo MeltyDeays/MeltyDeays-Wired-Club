@@ -567,16 +567,60 @@ export async function removeProductAdmin(id) {
   }
 }
 
-export async function handleAdminMarkSold(rewardId, title) {
-  const cleanTitle = title || rewardId;
-  if (!confirm(`¿Marcar "${cleanTitle}" como vendido externamente (Stock a 0)?\n\nEl producto se marcará como VENDIDO y desaparecerá del catálogo de clientes en 12 horas.`)) {
-    return;
+export function openMarkProductSoldModal(rewardId, title) {
+  const product = (vm?.catalog || []).find(p => p.id === rewardId);
+  const targetIdEl = document.getElementById("mark-sold-target-id");
+  const titleEl = document.getElementById("mark-sold-product-title");
+  const idEl = document.getElementById("mark-sold-product-id");
+  const pointsEl = document.getElementById("mark-sold-product-points");
+  const stockEl = document.getElementById("mark-sold-product-stock");
+  const imgEl = document.getElementById("mark-sold-product-img");
+
+  if (targetIdEl) targetIdEl.value = rewardId;
+  if (titleEl) titleEl.textContent = title || product?.title || rewardId;
+  if (idEl) idEl.textContent = rewardId;
+  if (pointsEl) pointsEl.textContent = `${(product?.pointsCost || 0).toLocaleString()} WP`;
+  if (stockEl) stockEl.textContent = `${product?.stock || 0} un.`;
+
+  const cover = product ? (typeof product.getImages === "function" ? product.getImages()[0] : (product.imageUrl || "")) : "";
+  if (imgEl) {
+    if (cover) {
+      imgEl.src = cover;
+      imgEl.style.display = "block";
+    } else {
+      imgEl.style.display = "none";
+    }
   }
+
+  const modal = document.getElementById("modal-mark-product-sold");
+  if (modal) modal.style.display = "flex";
+}
+
+export async function executeConfirmMarkSold() {
+  const id = document.getElementById("mark-sold-target-id")?.value;
+  if (!id) return;
+  closeModal("modal-mark-product-sold");
   try {
-    await vm.markRewardSoldOut(rewardId, "VENTA_EXTERNA");
-    showToast(`✓ "${cleanTitle}" marcado como vendido.`, "success");
+    const res = await vm.markRewardSoldOut(id, "VENTA_EXTERNA");
+    showToast(`✓ "${res?.title || id}" marcado como vendido.`, "success");
   } catch (err) {
     showToast("❌ Error al marcar producto: " + err.message, "error");
+  }
+}
+
+export function handleAdminMarkSold(rewardId, title) {
+  const modal = document.getElementById("modal-mark-product-sold");
+  if (modal) {
+    openMarkProductSoldModal(rewardId, title);
+    return;
+  }
+  const cleanTitle = title || rewardId;
+  if (confirm(`¿Marcar "${cleanTitle}" como vendido externamente (Stock a 0)?\n\nEl producto se marcará como VENDIDO y desaparecerá del catálogo de clientes en 12 horas.`)) {
+    vm.markRewardSoldOut(rewardId, "VENTA_EXTERNA").then(() => {
+      showToast(`✓ "${cleanTitle}" marcado como vendido.`, "success");
+    }).catch(err => {
+      showToast("❌ Error al marcar producto: " + err.message, "error");
+    });
   }
 }
 

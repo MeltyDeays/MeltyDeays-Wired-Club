@@ -2367,6 +2367,69 @@
     </div>
   </div>
 
+  <!-- MODAL: CONFIRMACIÓN DE VENTA EXTERNA DE PRODUCTO [COPLAND OS 21.0] -->
+  <div id="modal-mark-product-sold" class="modal-overlay" style="display: none;">
+    <div class="modal-content lain-card modal-compact-mobile" style="max-width: 490px; text-align: left; padding: 1.6rem; border: 2px solid #f43f5e; box-shadow: 0 0 25px rgba(244, 63, 94, 0.25);">
+      <div class="tech-corner top-left">+</div>
+      <div class="tech-corner top-right">+</div>
+      <div class="tech-corner bottom-left">+</div>
+      <div class="tech-corner bottom-right">+</div>
+      <button class="modal-close-btn" onclick="closeModal('modal-mark-product-sold')" aria-label="Cerrar">&times;</button>
+
+      <div class="lain-modal-header" style="border-bottom-color: #f43f5e;">
+        <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+          <span class="badge-navi" style="background: #fff1f2; color: #e11d48; border-color: #fda4af;">
+            INVENTARIO // REGISTRO DE VENTA EXTERNA
+          </span>
+          <span style="font-family: var(--font-mono); font-size: 0.68rem; color: #f43f5e; font-weight: 800;">
+            EXTERNAL_SALE_OFFLOAD
+          </span>
+        </div>
+      </div>
+
+      <h3 style="font-size: 1.22rem; font-weight: 900; color: #be123c; margin: 0 0 0.45rem 0; font-family: var(--font-mono); word-break: break-word;">
+        🏷️ ¿MARCAR PRODUCTO COMO VENDIDO?
+      </h3>
+      <p style="font-size: 0.84rem; color: var(--gray-700); line-height: 1.45; margin-bottom: 0.85rem;">
+        Confirma que este artículo se vendió fuera de la plataforma (ej. WhatsApp, redes sociales, mostrador físico):
+      </p>
+
+      <!-- TARJETA DE DETALLE DEL PRODUCTO -->
+      <div style="background: #fff1f2; border: 1.5px solid #fecdd3; border-radius: 6px; padding: 0.85rem; margin-bottom: 0.85rem; font-family: var(--font-mono);">
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 0.6rem;">
+          <img id="mark-sold-product-img" src="" alt="Producto" style="width: 48px; height: 48px; border-radius: 4px; object-fit: cover; border: 1px solid #fda4af; display: none;">
+          <div style="flex: 1; min-width: 0;">
+            <strong id="mark-sold-product-title" style="display: block; font-size: 0.92rem; color: #881337; word-break: break-word;">-</strong>
+            <code id="mark-sold-product-id" style="font-size: 0.72rem; color: #9f1239; background: #ffffff; padding: 1px 4px; border-radius: 2px; border: 1px solid #fbcfe8;">-</code>
+          </div>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+          <span style="font-size: 0.72rem; color: #9f1239; font-weight: 800;">VALOR EN PUNTOS:</span>
+          <strong id="mark-sold-product-points" style="font-size: 0.88rem; color: #047857;">-</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-size: 0.72rem; color: #9f1239; font-weight: 800;">STOCK ACTUAL:</span>
+          <span id="mark-sold-product-stock" style="font-size: 0.82rem; font-weight: 800; color: #1e293b;">-</span>
+        </div>
+      </div>
+
+      <!-- CALLOUT INFORMATIVO DE LA REGLA DE 12 HORAS -->
+      <div style="background: #fffbeb; border: 1px solid #fde68a; border-left: 3.5px solid #d97706; border-radius: 4px; padding: 0.65rem 0.75rem; margin-bottom: 1.15rem; font-size: 0.78rem; color: #78350f; line-height: 1.4;">
+        <strong style="display: block; margin-bottom: 2px;">⏳ Regla de Visibilidad (12 Horas):</strong>
+        El stock pasará a <strong>0 (Vendido)</strong> de inmediato. Permanecerá visible en el catálogo de clientes durante 12 horas con la etiqueta <em>Vendido</em> y luego desaparecerá automáticamente de la vista pública.
+      </div>
+
+      <input type="hidden" id="mark-sold-target-id">
+
+      <div class="modal-actions-responsive" style="display: flex; gap: 0.65rem; justify-content: flex-end;">
+        <button type="button" class="btn-secondary" onclick="closeModal('modal-mark-product-sold')">CANCELAR</button>
+        <button type="button" class="btn-primary" id="btn-confirm-mark-sold" style="background: #e11d48; border-color: #be123c; padding: 0.55rem 1.15rem; font-weight: 900;" onclick="executeConfirmMarkSold()">
+          🏷️ SÍ, MARCAR VENDIDO
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL: ASIGNACIÓN Y RECLAMO ADMINISTRATIVO DIRECTO DE FACTURA (RESPALDO QR) [COPLAND OS 21.0] -->
   <div id="modal-admin-claim-customer" class="modal-overlay" style="display: none;">
     <div class="modal-content lain-card admin-claim-modal-card" style="max-width: 620px; width: 95vw; padding: 1.6rem; border: 2px solid #4f46e5; box-shadow: 0 20px 45px rgba(15, 23, 42, 0.4), 0 0 25px rgba(79, 70, 229, 0.2); background: #ffffff !important; position: relative;">

@@ -984,10 +984,10 @@ function renderDraftTable() {
               const escapedTitle = (p.title || "").replace(/'/g, "\\'");
 
               const stockDisplay = isSoldOut
-                ? `<span style="background:#fee2e2; color:#991b1b; padding:2px 6px; border-radius:4px; font-size:0.7rem; font-weight:800; border:1px solid #fca5a5;">🔴 VENDIDO</span>`
+                ? `<span class="badge-stock-sold">🔴 VENDIDO</span>`
                 : (p.stock === 1
-                  ? `<span style="background:#ecfdf5; color:#065f46; padding:2px 6px; border-radius:4px; font-size:0.75rem; font-weight:800; border:1px solid #a7f3d0;">1 u. (ÚNICO)</span>`
-                  : `<strong>${p.stock}</strong> u.`);
+                  ? `<div class="stock-cell-wrap"><strong style="color:var(--dark);">1</strong> u. <span class="badge-stock-unique">ÚNICO</span></div>`
+                  : `<div class="stock-cell-wrap"><strong style="color:var(--dark);">${p.stock}</strong> u.</div>`);
 
               return `
                 <tr>

@@ -151,6 +151,8 @@ import {
   saveProductAdmin,
   removeProductAdmin,
   handleAdminMarkSold,
+  openMarkProductSoldModal,
+  executeConfirmMarkSold,
   handleAdminDecrementStock,
   handleAdminRestock,
   filterLainSeries,
@@ -475,10 +477,10 @@ function renderCatalogTable(catalog) {
     const isSoldOut = (p.stock || 0) <= 0 || (typeof p.isSoldOut === "function" && p.isSoldOut()) || p.status === "SOLD_OUT";
 
     const stockDisplay = isSoldOut
-      ? `<span style="background:#fee2e2; color:#991b1b; padding:2px 6px; border-radius:4px; font-size:0.7rem; font-weight:800; border:1px solid #fca5a5;">🔴 VENDIDO</span>`
+      ? `<span class="badge-stock-sold">🔴 VENDIDO</span>`
       : (p.stock === 1
-        ? `<span style="background:#ecfdf5; color:#065f46; padding:2px 6px; border-radius:4px; font-size:0.75rem; font-weight:800; border:1px solid #a7f3d0;">1 un. (ÚNICO)</span>`
-        : `<strong>${p.stock}</strong> un.`);
+        ? `<div class="stock-cell-wrap"><strong style="color:var(--dark);">1</strong> un. <span class="badge-stock-unique">ÚNICO</span></div>`
+        : `<div class="stock-cell-wrap"><strong style="color:var(--dark);">${p.stock}</strong> un.</div>`);
 
     return `
       <tr>
@@ -759,6 +761,8 @@ document.addEventListener("DOMContentLoaded", () => {
   window.saveProductAdmin = saveProductAdmin;
   window.removeProductAdmin = removeProductAdmin;
   window.handleAdminMarkSold = handleAdminMarkSold;
+  window.openMarkProductSoldModal = openMarkProductSoldModal;
+  window.executeConfirmMarkSold = executeConfirmMarkSold;
   window.handleAdminDecrementStock = handleAdminDecrementStock;
   window.handleAdminRestock = handleAdminRestock;
   window.handleProductImageFile = handleProductImageFile;

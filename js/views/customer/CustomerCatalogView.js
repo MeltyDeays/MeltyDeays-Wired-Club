@@ -781,7 +781,7 @@ export function renderCatalog(catalog, user) {
     const escapedTitle = (item.title || "").replace(/'/g, "\\'");
 
     return `
-      <div class="reward-card">
+      <div class="reward-card ${isOut ? 'is-sold-out' : ''}">
         <div class="reward-img-wrap" style="${!mainCover ? 'background: linear-gradient(135deg, #0d131f 0%, #17243b 100%); display:flex; align-items:center; justify-content:center;' : ''}">
           ${modeBadge}
           ${hasMultipleImgs ? `
@@ -793,16 +793,63 @@ export function renderCatalog(catalog, user) {
           ${mainCover
             ? `
               <img src="${mainCover}" alt="${item.title}" class="reward-img" onclick="openImageLightbox('${item.id}', 0, '${escapedTitle}')" title="Clic para ampliar imagen" onerror="this.onerror=null; this.src=''; this.parentElement.style.background='#0d131f';">
-              <div class="reward-img-action-overlay" onclick="openImageLightbox('${item.id}', 0, '${escapedTitle}')">
-                <div class="reward-img-expand-badge">
-                  <span style="font-size:0.85rem; line-height:1;">⛶</span>
-                  <span>AMPLIAR // WIRED_VIEW</span>
+              ${!isOut ? `
+                <div class="reward-img-action-overlay" onclick="openImageLightbox('${item.id}', 0, '${escapedTitle}')">
+                  <div class="reward-img-expand-badge">
+                    <span style="font-size:0.85rem; line-height:1;">⛶</span>
+                    <span>AMPLIAR // WIRED_VIEW</span>
+                  </div>
                 </div>
-              </div>
+              ` : ''}
             `
             : `<div style="text-align:center; padding:1rem;"><span style="font-size:2.2rem;">${isPartial ? '🏷️' : '🎁'}</span><div style="font-family:var(--font-mono); font-size:0.68rem; color:#38bdf8; margin-top:4px;">${isPartial ? 'SALE_DISCOUNT' : 'TECH_REWARD'}</div></div>`
           }
-          <div class="stock-tag ${isOut ? 'out' : ''}">${isOut ? 'VENDIDO' : (item.stock === 1 ? '1 DISP. (ÚNICO)' : item.stock + ' DISP.')}</div>
+          ${isOut ? `
+            <div class="reward-sold-stamp-container">
+              <div class="reward-sold-stamp">
+                <svg class="sold-seal-svg" viewBox="0 0 180 180" width="132" height="132">
+                  <defs>
+                    <linearGradient id="redGrad-${item.id}" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stop-color="#b91c1c" />
+                      <stop offset="50%" stop-color="#dc2626" />
+                      <stop offset="100%" stop-color="#991b1b" />
+                    </linearGradient>
+                    <linearGradient id="ribbonGrad-${item.id}" x1="0%" y1="0%" x2="0%" y2="100%">
+                      <stop offset="0%" stop-color="#ef4444" />
+                      <stop offset="20%" stop-color="#dc2626" />
+                      <stop offset="80%" stop-color="#991b1b" />
+                      <stop offset="100%" stop-color="#7f1d1d" />
+                    </linearGradient>
+                  </defs>
+                  
+                  <g>
+                    <!-- Scalloped starburst outer teeth -->
+                    <polygon points="174.0,90.0 163.7,96.4 172.7,104.6 161.5,109.2 168.9,118.7 157.1,121.3 162.7,132.0 150.6,132.4 154.3,144.0 142.3,142.3 144.0,154.3 132.4,150.6 132.0,162.7 121.3,157.1 118.7,168.9 109.2,161.5 104.6,172.7 96.4,163.7 90.0,174.0 83.6,163.7 75.4,172.7 70.8,161.5 61.3,168.9 58.7,157.1 48.0,162.7 47.6,150.6 36.0,154.3 37.7,142.3 25.7,144.0 29.4,132.4 17.3,132.0 22.9,121.3 11.1,118.7 18.5,109.2 7.3,104.6 16.3,96.4 6.0,90.0 16.3,83.6 7.3,75.4 18.5,70.8 11.1,61.3 22.9,58.7 17.3,48.0 29.4,47.6 25.7,36.0 37.7,37.7 36.0,25.7 47.6,29.4 48.0,17.3 58.7,22.9 61.3,11.1 70.8,18.5 75.4,7.3 83.6,16.3 90.0,6.0 96.4,16.3 104.6,7.3 109.2,18.5 118.7,11.1 121.3,22.9 132.0,17.3 132.4,29.4 144.0,25.7 142.3,37.7 154.3,36.0 150.6,47.6 162.7,48.0 157.1,58.7 168.9,61.3 161.5,70.8 172.7,75.4 163.7,83.6" fill="url(#redGrad-${item.id})" stroke="#7f1d1d" stroke-width="1.5" />
+                    
+                    <!-- White inner disc -->
+                    <circle cx="90" cy="90" r="63" fill="#ffffff" stroke="#b91c1c" stroke-width="2.5" />
+                    
+                    <!-- Concentric decorative red rings -->
+                    <circle cx="90" cy="90" r="53" fill="none" stroke="#dc2626" stroke-width="1.8" />
+                    <circle cx="90" cy="90" r="47" fill="none" stroke="#fca5a5" stroke-width="1" stroke-dasharray="3,2" />
+
+                    <!-- 3 Stars at the bottom -->
+                    <path d="M90 120 L92.5 127 L100 127 L94 131.5 L96.5 138.5 L90 134 L83.5 138.5 L86 131.5 L80 127 L87.5 127 Z" fill="#dc2626" />
+                    <path d="M64 116 L66 122 L72.5 122 L67.5 126 L69.5 132 L64 128 L58.5 132 L60.5 126 L55.5 122 L62 122 Z" fill="#dc2626" />
+                    <path d="M116 116 L118 122 L124.5 122 L119.5 126 L121.5 132 L116 128 L110.5 132 L112.5 126 L107.5 122 L114 122 Z" fill="#dc2626" />
+
+                    <!-- Horizontal Red Ribbon Band -->
+                    <rect x="0" y="66" width="180" height="46" rx="3" fill="url(#ribbonGrad-${item.id})" stroke="#ffffff" stroke-width="2" />
+                    <rect x="3" y="69" width="174" height="40" rx="2" fill="none" stroke="#fca5a5" stroke-width="1" stroke-opacity="0.6" />
+                    
+                    <!-- VENDIDO text -->
+                    <text x="90" y="99" text-anchor="middle" fill="#ffffff" font-family="'Impact', 'Arial Black', 'Montserrat', sans-serif" font-size="27" font-weight="900" letter-spacing="2.8">VENDIDO</text>
+                  </g>
+                </svg>
+              </div>
+            </div>
+          ` : ''}
+          <div class="stock-tag ${isOut ? 'out' : ''}">${isOut ? 'VENDIDO' : (item.stock === 1 ? '1 DISP. · ÚNICO' : item.stock + ' DISP.')}</div>
         </div>
         <div class="reward-body">
           <div class="reward-title" title="${item.title}">${item.title}</div>
