@@ -439,10 +439,13 @@ export function renderProductImagesPreview() {
     return `
       <div class="admin-img-card ${isMain ? 'is-main' : ''}">
         ${isMain ? '<span class="admin-img-badge-main">⭐ PORTADA</span>' : `<span class="admin-img-badge-order">#${idx + 1}</span>`}
+        <button type="button" class="admin-btn-del-img" onclick="removeProductImageAt(${idx})" title="Eliminar imagen">✕</button>
         <img src="${imgSrc}" alt="Foto ${idx + 1}" onclick="if (typeof openImageLightbox === 'function') openImageLightbox(${JSON.stringify(currentProductImages).replace(/"/g, '&quot;')}, ${idx}, 'Vista Previa Admin')" onerror="this.onerror=null; this.src=''; this.parentElement.style.opacity=0.6;">
         <div class="admin-img-actions">
-          ${!isMain ? `<button type="button" class="admin-btn-set-main" onclick="setProductMainImage(${idx})" title="Convertir en portada principal">⭐ Portada</button>` : `<span style="font-size: 0.65rem; color: #10b981; font-weight: 700; align-self: center;">${sourceLabel}</span>`}
-          <button type="button" class="admin-btn-del-img" onclick="removeProductImageAt(${idx})" title="Eliminar imagen">✕</button>
+          ${isMain 
+            ? '<span class="admin-main-active-label">⭐ PORTADA ACTIVA</span>' 
+            : `<button type="button" class="admin-btn-set-main" onclick="setProductMainImage(${idx})" title="Convertir esta foto en la imagen de portada principal">⭐ Hacer Portada</button>`
+          }
         </div>
       </div>
     `;
