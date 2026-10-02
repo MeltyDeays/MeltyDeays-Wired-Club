@@ -807,43 +807,72 @@ export function renderCatalog(catalog, user) {
           ${isOut ? `
             <div class="reward-sold-stamp-container">
               <div class="reward-sold-stamp">
-                <svg class="sold-seal-svg" viewBox="0 0 180 180" width="132" height="132">
+                <svg class="sold-seal-svg" viewBox="0 0 200 200" width="145" height="145">
                   <defs>
-                    <linearGradient id="redGrad-${item.id}" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stop-color="#b91c1c" />
-                      <stop offset="50%" stop-color="#dc2626" />
-                      <stop offset="100%" stop-color="#991b1b" />
+                    <linearGradient id="haibaneGold-${item.id}" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stop-color="#fef08a" />
+                      <stop offset="45%" stop-color="#f59e0b" />
+                      <stop offset="100%" stop-color="#b45309" />
                     </linearGradient>
-                    <linearGradient id="ribbonGrad-${item.id}" x1="0%" y1="0%" x2="0%" y2="100%">
-                      <stop offset="0%" stop-color="#ef4444" />
-                      <stop offset="20%" stop-color="#dc2626" />
-                      <stop offset="80%" stop-color="#991b1b" />
-                      <stop offset="100%" stop-color="#7f1d1d" />
+                    <linearGradient id="charcoalGrad-${item.id}" x1="0%" y1="0%" x2="0%" y2="100%">
+                      <stop offset="0%" stop-color="#475569" />
+                      <stop offset="40%" stop-color="#1e293b" />
+                      <stop offset="100%" stop-color="#090d16" />
                     </linearGradient>
+                    <linearGradient id="ribbonGrad-${item.id}" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" stop-color="#090d16" />
+                      <stop offset="15%" stop-color="#1e293b" />
+                      <stop offset="50%" stop-color="#0f172a" />
+                      <stop offset="85%" stop-color="#1e293b" />
+                      <stop offset="100%" stop-color="#090d16" />
+                    </linearGradient>
+                    <filter id="sealShadow-${item.id}" x="-25%" y="-25%" width="150%" height="150%">
+                      <feDropShadow dx="0" dy="5" stdDeviation="6" flood-color="#000000" flood-opacity="0.85" />
+                    </filter>
                   </defs>
-                  
-                  <g>
-                    <!-- Scalloped starburst outer teeth -->
-                    <polygon points="174.0,90.0 163.7,96.4 172.7,104.6 161.5,109.2 168.9,118.7 157.1,121.3 162.7,132.0 150.6,132.4 154.3,144.0 142.3,142.3 144.0,154.3 132.4,150.6 132.0,162.7 121.3,157.1 118.7,168.9 109.2,161.5 104.6,172.7 96.4,163.7 90.0,174.0 83.6,163.7 75.4,172.7 70.8,161.5 61.3,168.9 58.7,157.1 48.0,162.7 47.6,150.6 36.0,154.3 37.7,142.3 25.7,144.0 29.4,132.4 17.3,132.0 22.9,121.3 11.1,118.7 18.5,109.2 7.3,104.6 16.3,96.4 6.0,90.0 16.3,83.6 7.3,75.4 18.5,70.8 11.1,61.3 22.9,58.7 17.3,48.0 29.4,47.6 25.7,36.0 37.7,37.7 36.0,25.7 47.6,29.4 48.0,17.3 58.7,22.9 61.3,11.1 70.8,18.5 75.4,7.3 83.6,16.3 90.0,6.0 96.4,16.3 104.6,7.3 109.2,18.5 118.7,11.1 121.3,22.9 132.0,17.3 132.4,29.4 144.0,25.7 142.3,37.7 154.3,36.0 150.6,47.6 162.7,48.0 157.1,58.7 168.9,61.3 161.5,70.8 172.7,75.4 163.7,83.6" fill="url(#redGrad-${item.id})" stroke="#7f1d1d" stroke-width="1.5" />
-                    
-                    <!-- White inner disc -->
-                    <circle cx="90" cy="90" r="63" fill="#ffffff" stroke="#b91c1c" stroke-width="2.5" />
-                    
-                    <!-- Concentric decorative red rings -->
-                    <circle cx="90" cy="90" r="53" fill="none" stroke="#dc2626" stroke-width="1.8" />
-                    <circle cx="90" cy="90" r="47" fill="none" stroke="#fca5a5" stroke-width="1" stroke-dasharray="3,2" />
 
-                    <!-- 3 Stars at the bottom -->
-                    <path d="M90 120 L92.5 127 L100 127 L94 131.5 L96.5 138.5 L90 134 L83.5 138.5 L86 131.5 L80 127 L87.5 127 Z" fill="#dc2626" />
-                    <path d="M64 116 L66 122 L72.5 122 L67.5 126 L69.5 132 L64 128 L58.5 132 L60.5 126 L55.5 122 L62 122 Z" fill="#dc2626" />
-                    <path d="M116 116 L118 122 L124.5 122 L119.5 126 L121.5 132 L116 128 L110.5 132 L112.5 126 L107.5 122 L114 122 Z" fill="#dc2626" />
+                  <g filter="url(#sealShadow-${item.id})">
+                    <!-- WINGS (Left and Right Charcoal Feathers - 灰羽) -->
+                    <!-- Left Wing -->
+                    <path d="M95 105 C75 92 48 65 24 50 C22 65 34 82 46 95 C30 88 18 80 10 92 C22 105 38 114 55 118 C38 118 26 122 24 132 C38 140 60 138 76 130 C64 137 48 145 46 153 C64 157 85 145 94 134 Z" fill="url(#charcoalGrad-${item.id})" stroke="url(#haibaneGold-${item.id})" stroke-width="1.3" />
+                    <path d="M85 108 C68 98 48 78 32 68 C35 78 46 90 56 100 C44 96 34 92 28 100 C38 108 50 114 65 116 Z" fill="#334155" opacity="0.6" />
 
-                    <!-- Horizontal Red Ribbon Band -->
-                    <rect x="0" y="66" width="180" height="46" rx="3" fill="url(#ribbonGrad-${item.id})" stroke="#ffffff" stroke-width="2" />
-                    <rect x="3" y="69" width="174" height="40" rx="2" fill="none" stroke="#fca5a5" stroke-width="1" stroke-opacity="0.6" />
+                    <!-- Right Wing -->
+                    <path d="M105 105 C125 92 152 65 176 50 C178 65 166 82 154 95 C170 88 182 80 190 92 C178 105 162 114 145 118 C162 118 174 122 176 132 C162 140 140 138 124 130 C136 137 152 145 154 153 C136 157 115 145 106 134 Z" fill="url(#charcoalGrad-${item.id})" stroke="url(#haibaneGold-${item.id})" stroke-width="1.3" />
+                    <path d="M115 108 C132 98 152 78 168 68 C165 78 154 90 144 100 C156 96 166 92 172 100 C162 108 150 114 135 116 Z" fill="#334155" opacity="0.6" />
+
+                    <!-- HALO (Golden Ring of Glie hovering at top) -->
+                    <ellipse cx="100" cy="38" rx="36" ry="10" fill="none" stroke="url(#haibaneGold-${item.id})" stroke-width="2.6" />
+                    <ellipse cx="100" cy="38" rx="36" ry="10" fill="none" stroke="#ffffff" stroke-width="1" stroke-dasharray="8 4" opacity="0.75" />
+                    <!-- Halo radiance rays -->
+                    <line x1="100" y1="22" x2="100" y2="26" stroke="#fef08a" stroke-width="1.5" />
+                    <line x1="80" y1="26" x2="82" y2="29" stroke="#fef08a" stroke-width="1.2" />
+                    <line x1="120" y1="26" x2="118" y2="29" stroke="#fef08a" stroke-width="1.2" />
+
+                    <!-- CENTRAL CIRCULAR DISC (Old Home Sanctuary Seal) -->
+                    <circle cx="100" cy="100" r="56" fill="#090d16" stroke="url(#haibaneGold-${item.id})" stroke-width="2" />
+                    <circle cx="100" cy="100" r="50" fill="#111827" stroke="#d97706" stroke-width="1.2" stroke-dasharray="4 2" />
+                    <circle cx="100" cy="100" r="44" fill="none" stroke="#475569" stroke-width="0.8" />
+
+                    <!-- Top Inscription: 灰羽連盟 (Haibane Renmei Kanji) -->
+                    <text x="100" y="75" text-anchor="middle" fill="#fbbf24" font-family="'Cinzel', 'Noto Serif JP', 'Georgia', serif" font-size="12" font-weight="800" letter-spacing="3.5">灰羽連盟</text>
+                    <!-- Little feather symbol under Kanji -->
+                    <path d="M96 81 C98 79 102 79 104 81 C101 83 99 83 96 81 Z" fill="#fef08a" />
+
+                    <!-- Bottom Inscription: GLIE COMMUNE -->
+                    <text x="100" y="136" text-anchor="middle" fill="#fbbf24" font-family="'Cinzel', 'Georgia', serif" font-size="7.5" font-weight="800" letter-spacing="2">✦ GLIE · RETIRED ✦</text>
+                    <text x="100" y="146" text-anchor="middle" fill="#64748b" font-family="monospace" font-size="6" font-weight="700" letter-spacing="1">WALL OF GLIE // PASSED</text>
+
+                    <!-- CENTER CARTOUCHE / BANNER (VENDIDO) -->
+                    <rect x="6" y="86" width="188" height="34" rx="4" fill="url(#ribbonGrad-${item.id})" stroke="url(#haibaneGold-${item.id})" stroke-width="1.8" />
+                    <rect x="9" y="89" width="182" height="28" rx="2" fill="none" stroke="#d97706" stroke-width="0.8" stroke-dasharray="4 2" opacity="0.8" />
                     
-                    <!-- VENDIDO text -->
-                    <text x="90" y="99" text-anchor="middle" fill="#ffffff" font-family="'Impact', 'Arial Black', 'Montserrat', sans-serif" font-size="27" font-weight="900" letter-spacing="2.8">VENDIDO</text>
+                    <!-- Gold edge ornamental diamonds -->
+                    <polygon points="16,103 13,100 16,97 19,100" fill="#fbbf24" />
+                    <polygon points="184,103 181,100 184,97 187,100" fill="#fbbf24" />
+
+                    <!-- Main Bold Text: VENDIDO -->
+                    <text x="100" y="108.5" text-anchor="middle" fill="#fef08a" font-family="'Cinzel', 'Times New Roman', 'Trajan Pro', 'Georgia', serif" font-size="18.5" font-weight="900" letter-spacing="4.5">VENDIDO</text>
                   </g>
                 </svg>
               </div>

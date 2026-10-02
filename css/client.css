@@ -933,14 +933,15 @@
   border-color: #fca5a5;
 }
 
-/* EFECTO DE PRODUCTO VENDIDO CON SELLO CENTRAL */
+/* EFECTO DE PRODUCTO VENDIDO - ESTÉTICA HAIBANE RENMEI (灰羽連盟) */
 .reward-card.is-sold-out {
-  opacity: 0.92;
-  border-color: #fca5a5;
+  opacity: 0.94;
+  border-color: #64748b;
+  box-shadow: 3px 3px 0px #1e293b;
 }
 
 .reward-card.is-sold-out .reward-img {
-  filter: grayscale(70%) contrast(85%) brightness(0.65);
+  filter: grayscale(80%) contrast(90%) brightness(0.55) sepia(18%);
 }
 
 .reward-sold-stamp-container {
@@ -951,23 +952,23 @@
   justify-content: center;
   pointer-events: none;
   z-index: 5;
-  background: radial-gradient(circle, rgba(15, 23, 42, 0.45) 0%, rgba(15, 23, 42, 0.72) 100%);
-  backdrop-filter: blur(1.5px);
+  background: radial-gradient(circle at center, rgba(15, 23, 42, 0.45) 0%, rgba(15, 23, 42, 0.82) 100%);
+  backdrop-filter: blur(2px);
 }
 
 .reward-sold-stamp {
-  transform: rotate(-10deg) scale(0.96);
-  animation: stampPop 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
-  filter: drop-shadow(0 8px 20px rgba(0, 0, 0, 0.6));
+  transform: rotate(-3deg) scale(0.98);
+  animation: haibaneSealPop 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+  filter: drop-shadow(0 10px 24px rgba(0, 0, 0, 0.75));
 }
 
-@keyframes stampPop {
+@keyframes haibaneSealPop {
   0% {
-    transform: rotate(-25deg) scale(1.35);
+    transform: rotate(-12deg) scale(1.3);
     opacity: 0;
   }
   100% {
-    transform: rotate(-10deg) scale(0.96);
+    transform: rotate(-3deg) scale(0.98);
     opacity: 1;
   }
 }
@@ -975,6 +976,7 @@
 .sold-seal-svg {
   display: block;
   user-select: none;
+  overflow: visible;
 }
 
 .reward-body, .product-body {
