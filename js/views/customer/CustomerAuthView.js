@@ -83,10 +83,14 @@ export function switchAuthTab(tab) {
   }
 }
 
-export function toggleClientPinVisibility(inputId) {
+export function toggleClientPinVisibility(inputId, btnEl) {
   const input = document.getElementById(inputId);
   if (input) {
-    input.type = input.type === "password" ? "text" : "password";
+    const isPass = input.type === "password";
+    input.type = isPass ? "text" : "password";
+    if (btnEl) {
+      btnEl.textContent = isPass ? "🙈" : "👁️";
+    }
   }
 }
 

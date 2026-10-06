@@ -46,8 +46,8 @@ export function openMobileProfileDrawer() {
   if (!drawer) return;
 
   if (fab) {
-    fab.style.display = "none";
     fab.classList.add("is-hidden");
+    fab.style.setProperty("display", "none", "important");
   }
   document.body.classList.add("drawer-open");
   renderProfileDrawer();
@@ -66,8 +66,8 @@ export function closeMobileProfileDrawer() {
   drawer.classList.remove("open");
   if (overlay) overlay.classList.remove("open");
   if (fab) {
-    fab.style.display = "";
     fab.classList.remove("is-hidden");
+    fab.style.removeProperty("display");
   }
   document.body.classList.remove("drawer-open");
   document.body.style.overflow = "";
@@ -252,30 +252,56 @@ export function renderProfileDrawer() {
           <span>🔒 SEGURIDAD Y PIN</span>
         </div>
         <button type="button" class="btn-toggle-pin-form ${isPinFormOpen ? 'active' : ''}" id="btn-toggle-pin-form" onclick="event.stopPropagation(); toggleProfilePinForm();">
-          <span id="pin-toggle-label">${isPinFormOpen ? '✕ Cancelar' : '🔑 Cambiar PIN'}</span>
+          <span id="pin-toggle-label">${isPinFormOpen ? '✕ Cerrar' : '🔑 Cambiar PIN'}</span>
           <span id="pin-toggle-icon">${isPinFormOpen ? '▴' : '▾'}</span>
         </button>
       </div>
 
       <div id="profile-pin-form-body" class="profile-security-form-box" style="display: ${isPinFormOpen ? 'block' : 'none'};">
-        <div class="form-group-compact">
-          <label>PIN Actual:</label>
-          <input type="password" id="input-pin-current" class="profile-pin-input" maxlength="8" placeholder="••••">
+        <div class="pin-vault-badge">
+          <span class="vault-badge-icon">🛡️</span>
+          <span class="vault-badge-text">Protege tus Wired Points y validaciones de canje</span>
         </div>
-        <div class="form-group-compact">
-          <label>Nuevo PIN (4 a 8 dígitos):</label>
-          <input type="password" id="input-pin-new" class="profile-pin-input" maxlength="8" placeholder="Nuevo PIN">
+
+        <div class="pin-field-group">
+          <label class="pin-field-label" for="input-pin-current">
+            <span>🔑 PIN Actual</span>
+          </label>
+          <div class="pin-input-wrapper">
+            <input type="password" id="input-pin-current" class="profile-pin-input" maxlength="8" placeholder="Ingresa tu PIN actual" autocomplete="off" inputmode="numeric">
+            <button type="button" class="btn-pin-toggle-visibility" onclick="toggleClientPinVisibility('input-pin-current', this)" title="Ver / ocultar PIN">👁️</button>
+          </div>
         </div>
-        <div class="form-group-compact">
-          <label>Confirmar Nuevo PIN:</label>
-          <input type="password" id="input-pin-confirm" class="profile-pin-input" maxlength="8" placeholder="Confirmar nuevo PIN">
+
+        <div class="pin-field-group">
+          <div class="pin-label-row">
+            <label class="pin-field-label" for="input-pin-new">
+              <span>✨ Nuevo PIN</span>
+            </label>
+            <span class="pin-label-helper">4 a 8 dígitos</span>
+          </div>
+          <div class="pin-input-wrapper">
+            <input type="password" id="input-pin-new" class="profile-pin-input" maxlength="8" placeholder="Define 4-8 dígitos" autocomplete="off" inputmode="numeric">
+            <button type="button" class="btn-pin-toggle-visibility" onclick="toggleClientPinVisibility('input-pin-new', this)" title="Ver / ocultar PIN">👁️</button>
+          </div>
         </div>
+
+        <div class="pin-field-group">
+          <label class="pin-field-label" for="input-pin-confirm">
+            <span>🔒 Confirmar Nuevo PIN</span>
+          </label>
+          <div class="pin-input-wrapper">
+            <input type="password" id="input-pin-confirm" class="profile-pin-input" maxlength="8" placeholder="Repite tu nuevo PIN" autocomplete="off" inputmode="numeric">
+            <button type="button" class="btn-pin-toggle-visibility" onclick="toggleClientPinVisibility('input-pin-confirm', this)" title="Ver / ocultar PIN">👁️</button>
+          </div>
+        </div>
+
         <div class="pin-actions-row">
-          <button type="button" class="btn-primary btn-save-pin" onclick="executeProfilePinUpdate()">
-            ✓ Guardar PIN
+          <button type="button" class="btn-save-pin" onclick="executeProfilePinUpdate()">
+            <span>✓</span> <span>Actualizar PIN</span>
           </button>
-          <button type="button" class="btn-secondary btn-cancel-pin" onclick="cancelProfilePinUpdate(true)">
-            ✕ Cancelar
+          <button type="button" class="btn-cancel-pin" onclick="cancelProfilePinUpdate(true)">
+            <span>✕</span> <span>Cancelar</span>
           </button>
         </div>
       </div>
@@ -307,7 +333,7 @@ export function toggleProfilePinForm() {
   }
   if (toggleBtn) {
     toggleBtn.innerHTML = isPinFormOpen
-      ? `<span>✕ Cancelar</span> <span>▴</span>`
+      ? `<span>✕ Cerrar</span> <span>▴</span>`
       : `<span>🔑 Cambiar PIN</span> <span>▾</span>`;
     if (isPinFormOpen) {
       toggleBtn.classList.add("active");
