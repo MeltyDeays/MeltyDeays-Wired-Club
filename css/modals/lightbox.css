@@ -1426,8 +1426,6 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  max-height: 260px;
-  overflow-y: auto;
 }
 
 .temu-comment-card {
@@ -1569,7 +1567,7 @@
   }
   .modal-specs-body {
     padding: 0.85rem !important;
-    padding-bottom: 80px !important;
+    padding-bottom: 0.85rem !important;
   }
   .modal-specs-footer {
     position: sticky !important;
