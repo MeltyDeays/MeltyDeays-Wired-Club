@@ -1180,19 +1180,19 @@ export function renderCatalog(catalog, user) {
         <div class="reward-img-wrap" style="${!mainCover ? 'background: linear-gradient(135deg, #0d131f 0%, #17243b 100%); display:flex; align-items:center; justify-content:center;' : ''}">
           ${modeBadge}
           ${hasMultipleImgs ? `
-            <div class="reward-multi-photos-badge" onclick="event.stopPropagation(); openImageLightbox('${item.id}', 0, '${escapedTitle}')" title="Inspeccionar galería de ${itemImages.length} imágenes">
+            <div class="reward-multi-photos-badge" onclick="event.stopPropagation(); openProductSpecsModal('${item.id}')" title="Ver galería y ficha técnica (${itemImages.length} fotos)">
               <span style="display:inline-block; width:5px; height:5px; border-radius:50%; background:#38bdf8; box-shadow: 0 0 6px #38bdf8;"></span>
               <span>[ 0${itemImages.length} FRAMES ]</span>
             </div>
           ` : ''}
           ${mainCover
             ? `
-              <img src="${mainCover}" alt="${item.title}" class="reward-img" onclick="event.stopPropagation(); openImageLightbox('${item.id}', 0, '${escapedTitle}')" title="Clic para ampliar imagen" onerror="this.onerror=null; this.src=''; this.parentElement.style.background='#0d131f';">
+              <img src="${mainCover}" alt="${item.title}" class="reward-img" onclick="event.stopPropagation(); openProductSpecsModal('${item.id}')" title="Clic para ver detalles y fotos" onerror="this.onerror=null; this.src=''; this.parentElement.style.background='#0d131f';">
               ${!isOut ? `
-                <div class="reward-img-action-overlay" onclick="event.stopPropagation(); openImageLightbox('${item.id}', 0, '${escapedTitle}')">
+                <div class="reward-img-action-overlay" onclick="event.stopPropagation(); openProductSpecsModal('${item.id}')">
                   <div class="reward-img-expand-badge">
-                    <span style="font-size:0.85rem; line-height:1;">⛶</span>
-                    <span>AMPLIAR // WIRED_VIEW</span>
+                    <span style="font-size:0.85rem; line-height:1;">⚡</span>
+                    <span>VER DETALLES // WIRED_VIEW</span>
                   </div>
                 </div>
               ` : ''}
