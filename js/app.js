@@ -30,6 +30,7 @@ import {
   updateSpecsModalCalculation,
   submitProductComment,
   loadProductComments,
+  renderProductCommentsDom,
   toggleCommentReplyForm,
   submitClientCommentReply,
   openImageLightbox,
@@ -401,6 +402,7 @@ document.addEventListener("DOMContentLoaded", () => {
   window.updateSpecsModalCalculation = updateSpecsModalCalculation;
   window.submitProductComment = submitProductComment;
   window.loadProductComments = loadProductComments;
+  window.renderProductCommentsDom = renderProductCommentsDom;
   window.toggleCommentReplyForm = toggleCommentReplyForm;
   window.submitClientCommentReply = submitClientCommentReply;
   window.openImageLightbox = openImageLightbox;
@@ -449,4 +451,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Badge visual en entorno de pruebas (SANDBOX)
   injectEnvironmentBadge();
+
+  // Prevenir zoom accidental de página con gestos multitáctiles (pellizco con dos dedos)
+  document.addEventListener("gesturestart", (e) => e.preventDefault(), { passive: false });
+  document.addEventListener("gesturechange", (e) => e.preventDefault(), { passive: false });
+  document.addEventListener("gestureend", (e) => e.preventDefault(), { passive: false });
+  document.addEventListener("touchmove", (e) => {
+    if (e.touches && e.touches.length > 1) {
+      const target = e.target;
+      if (target && target.closest("#lightbox-viewport")) return;
+      e.preventDefault();
+    }
+  }, { passive: false });
 });

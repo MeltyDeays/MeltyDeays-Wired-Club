@@ -36,6 +36,10 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+html, body {
+  touch-action: pan-x pan-y;
+}
+
 body {
   background-color: var(--bg-page);
   background-image: radial-gradient(var(--dot-color) 0.85px, transparent 0.85px);
@@ -46,6 +50,17 @@ body {
   display: flex;
   flex-direction: column;
   overflow-x: hidden;
+}
+
+body.modal-open {
+  overflow: hidden !important;
+  overscroll-behavior: contain !important;
+  touch-action: none !important;
+}
+
+body.modal-open #dev-env-badge,
+body.modal-open #dev-env-badge * {
+  display: none !important;
 }
 
 /* NAVBAR TÉCNICA ESTILO ENCABEZADO DE FACTURA */

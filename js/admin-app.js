@@ -1109,6 +1109,18 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+  // Suscripción reactiva en tiempo real a preguntas y comentarios de la comunidad
+  if (FirestoreService && typeof FirestoreService.subscribeAllProductComments === "function") {
+    FirestoreService.subscribeAllProductComments(() => {
+      const commTab = document.getElementById("admin-tab-community");
+      if (commTab && commTab.style.display !== "none") {
+        renderAdminCommentsList();
+      } else {
+        updateAdminPendingCommentsBadge();
+      }
+    });
+  }
+
   vm.init();
   renderLainTemplateGrid();
 
@@ -1149,4 +1161,16 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     }
   });
+
+  // Prevenir zoom accidental de página con gestos multitáctiles (pellizco con dos dedos)
+  document.addEventListener("gesturestart", (e) => e.preventDefault(), { passive: false });
+  document.addEventListener("gesturechange", (e) => e.preventDefault(), { passive: false });
+  document.addEventListener("gestureend", (e) => e.preventDefault(), { passive: false });
+  document.addEventListener("touchmove", (e) => {
+    if (e.touches && e.touches.length > 1) {
+      const target = e.target;
+      if (target && target.closest("#lightbox-viewport")) return;
+      e.preventDefault();
+    }
+  }, { passive: false });
 });

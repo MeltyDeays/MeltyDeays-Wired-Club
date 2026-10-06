@@ -15,6 +15,7 @@ let showVoucherModal = (code) => {
 let formatPrice = (usd) => `$${Number(usd || 0).toFixed(2)} USD`;
 let formatDualPrice = (usd) => `$${Number(usd || 0).toFixed(2)} USD`;
 let currentlyOpenSpecsId = null;
+let activeCommentsUnsubscribe = null;
 
 export function toggleRewardSpecs(itemId) {
   const drop = document.getElementById("specs-drop-" + itemId);
@@ -68,6 +69,78 @@ let currentLightboxImages = [];
 let currentLightboxIndex = 0;
 let currentLightboxTitle = "";
 let isLightboxZoomed = false;
+let lightboxPanX = 0;
+let lightboxPanY = 0;
+let isPanning = false;
+let panStartX = 0;
+let panStartY = 0;
+let panTotalMove = 0;
+
+export function resetLightboxPan() {
+  lightboxPanX = 0;
+  lightboxPanY = 0;
+  isPanning = false;
+  panTotalMove = 0;
+  isLightboxZoomed = false;
+  const viewport = document.getElementById("lightbox-viewport");
+  if (viewport) viewport.classList.remove("is-panning");
+  const imgEl = document.getElementById("lightbox-main-img");
+  if (imgEl) {
+    imgEl.classList.remove("zoomed");
+    imgEl.style.transform = "";
+  }
+  const hintEl = document.querySelector(".lightbox-zoom-hint");
+  if (hintEl) hintEl.textContent = "[+] Clic para zoom";
+}
+
+function attachLightboxPanListeners() {
+  const viewport = document.getElementById("lightbox-viewport");
+  if (!viewport || viewport.dataset.panAttached === "true") return;
+  viewport.dataset.panAttached = "true";
+
+  viewport.addEventListener("pointerdown", (e) => {
+    if (!isLightboxZoomed) return;
+    isPanning = true;
+    panTotalMove = 0;
+    panStartX = e.clientX - lightboxPanX;
+    panStartY = e.clientY - lightboxPanY;
+    viewport.classList.add("is-panning");
+    try {
+      viewport.setPointerCapture(e.pointerId);
+    } catch (_) {}
+  });
+
+  viewport.addEventListener("pointermove", (e) => {
+    if (!isPanning || !isLightboxZoomed) return;
+    const nextX = e.clientX - panStartX;
+    const nextY = e.clientY - panStartY;
+    panTotalMove += Math.hypot(nextX - lightboxPanX, nextY - lightboxPanY);
+
+    const maxPanX = (viewport.clientWidth || 360) * 0.75;
+    const maxPanY = (viewport.clientHeight || 480) * 0.75;
+    lightboxPanX = Math.max(-maxPanX, Math.min(maxPanX, nextX));
+    lightboxPanY = Math.max(-maxPanY, Math.min(maxPanY, nextY));
+
+    const imgEl = document.getElementById("lightbox-main-img");
+    if (imgEl) {
+      imgEl.style.transform = `scale(2.2) translate(${lightboxPanX / 2.2}px, ${lightboxPanY / 2.2}px)`;
+    }
+  });
+
+  const onPointerUp = (e) => {
+    if (!isPanning) return;
+    isPanning = false;
+    viewport.classList.remove("is-panning");
+    try {
+      if (e && e.pointerId && viewport.hasPointerCapture(e.pointerId)) {
+        viewport.releasePointerCapture(e.pointerId);
+      }
+    } catch (_) {}
+  };
+
+  viewport.addEventListener("pointerup", onPointerUp);
+  viewport.addEventListener("pointercancel", onPointerUp);
+}
 
 export function openImageLightbox(rewardIdOrImages, index = 0, customTitle = "") {
   let images = [];
@@ -109,53 +182,78 @@ export function openImageLightbox(rewardIdOrImages, index = 0, customTitle = "")
   currentLightboxImages = images;
   currentLightboxIndex = Math.max(0, Math.min(index, images.length - 1));
   currentLightboxTitle = title;
-  isLightboxZoomed = false;
+  resetLightboxPan();
 
   const modal = document.getElementById("modal-image-lightbox");
   if (!modal) return;
 
   modal.style.display = "flex";
+  document.body.classList.add("modal-open");
+  const fab = document.getElementById("fab-mobile-menu");
+  if (fab) {
+    fab.classList.add("is-hidden");
+    fab.style.setProperty("display", "none", "important");
+  }
+  attachLightboxPanListeners();
   renderLightboxView();
 }
 
 export function closeImageLightbox() {
   const modal = document.getElementById("modal-image-lightbox");
   if (modal) modal.style.display = "none";
-  isLightboxZoomed = false;
-  const imgEl = document.getElementById("lightbox-main-img");
-  if (imgEl) imgEl.classList.remove("zoomed");
+  resetLightboxPan();
+
+  const specsModal = document.getElementById("modal-product-specs");
+  const isSpecsOpen = specsModal && specsModal.style.display !== "none" && specsModal.style.display !== "";
+  if (!isSpecsOpen) {
+    document.body.classList.remove("modal-open");
+    const fab = document.getElementById("fab-mobile-menu");
+    if (fab) {
+      fab.style.display = "";
+      fab.classList.remove("is-hidden");
+    }
+  }
 }
 
 export function lightboxNextImage() {
   if (currentLightboxImages.length <= 1) return;
   currentLightboxIndex = (currentLightboxIndex + 1) % currentLightboxImages.length;
-  isLightboxZoomed = false;
+  resetLightboxPan();
   renderLightboxView();
 }
 
 export function lightboxPrevImage() {
   if (currentLightboxImages.length <= 1) return;
   currentLightboxIndex = (currentLightboxIndex - 1 + currentLightboxImages.length) % currentLightboxImages.length;
-  isLightboxZoomed = false;
+  resetLightboxPan();
   renderLightboxView();
 }
 
 export function setLightboxImageIndex(idx) {
   if (idx >= 0 && idx < currentLightboxImages.length) {
     currentLightboxIndex = idx;
-    isLightboxZoomed = false;
+    resetLightboxPan();
     renderLightboxView();
   }
 }
 
 export function toggleLightboxZoom(e) {
+  if (panTotalMove > 8) {
+    panTotalMove = 0;
+    return;
+  }
   const imgEl = document.getElementById("lightbox-main-img");
   if (!imgEl) return;
   isLightboxZoomed = !isLightboxZoomed;
   if (isLightboxZoomed) {
+    lightboxPanX = 0;
+    lightboxPanY = 0;
     imgEl.classList.add("zoomed");
+    imgEl.style.transform = "scale(2.2) translate(0px, 0px)";
+    const hintEl = document.querySelector(".lightbox-zoom-hint");
+    if (hintEl) hintEl.textContent = "[-] Arrastra para explorar / Clic para alejar";
   } else {
-    imgEl.classList.remove("zoomed");
+    resetLightboxPan();
   }
 }
 
@@ -382,122 +480,143 @@ export async function submitProductComment(rewardId) {
   }
 }
 
+export function renderProductCommentsDom(rewardId, comments) {
+  const listEl = document.getElementById(`comments-list-${rewardId}`);
+  if (!listEl) return;
+
+  if (!comments || comments.length === 0) {
+    listEl.innerHTML = `
+      <div style="text-align: center; padding: 14px; color: #94a3b8; font-size: 0.72rem; font-family: var(--font-mono); background: #f8fafc; border-radius: 4px; border: 1px dashed #cbd5e1;">
+        💬 Aún no hay preguntas sobre este artículo. ¡Sé el primero en consultar!
+      </div>
+    `;
+    return;
+  }
+
+  // Preservar texto de borrador si el usuario ya tenía el formulario de respuesta abierto
+  const openReplyDrafts = {};
+  listEl.querySelectorAll(".temu-reply-form-container").forEach(form => {
+    if (form.style.display !== "none") {
+      const commentId = form.id.replace("reply-form-", "");
+      const input = document.getElementById(`reply-input-${commentId}`);
+      if (input && input.value) {
+        openReplyDrafts[commentId] = input.value;
+      }
+    }
+  });
+
+  listEl.innerHTML = comments.map(c => {
+    const dateStr = c.createdAt ? new Date(c.createdAt).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' }) : 'Reciente';
+    
+    let qText = String(c.questionText || c.comment || c.text || c.message || c.question || c.content || '').trim();
+    if (!qText || qText === 'undefined' || qText === 'null') {
+      qText = '¿Tienen entrega disponible en tienda física hoy mismo si aparto con mis puntos?';
+    }
+
+    // Normalizar array de respuestas (hilo conversacional multirrespuesta)
+    let repliesList = Array.isArray(c.replies) ? [...c.replies] : [];
+    if (repliesList.length === 0) {
+      let legacyText = String(c.answerText || c.reply || c.response || c.answer || '').trim();
+      if (legacyText && legacyText !== 'undefined' && legacyText !== 'null') {
+        const isOff = Boolean(
+          c.isOfficialReply === true ||
+          (c.answeredBy && (c.answeredBy.includes("MeltyDeays") || c.answeredBy.includes("Soporte Oficial"))) ||
+          (c.replyAuthor && (c.replyAuthor.includes("MeltyDeays") || c.replyAuthor.includes("Soporte Oficial")))
+        );
+        repliesList.push({
+          id: 'legacy-' + c.id,
+          text: legacyText,
+          author: c.answeredBy || c.replyAuthor || (isOff ? "MeltyDeays Soporte" : "Socio"),
+          isOfficial: isOff,
+          createdAt: c.replyAt || c.answeredAt || c.createdAt
+        });
+      }
+    }
+
+    const hasReplies = repliesList.length > 0;
+
+    let authorName = String(c.userName || c.author || c.name || 'Socio').trim();
+    if (!authorName || authorName === 'undefined' || authorName === 'null') {
+      authorName = 'Socio Wired';
+    }
+
+    const currentUserName = (vm?.currentUser?.displayName) ? vm.currentUser.displayName.trim() : "Socio Wired";
+    const draftText = openReplyDrafts[c.id] || "";
+    const isFormOpen = Boolean(draftText);
+
+    return `
+      <div class="temu-comment-card">
+        <div class="temu-comment-user-row">
+          <span class="temu-comment-username">👤 ${authorName}</span>
+          <span class="temu-comment-date">${dateStr}</span>
+        </div>
+        <div class="temu-comment-text">${qText}</div>
+        
+        ${hasReplies ? `
+          <div class="temu-comments-thread" style="margin-top: 8px; display: flex; flex-direction: column; gap: 6px; border-left: 2px solid #e2e8f0; padding-left: 8px; margin-left: 2px;">
+            ${repliesList.map(rep => {
+              const isOfficial = Boolean(rep.isOfficial);
+              const rawAuthor = String(rep.author || (isOfficial ? "MeltyDeays Soporte" : "Socio")).trim();
+              const cleanAuthor = rawAuthor.replace(/\\s*\\(Soporte\\)/gi, '').trim() || "Socio";
+              const repDate = rep.createdAt ? new Date(rep.createdAt).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
+              const repText = String(rep.text || '').trim();
+
+              if (isOfficial) {
+                return `
+                  <div class="temu-comment-reply-box official-reply" style="background: #f0f9ff; border-left: 3px solid #0284c7; padding: 6px 10px; border-radius: 4px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
+                      <span class="temu-comment-reply-tag official-tag" style="background: #0284c7; color: #ffffff; font-weight: 800; font-size: 0.65rem; padding: 2px 7px; border-radius: 3px; display: inline-flex; align-items: center; gap: 4px;">🛡️ MeltyDeays Soporte</span>
+                      ${repDate ? `<span style="font-size: 0.60rem; color: #64748b; font-family: var(--font-mono);">${repDate}</span>` : ''}
+                    </div>
+                    <div class="temu-comment-reply-text" style="font-size: 0.74rem; color: #0f172a; line-height: 1.35;">${repText}</div>
+                  </div>
+                `;
+              } else {
+                return `
+                  <div class="temu-comment-reply-box community-reply" style="background: #f8fafc; border-left: 3px solid #64748b; padding: 6px 10px; border-radius: 4px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
+                      <span class="temu-comment-reply-tag community-tag" style="background: #e2e8f0; color: #334155; font-weight: 700; font-size: 0.65rem; padding: 2px 7px; border-radius: 3px; display: inline-flex; align-items: center; gap: 4px; border: 1px solid #cbd5e1;">👤 Respuesta de ${cleanAuthor}</span>
+                      ${repDate ? `<span style="font-size: 0.60rem; color: #64748b; font-family: var(--font-mono);">${repDate}</span>` : ''}
+                    </div>
+                    <div class="temu-comment-reply-text" style="font-size: 0.74rem; color: #334155; line-height: 1.35;">${repText}</div>
+                  </div>
+                `;
+              }
+            }).join('')}
+          </div>
+        ` : `
+          <div style="font-size: 0.65rem; color: #94a3b8; font-style: italic; margin-top: 4px; padding-left: 2px;">
+            ⏳ Pendiente de respuesta por el equipo de tienda
+          </div>
+        `}
+
+        <div style="margin-top: 8px; display: flex; justify-content: flex-end;">
+          <button type="button" class="btn-reply-toggle" style="background: #f8fafc; border: 1px solid #cbd5e1; color: #0284c7; font-size: 0.70rem; font-weight: 800; padding: 4px 10px; border-radius: 4px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; transition: all 0.2s ease;" onclick="toggleCommentReplyForm('${c.id}')">
+            💬 Responder a la consulta
+          </button>
+        </div>
+        <div id="reply-form-${c.id}" class="temu-reply-form-container" style="display: ${isFormOpen ? 'block' : 'none'}; margin-top: 8px; background: #ffffff; border: 1.5px solid #0284c7; border-radius: 6px; padding: 8px; box-shadow: 0 4px 12px rgba(2, 132, 199, 0.08);">
+          <div style="font-size: 0.68rem; font-weight: 800; color: #0369a1; margin-bottom: 4px; display: flex; align-items: center; gap: 4px;">
+            ✍️ Tu respuesta (${currentUserName}):
+          </div>
+          <textarea id="reply-input-${c.id}" class="temu-comment-reply-input" placeholder="Escribe tu respuesta a esta consulta..." rows="2" style="width: 100%; padding: 6px 8px; font-size: 0.74rem; border: 1px solid #cbd5e1; border-radius: 4px; box-sizing: border-box; margin-bottom: 6px; resize: vertical; font-family: inherit; outline: none;">${draftText}</textarea>
+          <div style="display: flex; justify-content: flex-end; gap: 6px;">
+            <button type="button" class="btn-secondary" style="font-size: 0.68rem; padding: 3px 8px; border-radius: 4px; cursor: pointer;" onclick="toggleCommentReplyForm('${c.id}')">Cancelar</button>
+            <button type="button" class="btn-primary" style="font-size: 0.68rem; padding: 3px 10px; border-radius: 4px; cursor: pointer; background: #0284c7; color: white; border: none; font-weight: 800;" onclick="submitClientCommentReply('${rewardId}', '${c.id}')">Publicar</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
 export async function loadProductComments(rewardId) {
   const listEl = document.getElementById(`comments-list-${rewardId}`);
   if (!listEl) return;
 
   try {
     const comments = await FirestoreService.fetchProductComments(rewardId);
-    if (!comments || comments.length === 0) {
-      listEl.innerHTML = `
-        <div style="text-align: center; padding: 14px; color: #94a3b8; font-size: 0.72rem; font-family: var(--font-mono); background: #f8fafc; border-radius: 4px; border: 1px dashed #cbd5e1;">
-          💬 Aún no hay preguntas sobre este artículo. ¡Sé el primero en consultar!
-        </div>
-      `;
-      return;
-    }
-
-    listEl.innerHTML = comments.map(c => {
-      const dateStr = c.createdAt ? new Date(c.createdAt).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' }) : 'Reciente';
-      
-      let qText = String(c.questionText || c.comment || c.text || c.message || c.question || c.content || '').trim();
-      if (!qText || qText === 'undefined' || qText === 'null') {
-        qText = '¿Tienen entrega disponible en tienda física hoy mismo si aparto con mis puntos?';
-      }
-
-      // Normalizar array de respuestas (hilo conversacional multirrespuesta)
-      let repliesList = Array.isArray(c.replies) ? [...c.replies] : [];
-      if (repliesList.length === 0) {
-        let legacyText = String(c.answerText || c.reply || c.response || c.answer || '').trim();
-        if (legacyText && legacyText !== 'undefined' && legacyText !== 'null') {
-          const isOff = Boolean(
-            c.isOfficialReply === true ||
-            (c.answeredBy && (c.answeredBy.includes("MeltyDeays") || c.answeredBy.includes("Soporte Oficial"))) ||
-            (c.replyAuthor && (c.replyAuthor.includes("MeltyDeays") || c.replyAuthor.includes("Soporte Oficial")))
-          );
-          repliesList.push({
-            id: 'legacy-' + c.id,
-            text: legacyText,
-            author: c.answeredBy || c.replyAuthor || (isOff ? "MeltyDeays Soporte" : "Socio"),
-            isOfficial: isOff,
-            createdAt: c.replyAt || c.answeredAt || c.createdAt
-          });
-        }
-      }
-
-      const hasReplies = repliesList.length > 0;
-
-      let authorName = String(c.userName || c.author || c.name || 'Socio').trim();
-      if (!authorName || authorName === 'undefined' || authorName === 'null') {
-        authorName = 'Socio Wired';
-      }
-
-      const currentUserName = (vm?.currentUser?.displayName) ? vm.currentUser.displayName.trim() : "Socio Wired";
-
-      return `
-        <div class="temu-comment-card">
-          <div class="temu-comment-user-row">
-            <span class="temu-comment-username">👤 ${authorName}</span>
-            <span class="temu-comment-date">${dateStr}</span>
-          </div>
-          <div class="temu-comment-text">${qText}</div>
-          
-          ${hasReplies ? `
-            <div class="temu-comments-thread" style="margin-top: 8px; display: flex; flex-direction: column; gap: 6px; border-left: 2px solid #e2e8f0; padding-left: 8px; margin-left: 2px;">
-              ${repliesList.map(rep => {
-                const isOfficial = Boolean(rep.isOfficial);
-                const rawAuthor = String(rep.author || (isOfficial ? "MeltyDeays Soporte" : "Socio")).trim();
-                const cleanAuthor = rawAuthor.replace(/\s*\(Soporte\)/gi, '').trim() || "Socio";
-                const repDate = rep.createdAt ? new Date(rep.createdAt).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
-                const repText = String(rep.text || '').trim();
-
-                if (isOfficial) {
-                  return `
-                    <div class="temu-comment-reply-box official-reply" style="background: #f0f9ff; border-left: 3px solid #0284c7; padding: 6px 10px; border-radius: 4px;">
-                      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
-                        <span class="temu-comment-reply-tag official-tag" style="background: #0284c7; color: #ffffff; font-weight: 800; font-size: 0.65rem; padding: 2px 7px; border-radius: 3px; display: inline-flex; align-items: center; gap: 4px;">🛡️ MeltyDeays Soporte</span>
-                        ${repDate ? `<span style="font-size: 0.60rem; color: #64748b; font-family: var(--font-mono);">${repDate}</span>` : ''}
-                      </div>
-                      <div class="temu-comment-reply-text" style="font-size: 0.74rem; color: #0f172a; line-height: 1.35;">${repText}</div>
-                    </div>
-                  `;
-                } else {
-                  return `
-                    <div class="temu-comment-reply-box community-reply" style="background: #f8fafc; border-left: 3px solid #64748b; padding: 6px 10px; border-radius: 4px;">
-                      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
-                        <span class="temu-comment-reply-tag community-tag" style="background: #e2e8f0; color: #334155; font-weight: 700; font-size: 0.65rem; padding: 2px 7px; border-radius: 3px; display: inline-flex; align-items: center; gap: 4px; border: 1px solid #cbd5e1;">👤 Respuesta de ${cleanAuthor}</span>
-                        ${repDate ? `<span style="font-size: 0.60rem; color: #64748b; font-family: var(--font-mono);">${repDate}</span>` : ''}
-                      </div>
-                      <div class="temu-comment-reply-text" style="font-size: 0.74rem; color: #334155; line-height: 1.35;">${repText}</div>
-                    </div>
-                  `;
-                }
-              }).join('')}
-            </div>
-          ` : `
-            <div style="font-size: 0.65rem; color: #94a3b8; font-style: italic; margin-top: 4px; padding-left: 2px;">
-              ⏳ Pendiente de respuesta por el equipo de tienda
-            </div>
-          `}
-
-          <div style="margin-top: 8px; display: flex; justify-content: flex-end;">
-            <button type="button" class="btn-reply-toggle" style="background: #f8fafc; border: 1px solid #cbd5e1; color: #0284c7; font-size: 0.70rem; font-weight: 800; padding: 4px 10px; border-radius: 4px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; transition: all 0.2s ease;" onclick="toggleCommentReplyForm('${c.id}')">
-              💬 Responder a la consulta
-            </button>
-          </div>
-          <div id="reply-form-${c.id}" class="temu-reply-form-container" style="display: none; margin-top: 8px; background: #ffffff; border: 1.5px solid #0284c7; border-radius: 6px; padding: 8px; box-shadow: 0 4px 12px rgba(2, 132, 199, 0.08);">
-            <div style="font-size: 0.68rem; font-weight: 800; color: #0369a1; margin-bottom: 4px; display: flex; align-items: center; gap: 4px;">
-              ✍️ Tu respuesta (${currentUserName}):
-            </div>
-            <textarea id="reply-input-${c.id}" class="temu-comment-reply-input" placeholder="Escribe tu respuesta a esta consulta..." rows="2" style="width: 100%; padding: 6px 8px; font-size: 0.74rem; border: 1px solid #cbd5e1; border-radius: 4px; box-sizing: border-box; margin-bottom: 6px; resize: vertical; font-family: inherit; outline: none;"></textarea>
-            <div style="display: flex; justify-content: flex-end; gap: 6px;">
-              <button type="button" class="btn-secondary" style="font-size: 0.68rem; padding: 3px 8px; border-radius: 4px; cursor: pointer;" onclick="toggleCommentReplyForm('${c.id}')">Cancelar</button>
-              <button type="button" class="btn-primary" style="font-size: 0.68rem; padding: 3px 10px; border-radius: 4px; cursor: pointer; background: #0284c7; color: white; border: none; font-weight: 800;" onclick="submitClientCommentReply('${rewardId}', '${c.id}')">Publicar</button>
-            </div>
-          </div>
-        </div>
-      `;
-    }).join("");
+    renderProductCommentsDom(rewardId, comments);
   } catch (err) {
     listEl.innerHTML = `
       <div style="text-align: center; padding: 8px; color: #94a3b8; font-size: 0.72rem;">
@@ -573,25 +692,18 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
   const fab = document.getElementById("fab-mobile-menu");
   if (fab) fab.style.display = "none";
 
-  // Actualizar topbar con botón Volver y botón Compartir
+  // Actualizar topbar limpia y balanceada (Volver // Kicker // Cerrar)
   const topbar = modal.querySelector(".modal-specs-topbar");
   if (topbar) {
     topbar.innerHTML = `
-      <div style="display: flex; align-items: center; gap: 8px;">
-        <button type="button" class="btn-secondary" style="padding: 4px 8px; font-size: 0.72rem; display: flex; align-items: center; gap: 4px;" onclick="closeProductSpecsModal()">
-          <span>←</span> <span>Volver</span>
-        </button>
-        <div class="modal-specs-kicker">
-          <span class="kicker-dot"></span>
-          <span>WIRED SHOP // DETALLE</span>
-        </div>
+      <button type="button" class="specs-topbar-back-btn" onclick="closeProductSpecsModal()" title="Volver al catálogo">
+        <span>←</span> <span>Volver</span>
+      </button>
+      <div class="modal-specs-kicker">
+        <span class="kicker-dot"></span>
+        <span>WIRED SHOP // DETALLE</span>
       </div>
-      <div class="specs-topbar-actions">
-        <button type="button" class="specs-topbar-share-btn" onclick="shareProduct('${item.id}')" title="Compartir este producto">
-          <span>📤</span> <span>Compartir</span>
-        </button>
-        <button class="modal-close-btn" onclick="closeProductSpecsModal()" aria-label="Cerrar" style="position: static !important; width: 30px; height: 30px;">&times;</button>
-      </div>
+      <button class="modal-close-btn" onclick="closeProductSpecsModal()" aria-label="Cerrar">&times;</button>
     `;
   }
 
@@ -912,18 +1024,34 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
     fab.style.setProperty("display", "none", "important");
   }
 
-  // Cargar comentarios en segundo plano
+  // Cargar comentarios y suscribir en tiempo real reactivo
+  if (typeof activeCommentsUnsubscribe === "function") {
+    activeCommentsUnsubscribe();
+    activeCommentsUnsubscribe = null;
+  }
   loadProductComments(item.id);
+  activeCommentsUnsubscribe = FirestoreService.subscribeProductComments(item.id, (comments) => {
+    renderProductCommentsDom(item.id, comments);
+  });
 }
 
 export function closeProductSpecsModal() {
+  if (typeof activeCommentsUnsubscribe === "function") {
+    activeCommentsUnsubscribe();
+    activeCommentsUnsubscribe = null;
+  }
   const modal = document.getElementById("modal-product-specs");
   if (modal) modal.style.display = "none";
-  document.body.classList.remove("modal-open");
-  const fab = document.getElementById("fab-mobile-menu");
-  if (fab) {
-    fab.style.display = "";
-    fab.classList.remove("is-hidden");
+
+  const lightboxModal = document.getElementById("modal-image-lightbox");
+  const isLightboxOpen = lightboxModal && lightboxModal.style.display !== "none" && lightboxModal.style.display !== "";
+  if (!isLightboxOpen) {
+    document.body.classList.remove("modal-open");
+    const fab = document.getElementById("fab-mobile-menu");
+    if (fab) {
+      fab.style.display = "";
+      fab.classList.remove("is-hidden");
+    }
   }
 }
 

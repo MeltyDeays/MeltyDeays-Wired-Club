@@ -6,16 +6,18 @@
 .image-lightbox-overlay {
   position: fixed;
   inset: 0;
-  z-index: 12000;
-  background: rgba(15, 23, 42, 0.8);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  z-index: 100000;
+  background: rgba(15, 23, 42, 0.94);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   padding: 1rem 0.5rem;
   animation: lightboxFadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  overscroll-behavior: contain;
+  touch-action: none;
 }
 
 @keyframes lightboxFadeIn {
@@ -158,8 +160,10 @@
   align-items: center;
   justify-content: center;
   position: relative;
-  overflow: auto;
+  overflow: hidden;
   padding: 12px;
+  touch-action: none;
+  user-select: none;
 }
 
 .lightbox-img {
@@ -169,16 +173,25 @@
   border-radius: 4px;
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
   cursor: zoom-in;
-  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 0.16s ease-out;
   will-change: transform;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-drag: none;
 }
 
 .image-lightbox-viewport.is-zoomed .lightbox-img,
 .lightbox-img.zoomed {
   max-width: none;
   max-height: none;
-  transform: scale(1.75);
-  cursor: zoom-out;
+  cursor: grab;
+  touch-action: none;
+}
+
+.lightbox-img.zoomed:active,
+.image-lightbox-viewport.is-panning .lightbox-img {
+  cursor: grabbing !important;
+  transition: none !important;
 }
 
 .lightbox-zoom-hint {
@@ -411,13 +424,46 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.85rem 1.25rem;
+  gap: 8px;
+  padding: 0.65rem 1rem;
   background: #ffffff;
   border-bottom: 1.5px solid var(--dark);
   flex-shrink: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.specs-topbar-back-btn {
+  flex-shrink: 0;
+  background: #ffffff;
+  border: 1.5px solid var(--dark);
+  border-radius: 4px;
+  box-shadow: 2px 2px 0px var(--dark);
+  font-family: var(--font-mono);
+  font-size: 0.70rem;
+  font-weight: 800;
+  padding: 4px 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--dark);
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.specs-topbar-back-btn:hover {
+  background: #f8fafc;
+  transform: translateY(-1px);
 }
 
 .modal-specs-kicker {
+  flex: 1;
+  min-width: 0;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-family: var(--font-mono);
   font-size: 0.68rem;
   font-weight: 800;
@@ -425,6 +471,7 @@
   letter-spacing: 0.5px;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
   text-transform: uppercase;
 }
@@ -434,6 +481,34 @@
   height: 6px;
   border-radius: 50%;
   background: var(--primary);
+  flex-shrink: 0;
+}
+
+.modal-specs-topbar .modal-close-btn {
+  position: static !important;
+  top: auto !important;
+  right: auto !important;
+  flex-shrink: 0 !important;
+  width: 32px !important;
+  height: 32px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: #ffffff !important;
+  border: 1.5px solid var(--dark) !important;
+  border-radius: 4px !important;
+  box-shadow: 2px 2px 0px var(--dark) !important;
+  font-size: 1.15rem !important;
+  line-height: 1 !important;
+  cursor: pointer !important;
+  color: var(--dark) !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.modal-specs-topbar .modal-close-btn:hover {
+  background: #f8fafc !important;
+  transform: translateY(-1px) !important;
 }
 
 .modal-specs-body {
@@ -1393,15 +1468,19 @@
   justify-content: space-between;
   align-items: center;
   gap: 8px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .temu-comment-author-input {
   flex: 1;
+  min-width: 0;
   border: 1px solid #cbd5e1;
   border-radius: 4px;
   padding: 5px 8px;
   font-size: 0.75rem;
   background: #ffffff;
+  box-sizing: border-box;
 }
 
 .temu-comment-btn-submit {
@@ -1414,12 +1493,28 @@
   font-family: var(--font-mono);
   font-weight: 800;
   cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
   transition: all 0.15s ease;
+  box-sizing: border-box;
 }
 
 .temu-comment-btn-submit:hover {
   background: var(--primary);
   border-color: var(--primary);
+}
+
+@media (max-width: 480px) {
+  .temu-comment-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+  }
+  .temu-comment-author-input,
+  .temu-comment-btn-submit {
+    width: 100% !important;
+    text-align: center;
+  }
 }
 
 .temu-comments-list {
@@ -1442,7 +1537,10 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 8px;
   font-size: 0.72rem;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .temu-comment-username {
@@ -1451,12 +1549,19 @@
   display: flex;
   align-items: center;
   gap: 4px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
 }
 
 .temu-comment-date {
   font-size: 0.65rem;
   color: #94a3b8;
   font-family: var(--font-mono);
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .temu-comment-text {
@@ -1604,3 +1709,20 @@
     }
   }
 }
+
+@media (max-width: 640px) {
+  .image-lightbox-overlay {
+    padding: 0 !important;
+    background: #000000 !important;
+  }
+
+  .image-lightbox-container {
+    width: 100% !important;
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+}
+

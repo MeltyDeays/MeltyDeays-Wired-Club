@@ -1450,39 +1450,102 @@ export class FirestoreService {
         console.warn("Firestore addProductComment local only:", e.message);
       }
     }
+    try {
+      window.dispatchEvent(new CustomEvent("wired:comments_changed", { detail: { commentId: comment.id, rewardId: comment.rewardId } }));
+    } catch (e) {}
     return comment;
   }
 
   static subscribeProductComments(rewardId, callback) {
     if (!rewardId || typeof callback !== "function") return () => {};
-    if (!db) {
-      this.fetchProductComments(rewardId).then(callback);
-      return () => {};
+
+    let unsubFirestore = null;
+    if (db) {
+      try {
+        unsubFirestore = db.collection(getCollectionName("product_comments"))
+          .where("rewardId", "==", rewardId)
+          .onSnapshot(snap => {
+            const list = [];
+            const local = engine.getSnapshot();
+            if (!local.comments) local.comments = {};
+            if (snap && !snap.empty) {
+              snap.forEach(doc => {
+                const data = this._normalizeCommentData(doc.data());
+                local.comments[doc.id] = data;
+                list.push(data);
+              });
+            }
+            engine.saveSnapshot(local);
+            callback(list.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)));
+          }, err => {
+            console.warn("subscribeProductComments error:", err.message);
+            this.fetchProductComments(rewardId).then(callback);
+          });
+      } catch (e) {
+        this.fetchProductComments(rewardId).then(callback);
+      }
     }
-    try {
-      return db.collection(getCollectionName("product_comments"))
-        .where("rewardId", "==", rewardId)
-        .onSnapshot(snap => {
-          const list = [];
-          const local = engine.getSnapshot();
-          if (!local.comments) local.comments = {};
-          if (snap && !snap.empty) {
-            snap.forEach(doc => {
-              const data = this._normalizeCommentData(doc.data());
-              local.comments[doc.id] = data;
-              list.push(data);
-            });
-          }
-          engine.saveSnapshot(local);
-          callback(list.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)));
-        }, err => {
-          console.warn("subscribeProductComments error:", err.message);
-          this.fetchProductComments(rewardId).then(callback);
-        });
-    } catch (e) {
+
+    const handleLocal = () => {
       this.fetchProductComments(rewardId).then(callback);
-      return () => {};
+    };
+
+    window.addEventListener("wired:comments_changed", handleLocal);
+    window.addEventListener("storage", handleLocal);
+
+    // Ejecución inicial inmediata
+    this.fetchProductComments(rewardId).then(callback);
+
+    return () => {
+      if (typeof unsubFirestore === "function") unsubFirestore();
+      window.removeEventListener("wired:comments_changed", handleLocal);
+      window.removeEventListener("storage", handleLocal);
+    };
+  }
+
+  static subscribeAllProductComments(callback) {
+    if (typeof callback !== "function") return () => {};
+
+    let unsubFirestore = null;
+    if (db) {
+      try {
+        unsubFirestore = db.collection(getCollectionName("product_comments"))
+          .onSnapshot(snap => {
+            const list = [];
+            const local = engine.getSnapshot();
+            if (!local.comments) local.comments = {};
+            if (snap && !snap.empty) {
+              snap.forEach(doc => {
+                const data = this._normalizeCommentData(doc.data());
+                local.comments[doc.id] = data;
+                list.push(data);
+              });
+            }
+            engine.saveSnapshot(local);
+            callback(list.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)));
+          }, err => {
+            console.warn("subscribeAllProductComments error:", err.message);
+            this.fetchAllProductComments().then(callback);
+          });
+      } catch (e) {
+        this.fetchAllProductComments().then(callback);
+      }
     }
+
+    const handleLocal = () => {
+      this.fetchAllProductComments().then(callback);
+    };
+
+    window.addEventListener("wired:comments_changed", handleLocal);
+    window.addEventListener("storage", handleLocal);
+
+    this.fetchAllProductComments().then(callback);
+
+    return () => {
+      if (typeof unsubFirestore === "function") unsubFirestore();
+      window.removeEventListener("wired:comments_changed", handleLocal);
+      window.removeEventListener("storage", handleLocal);
+    };
   }
 
   static async fetchAllProductComments() {
@@ -1582,13 +1645,18 @@ export class FirestoreService {
         console.warn("Firestore answerProductComment local only:", e.message);
       }
     }
+    try {
+      window.dispatchEvent(new CustomEvent("wired:comments_changed", { detail: { commentId, rewardId: comment.rewardId } }));
+    } catch (e) {}
     return comment;
   }
 
   static async deleteProductComment(commentId) {
     if (!commentId) return false;
+    let targetRewardId = null;
     const snap = engine.getSnapshot();
     if (snap.comments && snap.comments[commentId]) {
+      targetRewardId = snap.comments[commentId].rewardId;
       delete snap.comments[commentId];
       engine.saveSnapshot(snap);
     }
@@ -1599,6 +1667,9 @@ export class FirestoreService {
         console.warn("Firestore deleteProductComment local only:", e.message);
       }
     }
+    try {
+      window.dispatchEvent(new CustomEvent("wired:comments_changed", { detail: { commentId, rewardId: targetRewardId } }));
+    } catch (e) {}
     return true;
   }
 }
