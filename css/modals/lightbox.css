@@ -1152,31 +1152,6 @@
   transform: translate(-1px, -1px);
 }
 
-.temu-sheet-rating-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.75rem;
-  color: #78350f;
-  font-weight: 700;
-  padding: 2px 0;
-}
-
-.temu-sheet-rating-row .stars {
-  color: #f59e0b;
-  font-size: 0.85rem;
-  letter-spacing: 1px;
-}
-
-.temu-sheet-rating-row .divider {
-  color: #cbd5e1;
-}
-
-.temu-sheet-rating-row .sales {
-  color: #64748b;
-  font-family: var(--font-mono);
-}
-
 /* ACORDEÓN DE ESPECIFICACIONES */
 .temu-specs-details {
   border: 1.5px solid #cbd5e1;

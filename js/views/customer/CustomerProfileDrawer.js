@@ -156,7 +156,7 @@ export function renderProfileDrawer() {
     <!-- DATOS DE SOCIO -->
     <div class="profile-info-block">
       <!-- MODO VISTA POR DEFECTO -->
-      <div id="profile-name-view-box" class="profile-name-view-box" style="display: ${isEditingProfileName ? 'none' : 'flex'};">
+      <div id="profile-name-view-box" class="profile-name-view-box ${isEditingProfileName ? 'hidden' : ''}" style="display: ${isEditingProfileName ? 'none' : 'flex'};">
         <h3 class="profile-display-name">${escapeHtml(user.displayName)}</h3>
         <button type="button" class="btn-edit-name-trigger" onclick="enableProfileNameEditing()" title="Modificar nombre de socio">
           <span>✏️</span> <span>Editar</span>
@@ -164,14 +164,16 @@ export function renderProfileDrawer() {
       </div>
 
       <!-- MODO EDICIÓN ACTIVABLE CON GUARDAR Y CANCELAR -->
-      <div id="profile-name-edit-box" class="profile-name-edit-box" style="display: ${isEditingProfileName ? 'flex' : 'none'};">
+      <div id="profile-name-edit-box" class="profile-name-edit-box ${isEditingProfileName ? 'active' : ''}" style="display: ${isEditingProfileName ? 'flex' : 'none'};">
         <input type="text" id="input-profile-name" class="profile-name-input" value="${escapeHtml(user.displayName)}" placeholder="Tu nombre" maxlength="35" onkeydown="if(event.key==='Enter') saveProfileDisplayName(); if(event.key==='Escape') cancelProfileNameEditing();">
-        <button type="button" class="btn-save-name" onclick="saveProfileDisplayName()" title="Guardar cambios">
-          💾 Guardar
-        </button>
-        <button type="button" class="btn-cancel-name" onclick="cancelProfileNameEditing()" title="Cancelar edición">
-          ✕ Cancelar
-        </button>
+        <div class="profile-name-edit-actions">
+          <button type="button" class="btn-cancel-name" onclick="cancelProfileNameEditing()" title="Cancelar edición">
+            ✕ Cancelar
+          </button>
+          <button type="button" class="btn-save-name" onclick="saveProfileDisplayName()" title="Guardar cambios">
+            💾 Guardar
+          </button>
+        </div>
       </div>
       <div class="profile-meta-badges">
         <span class="profile-tier-badge">${user.tier || 'NAVI_USER'}</span>
@@ -383,8 +385,14 @@ export function enableProfileNameEditing() {
   const viewBox = document.getElementById("profile-name-view-box");
   const editBox = document.getElementById("profile-name-edit-box");
   const input = document.getElementById("input-profile-name");
-  if (viewBox) viewBox.style.display = "none";
-  if (editBox) editBox.style.display = "flex";
+  if (viewBox) {
+    viewBox.classList.add("hidden");
+    viewBox.style.setProperty("display", "none", "important");
+  }
+  if (editBox) {
+    editBox.classList.add("active");
+    editBox.style.setProperty("display", "flex", "important");
+  }
   if (input) {
     input.focus();
     input.select();
@@ -399,8 +407,14 @@ export function cancelProfileNameEditing() {
   if (input && vm && vm.currentUser) {
     input.value = vm.currentUser.displayName || "";
   }
-  if (editBox) editBox.style.display = "none";
-  if (viewBox) viewBox.style.display = "flex";
+  if (editBox) {
+    editBox.classList.remove("active");
+    editBox.style.setProperty("display", "none", "important");
+  }
+  if (viewBox) {
+    viewBox.classList.remove("hidden");
+    viewBox.style.setProperty("display", "flex", "important");
+  }
 }
 
 export async function saveProfileDisplayName() {

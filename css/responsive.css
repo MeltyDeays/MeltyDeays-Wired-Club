@@ -437,6 +437,10 @@
     gap: 8px !important;
     margin-bottom: 8px !important;
   }
+  .profile-name-view-box.hidden,
+  .profile-name-view-box[style*="display: none"] {
+    display: none !important;
+  }
 
   .profile-display-name {
     font-size: 1.05rem !important;
@@ -468,23 +472,29 @@
   }
 
   .profile-name-edit-box {
-    display: flex !important;
-    align-items: center !important;
+    display: none !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
     gap: 6px !important;
-    margin-bottom: 8px !important;
+    margin-bottom: 10px !important;
     width: 100% !important;
+    box-sizing: border-box !important;
     animation: fadeIn 0.15s ease !important;
+  }
+  .profile-name-edit-box.active,
+  .profile-name-edit-box[style*="display: flex"] {
+    display: flex !important;
   }
 
   .profile-name-input {
-    flex: 1 !important;
-    height: 36px !important;
-    font-size: 0.9rem !important;
+    width: 100% !important;
+    height: 38px !important;
+    font-size: 0.88rem !important;
     font-weight: 700 !important;
     color: #0f172a !important;
     border: 1.5px solid #0284c7 !important;
     border-radius: 6px !important;
-    padding: 4px 8px !important;
+    padding: 6px 10px !important;
     background: #ffffff !important;
     box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.12) !important;
     box-sizing: border-box !important;
@@ -494,13 +504,22 @@
     border-color: #0284c7 !important;
   }
 
+  .profile-name-edit-actions {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    gap: 6px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
   .btn-save-name {
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
     gap: 4px !important;
-    height: 36px !important;
-    padding: 0 10px !important;
+    height: 34px !important;
+    padding: 0 12px !important;
     background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%) !important;
     color: #ffffff !important;
     border: 1.5px solid #0f172a !important;
@@ -521,8 +540,8 @@
     align-items: center !important;
     justify-content: center !important;
     gap: 4px !important;
-    height: 36px !important;
-    padding: 0 8px !important;
+    height: 34px !important;
+    padding: 0 10px !important;
     background: #ffffff !important;
     color: #64748b !important;
     border: 1.5px solid #cbd5e1 !important;
@@ -1798,21 +1817,6 @@
     flex-direction: column !important;
     gap: 3px !important;
     margin-top: auto !important;
-  }
-
-  .reward-temu-social {
-    display: flex !important;
-    align-items: center !important;
-    gap: 4px !important;
-    font-size: 0.62rem !important;
-    color: #b45309 !important;
-    font-weight: 700 !important;
-    margin-bottom: 2px !important;
-  }
-
-  .reward-temu-social .stars {
-    color: #f59e0b !important;
-    font-size: 0.68rem !important;
   }
 
   .reward-temu-price-line {

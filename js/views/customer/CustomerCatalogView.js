@@ -884,14 +884,6 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
         }
       </div>
       <h3 class="specs-header-title">${item.title}</h3>
-      <div class="temu-sheet-rating-row">
-        <span class="stars">★★★★★</span>
-        <span>4.9</span>
-        <span class="divider">|</span>
-        <span class="sales">120+ canjes en tienda</span>
-        <span class="divider">|</span>
-        <span style="color: #059669; font-weight: 800;">✓ En vitrina</span>
-      </div>
     </div>
 
     ${saleBannerHtml}
@@ -1224,12 +1216,6 @@ export function renderCatalog(catalog, user) {
 
     const temuMetaHtml = `
       <div class="reward-temu-meta">
-        <div class="reward-temu-social">
-          <span class="stars">★★★★★</span>
-          <span>4.9</span>
-          <span style="color:#cbd5e1;">·</span>
-          <span>100+ canjes</span>
-        </div>
         <div class="reward-temu-price-line">
           <span class="reward-temu-price-main">${temuPriceMain}</span>
           ${temuPriceOrig ? `<span class="reward-temu-price-orig">${temuPriceOrig}</span>` : ''}
