@@ -814,10 +814,9 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
 
   modal.style.display = "flex";
   document.body.classList.add("modal-open");
-  const fab = document.getElementById("fab-mobile-menu");
   if (fab) {
-    fab.style.display = "none";
     fab.classList.add("is-hidden");
+    fab.style.setProperty("display", "none", "important");
   }
 
   // Cargar comentarios en segundo plano
