@@ -1313,6 +1313,92 @@ export class FirestoreService {
   // ==========================================
   // PREGUNTAS Y COMENTARIOS DE PRODUCTO (Q&A)
   // ==========================================
+  static _normalizeCommentData(c) {
+    if (!c) return c;
+    const DEFAULT_OFFICIAL_REPLIES = {
+      "COMM-DEMO-01": "¡Hola Gabriel! Es un cable paracord ultra-liviano con trenzado suave, prácticamente se siente inalámbrico sobre cualquier mousepad.",
+      "COMM-DEMO-02": "¡Hola Sofía! Sí, al generar tu vale con puntos queda reservado inmediatamente a tu nombre para retiro en nuestro mostrador.",
+      "COMM-DEMO-03": "¡Hola Marcos! Incluye tanto el receptor USB inalámbrico de 2.4 GHz como soporte para Bluetooth 5.3 y cable desmontable."
+    };
+
+    if (!Array.isArray(c.replies)) {
+      c.replies = [];
+    }
+
+    // 1. Restaurar o garantizar officialReply inmutable
+    if (!c.officialReply) {
+      if (DEFAULT_OFFICIAL_REPLIES[c.id]) {
+        c.officialReply = DEFAULT_OFFICIAL_REPLIES[c.id];
+        c.officialReplyAuthor = "MeltyDeays · Soporte Oficial";
+        c.officialReplyAt = c.officialReplyAt || c.replyAt || c.createdAt || new Date().toISOString();
+      } else if (c.replyAuthor && (c.replyAuthor.includes("MeltyDeays") || c.replyAuthor.includes("Soporte"))) {
+        c.officialReply = (c.reply || c.answerText || "").trim();
+        c.officialReplyAuthor = "MeltyDeays · Soporte Oficial";
+        c.officialReplyAt = c.replyAt || c.answeredAt || c.createdAt || new Date().toISOString();
+      }
+    }
+
+    // 2. Extraer o reubicar respuestas de clientes (Valeria Ríos u otros) si quedaron guardadas en reply/answerText
+    const legacyText = String(c.answerText || c.reply || "").trim();
+    const legacyAuthor = String(c.replyAuthor || c.answeredBy || "").trim();
+    const isLegacyClient = legacyAuthor && !legacyAuthor.includes("MeltyDeays") && !legacyAuthor.includes("Soporte");
+
+    if (isLegacyClient && legacyText) {
+      const exists = c.replies.some(r => r.text === legacyText && !r.isOfficial);
+      if (!exists) {
+        c.replies.push({
+          id: "REP-COMM-" + Date.now() + "-" + Math.random().toString(36).substring(2, 6).toUpperCase(),
+          text: legacyText,
+          author: legacyAuthor,
+          isOfficial: false,
+          createdAt: c.replyAt || c.answeredAt || new Date().toISOString()
+        });
+      }
+    }
+
+    // 3. Asegurar que la respuesta oficial exista en el array replies
+    if (c.officialReply) {
+      const hasOfficialInReplies = c.replies.some(r => r.isOfficial === true);
+      if (!hasOfficialInReplies) {
+        c.replies.unshift({
+          id: "REP-OFFICIAL-" + c.id,
+          text: c.officialReply,
+          author: "MeltyDeays · Soporte Oficial",
+          isOfficial: true,
+          createdAt: c.officialReplyAt || c.createdAt || new Date().toISOString()
+        });
+      }
+    }
+
+    // 4. Normalizar flags de autoría en cada elemento de replies
+    c.replies = c.replies.map(r => {
+      const auth = String(r.author || "").trim();
+      const isActuallyOfficial = Boolean(
+        r.isOfficial === true &&
+        (auth.includes("MeltyDeays") || auth.includes("Soporte"))
+      );
+      return {
+        ...r,
+        isOfficial: isActuallyOfficial,
+        author: isActuallyOfficial ? "MeltyDeays · Soporte Oficial" : (auth || "Socio Wired")
+      };
+    });
+
+    // 5. Preservar campos top-level exclusivamente con soporte oficial
+    if (c.officialReply) {
+      c.answerText = c.officialReply;
+      c.reply = c.officialReply;
+      c.answeredBy = "MeltyDeays · Soporte Oficial";
+      c.replyAuthor = "MeltyDeays · Soporte Oficial";
+      c.answeredAt = c.officialReplyAt;
+      c.replyAt = c.officialReplyAt;
+      c.isOfficialReply = true;
+      c.status = "ANSWERED";
+    }
+
+    return c;
+  }
+
   static async fetchProductComments(rewardId) {
     if (!rewardId) return [];
     if (db) {
@@ -1325,7 +1411,7 @@ export class FirestoreService {
         const list = [];
         if (snap && !snap.empty) {
           snap.forEach(doc => {
-            const data = doc.data();
+            const data = this._normalizeCommentData(doc.data());
             local.comments[doc.id] = data;
             list.push(data);
           });
@@ -1337,7 +1423,7 @@ export class FirestoreService {
       }
     }
     const snap = engine.getSnapshot();
-    const all = Object.values(snap.comments || {});
+    const all = Object.values(snap.comments || {}).map(c => this._normalizeCommentData(c));
     return all
       .filter(c => c.rewardId === rewardId)
       .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
@@ -1350,6 +1436,7 @@ export class FirestoreService {
     }
     comment.createdAt = comment.createdAt || new Date().toISOString();
     comment.status = comment.status || "APPROVED";
+    comment = this._normalizeCommentData(comment);
 
     const snap = engine.getSnapshot();
     if (!snap.comments) snap.comments = {};
@@ -1381,7 +1468,7 @@ export class FirestoreService {
           if (!local.comments) local.comments = {};
           if (snap && !snap.empty) {
             snap.forEach(doc => {
-              const data = doc.data();
+              const data = this._normalizeCommentData(doc.data());
               local.comments[doc.id] = data;
               list.push(data);
             });
@@ -1407,7 +1494,7 @@ export class FirestoreService {
         const list = [];
         if (snap && !snap.empty) {
           snap.forEach(doc => {
-            const data = doc.data();
+            const data = this._normalizeCommentData(doc.data());
             local.comments[doc.id] = data;
             list.push(data);
           });
@@ -1419,7 +1506,7 @@ export class FirestoreService {
       }
     }
     const snap = engine.getSnapshot();
-    const all = Object.values(snap.comments || {});
+    const all = Object.values(snap.comments || {}).map(c => this._normalizeCommentData(c));
     return all.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
   }
 
@@ -1428,17 +1515,62 @@ export class FirestoreService {
 
     const snap = engine.getSnapshot();
     if (!snap.comments) snap.comments = {};
-    const comment = snap.comments[commentId] || { id: commentId };
+    let comment = snap.comments[commentId] || { id: commentId };
+    comment = this._normalizeCommentData(comment);
 
     const now = new Date().toISOString();
-    comment.answerText = answerText.trim();
-    comment.reply = answerText.trim();
-    comment.answeredBy = answeredBy;
-    comment.replyAuthor = answeredBy;
-    comment.answeredAt = now;
-    comment.replyAt = now;
-    comment.isOfficialReply = Boolean(isOfficialReply);
-    comment.status = "ANSWERED";
+    const cleanText = answerText.trim();
+    const isOfficial = Boolean(
+      isOfficialReply === true ||
+      (answeredBy && (answeredBy.includes("MeltyDeays") || answeredBy.includes("Soporte")))
+    );
+
+    if (!Array.isArray(comment.replies)) {
+      comment.replies = [];
+    }
+
+    if (isOfficial) {
+      // 1. RESPUESTA OFICIAL DE TIENDA (ADMINISTRADOR)
+      comment.officialReply = cleanText;
+      comment.officialReplyAuthor = "MeltyDeays · Soporte Oficial";
+      comment.officialReplyAt = now;
+      comment.isOfficialReply = true;
+      comment.status = "ANSWERED";
+
+      const officialNode = {
+        id: "REP-OFFICIAL-" + commentId,
+        text: cleanText,
+        author: "MeltyDeays · Soporte Oficial",
+        isOfficial: true,
+        createdAt: now
+      };
+
+      const existingOfficialIdx = comment.replies.findIndex(r => r.isOfficial === true);
+      if (existingOfficialIdx >= 0) {
+        comment.replies[existingOfficialIdx] = officialNode;
+      } else {
+        comment.replies.unshift(officialNode);
+      }
+
+      // Sincronizar top-level únicamente con la respuesta oficial
+      comment.answerText = cleanText;
+      comment.reply = cleanText;
+      comment.answeredBy = "MeltyDeays · Soporte Oficial";
+      comment.replyAuthor = "MeltyDeays · Soporte Oficial";
+      comment.answeredAt = now;
+      comment.replyAt = now;
+    } else {
+      // 2. RESPUESTA DE LA COMUNIDAD / SOCIO (ej. Valeria Ríos)
+      // NUNCA TOCA LA RESPUESTA OFICIAL DE TIENDA
+      const communityNode = {
+        id: "REP-COMM-" + Date.now() + "-" + Math.random().toString(36).substring(2, 6).toUpperCase(),
+        text: cleanText,
+        author: answeredBy || "Socio Wired",
+        isOfficial: false,
+        createdAt: now
+      };
+      comment.replies.push(communityNode);
+    }
 
     snap.comments[commentId] = comment;
     engine.saveSnapshot(snap);

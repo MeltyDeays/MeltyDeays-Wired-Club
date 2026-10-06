@@ -752,9 +752,15 @@ export async function renderAdminCommentsList() {
         qText = '¿Tienen entrega disponible en tienda física hoy mismo si aparto con mis puntos?';
       }
 
-      let aText = String(c.answerText || c.reply || c.response || c.answer || '').trim();
-      if (aText === 'undefined' || aText === 'null') aText = '';
-      const isAnswered = Boolean(aText);
+      // Separar respuesta oficial de tienda vs respuestas comunitarias de clientes
+      const officialAnswerText = String(c.officialReply || (c.isOfficialReply ? (c.answerText || c.reply) : '') || '').trim();
+      const hasOfficialReply = Boolean(officialAnswerText);
+      const officialDateStr = (c.officialReplyAt || c.answeredAt || c.replyAt) 
+        ? new Date(c.officialReplyAt || c.answeredAt || c.replyAt).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) 
+        : '';
+
+      const repliesList = Array.isArray(c.replies) ? c.replies : [];
+      const communityReplies = repliesList.filter(r => !r.isOfficial && String(r.author || '').trim() !== 'MeltyDeays · Soporte Oficial');
 
       let authorName = String(c.userName || c.author || c.name || 'Socio').trim();
       if (!authorName || authorName === 'undefined' || authorName === 'null') {
@@ -762,7 +768,7 @@ export async function renderAdminCommentsList() {
       }
 
       return `
-        <div class="admin-comment-card ${isAnswered ? 'answered' : 'pending'}" style="background: #ffffff; border: 1.5px solid ${isAnswered ? '#cbd5e1' : '#fca5a5'}; border-radius: 8px; padding: 14px; margin-bottom: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.04);">
+        <div class="admin-comment-card ${hasOfficialReply ? 'answered' : 'pending'}" style="background: #ffffff; border: 1.5px solid ${hasOfficialReply ? '#cbd5e1' : '#fca5a5'}; border-radius: 8px; padding: 14px; margin-bottom: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.04);">
           <!-- Encabezado de la pregunta -->
           <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 8px; flex-wrap: wrap;">
             <div style="display: flex; align-items: center; gap: 8px;">
@@ -773,8 +779,8 @@ export async function renderAdminCommentsList() {
               </div>
             </div>
             <div style="display: flex; align-items: center; gap: 6px;">
-              <span class="badge ${isAnswered ? 'badge-success' : 'badge-danger'}" style="font-size: 0.68rem; font-weight: 800; padding: 3px 8px;">
-                ${isAnswered ? '✓ RESPONDIDA' : '⏳ PENDIENTE'}
+              <span class="badge ${hasOfficialReply ? 'badge-success' : 'badge-danger'}" style="font-size: 0.68rem; font-weight: 800; padding: 3px 8px;">
+                ${hasOfficialReply ? '✓ RESPUESTA OFICIAL ACTIVA' : '⏳ PENDIENTE DE SOPORTE'}
               </span>
               <button type="button" class="btn-outline-sm" onclick="deleteAdminComment('${c.id}')" title="Eliminar pregunta" style="color: #ef4444; border-color: #fca5a5; padding: 2px 6px;">
                 🗑️
@@ -785,7 +791,7 @@ export async function renderAdminCommentsList() {
           <!-- Datos del cliente y pregunta -->
           <div style="background: #f8fafc; border-left: 3px solid #38bdf8; padding: 8px 12px; border-radius: 0 4px 4px 0; margin-bottom: 10px;">
             <div style="display: flex; justify-content: space-between; font-size: 0.72rem; color: #475569; margin-bottom: 4px;">
-              <span><strong>👤 ${authorName}</strong> ${c.userTier ? `<span style="font-size: 0.6rem; background: #e0f2fe; color: #0369a1; padding: 1px 4px; border-radius: 2px; font-weight: 800;">${c.userTier}</span>` : ''}</span>
+              <span><strong>👤 Pregunta de: ${authorName}</strong> ${c.userTier ? `<span style="font-size: 0.6rem; background: #e0f2fe; color: #0369a1; padding: 1px 4px; border-radius: 2px; font-weight: 800;">${c.userTier}</span>` : ''}</span>
               <span style="font-family: var(--font-mono); font-size: 0.65rem; color: #94a3b8;">${dateStr}</span>
             </div>
             <div style="font-size: 0.85rem; font-weight: 600; color: #0f172a; line-height: 1.35;">
@@ -793,28 +799,57 @@ export async function renderAdminCommentsList() {
             </div>
           </div>
 
-          <!-- Respuesta actual si existe -->
-          ${isAnswered ? `
+          <!-- Respuesta Oficial de la Tienda (MeltyDeays Soporte) -->
+          ${hasOfficialReply ? `
             <div style="background: #ecfdf5; border-left: 3px solid #10b981; padding: 8px 12px; border-radius: 0 4px 4px 0; margin-bottom: 10px;">
-              <div style="display: flex; justify-content: space-between; font-size: 0.72rem; color: #065f46; font-weight: 800; margin-bottom: 4px;">
-                <span>🛡️ ${c.answeredBy || c.replyAuthor || 'MeltyDeays Soporte'}</span>
-                <span style="font-family: var(--font-mono); font-size: 0.65rem; font-weight: normal; color: #047857;">${answerDateStr}</span>
+              <div style="display: flex; justify-content: space-between; font-size: 0.72rem; color: #065f46; font-weight: 800; margin-bottom: 3px;">
+                <span>🛡️ MeltyDeays · Soporte Oficial (Respuesta oficial publicada)</span>
+                <span style="font-family: var(--font-mono); font-size: 0.65rem; font-weight: normal; color: #047857;">${officialDateStr}</span>
               </div>
               <div style="font-size: 0.82rem; color: #064e3b; line-height: 1.35;">
-                ${aText}
+                ${officialAnswerText}
+              </div>
+            </div>
+          ` : `
+            <div style="background: #fffbeb; border-left: 3px solid #f59e0b; padding: 6px 10px; border-radius: 0 4px 4px 0; margin-bottom: 10px; font-size: 0.72rem; color: #92400e; font-style: italic;">
+              ⏳ Aún no has publicado una respuesta oficial de tienda para esta consulta.
+            </div>
+          `}
+
+          <!-- Respuestas de otros socios/clientes en la conversación -->
+          ${communityReplies.length > 0 ? `
+            <div style="margin-bottom: 10px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px 10px;">
+              <div style="font-size: 0.68rem; font-weight: 800; color: #64748b; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.2px;">
+                💬 Respuestas de otros socios / clientes (${communityReplies.length}):
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 6px;">
+                ${communityReplies.map(cr => {
+                  const crDate = cr.createdAt ? new Date(cr.createdAt).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
+                  return `
+                    <div style="background: #ffffff; border-left: 3px solid #64748b; padding: 6px 10px; border-radius: 0 4px 4px 0; border: 1px solid #e2e8f0; border-left-width: 3px;">
+                      <div style="display: flex; justify-content: space-between; font-size: 0.70rem; color: #334155; font-weight: 700; margin-bottom: 2px;">
+                        <span>👤 ${cr.author || 'Socio'} (Cliente)</span>
+                        <span style="font-family: var(--font-mono); font-size: 0.62rem; color: #94a3b8;">${crDate}</span>
+                      </div>
+                      <div style="font-size: 0.76rem; color: #1e293b; line-height: 1.3;">
+                        ${cr.text}
+                      </div>
+                    </div>
+                  `;
+                }).join('')}
               </div>
             </div>
           ` : ''}
 
-          <!-- Formulario para responder o editar respuesta -->
+          <!-- Formulario para Administrador: Modificar o Publicar Respuesta Oficial -->
           <div style="margin-top: 10px; border-top: 1px dashed #e2e8f0; padding-top: 10px;">
             <label style="display: block; font-size: 0.72rem; font-weight: 800; color: #334155; margin-bottom: 4px;">
-              ${isAnswered ? '✏️ Modificar respuesta oficial:' : '💬 Escribir respuesta oficial de tienda:'}
+              ${hasOfficialReply ? '✏️ Modificar respuesta oficial de tienda (MeltyDeays Soporte):' : '💬 Publicar respuesta oficial de tienda (MeltyDeays Soporte):'}
             </label>
             <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-              <textarea id="admin-reply-input-${c.id}" class="form-input" style="flex: 1; min-height: 48px; font-size: 0.8rem; padding: 6px 10px; border-radius: 4px;" placeholder="Escribe la respuesta que verá el cliente en su móvil...">${aText}</textarea>
+              <textarea id="admin-reply-input-${c.id}" class="form-input" style="flex: 1; min-height: 48px; font-size: 0.8rem; padding: 6px 10px; border-radius: 4px;" placeholder="Escribe la respuesta oficial como MeltyDeays Soporte...">${officialAnswerText}</textarea>
               <button type="button" class="btn-primary" style="align-self: flex-end; padding: 8px 14px; font-size: 0.78rem; font-weight: 800; display: flex; align-items: center; gap: 5px;" onclick="submitAdminCommentReply('${c.id}')">
-                <span>✓</span> <span>${isAnswered ? 'Actualizar' : 'Publicar Respuesta'}</span>
+                <span>✓</span> <span>${hasOfficialReply ? 'Actualizar Respuesta Oficial' : 'Publicar Respuesta Oficial'}</span>
               </button>
             </div>
           </div>
@@ -840,7 +875,8 @@ export async function submitAdminCommentReply(commentId) {
 
   try {
     await FirestoreService.answerProductComment(commentId, replyText, "MeltyDeays · Soporte Oficial", true);
-    showToast("✓ Respuesta oficial enviada y publicada para el cliente", "success");
+    input.value = "";
+    showToast("✓ Respuesta oficial enviada y agregada al hilo", "success");
     await renderAdminCommentsList();
   } catch (e) {
     showToast("Error al publicar respuesta: " + e.message, "error");

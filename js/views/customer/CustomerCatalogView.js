@@ -405,22 +405,34 @@ export async function loadProductComments(rewardId) {
         qText = '¿Tienen entrega disponible en tienda física hoy mismo si aparto con mis puntos?';
       }
 
-      let aText = String(c.answerText || c.reply || c.response || c.answer || '').trim();
-      if (aText === 'undefined' || aText === 'null') aText = '';
-      const hasAnswer = Boolean(aText);
+      // Normalizar array de respuestas (hilo conversacional multirrespuesta)
+      let repliesList = Array.isArray(c.replies) ? [...c.replies] : [];
+      if (repliesList.length === 0) {
+        let legacyText = String(c.answerText || c.reply || c.response || c.answer || '').trim();
+        if (legacyText && legacyText !== 'undefined' && legacyText !== 'null') {
+          const isOff = Boolean(
+            c.isOfficialReply === true ||
+            (c.answeredBy && (c.answeredBy.includes("MeltyDeays") || c.answeredBy.includes("Soporte Oficial"))) ||
+            (c.replyAuthor && (c.replyAuthor.includes("MeltyDeays") || c.replyAuthor.includes("Soporte Oficial")))
+          );
+          repliesList.push({
+            id: 'legacy-' + c.id,
+            text: legacyText,
+            author: c.answeredBy || c.replyAuthor || (isOff ? "MeltyDeays Soporte" : "Socio"),
+            isOfficial: isOff,
+            createdAt: c.replyAt || c.answeredAt || c.createdAt
+          });
+        }
+      }
+
+      const hasReplies = repliesList.length > 0;
 
       let authorName = String(c.userName || c.author || c.name || 'Socio').trim();
       if (!authorName || authorName === 'undefined' || authorName === 'null') {
         authorName = 'Socio Wired';
       }
 
-      const isOfficial = Boolean(
-        c.isOfficialReply === true ||
-        (c.answeredBy && (c.answeredBy.includes("MeltyDeays") || c.answeredBy.includes("Soporte Oficial"))) ||
-        (c.replyAuthor && (c.replyAuthor.includes("MeltyDeays") || c.replyAuthor.includes("Soporte Oficial")))
-      );
-      const rawAuthor = String(c.answeredBy || c.replyAuthor || (isOfficial ? "MeltyDeays Soporte" : "Socio")).trim();
-      const cleanReplyAuthor = rawAuthor.replace(/\s*\(Soporte\)/gi, '').trim() || "Socio";
+      const currentUserName = (vm?.currentUser?.displayName) ? vm.currentUser.displayName.trim() : "Socio Wired";
 
       return `
         <div class="temu-comment-card">
@@ -429,31 +441,58 @@ export async function loadProductComments(rewardId) {
             <span class="temu-comment-date">${dateStr}</span>
           </div>
           <div class="temu-comment-text">${qText}</div>
-          ${hasAnswer ? (isOfficial ? `
-            <div class="temu-comment-reply-box official-reply" style="background: #f8fafc; border-left: 3px solid #0284c7; padding: 6px 10px; margin-top: 6px; border-radius: 4px;">
-              <span class="temu-comment-reply-tag official-tag" style="background: #0284c7; color: #ffffff; font-weight: 800; font-size: 0.68rem; padding: 2px 7px; border-radius: 3px; display: inline-flex; align-items: center; gap: 4px;">🛡️ MeltyDeays Soporte</span>
-              <div class="temu-comment-reply-text" style="font-size: 0.74rem; color: #1e293b; margin-top: 4px; line-height: 1.35;">${aText}</div>
+          
+          ${hasReplies ? `
+            <div class="temu-comments-thread" style="margin-top: 8px; display: flex; flex-direction: column; gap: 6px; border-left: 2px solid #e2e8f0; padding-left: 8px; margin-left: 2px;">
+              ${repliesList.map(rep => {
+                const isOfficial = Boolean(rep.isOfficial);
+                const rawAuthor = String(rep.author || (isOfficial ? "MeltyDeays Soporte" : "Socio")).trim();
+                const cleanAuthor = rawAuthor.replace(/\s*\(Soporte\)/gi, '').trim() || "Socio";
+                const repDate = rep.createdAt ? new Date(rep.createdAt).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
+                const repText = String(rep.text || '').trim();
+
+                if (isOfficial) {
+                  return `
+                    <div class="temu-comment-reply-box official-reply" style="background: #f0f9ff; border-left: 3px solid #0284c7; padding: 6px 10px; border-radius: 4px;">
+                      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
+                        <span class="temu-comment-reply-tag official-tag" style="background: #0284c7; color: #ffffff; font-weight: 800; font-size: 0.65rem; padding: 2px 7px; border-radius: 3px; display: inline-flex; align-items: center; gap: 4px;">🛡️ MeltyDeays Soporte</span>
+                        ${repDate ? `<span style="font-size: 0.60rem; color: #64748b; font-family: var(--font-mono);">${repDate}</span>` : ''}
+                      </div>
+                      <div class="temu-comment-reply-text" style="font-size: 0.74rem; color: #0f172a; line-height: 1.35;">${repText}</div>
+                    </div>
+                  `;
+                } else {
+                  return `
+                    <div class="temu-comment-reply-box community-reply" style="background: #f8fafc; border-left: 3px solid #64748b; padding: 6px 10px; border-radius: 4px;">
+                      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
+                        <span class="temu-comment-reply-tag community-tag" style="background: #e2e8f0; color: #334155; font-weight: 700; font-size: 0.65rem; padding: 2px 7px; border-radius: 3px; display: inline-flex; align-items: center; gap: 4px; border: 1px solid #cbd5e1;">👤 Respuesta de ${cleanAuthor}</span>
+                        ${repDate ? `<span style="font-size: 0.60rem; color: #64748b; font-family: var(--font-mono);">${repDate}</span>` : ''}
+                      </div>
+                      <div class="temu-comment-reply-text" style="font-size: 0.74rem; color: #334155; line-height: 1.35;">${repText}</div>
+                    </div>
+                  `;
+                }
+              }).join('')}
             </div>
           ` : `
-            <div class="temu-comment-reply-box community-reply" style="background: #f1f5f9; border-left: 3px solid #64748b; padding: 6px 10px; margin-top: 6px; border-radius: 4px;">
-              <span class="temu-comment-reply-tag community-tag" style="background: #e2e8f0; color: #334155; font-weight: 700; font-size: 0.68rem; padding: 2px 7px; border-radius: 3px; display: inline-flex; align-items: center; gap: 4px; border: 1px solid #cbd5e1;">👤 Respuesta de ${cleanReplyAuthor}</span>
-              <div class="temu-comment-reply-text" style="font-size: 0.74rem; color: #334155; margin-top: 4px; line-height: 1.35;">${aText}</div>
-            </div>
-          `) : `
-            <div style="font-size: 0.65rem; color: #94a3b8; font-style: italic; margin-top: 2px;">
+            <div style="font-size: 0.65rem; color: #94a3b8; font-style: italic; margin-top: 4px; padding-left: 2px;">
               ⏳ Pendiente de respuesta por el equipo de tienda
             </div>
           `}
-          <div style="margin-top: 6px; display: flex; justify-content: flex-end;">
-            <button type="button" class="btn-reply-toggle" style="background: none; border: none; color: #0284c7; font-size: 0.68rem; font-weight: 800; cursor: pointer; text-decoration: underline;" onclick="toggleCommentReplyForm('${c.id}')">
-              💬 Responder
+
+          <div style="margin-top: 8px; display: flex; justify-content: flex-end;">
+            <button type="button" class="btn-reply-toggle" style="background: #f8fafc; border: 1px solid #cbd5e1; color: #0284c7; font-size: 0.70rem; font-weight: 800; padding: 4px 10px; border-radius: 4px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; transition: all 0.2s ease;" onclick="toggleCommentReplyForm('${c.id}')">
+              💬 Responder a la consulta
             </button>
           </div>
-          <div id="reply-form-${c.id}" style="display: none; margin-top: 6px; background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 4px; padding: 6px;">
-            <input type="text" id="reply-input-${c.id}" class="temu-comment-reply-input" placeholder="Escribe tu respuesta a esta consulta..." style="width: 100%; padding: 5px; font-size: 0.72rem; border: 1px solid var(--dark); border-radius: 3px; box-sizing: border-box; margin-bottom: 5px;">
-            <div style="display: flex; justify-content: flex-end; gap: 4px;">
-              <button type="button" class="btn-secondary" style="font-size: 0.65rem; padding: 2px 7px;" onclick="toggleCommentReplyForm('${c.id}')">Cancelar</button>
-              <button type="button" class="btn-primary" style="font-size: 0.65rem; padding: 2px 8px;" onclick="submitClientCommentReply('${rewardId}', '${c.id}')">Publicar</button>
+          <div id="reply-form-${c.id}" class="temu-reply-form-container" style="display: none; margin-top: 8px; background: #ffffff; border: 1.5px solid #0284c7; border-radius: 6px; padding: 8px; box-shadow: 0 4px 12px rgba(2, 132, 199, 0.08);">
+            <div style="font-size: 0.68rem; font-weight: 800; color: #0369a1; margin-bottom: 4px; display: flex; align-items: center; gap: 4px;">
+              ✍️ Tu respuesta (${currentUserName}):
+            </div>
+            <textarea id="reply-input-${c.id}" class="temu-comment-reply-input" placeholder="Escribe tu respuesta a esta consulta..." rows="2" style="width: 100%; padding: 6px 8px; font-size: 0.74rem; border: 1px solid #cbd5e1; border-radius: 4px; box-sizing: border-box; margin-bottom: 6px; resize: vertical; font-family: inherit; outline: none;"></textarea>
+            <div style="display: flex; justify-content: flex-end; gap: 6px;">
+              <button type="button" class="btn-secondary" style="font-size: 0.68rem; padding: 3px 8px; border-radius: 4px; cursor: pointer;" onclick="toggleCommentReplyForm('${c.id}')">Cancelar</button>
+              <button type="button" class="btn-primary" style="font-size: 0.68rem; padding: 3px 10px; border-radius: 4px; cursor: pointer; background: #0284c7; color: white; border: none; font-weight: 800;" onclick="submitClientCommentReply('${rewardId}', '${c.id}')">Publicar</button>
             </div>
           </div>
         </div>
@@ -470,8 +509,21 @@ export async function loadProductComments(rewardId) {
 
 export function toggleCommentReplyForm(commentId) {
   const form = document.getElementById(`reply-form-${commentId}`);
-  if (form) {
-    form.style.display = form.style.display === "none" ? "block" : "none";
+  if (!form) return;
+  const isOpening = form.style.display === "none" || !form.style.display;
+  form.style.display = isOpening ? "block" : "none";
+  if (isOpening) {
+    setTimeout(() => {
+      form.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      const input = document.getElementById(`reply-input-${commentId}`);
+      if (input) {
+        input.focus();
+        if (typeof input.setSelectionRange === "function") {
+          const len = input.value.length;
+          input.setSelectionRange(len, len);
+        }
+      }
+    }, 50);
   }
 }
 
@@ -483,8 +535,11 @@ export async function submitClientCommentReply(rewardId, commentId) {
 
   try {
     await FirestoreService.answerProductComment(commentId, replyText, author, false);
+    input.value = "";
+    const form = document.getElementById(`reply-form-${commentId}`);
+    if (form) form.style.display = "none";
     if (typeof showToast === "function") {
-      showToast("✓ Respuesta enviada con éxito.", "success");
+      showToast("✓ Respuesta añadida a la conversación.", "success");
     }
     await loadProductComments(rewardId);
   } catch (e) {
@@ -783,18 +838,50 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
 
   if (footer) {
     const isOut = item.stock <= 0;
+    
+    const waSvg = `
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" style="color: #059669; flex-shrink: 0;">
+        <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0 0 12.04 2zm.01 1.67c2.2 0 4.26.86 5.82 2.41a8.16 8.16 0 0 1 2.41 5.83c0 4.54-3.7 8.24-8.24 8.24-1.48 0-2.93-.4-4.2-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.217 8.217 0 0 1-1.26-4.38c0-4.54 3.7-8.24 8.24-8.24zm4.52 11.66c-.25-.13-1.47-.72-1.7-.81-.23-.08-.39-.13-.56.13-.17.25-.64.81-.79.97-.14.17-.29.19-.54.06-.25-.13-1.06-.39-2.02-1.25-.75-.67-1.26-1.5-1.4-1.75-.15-.25-.02-.39.11-.51.11-.11.25-.29.38-.44.12-.14.17-.25.25-.42.08-.17.04-.31-.02-.44-.06-.13-.56-1.35-.77-1.85-.2-.49-.41-.42-.56-.43h-.48c-.17 0-.44.06-.67.31-.23.25-.87.85-.87 2.08 0 1.22.89 2.41 1.01 2.58.13.17 1.76 2.68 4.26 3.76.6.26 1.06.41 1.43.53.6.19 1.15.16 1.58.1.48-.07 1.47-.6 1.68-1.18.21-.58.21-1.08.15-1.18-.06-.1-.23-.17-.48-.3z"/>
+      </svg>
+    `;
+
+    const shareSvg = `
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--dark); flex-shrink: 0;">
+        <circle cx="18" cy="5" r="3"></circle>
+        <circle cx="6" cy="12" r="3"></circle>
+        <circle cx="18" cy="19" r="3"></circle>
+        <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+        <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+      </svg>
+    `;
+
+    const zapSvg = `
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" stroke="none" style="flex-shrink: 0;">
+        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+      </svg>
+    `;
+
+    const tagSvg = `
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
+        <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
+        <line x1="7" y1="7" x2="7.01" y2="7"></line>
+      </svg>
+    `;
+
     let actionBtn = "";
     if (!isOut) {
       if (isPartial) {
         actionBtn = `
           <button type="button" class="modal-specs-action-btn btn-redeem-gold" onclick="closeProductSpecsModal(); confirmRedeem('${item.id}');">
-            <span>🏷️</span> <span>Canjear / Comprar</span>
+            ${tagSvg}
+            <span>Canjear / Comprar</span>
           </button>
         `;
       } else {
         actionBtn = `
           <button type="button" class="modal-specs-action-btn btn-redeem-blue" onclick="closeProductSpecsModal(); confirmRedeem('${item.id}');">
-            <span>⚡</span> <span>Canjear Ahora</span>
+            ${zapSvg}
+            <span>Canjear Ahora</span>
           </button>
         `;
       }
@@ -807,10 +894,12 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
 
     footer.innerHTML = `
       <a href="${waUrl}" target="_blank" class="modal-specs-aux-btn wa" title="Consultar por WhatsApp">
-        <span>💬</span> <span class="aux-text">WhatsApp</span>
+        ${waSvg}
+        <span class="aux-text">WhatsApp</span>
       </a>
       <button type="button" class="modal-specs-aux-btn share" title="Compartir enlace de producto" onclick="shareProduct('${item.id}')">
-        <span>📤</span> <span class="aux-text">Compartir</span>
+        ${shareSvg}
+        <span class="aux-text">Compartir</span>
       </button>
       ${actionBtn}
     `;
