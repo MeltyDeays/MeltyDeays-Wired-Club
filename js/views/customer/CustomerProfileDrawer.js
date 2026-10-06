@@ -12,6 +12,7 @@ let setAppCurrency = () => {};
 let openClientCameraScanner = () => {};
 let openClaimModal = () => {};
 let isPinFormOpen = false;
+let isEditingProfileName = false;
 
 export function initCustomerProfileDrawer(deps) {
   if (deps) {
@@ -63,6 +64,7 @@ export function closeMobileProfileDrawer() {
   if (!drawer) return;
 
   cancelProfilePinUpdate(false);
+  cancelProfileNameEditing();
   drawer.classList.remove("open");
   if (overlay) overlay.classList.remove("open");
   if (fab) {
@@ -153,10 +155,22 @@ export function renderProfileDrawer() {
 
     <!-- DATOS DE SOCIO -->
     <div class="profile-info-block">
-      <div class="profile-name-row">
-        <input type="text" id="input-profile-name" class="profile-name-input" value="${escapeHtml(user.displayName)}" placeholder="Tu nombre">
-        <button type="button" class="btn-save-name" onclick="saveProfileDisplayName()" title="Guardar cambios de nombre">
+      <!-- MODO VISTA POR DEFECTO -->
+      <div id="profile-name-view-box" class="profile-name-view-box" style="display: ${isEditingProfileName ? 'none' : 'flex'};">
+        <h3 class="profile-display-name">${escapeHtml(user.displayName)}</h3>
+        <button type="button" class="btn-edit-name-trigger" onclick="enableProfileNameEditing()" title="Modificar nombre de socio">
+          <span>✏️</span> <span>Editar</span>
+        </button>
+      </div>
+
+      <!-- MODO EDICIÓN ACTIVABLE CON GUARDAR Y CANCELAR -->
+      <div id="profile-name-edit-box" class="profile-name-edit-box" style="display: ${isEditingProfileName ? 'flex' : 'none'};">
+        <input type="text" id="input-profile-name" class="profile-name-input" value="${escapeHtml(user.displayName)}" placeholder="Tu nombre" maxlength="35" onkeydown="if(event.key==='Enter') saveProfileDisplayName(); if(event.key==='Escape') cancelProfileNameEditing();">
+        <button type="button" class="btn-save-name" onclick="saveProfileDisplayName()" title="Guardar cambios">
           💾 Guardar
+        </button>
+        <button type="button" class="btn-cancel-name" onclick="cancelProfileNameEditing()" title="Cancelar edición">
+          ✕ Cancelar
         </button>
       </div>
       <div class="profile-meta-badges">
@@ -364,6 +378,31 @@ export function cancelProfilePinUpdate(showAlert = true) {
   }
 }
 
+export function enableProfileNameEditing() {
+  isEditingProfileName = true;
+  const viewBox = document.getElementById("profile-name-view-box");
+  const editBox = document.getElementById("profile-name-edit-box");
+  const input = document.getElementById("input-profile-name");
+  if (viewBox) viewBox.style.display = "none";
+  if (editBox) editBox.style.display = "flex";
+  if (input) {
+    input.focus();
+    input.select();
+  }
+}
+
+export function cancelProfileNameEditing() {
+  isEditingProfileName = false;
+  const viewBox = document.getElementById("profile-name-view-box");
+  const editBox = document.getElementById("profile-name-edit-box");
+  const input = document.getElementById("input-profile-name");
+  if (input && vm && vm.currentUser) {
+    input.value = vm.currentUser.displayName || "";
+  }
+  if (editBox) editBox.style.display = "none";
+  if (viewBox) viewBox.style.display = "flex";
+}
+
 export async function saveProfileDisplayName() {
   if (!vm || !vm.currentUser) return;
   const input = document.getElementById("input-profile-name");
@@ -378,11 +417,17 @@ export async function saveProfileDisplayName() {
   try {
     await FirestoreService.saveUser(vm.currentUser.toJSON());
     vm.notify();
+    isEditingProfileName = false;
     showToast("✓ Nombre de socio actualizado exitosamente", "success");
     renderProfileDrawer();
   } catch (e) {
     showToast("Error al guardar: " + e.message, "error");
   }
+}
+
+if (typeof window !== "undefined") {
+  window.enableProfileNameEditing = enableProfileNameEditing;
+  window.cancelProfileNameEditing = cancelProfileNameEditing;
 }
 
 export async function applyDrawerCurrency(newCurr) {

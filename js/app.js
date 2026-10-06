@@ -84,6 +84,8 @@ import {
   executeProfilePinUpdate,
   toggleProfilePinForm,
   cancelProfilePinUpdate,
+  enableProfileNameEditing,
+  cancelProfileNameEditing,
   handleNotificationClick,
   markAllNotificationsRead,
   requestChromePushPermission,
@@ -347,6 +349,8 @@ document.addEventListener("DOMContentLoaded", () => {
   window.openMobileProfileDrawer = openMobileProfileDrawer;
   window.closeMobileProfileDrawer = closeMobileProfileDrawer;
   window.saveProfileDisplayName = saveProfileDisplayName;
+  window.enableProfileNameEditing = enableProfileNameEditing;
+  window.cancelProfileNameEditing = cancelProfileNameEditing;
   window.applyDrawerCurrency = applyDrawerCurrency;
   window.toggleBannerPresetPicker = toggleBannerPresetPicker;
   window.toggleAvatarPresetPicker = toggleAvatarPresetPicker;

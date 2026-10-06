@@ -431,32 +431,112 @@
     padding: 0 1rem 0.75rem 1rem !important;
   }
 
-  .profile-name-row {
+  .profile-name-view-box {
     display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    margin-bottom: 8px !important;
+  }
+
+  .profile-display-name {
+    font-size: 1.05rem !important;
+    font-weight: 800 !important;
+    color: #0f172a !important;
+    margin: 0 !important;
+    letter-spacing: -0.01em !important;
+    line-height: 1.25 !important;
+  }
+
+  .btn-edit-name-trigger {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+    background: #f1f5f9 !important;
+    border: 1.5px solid #cbd5e1 !important;
+    border-radius: 6px !important;
+    padding: 3px 8px !important;
+    font-size: 0.68rem !important;
+    font-weight: 700 !important;
+    color: #475569 !important;
+    cursor: pointer !important;
+    transition: all 0.15s ease !important;
+  }
+  .btn-edit-name-trigger:hover {
+    background: #e2e8f0 !important;
+    color: #0f172a !important;
+    border-color: #94a3b8 !important;
+  }
+
+  .profile-name-edit-box {
+    display: flex !important;
+    align-items: center !important;
     gap: 6px !important;
-    margin-bottom: 6px !important;
+    margin-bottom: 8px !important;
+    width: 100% !important;
+    animation: fadeIn 0.15s ease !important;
   }
 
   .profile-name-input {
     flex: 1 !important;
-    font-size: 0.95rem !important;
-    font-weight: 800 !important;
-    color: var(--dark) !important;
-    border: 1.5px solid var(--dark) !important;
-    border-radius: 5px !important;
+    height: 36px !important;
+    font-size: 0.9rem !important;
+    font-weight: 700 !important;
+    color: #0f172a !important;
+    border: 1.5px solid #0284c7 !important;
+    border-radius: 6px !important;
     padding: 4px 8px !important;
     background: #ffffff !important;
+    box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.12) !important;
+    box-sizing: border-box !important;
+  }
+  .profile-name-input:focus {
+    outline: none !important;
+    border-color: #0284c7 !important;
   }
 
   .btn-save-name {
-    background: #0f172a !important;
-    color: #ffffff !important;
-    border: 1.5px solid var(--dark) !important;
-    border-radius: 5px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 4px !important;
+    height: 36px !important;
     padding: 0 10px !important;
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%) !important;
+    color: #ffffff !important;
+    border: 1.5px solid #0f172a !important;
+    border-radius: 6px !important;
     font-size: 0.72rem !important;
     font-weight: 800 !important;
     cursor: pointer !important;
+    white-space: nowrap !important;
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.2) !important;
+    transition: filter 0.15s ease !important;
+  }
+  .btn-save-name:hover {
+    filter: brightness(1.15) !important;
+  }
+
+  .btn-cancel-name {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 4px !important;
+    height: 36px !important;
+    padding: 0 8px !important;
+    background: #ffffff !important;
+    color: #64748b !important;
+    border: 1.5px solid #cbd5e1 !important;
+    border-radius: 6px !important;
+    font-size: 0.72rem !important;
+    font-weight: 700 !important;
+    cursor: pointer !important;
+    white-space: nowrap !important;
+    transition: all 0.15s ease !important;
+  }
+  .btn-cancel-name:hover {
+    background: #f1f5f9 !important;
+    color: #0f172a !important;
+    border-color: #94a3b8 !important;
   }
 
   .profile-meta-badges {
