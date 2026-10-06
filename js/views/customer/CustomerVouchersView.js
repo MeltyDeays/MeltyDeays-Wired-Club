@@ -377,6 +377,8 @@ export function showVoucherModal(voucherCode) {
         instructionsBox.innerHTML = `📌 <strong>Instrucciones:</strong> Muestra este código QR o envíalo por WhatsApp a MeltyDeays para coordinar la entrega personal de tu producto 100% gratis.<div style="margin-top:4px; font-size:0.68rem; color:#64748b; font-family:var(--font-mono);">🛡️ Premio de fidelidad: Se entrega probado personalmente. Exento de garantía comercial posterior de 30 días.</div>`;
       } else if (isPaid) {
         instructionsBox.innerHTML = `📌 <strong>Pago Registrado con Éxito:</strong> Ya cancelaste <strong>${formatPrice(voucher.cashToPayUsd)}</strong>. Envía el comprobante por WhatsApp a MeltyDeays para pactar la entrega personal en el momento que te sea más conveniente.<div style="margin-top:4px; font-size:0.68rem; color:#047857; font-family:var(--font-mono);">🛡️ Garantía técnica oficial de 30 días amparada por tu compra comercial.</div>`;
+      } else if (isExpired) {
+        instructionsBox.innerHTML = `📌 <strong>Reserva Caducada:</strong> El plazo de 3 días para abonar venció. Este vale ya no tiene validez y el artículo regresó al catálogo. Si aún te interesa, genera un nuevo canje desde la tienda.`;
       } else {
         instructionsBox.innerHTML = (voucher.discountUsd > 0)
           ? `📌 <strong>Vale de Descuento Pendiente de Pago:</strong> Tienes 3 días para coordinar el abono de <strong>${formatPrice(voucher.cashToPayUsd)}</strong> (descuento aplicado: -${formatPrice(voucher.discountUsd)} con tus puntos).<div style="margin-top:4px; font-size:0.68rem; color:#78350f; font-family:var(--font-mono);">🛡️ Garantía técnica comercial de 30 días tras concretar el pago. Si no se abona en 3 días, la reserva caduca con penalización de 10 WP.</div>`
@@ -384,7 +386,10 @@ export function showVoucherModal(voucherCode) {
       }
     }
 
-    if (waBtn) {
+    if (waBtn && isExpired) {
+      waBtn.style.display = "none";
+      waBtn.removeAttribute("href");
+    } else if (waBtn) {
       waBtn.style.display = "flex";
       const phone = "50558438412";
 
