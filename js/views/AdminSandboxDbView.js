@@ -167,7 +167,7 @@ export async function executeSeedDevData() {
     showToast("⚠️ Acción restringida en entorno de producción.", "error");
     return;
   }
-  if (!safeConfirm("🌱 ¿Deseas sembrar datos demo estándar (3 socios, 6 productos con especificaciones y comentarios)?")) {
+  if (!safeConfirm("🌱 ¿Deseas sembrar datos demo estándar (3 socios, 9 productos incluyendo 'Próximamente', especificaciones y comentarios)?")) {
     return;
   }
   showToast("Sembrando datos de demostración...", "info");

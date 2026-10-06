@@ -113,7 +113,10 @@ export class FirestoreService {
 
         if (!isProduction()) {
           const list = Object.values(local.rewards);
-          const needsEnrich = list.length > 0 && list.some(r => r.id && r.id.startsWith("REW-DEMO") && (!r.description || !r.description.includes("\n")));
+          const needsEnrich = list.length > 0 && (
+            list.some(r => r.id && r.id.startsWith("REW-DEMO") && (!r.description || !r.description.includes("\n"))) ||
+            (list.some(r => r.id && r.id.startsWith("REW-DEMO")) && !list.some(r => r.id && r.id.startsWith("REW-DEMO-INCOMING")))
+          );
           if (needsEnrich) {
             await this.seedDevData();
             return Object.values(engine.getSnapshot().rewards || {});
@@ -128,7 +131,10 @@ export class FirestoreService {
     const snap = engine.getSnapshot();
     if (!isProduction()) {
       const list = Object.values(snap.rewards || {});
-      const needsEnrich = list.length > 0 && list.some(r => r.id && r.id.startsWith("REW-DEMO") && (!r.description || !r.description.includes("\n")));
+      const needsEnrich = list.length > 0 && (
+        list.some(r => r.id && r.id.startsWith("REW-DEMO") && (!r.description || !r.description.includes("\n"))) ||
+        (list.some(r => r.id && r.id.startsWith("REW-DEMO")) && !list.some(r => r.id && r.id.startsWith("REW-DEMO-INCOMING")))
+      );
       if (needsEnrich) {
         await this.seedDevData();
         return Object.values(engine.getSnapshot().rewards || {});
@@ -1261,6 +1267,87 @@ export class FirestoreService {
         ],
         rewardType: "PARTIAL_DISCOUNT",
         status: "ACTIVE"
+      },
+      {
+        id: "REW-DEMO-INCOMING-01",
+        title: "Monitor Gamer Fast IPS 27\" QHD 180Hz 1ms HDR400",
+        description: `Panel Fast IPS de 27 pulgadas con resolución 2560x1440 QHD y fluidez competitiva de 180Hz.
+• Panel: Fast IPS de 27" con resolución nativa 2K QHD (2560 x 1440 píxeles)
+• Tasa de Refresco: 180 Hz con soporte Adaptive Sync, G-Sync y FreeSync Premium
+• Tiempo de Respuesta: 1 ms GtG ultra-rápido libre de ghosting y smearing
+• Gama de Color: 99% sRGB / 95% DCI-P3 con certificación VESA DisplayHDR 400
+• Conectividad: 2x HDMI 2.0, 1x DisplayPort 1.4 y salida de audio jack 3.5 mm
+• Ergonomía: Base con ajuste de altura, inclinación, giro y compatibilidad VESA 100x100`,
+        pointsCost: 0,
+        priceUsd: 220.0,
+        presaleDiscountType: "PERCENTAGE",
+        presaleDiscountValue: 15,
+        presaleDiscountUsd: 33.0,
+        presalePriceUsd: 187.0,
+        stock: 4,
+        status: "INCOMING",
+        isIncoming: true,
+        rewardType: "INCOMING",
+        estimatedArrival: new Date(Date.now() + 86400000 * 6 + 3600000 * 14).toISOString(),
+        imageUrl: "https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&w=800&q=80",
+        images: [
+          "https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&w=800&q=80",
+          "https://images.unsplash.com/photo-1585792180666-f7347c490ee2?auto=format&fit=crop&w=800&q=80"
+        ]
+      },
+      {
+        id: "REW-DEMO-INCOMING-02",
+        title: "Teclado Magnético Rapid Trigger Hall Effect 60%",
+        description: `Teclado analógico ultra-rápido para eSports y shooters con switches magnéticos de punto de actuación variable.
+• Switches: Magnéticos Hall Effect con Rapid Trigger continuo (actuación 0.1 mm a 4.0 mm)
+• Tasa de Polling: 8000 Hz (0.125 ms de latencia absoluta de entrada)
+• Estructura: Chasis de aluminio anodizado CNC con acolchado acústico de silicona
+• Keycaps: PBT Double-Shot de perfil OEM translúcidas para retroiluminación RGB
+• Conectividad: Cable USB-C desmontable con blindaje trenzado y conector bañado en oro
+• Software: Configuración integrada web sin software invasivo ni drivers pesados`,
+        pointsCost: 0,
+        priceUsd: 110.0,
+        presaleDiscountType: "PERCENTAGE",
+        presaleDiscountValue: 20,
+        presaleDiscountUsd: 22.0,
+        presalePriceUsd: 88.0,
+        stock: 3,
+        status: "INCOMING",
+        isIncoming: true,
+        rewardType: "INCOMING",
+        estimatedArrival: new Date(Date.now() + 86400000 * 11 + 3600000 * 8).toISOString(),
+        imageUrl: "https://images.unsplash.com/photo-1587829741301-dc798b83add3?auto=format&fit=crop&w=800&q=80",
+        images: [
+          "https://images.unsplash.com/photo-1587829741301-dc798b83add3?auto=format&fit=crop&w=800&q=80",
+          "https://images.unsplash.com/photo-1618384887929-16ec33fab9ef?auto=format&fit=crop&w=800&q=80"
+        ]
+      },
+      {
+        id: "REW-DEMO-INCOMING-03",
+        title: "Micrófono Condensador USB-C Broadcast con Brazo Articulado",
+        description: `Kit completo de streaming y podcast con cápsula de condensador cardioide de 24-bit/192kHz y brazo metálico.
+• Cápsula: Condensador cardioide de 16 mm con respuesta de frecuencia plana de 20 Hz - 20 kHz
+• Resolución de Audio: Grabación con calidad de estudio de 24 bits / 192 kHz sin distorsión
+• Monitoreo en Tiempo Real: Salida jack de auriculares de 3.5 mm con latencia cero
+• Control Físico: Botón táctil 'Tap-to-Mute' con LED indicador de estado y perilla de ganancia
+• Accesorios Incluidos: Brazo articulado metálico de alta resistencia, shockmount y filtro antipop
+• Compatibilidad: Conexión Plug & Play inmediata en Windows, Mac, Linux y PS5 vía USB-C`,
+        pointsCost: 0,
+        priceUsd: 75.0,
+        presaleDiscountType: "FIXED",
+        presaleDiscountValue: 15.0,
+        presaleDiscountUsd: 15.0,
+        presalePriceUsd: 60.0,
+        stock: 5,
+        status: "INCOMING",
+        isIncoming: true,
+        rewardType: "INCOMING",
+        estimatedArrival: new Date(Date.now() + 86400000 * 18 + 3600000 * 5).toISOString(),
+        imageUrl: "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?auto=format&fit=crop&w=800&q=80",
+        images: [
+          "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?auto=format&fit=crop&w=800&q=80",
+          "https://images.unsplash.com/photo-1583778176476-4a8b02a64c01?auto=format&fit=crop&w=800&q=80"
+        ]
       }
     ];
 
