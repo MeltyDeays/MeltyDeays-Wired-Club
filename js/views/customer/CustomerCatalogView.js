@@ -667,15 +667,19 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
           <span>Ahorro con puntos: <strong id="specs-calc-disc-${item.id}" style="color: #059669;">-${formatPrice(appliedDiscountUsd)} (-${formattedAppliedPct}%)</strong></span>
         </div>
         ${user && maxUsable > 0 ? `
-          <div style="background: rgba(255, 255, 255, 0.75); border: 1px solid #fcd34d; border-radius: 4px; padding: 6px 8px; margin-top: 4px;">
-            <div style="display: flex; justify-content: space-between; font-size: 0.68rem; font-weight: 800; color: #92400e; margin-bottom: 3px;">
-              <span>CALCULADORA DE DESCUENTO:</span>
-              <span id="specs-slider-val-${item.id}">${appliedPts} WP aplicados</span>
+          <div class="specs-calc-box">
+            <div class="specs-calc-header">
+              <span>⚡ CALCULADORA DE DESCUENTO:</span>
+              <span class="specs-calc-value" id="specs-slider-val-${item.id}">${appliedPts} WP aplicados</span>
             </div>
-            <input type="range" id="specs-slider-${item.id}" min="0" max="${maxUsable}" value="${appliedPts}" step="1" style="width: 100%; accent-color: #d97706; cursor: pointer;" oninput="updateSpecsModalCalculation('${item.id}', this.value)">
-            <div style="display: flex; justify-content: space-between; margin-top: 2px;">
-              <button type="button" class="btn-outline-sm" style="font-size: 0.62rem; padding: 1px 5px; background: #fff;" onclick="updateSpecsModalCalculation('${item.id}', 0)">0 WP (Sin desc.)</button>
-              <button type="button" class="btn-outline-sm" style="font-size: 0.62rem; padding: 1px 5px; background: #fff;" onclick="updateSpecsModalCalculation('${item.id}', ${maxUsable})">Tope (${maxUsable} WP)</button>
+            <input type="range" id="specs-slider-${item.id}" class="specs-calc-range" min="0" max="${maxUsable}" value="${appliedPts}" step="1" oninput="updateSpecsModalCalculation('${item.id}', this.value)">
+            <div class="specs-calc-presets-row">
+              <button type="button" class="specs-calc-preset-btn min" onclick="updateSpecsModalCalculation('${item.id}', 0)">
+                <span>🔄</span> <span>Sin desc. (0 WP)</span>
+              </button>
+              <button type="button" class="specs-calc-preset-btn max" onclick="updateSpecsModalCalculation('${item.id}', ${maxUsable})">
+                <span>⚡</span> <span>Tope (${maxUsable} WP)</span>
+              </button>
             </div>
           </div>
         ` : ''}

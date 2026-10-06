@@ -328,9 +328,9 @@
                 <input type="number" id="confirm-points-num" style="width: 70px; padding: 2px 5px; font-family: var(--font-mono); font-weight: 800; font-size: 0.75rem; border: 1px solid #d97706; border-radius: 3px; color: #b45309; background: #fff;" oninput="onPointsNumChange(this.value)">
                 <span style="font-size: 0.7rem; font-weight: 800; color: #b45309;">WP</span>
               </div>
-              <div style="display: flex; gap: 4px;">
-                <button type="button" class="btn-outline-sm" style="font-size: 0.65rem; padding: 2px 6px; border: 1px solid #f59e0b; color: #92400e; background: #fff; cursor: pointer; border-radius: 3px;" onclick="setPointsPreset('max')">Max Posible (<span id="confirm-points-max-badge">0 WP</span>)</button>
-                <button type="button" class="btn-outline-sm" style="font-size: 0.65rem; padding: 2px 6px; border: 1px solid #cbd5e1; color: #64748b; background: #fff; cursor: pointer; border-radius: 3px;" onclick="setPointsPreset('zero')">0 WP (Sin desc.)</button>
+              <div style="display: flex; gap: 6px;">
+                <button type="button" class="specs-calc-preset-btn max" onclick="setPointsPreset('max')">⚡ Max (<span id="confirm-points-max-badge">0 WP</span>)</button>
+                <button type="button" class="specs-calc-preset-btn min" onclick="setPointsPreset('zero')">🔄 0 WP (Sin desc.)</button>
               </div>
             </div>
           </div>
