@@ -3,6 +3,7 @@
  * The Wired Club - Mobile Experience (v2026)
  */
 import { FirestoreService } from "../../services/FirestoreService.js";
+import { PushNotificationService } from "../../services/PushNotificationService.js";
 
 let vm = null;
 let showToast = () => {};
@@ -10,6 +11,7 @@ let openAuthModal = () => {};
 let setAppCurrency = () => {};
 let openClientCameraScanner = () => {};
 let openClaimModal = () => {};
+let isPinFormOpen = false;
 
 export function initCustomerProfileDrawer(deps) {
   if (deps) {
@@ -40,8 +42,10 @@ export const BANNER_PRESETS = [
 export function openMobileProfileDrawer() {
   const drawer = document.getElementById("drawer-mobile-profile");
   const overlay = document.getElementById("drawer-profile-overlay");
+  const fab = document.getElementById("fab-mobile-menu");
   if (!drawer) return;
 
+  if (fab) fab.style.display = "none";
   renderProfileDrawer();
   drawer.classList.add("open");
   if (overlay) overlay.classList.add("open");
@@ -51,10 +55,13 @@ export function openMobileProfileDrawer() {
 export function closeMobileProfileDrawer() {
   const drawer = document.getElementById("drawer-mobile-profile");
   const overlay = document.getElementById("drawer-profile-overlay");
+  const fab = document.getElementById("fab-mobile-menu");
   if (!drawer) return;
 
+  cancelProfilePinUpdate(false);
   drawer.classList.remove("open");
   if (overlay) overlay.classList.remove("open");
+  if (fab) fab.style.display = "";
   document.body.style.overflow = "";
 }
 
@@ -93,6 +100,8 @@ export function renderProfileDrawer() {
   const bannerUrl = user.bannerUrl || "https://images.unsplash.com/photo-1508739773434-c26b3d09e071?auto=format&fit=crop&w=900&q=80";
   const userNotifications = getComputedUserNotifications(user);
   const unreadCount = userNotifications.filter(n => !n.read).length;
+  const pushPerm = PushNotificationService.getPermission();
+  const isPushGranted = pushPerm === "granted";
 
   drawerContent.innerHTML = `
     <!-- CABECERA DE PERFIL: BANNER + AVATAR -->
@@ -176,52 +185,92 @@ export function renderProfileDrawer() {
           ${unreadCount > 0 ? `<span class="notifications-count-badge">${unreadCount} NUEVAS</span>` : ''}
         </div>
         ${unreadCount > 0 ? `
-          <button type="button" class="btn-mark-all-read" onclick="markAllNotificationsRead()">
+          <button type="button" class="btn-mark-all-read" onclick="markAllNotificationsRead()" title="Marcar todas como leídas">
             Marcar leídas
           </button>
         ` : ''}
       </div>
+
+      <!-- LISTA DE NOTIFICACIONES INTERACTIVAS -->
       <div class="profile-notifications-list">
         ${userNotifications.map(n => `
-          <div class="profile-notification-card ${n.read ? 'read' : 'unread'}">
+          <div class="profile-notification-card ${n.read ? 'read' : 'unread'}" onclick="handleNotificationClick('${n.id}')" title="${n.read ? 'Notificación leída (Tocar para ver)' : 'Tocar para ir directamente al producto'}">
             <div class="notif-icon-col">${n.icon}</div>
             <div class="notif-body-col">
               <div class="notif-title-row">
                 <span class="notif-title">${n.title}</span>
-                <span class="notif-time">${n.time}</span>
+                <div style="display: flex; align-items: center; gap: 4px;">
+                  ${!n.read ? '<span class="notif-unread-dot" title="No leída">●</span>' : ''}
+                  <span class="notif-time">${n.time}</span>
+                </div>
               </div>
               <div class="notif-desc">${n.desc}</div>
+              <div class="notif-action-row">
+                ${n.badgeText ? `<span class="notif-badge-pill">${n.badgeText}</span>` : ''}
+                ${n.targetRewardId ? `<span class="notif-link-hint">Ver producto ➔</span>` : ''}
+              </div>
             </div>
           </div>
         `).join("")}
       </div>
+
+      <!-- NOTIFICACIONES WEB PUSH EN GOOGLE CHROME (MÓVIL / SISTEMA) -->
+      <div class="chrome-push-box ${isPushGranted ? 'granted' : 'pending'}" style="margin-top: 0.75rem;">
+        <div class="chrome-push-header">
+          <span class="chrome-push-icon">${isPushGranted ? '🟢' : '📲'}</span>
+          <span class="chrome-push-title">${isPushGranted ? 'Avisos en Google Chrome: ACTIVOS' : 'Avisos en Google Chrome (Móvil)'}</span>
+        </div>
+        <div class="chrome-push-desc">
+          ${isPushGranted 
+            ? 'Recibirás avisos en tu teléfono sobre nuevos artículos y descuentos en MeltyDeays aunque tengas otra aplicación abierta.'
+            : 'Activa los avisos de Chrome para enterarte inmediatamente cuando hayan nuevos productos o promociones especiales en tu teléfono.'}
+        </div>
+        ${isPushGranted ? `
+          <button type="button" class="btn-chrome-push-test" onclick="testChromePushNotification()">
+            🔔 Probar aviso en mi teléfono
+          </button>
+        ` : `
+          <button type="button" class="btn-chrome-push-enable" onclick="requestChromePushPermission()">
+            ⚡ Activar Avisos en Chrome
+          </button>
+        `}
+      </div>
     </div>
 
-    <!-- SEGURIDAD: ACTUALIZAR PIN -->
+    <!-- SEGURIDAD: ACTUALIZAR PIN CON CANCELAR MEJORADO -->
     <div class="drawer-section">
-      <details class="profile-security-accordion">
-        <summary class="drawer-section-title" style="cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: center;">
-          <span>🔒 SEGURIDAD Y ACTUALIZAR PIN</span>
-          <span style="font-size:0.75rem; color:#94a3b8;">▾ Modificar</span>
-        </summary>
-        <div class="profile-security-form" style="margin-top: 0.85rem;">
-          <div class="form-group-compact">
-            <label>PIN Actual:</label>
-            <input type="password" id="input-pin-current" class="profile-pin-input" maxlength="8" placeholder="••••">
-          </div>
-          <div class="form-group-compact">
-            <label>Nuevo PIN (4 a 8 dígitos):</label>
-            <input type="password" id="input-pin-new" class="profile-pin-input" maxlength="8" placeholder="Nuevo PIN">
-          </div>
-          <div class="form-group-compact">
-            <label>Confirmar Nuevo PIN:</label>
-            <input type="password" id="input-pin-confirm" class="profile-pin-input" maxlength="8" placeholder="Confirmar">
-          </div>
-          <button type="button" class="btn-primary" style="width: 100%; margin-top: 0.5rem; justify-content: center;" onclick="executeProfilePinUpdate()">
-            ✓ Actualizar PIN de Seguridad
+      <div class="profile-security-header" onclick="toggleProfilePinForm()">
+        <div class="drawer-section-title" style="margin: 0; cursor: pointer;">
+          <span>🔒 SEGURIDAD Y PIN</span>
+        </div>
+        <button type="button" class="btn-toggle-pin-form ${isPinFormOpen ? 'active' : ''}" id="btn-toggle-pin-form" onclick="event.stopPropagation(); toggleProfilePinForm();">
+          <span id="pin-toggle-label">${isPinFormOpen ? '✕ Cancelar' : '🔑 Cambiar PIN'}</span>
+          <span id="pin-toggle-icon">${isPinFormOpen ? '▴' : '▾'}</span>
+        </button>
+      </div>
+
+      <div id="profile-pin-form-body" class="profile-security-form-box" style="display: ${isPinFormOpen ? 'block' : 'none'};">
+        <div class="form-group-compact">
+          <label>PIN Actual:</label>
+          <input type="password" id="input-pin-current" class="profile-pin-input" maxlength="8" placeholder="••••">
+        </div>
+        <div class="form-group-compact">
+          <label>Nuevo PIN (4 a 8 dígitos):</label>
+          <input type="password" id="input-pin-new" class="profile-pin-input" maxlength="8" placeholder="Nuevo PIN">
+        </div>
+        <div class="form-group-compact">
+          <label>Confirmar Nuevo PIN:</label>
+          <input type="password" id="input-pin-confirm" class="profile-pin-input" maxlength="8" placeholder="Confirmar nuevo PIN">
+        </div>
+        <div class="pin-actions-row">
+          <button type="button" class="btn-primary btn-save-pin" onclick="executeProfilePinUpdate()">
+            ✓ Guardar PIN
+          </button>
+          <button type="button" class="btn-secondary btn-cancel-pin" onclick="cancelProfilePinUpdate(true)">
+            ✕ Cancelar
           </button>
         </div>
-      </details>
+      </div>
     </div>
 
     <!-- ACCIONES RÁPIDAS Y CERRAR SESIÓN -->
@@ -239,6 +288,46 @@ export function renderProfileDrawer() {
       </div>
     </div>
   `;
+}
+
+export function toggleProfilePinForm() {
+  isPinFormOpen = !isPinFormOpen;
+  const formBody = document.getElementById("profile-pin-form-body");
+  const toggleBtn = document.getElementById("btn-toggle-pin-form");
+  if (formBody) {
+    formBody.style.display = isPinFormOpen ? "block" : "none";
+  }
+  if (toggleBtn) {
+    toggleBtn.innerHTML = isPinFormOpen
+      ? `<span>✕ Cancelar</span> <span>▴</span>`
+      : `<span>🔑 Cambiar PIN</span> <span>▾</span>`;
+    if (isPinFormOpen) {
+      toggleBtn.classList.add("active");
+    } else {
+      toggleBtn.classList.remove("active");
+    }
+  }
+}
+
+export function cancelProfilePinUpdate(showAlert = true) {
+  isPinFormOpen = false;
+  const curEl = document.getElementById("input-pin-current");
+  const newEl = document.getElementById("input-pin-new");
+  const confEl = document.getElementById("input-pin-confirm");
+  const formBody = document.getElementById("profile-pin-form-body");
+  const toggleBtn = document.getElementById("btn-toggle-pin-form");
+
+  if (curEl) curEl.value = "";
+  if (newEl) newEl.value = "";
+  if (confEl) confEl.value = "";
+  if (formBody) formBody.style.display = "none";
+  if (toggleBtn) {
+    toggleBtn.innerHTML = `<span>🔑 Cambiar PIN</span> <span>▾</span>`;
+    toggleBtn.classList.remove("active");
+  }
+  if (showAlert) {
+    showToast("Modificación de PIN cancelada", "info");
+  }
 }
 
 export async function saveProfileDisplayName() {
@@ -397,9 +486,7 @@ export async function executeProfilePinUpdate() {
   try {
     await FirestoreService.saveUser(vm.currentUser.toJSON());
     showToast("✓ PIN de seguridad actualizado con éxito", "success");
-    if (curEl) curEl.value = "";
-    if (newEl) newEl.value = "";
-    if (confEl) confEl.value = "";
+    cancelProfilePinUpdate(false);
   } catch (e) {
     showToast("Error al actualizar PIN: " + e.message, "error");
   }
@@ -416,6 +503,8 @@ function getComputedUserNotifications(user) {
       title: "Descuentos Disponibles",
       desc: pts > 0 ? `Tienes ${pts.toLocaleString()} Wired Points listos para aplicar hasta un 57% de descuento en el catálogo.` : "Acumula puntos en tus compras para canjear descuentos exclusivos.",
       time: "Hoy",
+      targetRewardId: "REW-DEMO-03",
+      badgeText: "57% OFF",
       read: readList.includes("notif-pts-discount")
     },
     {
@@ -424,14 +513,18 @@ function getComputedUserNotifications(user) {
       title: "Nuevos Artículos Demo",
       desc: "Mando Hall Effect GameSir Nova Lite y Teclado Mecánico Gasket 65% ya disponibles en el club.",
       time: "Ayer",
+      targetRewardId: "REW-DEMO-04",
+      badgeText: "NUEVO",
       read: readList.includes("notif-new-items")
     },
     {
       id: "notif-pass-status",
       icon: "⚡",
       title: "CyberPass Activo",
-      desc: `Socio ${user.displayName} (${user.tier || 'NAVI_USER'}) verificado en The Wired Club.`,
+      desc: `Socio ${user?.displayName || 'Socio'} (${user?.tier || 'NAVI_USER'}) verificado en The Wired Club.`,
       time: "Reciente",
+      targetRewardId: null,
+      badgeText: "ACTIVO",
       read: readList.includes("notif-pass-status")
     }
   ];
@@ -439,10 +532,40 @@ function getComputedUserNotifications(user) {
   return notifs;
 }
 
+export function handleNotificationClick(notifId) {
+  const readList = JSON.parse(localStorage.getItem("melty_read_notifications") || "[]");
+  if (!readList.includes(notifId)) {
+    readList.push(notifId);
+    localStorage.setItem("melty_read_notifications", JSON.stringify(readList));
+  }
+  updateNotificationsBadge();
+
+  const user = vm ? vm.currentUser : null;
+  const notifs = getComputedUserNotifications(user);
+  const notif = notifs.find(n => n.id === notifId);
+
+  // Cerrar el drawer primero
+  closeMobileProfileDrawer();
+
+  // Si tiene un producto destino, abrir directamente su vista detallada
+  if (notif && notif.targetRewardId) {
+    setTimeout(() => {
+      if (typeof window.openProductSpecsModal === "function") {
+        window.openProductSpecsModal(notif.targetRewardId);
+      }
+    }, 200);
+  } else {
+    showToast("✓ " + (notif ? notif.title : "Notificación leída"), "info");
+  }
+}
+
 export function markAllNotificationsRead() {
-  const notifIds = ["notif-pts-discount", "notif-new-items", "notif-pass-status"];
+  const user = vm ? vm.currentUser : null;
+  const notifs = getComputedUserNotifications(user);
+  const notifIds = notifs.map(n => n.id);
   localStorage.setItem("melty_read_notifications", JSON.stringify(notifIds));
-  showToast("✓ Notificaciones marcadas como leídas", "info");
+  updateNotificationsBadge();
+  showToast("✓ Todas las notificaciones marcadas como leídas", "info");
   renderProfileDrawer();
 }
 
@@ -460,9 +583,38 @@ export function updateNotificationsBadge() {
       el.textContent = unread;
       el.style.display = "inline-flex";
     } else {
+      el.textContent = "0";
       el.style.display = "none";
     }
   });
+}
+
+export async function requestChromePushPermission() {
+  const res = await PushNotificationService.requestPermission();
+  if (res === "granted") {
+    showToast("✓ ¡Avisos de Google Chrome activados con éxito!", "success");
+    await PushNotificationService.sendNotification({
+      title: "⚡ MeltyDeays · The Wired Club",
+      body: "🎉 ¡Avisos en Chrome activados! Te avisaremos de nuevos productos y descuentos gaming en tu teléfono.",
+      rewardId: "REW-DEMO-03"
+    });
+    renderProfileDrawer();
+  } else if (res === "denied") {
+    showToast("Las notificaciones están bloqueadas en tu Google Chrome. Habilítalas en Configuración de sitios.", "error");
+  }
+}
+
+export async function testChromePushNotification() {
+  const sent = await PushNotificationService.sendNotification({
+    title: "🔥 ¡Novedades MeltyDeays!",
+    body: "🎮 Mouse Gamer Óptico RGB y Teclado 65% con hasta 57% OFF disponibles en The Wired Club.",
+    rewardId: "REW-DEMO-03"
+  });
+  if (sent) {
+    showToast("✓ Aviso enviado a tu teléfono vía Google Chrome", "success");
+  } else {
+    showToast("No se pudo enviar. Verifica los permisos de tu navegador.", "error");
+  }
 }
 
 function escapeHtml(str) {

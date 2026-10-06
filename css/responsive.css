@@ -584,28 +584,45 @@
     display: flex !important;
     flex-direction: column !important;
     gap: 6px !important;
-    max-height: 200px !important;
+    max-height: 220px !important;
     overflow-y: auto !important;
   }
 
   .profile-notification-card {
     display: flex !important;
     gap: 8px !important;
-    padding: 7px 8px !important;
+    padding: 8px 10px !important;
     border-radius: 6px !important;
-    border: 1px solid #e2e8f0 !important;
-    background: #f8fafc !important;
+    border: 1.5px solid #e2e8f0 !important;
+    background: #ffffff !important;
     font-size: 0.72rem !important;
+    cursor: pointer !important;
+    transition: transform 0.12s ease, border-color 0.15s ease, background 0.15s ease !important;
+    box-sizing: border-box !important;
+  }
+
+  .profile-notification-card:active {
+    transform: scale(0.98) !important;
   }
 
   .profile-notification-card.unread {
     background: #f0fdf4 !important;
     border-color: #86efac !important;
+    box-shadow: 0 1px 3px rgba(16, 185, 129, 0.15) !important;
+  }
+
+  .profile-notification-card.read {
+    background: #f8fafc !important;
+    border-color: #e2e8f0 !important;
+    opacity: 0.88 !important;
   }
 
   .notif-icon-col {
-    font-size: 1.1rem !important;
+    font-size: 1.15rem !important;
     flex-shrink: 0 !important;
+    display: flex !important;
+    align-items: flex-start !important;
+    padding-top: 1px !important;
   }
 
   .notif-body-col {
@@ -623,6 +640,12 @@
   .notif-title {
     font-weight: 800 !important;
     color: #0f172a !important;
+    font-size: 0.74rem !important;
+  }
+
+  .notif-unread-dot {
+    color: #10b981 !important;
+    font-size: 0.65rem !important;
   }
 
   .notif-time {
@@ -635,6 +658,174 @@
     font-size: 0.66rem !important;
     color: #475569 !important;
     line-height: 1.3 !important;
+  }
+
+  .notif-action-row {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    margin-top: 4px !important;
+  }
+
+  .notif-badge-pill {
+    background: #fef3c7 !important;
+    color: #92400e !important;
+    font-size: 0.58rem !important;
+    font-weight: 900 !important;
+    padding: 1px 5px !important;
+    border-radius: 3px !important;
+    font-family: var(--font-mono) !important;
+    border: 1px solid #fde68a !important;
+  }
+
+  .notif-link-hint {
+    color: #0284c7 !important;
+    font-size: 0.62rem !important;
+    font-weight: 800 !important;
+    text-decoration: underline !important;
+    font-family: var(--font-mono) !important;
+  }
+
+  /* WIDGET NOTIFICACIONES PUSH GOOGLE CHROME */
+  .chrome-push-box {
+    border-radius: 6px !important;
+    padding: 8px 10px !important;
+    border: 1.5px solid !important;
+    box-sizing: border-box !important;
+  }
+
+  .chrome-push-box.pending {
+    background: #f8fafc !important;
+    border-color: #cbd5e1 !important;
+  }
+
+  .chrome-push-box.granted {
+    background: #ecfdf5 !important;
+    border-color: #34d399 !important;
+  }
+
+  .chrome-push-header {
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    margin-bottom: 3px !important;
+  }
+
+  .chrome-push-title {
+    font-size: 0.72rem !important;
+    font-weight: 800 !important;
+    font-family: var(--font-mono) !important;
+    color: #0f172a !important;
+  }
+
+  .chrome-push-desc {
+    font-size: 0.65rem !important;
+    color: #475569 !important;
+    line-height: 1.3 !important;
+    margin-bottom: 7px !important;
+  }
+
+  .btn-chrome-push-enable {
+    width: 100% !important;
+    padding: 6px 10px !important;
+    background: #0f172a !important;
+    color: #ffffff !important;
+    border: 1.5px solid var(--dark) !important;
+    border-radius: 5px !important;
+    font-size: 0.72rem !important;
+    font-weight: 800 !important;
+    cursor: pointer !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    box-shadow: 2px 2px 0px var(--dark) !important;
+  }
+
+  .btn-chrome-push-enable:active {
+    transform: translate(1px, 1px) !important;
+    box-shadow: 1px 1px 0px var(--dark) !important;
+  }
+
+  .btn-chrome-push-test {
+    width: 100% !important;
+    padding: 5px 8px !important;
+    background: #ffffff !important;
+    color: #065f46 !important;
+    border: 1.5px solid #10b981 !important;
+    border-radius: 4px !important;
+    font-size: 0.68rem !important;
+    font-weight: 800 !important;
+    cursor: pointer !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 5px !important;
+  }
+
+  /* APARTADO PIN Y SEGURIDAD MEJORADO */
+  .profile-security-header {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    cursor: pointer !important;
+  }
+
+  .btn-toggle-pin-form {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 5px !important;
+    background: #f1f5f9 !important;
+    border: 1.5px solid #cbd5e1 !important;
+    border-radius: 5px !important;
+    padding: 3px 8px !important;
+    font-size: 0.68rem !important;
+    font-weight: 800 !important;
+    font-family: var(--font-mono) !important;
+    color: #0f172a !important;
+    cursor: pointer !important;
+    transition: all 0.15s ease !important;
+  }
+
+  .btn-toggle-pin-form.active {
+    background: #fee2e2 !important;
+    border-color: #fca5a5 !important;
+    color: #991b1b !important;
+  }
+
+  .profile-security-form-box {
+    margin-top: 0.75rem !important;
+    padding: 10px !important;
+    background: #f8fafc !important;
+    border: 1.5px solid #cbd5e1 !important;
+    border-radius: 6px !important;
+    animation: fadeIn 0.15s ease !important;
+  }
+
+  .pin-actions-row {
+    display: flex !important;
+    gap: 8px !important;
+    margin-top: 8px !important;
+  }
+
+  .btn-save-pin {
+    flex: 1.2 !important;
+    justify-content: center !important;
+    font-size: 0.75rem !important;
+    padding: 7px 10px !important;
+  }
+
+  .btn-cancel-pin {
+    flex: 1 !important;
+    justify-content: center !important;
+    font-size: 0.75rem !important;
+    padding: 7px 10px !important;
+    background: #ffffff !important;
+    border: 1.5px solid #cbd5e1 !important;
+    color: #475569 !important;
+    border-radius: 4px !important;
+    cursor: pointer !important;
+    font-weight: 800 !important;
   }
 
   .profile-pin-input {

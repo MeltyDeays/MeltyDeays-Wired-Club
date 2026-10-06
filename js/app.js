@@ -80,9 +80,15 @@ import {
   handleAvatarFileInput,
   handleBannerFileInput,
   executeProfilePinUpdate,
+  toggleProfilePinForm,
+  cancelProfilePinUpdate,
+  handleNotificationClick,
   markAllNotificationsRead,
+  requestChromePushPermission,
+  testChromePushNotification,
   renderProfileDrawer
 } from "./views/customer/index.js";
+import { PushNotificationService } from "./services/PushNotificationService.js";
 
 const vm = new CustomerViewModel();
 
@@ -347,7 +353,12 @@ document.addEventListener("DOMContentLoaded", () => {
   window.handleAvatarFileInput = handleAvatarFileInput;
   window.handleBannerFileInput = handleBannerFileInput;
   window.executeProfilePinUpdate = executeProfilePinUpdate;
+  window.toggleProfilePinForm = toggleProfilePinForm;
+  window.cancelProfilePinUpdate = cancelProfilePinUpdate;
+  window.handleNotificationClick = handleNotificationClick;
   window.markAllNotificationsRead = markAllNotificationsRead;
+  window.requestChromePushPermission = requestChromePushPermission;
+  window.testChromePushNotification = testChromePushNotification;
   window.renderProfileDrawer = renderProfileDrawer;
 
   // Vincular funciones a window para eventos HTML onclick
@@ -413,6 +424,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Iniciar ViewModel
   vm.init();
+
+  // Inicializar Service Worker para Google Chrome (Push & Móvil)
+  PushNotificationService.registerServiceWorker();
+
+  // Abrir producto directamente si el usuario tocó una notificación de Chrome con openReward
+  const urlParams = new URLSearchParams(window.location.search);
+  const openRewardId = urlParams.get("openReward");
+  if (openRewardId) {
+    setTimeout(() => {
+      if (typeof window.openProductSpecsModal === "function") {
+        window.openProductSpecsModal(openRewardId);
+      }
+    }, 450);
+  }
 
   // Badge visual en entorno de pruebas (SANDBOX)
   injectEnvironmentBadge();
