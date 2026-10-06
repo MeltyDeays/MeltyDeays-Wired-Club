@@ -414,6 +414,14 @@ export async function loadProductComments(rewardId) {
         authorName = 'Socio Wired';
       }
 
+      const isOfficial = Boolean(
+        c.isOfficialReply === true ||
+        (c.answeredBy && (c.answeredBy.includes("MeltyDeays") || c.answeredBy.includes("Soporte Oficial"))) ||
+        (c.replyAuthor && (c.replyAuthor.includes("MeltyDeays") || c.replyAuthor.includes("Soporte Oficial")))
+      );
+      const rawAuthor = String(c.answeredBy || c.replyAuthor || (isOfficial ? "MeltyDeays Soporte" : "Socio")).trim();
+      const cleanReplyAuthor = rawAuthor.replace(/\s*\(Soporte\)/gi, '').trim() || "Socio";
+
       return `
         <div class="temu-comment-card">
           <div class="temu-comment-user-row">
@@ -421,12 +429,17 @@ export async function loadProductComments(rewardId) {
             <span class="temu-comment-date">${dateStr}</span>
           </div>
           <div class="temu-comment-text">${qText}</div>
-          ${hasAnswer ? `
-            <div class="temu-comment-reply-box">
-              <span class="temu-comment-reply-tag">🛡️ MeltyDeays Soporte</span>
-              <div class="temu-comment-reply-text">${aText}</div>
+          ${hasAnswer ? (isOfficial ? `
+            <div class="temu-comment-reply-box official-reply" style="background: #f8fafc; border-left: 3px solid #0284c7; padding: 6px 10px; margin-top: 6px; border-radius: 4px;">
+              <span class="temu-comment-reply-tag official-tag" style="background: #0284c7; color: #ffffff; font-weight: 800; font-size: 0.68rem; padding: 2px 7px; border-radius: 3px; display: inline-flex; align-items: center; gap: 4px;">🛡️ MeltyDeays Soporte</span>
+              <div class="temu-comment-reply-text" style="font-size: 0.74rem; color: #1e293b; margin-top: 4px; line-height: 1.35;">${aText}</div>
             </div>
           ` : `
+            <div class="temu-comment-reply-box community-reply" style="background: #f1f5f9; border-left: 3px solid #64748b; padding: 6px 10px; margin-top: 6px; border-radius: 4px;">
+              <span class="temu-comment-reply-tag community-tag" style="background: #e2e8f0; color: #334155; font-weight: 700; font-size: 0.68rem; padding: 2px 7px; border-radius: 3px; display: inline-flex; align-items: center; gap: 4px; border: 1px solid #cbd5e1;">👤 Respuesta de ${cleanReplyAuthor}</span>
+              <div class="temu-comment-reply-text" style="font-size: 0.74rem; color: #334155; margin-top: 4px; line-height: 1.35;">${aText}</div>
+            </div>
+          `) : `
             <div style="font-size: 0.65rem; color: #94a3b8; font-style: italic; margin-top: 2px;">
               ⏳ Pendiente de respuesta por el equipo de tienda
             </div>
@@ -466,10 +479,10 @@ export async function submitClientCommentReply(rewardId, commentId) {
   const input = document.getElementById(`reply-input-${commentId}`);
   if (!input || !input.value.trim()) return;
   const replyText = input.value.trim();
-  const author = (vm?.currentUser?.displayName) ? `${vm.currentUser.displayName} (Soporte)` : "MeltyDeays · Soporte Oficial";
+  const author = (vm?.currentUser?.displayName) ? vm.currentUser.displayName.trim() : "Socio Wired";
 
   try {
-    await FirestoreService.answerProductComment(commentId, replyText, author);
+    await FirestoreService.answerProductComment(commentId, replyText, author, false);
     if (typeof showToast === "function") {
       showToast("✓ Respuesta enviada con éxito.", "success");
     }
@@ -720,11 +733,11 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
 
     <!-- DESPLEGABLE DE ESPECIFICACIONES TÉCNICAS (IDÉNTICO A PRODUCCIÓN) -->
     <div class="reward-specs-box" style="margin: 0.75rem 0 1rem 0;">
-      <button type="button" class="reward-specs-toggle-btn expanded" onclick="toggleModalProductSpecs('${item.id}')" id="modal-specs-btn-${item.id}">
-        <span class="btn-specs-label">✕ Ocultar especificaciones</span>
-        <span class="btn-specs-icon">▴</span>
+      <button type="button" class="reward-specs-toggle-btn" onclick="toggleModalProductSpecs('${item.id}')" id="modal-specs-btn-${item.id}">
+        <span class="btn-specs-label">📋 Ver especificaciones (${parsed.specs.length})</span>
+        <span class="btn-specs-icon">▾</span>
       </button>
-      <div class="reward-specs-dropdown" id="modal-specs-drop-${item.id}" style="display:block; max-height: 280px; overflow-y: auto;">
+      <div class="reward-specs-dropdown" id="modal-specs-drop-${item.id}" style="display:none; max-height: 280px; overflow-y: auto;">
         <div class="specs-dropdown-header">
           <span class="specs-dropdown-title">ESPECIFICACIONES (${parsed.specs.length})</span>
         </div>
@@ -770,36 +783,42 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
     if (!isOut) {
       if (isPartial) {
         actionBtn = `
-          <button type="button" class="btn-primary" style="background: linear-gradient(135deg, #d97706, #b45309); border-color: var(--dark); padding: 0.5rem 1.1rem; font-size: 0.78rem; display: flex; align-items: center; gap: 6px;" onclick="closeProductSpecsModal(); confirmRedeem('${item.id}');">
+          <button type="button" class="modal-specs-action-btn btn-redeem-gold" onclick="closeProductSpecsModal(); confirmRedeem('${item.id}');">
             <span>🏷️</span> <span>Canjear / Comprar</span>
           </button>
         `;
       } else {
         actionBtn = `
-          <button type="button" class="btn-primary" style="padding: 0.5rem 1.1rem; font-size: 0.78rem; display: flex; align-items: center; gap: 6px;" onclick="closeProductSpecsModal(); confirmRedeem('${item.id}');">
+          <button type="button" class="modal-specs-action-btn btn-redeem-blue" onclick="closeProductSpecsModal(); confirmRedeem('${item.id}');">
             <span>⚡</span> <span>Canjear Ahora</span>
           </button>
         `;
       }
     } else {
-      actionBtn = `<button type="button" class="btn-secondary" disabled style="padding: 0.5rem 1.1rem; font-size: 0.78rem;">❌ Agotado</button>`;
+      actionBtn = `<button type="button" class="modal-specs-action-btn btn-redeem-disabled" disabled>❌ Agotado</button>`;
     }
 
     const waText = encodeURIComponent(`Hola MeltyDeays! Quisiera consultar sobre el producto: ${item.title} (Código: ${item.id})`);
     const waUrl = `https://api.whatsapp.com/send?phone=50558438412&text=${waText}`;
 
     footer.innerHTML = `
-      <a href="${waUrl}" target="_blank" class="btn-secondary" style="padding: 0.5rem 0.85rem; font-size: 0.78rem; display: flex; align-items: center; gap: 6px; text-decoration: none; background: #ecfdf5; border-color: #059669; color: #065f46;">
-        <span>💬</span> <span>WhatsApp</span>
+      <a href="${waUrl}" target="_blank" class="modal-specs-aux-btn wa" title="Consultar por WhatsApp">
+        <span>💬</span> <span class="aux-text">WhatsApp</span>
       </a>
-      <button type="button" class="btn-secondary" style="padding: 0.5rem 0.85rem; font-size: 0.78rem; display: flex; align-items: center; gap: 6px;" onclick="shareProduct('${item.id}')">
-        <span>📤</span> <span>Compartir</span>
+      <button type="button" class="modal-specs-aux-btn share" title="Compartir enlace de producto" onclick="shareProduct('${item.id}')">
+        <span>📤</span> <span class="aux-text">Compartir</span>
       </button>
       ${actionBtn}
     `;
   }
 
   modal.style.display = "flex";
+  document.body.classList.add("modal-open");
+  const fab = document.getElementById("fab-mobile-menu");
+  if (fab) {
+    fab.style.display = "none";
+    fab.classList.add("is-hidden");
+  }
 
   // Cargar comentarios en segundo plano
   loadProductComments(item.id);
@@ -808,8 +827,12 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
 export function closeProductSpecsModal() {
   const modal = document.getElementById("modal-product-specs");
   if (modal) modal.style.display = "none";
+  document.body.classList.remove("modal-open");
   const fab = document.getElementById("fab-mobile-menu");
-  if (fab) fab.style.display = "";
+  if (fab) {
+    fab.style.display = "";
+    fab.classList.remove("is-hidden");
+  }
 }
 
 export function toggleModalProductSpecs(itemId) {

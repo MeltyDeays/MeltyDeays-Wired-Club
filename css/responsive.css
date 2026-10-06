@@ -163,6 +163,15 @@
     transform: scale(0.92) !important;
   }
 
+  .fab-mobile-menu-btn.is-hidden,
+  body.drawer-open .fab-mobile-menu-btn,
+  body.modal-open .fab-mobile-menu-btn {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
+
   .fab-icon-wrap {
     display: flex !important;
     align-items: center !important;

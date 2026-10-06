@@ -45,7 +45,11 @@ export function openMobileProfileDrawer() {
   const fab = document.getElementById("fab-mobile-menu");
   if (!drawer) return;
 
-  if (fab) fab.style.display = "none";
+  if (fab) {
+    fab.style.display = "none";
+    fab.classList.add("is-hidden");
+  }
+  document.body.classList.add("drawer-open");
   renderProfileDrawer();
   drawer.classList.add("open");
   if (overlay) overlay.classList.add("open");
@@ -61,7 +65,11 @@ export function closeMobileProfileDrawer() {
   cancelProfilePinUpdate(false);
   drawer.classList.remove("open");
   if (overlay) overlay.classList.remove("open");
-  if (fab) fab.style.display = "";
+  if (fab) {
+    fab.style.display = "";
+    fab.classList.remove("is-hidden");
+  }
+  document.body.classList.remove("drawer-open");
   document.body.style.overflow = "";
 }
 

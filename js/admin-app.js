@@ -839,7 +839,7 @@ export async function submitAdminCommentReply(commentId) {
   const replyText = input.value.trim();
 
   try {
-    await FirestoreService.answerProductComment(commentId, replyText, "MeltyDeays · Soporte Oficial");
+    await FirestoreService.answerProductComment(commentId, replyText, "MeltyDeays · Soporte Oficial", true);
     showToast("✓ Respuesta oficial enviada y publicada para el cliente", "success");
     await renderAdminCommentsList();
   } catch (e) {

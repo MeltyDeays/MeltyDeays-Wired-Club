@@ -1423,7 +1423,7 @@ export class FirestoreService {
     return all.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
   }
 
-  static async answerProductComment(commentId, answerText, answeredBy = "MeltyDeays · Soporte Oficial") {
+  static async answerProductComment(commentId, answerText, answeredBy = "MeltyDeays · Soporte Oficial", isOfficialReply = false) {
     if (!commentId || !answerText) throw new Error("ID de comentario o texto de respuesta faltante");
 
     const snap = engine.getSnapshot();
@@ -1437,6 +1437,7 @@ export class FirestoreService {
     comment.replyAuthor = answeredBy;
     comment.answeredAt = now;
     comment.replyAt = now;
+    comment.isOfficialReply = Boolean(isOfficialReply);
     comment.status = "ANSWERED";
 
     snap.comments[commentId] = comment;
