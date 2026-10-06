@@ -25,6 +25,10 @@ import {
   specsModalPrevImage,
   setSpecsModalImageIndex,
   openLightboxFromSpecs,
+  shareProduct,
+  updateSpecsModalCalculation,
+  submitProductComment,
+  loadProductComments,
   openImageLightbox,
   closeImageLightbox,
   lightboxNextImage,
@@ -342,6 +346,10 @@ document.addEventListener("DOMContentLoaded", () => {
   window.specsModalPrevImage = specsModalPrevImage;
   window.setSpecsModalImageIndex = setSpecsModalImageIndex;
   window.openLightboxFromSpecs = openLightboxFromSpecs;
+  window.shareProduct = shareProduct;
+  window.updateSpecsModalCalculation = updateSpecsModalCalculation;
+  window.submitProductComment = submitProductComment;
+  window.loadProductComments = loadProductComments;
   window.openImageLightbox = openImageLightbox;
   window.closeImageLightbox = closeImageLightbox;
   window.lightboxNextImage = lightboxNextImage;

@@ -43,6 +43,7 @@ class StorageEngine {
         if (!snap.vouchers) snap.vouchers = {};
         if (!snap.batches) snap.batches = [];
         if (!snap.ledger) snap.ledger = {};
+        if (!snap.comments) snap.comments = {};
         localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(snap));
       } catch (e) {
         localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(this.getBlank()));
@@ -59,7 +60,7 @@ class StorageEngine {
   }
 
   getBlank() {
-    return { users: {}, rewards: {}, vouchers: {}, tokens: {}, batches: [], ledger: {} };
+    return { users: {}, rewards: {}, vouchers: {}, tokens: {}, batches: [], ledger: {}, comments: {} };
   }
 
   saveSnapshot(data) {
@@ -1136,6 +1137,94 @@ export class FirestoreService {
       usersSeeded: demoUsers.length,
       rewardsSeeded: demoRewards.length
     };
+  }
+
+  // ==========================================
+  // PREGUNTAS Y COMENTARIOS DE PRODUCTO (Q&A)
+  // ==========================================
+  static async fetchProductComments(rewardId) {
+    if (!rewardId) return [];
+    if (db) {
+      try {
+        const snap = await db.collection(getCollectionName("product_comments"))
+          .where("rewardId", "==", rewardId)
+          .get();
+        const local = engine.getSnapshot();
+        if (!local.comments) local.comments = {};
+        const list = [];
+        if (snap && !snap.empty) {
+          snap.forEach(doc => {
+            const data = doc.data();
+            local.comments[doc.id] = data;
+            list.push(data);
+          });
+        }
+        engine.saveSnapshot(local);
+        return list.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+      } catch (e) {
+        console.warn("Firestore fetchProductComments fallback:", e.message);
+      }
+    }
+    const snap = engine.getSnapshot();
+    const all = Object.values(snap.comments || {});
+    return all
+      .filter(c => c.rewardId === rewardId)
+      .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+  }
+
+  static async addProductComment(comment) {
+    if (!comment || !comment.rewardId) throw new Error("Datos de comentario incompletos");
+    if (!comment.id) {
+      comment.id = "COMM-" + Date.now() + "-" + Math.random().toString(36).substring(2, 6).toUpperCase();
+    }
+    comment.createdAt = comment.createdAt || new Date().toISOString();
+    comment.status = comment.status || "APPROVED";
+
+    const snap = engine.getSnapshot();
+    if (!snap.comments) snap.comments = {};
+    snap.comments[comment.id] = comment;
+    engine.saveSnapshot(snap);
+
+    if (db) {
+      try {
+        await db.collection(getCollectionName("product_comments")).doc(comment.id).set(comment, { merge: true });
+      } catch (e) {
+        console.warn("Firestore addProductComment local only:", e.message);
+      }
+    }
+    return comment;
+  }
+
+  static subscribeProductComments(rewardId, callback) {
+    if (!rewardId || typeof callback !== "function") return () => {};
+    if (!db) {
+      this.fetchProductComments(rewardId).then(callback);
+      return () => {};
+    }
+    try {
+      return db.collection(getCollectionName("product_comments"))
+        .where("rewardId", "==", rewardId)
+        .onSnapshot(snap => {
+          const list = [];
+          const local = engine.getSnapshot();
+          if (!local.comments) local.comments = {};
+          if (snap && !snap.empty) {
+            snap.forEach(doc => {
+              const data = doc.data();
+              local.comments[doc.id] = data;
+              list.push(data);
+            });
+          }
+          engine.saveSnapshot(local);
+          callback(list.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)));
+        }, err => {
+          console.warn("subscribeProductComments error:", err.message);
+          this.fetchProductComments(rewardId).then(callback);
+        });
+    } catch (e) {
+      this.fetchProductComments(rewardId).then(callback);
+      return () => {};
+    }
   }
 }
 

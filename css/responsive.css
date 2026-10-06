@@ -1,7 +1,10 @@
 /* ========================================================= */
 /* ULTRA-RESPONSIVE ADAPTABILITY FOR ALL MOBILE SCREEN SIZES */
 /* (CLIENT PORTAL + ADMIN NOC TERMINAL)                     */
-/* ========================================================= */
+/* Ocultar meta estilo Temu por defecto en pantallas grandes */
+.reward-temu-meta {
+  display: none;
+}
 
 @media (max-width: 900px) {
   .noc-stats-grid {
@@ -685,10 +688,11 @@
     box-sizing: border-box !important;
   }
 
-  /* CATÁLOGO RESPONSIVO EN PANTALLAS ANGOSTAS (360px - 480px) */
+  /* CATÁLOGO RESPONSIVO ESTILO TEMU (2 COLUMNAS EN MÓVIL) */
   .rewards-grid, .catalog-grid {
-    grid-template-columns: 1fr !important;
-    gap: 1.15rem !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 0.55rem !important;
+    align-items: stretch !important;
   }
 
   .reward-card {
@@ -696,54 +700,123 @@
     max-width: 100% !important;
     box-sizing: border-box !important;
     overflow: hidden !important;
+    border: 1.5px solid var(--dark) !important;
+    border-radius: 8px !important;
+    box-shadow: 2px 2px 0px var(--dark) !important;
+    cursor: pointer !important;
+    display: flex !important;
+    flex-direction: column !important;
+    transition: transform 0.1s ease, box-shadow 0.1s ease !important;
   }
 
-  .reward-pricing-box {
-    padding: 6px 8px !important;
+  .reward-card:active {
+    transform: scale(0.98) !important;
   }
 
-  .pricing-row {
+  .reward-img-wrap {
+    height: auto !important;
+    aspect-ratio: 1 / 1 !important;
+    border-bottom: 1.5px solid var(--dark) !important;
+    border-top-left-radius: 6px !important;
+    border-top-right-radius: 6px !important;
+    position: relative !important;
+  }
+
+  .reward-body {
+    padding: 0.45rem 0.5rem 0.6rem 0.5rem !important;
+    display: flex !important;
+    flex-direction: column !important;
+    flex: 1 !important;
+  }
+
+  .reward-title {
+    font-size: 0.76rem !important;
+    font-weight: 800 !important;
+    line-height: 1.25 !important;
+    height: 2.5em !important;
+    max-height: 2.5em !important;
+    overflow: hidden !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+    margin-bottom: 2px !important;
+    color: var(--dark) !important;
+  }
+
+  /* Ocultar elementos desktop pesados en la tarjeta móvil de 2 columnas */
+  .reward-card .reward-desc-wrap,
+  .reward-card .reward-pricing-box,
+  .reward-card .reward-footer {
+    display: none !important;
+  }
+
+  /* BLOQUE DE PRECIO & MONEDA WIRED POINT ESTILO TEMU (MÓVIL) */
+  .reward-temu-meta {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 3px !important;
+    margin-top: auto !important;
+  }
+
+  .reward-temu-social {
+    display: flex !important;
+    align-items: center !important;
     gap: 4px !important;
+    font-size: 0.62rem !important;
+    color: #b45309 !important;
+    font-weight: 700 !important;
+    margin-bottom: 2px !important;
   }
 
-  .pricing-label {
+  .reward-temu-social .stars {
+    color: #f59e0b !important;
     font-size: 0.68rem !important;
   }
 
-  .pricing-val {
-    font-size: 0.70rem !important;
+  .reward-temu-price-line {
+    display: flex !important;
+    align-items: baseline !important;
+    gap: 4px !important;
+    flex-wrap: wrap !important;
   }
 
-  .pricing-row.footnote-row {
-    font-size: 0.64rem !important;
+  .reward-temu-price-main {
+    font-size: 0.96rem !important;
+    font-weight: 900 !important;
+    color: #dc2626 !important;
+    font-family: var(--font-mono) !important;
+    line-height: 1 !important;
   }
 
-  .pricing-row.footnote-row .pricing-label {
-    font-size: 0.64rem !important;
+  .reward-temu-price-orig {
+    font-size: 0.65rem !important;
+    color: #94a3b8 !important;
+    text-decoration: line-through !important;
+    font-family: var(--font-mono) !important;
   }
 
-  .pricing-row.footnote-row .pricing-val {
-    font-size: 0.64rem !important;
+  .reward-temu-coin-pill {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 3.5px !important;
+    background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%) !important;
+    border: 1px solid #f59e0b !important;
+    border-radius: 4px !important;
+    padding: 2px 5px !important;
+    font-size: 0.62rem !important;
+    font-weight: 800 !important;
+    color: #92400e !important;
+    font-family: var(--font-mono) !important;
+    width: fit-content !important;
+    line-height: 1.1 !important;
   }
 
-  .btn-redeem-partial {
-    padding: 0.4rem 0.6rem !important;
-    min-height: 38px !important;
-    gap: 5px !important;
-  }
-
-  .btn-redeem-content {
-    font-size: 0.72rem !important;
-    gap: 5px !important;
-  }
-
-  .btn-redeem-text {
-    font-size: 0.72rem !important;
-  }
-
-  .btn-redeem-pts-badge {
-    font-size: 0.66rem !important;
-    padding: 2.5px 5px !important;
+  .reward-temu-coin-icon {
+    width: 13px !important;
+    height: 13px !important;
+    flex-shrink: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
   }
 
   .confirm-redeem-actions {

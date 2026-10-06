@@ -2,6 +2,7 @@
  * Vista / Subcontrolador: Catálogo de Recompensas, Calculadora Dinámica de Canje y FX Retro (The Wired Club)
  */
 import { parseProductDescription } from "../../models/RewardModel.js";
+import { FirestoreService } from "../../services/FirestoreService.js";
 
 let vm = null;
 let showToast = () => {};
@@ -281,6 +282,154 @@ export function openLightboxFromSpecs() {
   openImageLightbox(currentSpecsItem.id, currentSpecsImgIndex, escapedTitle);
 }
 
+export function renderWiredCoinSvg() {
+  return `
+    <svg class="reward-temu-coin-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="12" cy="12" r="10.5" fill="#f59e0b" stroke="#b45309" stroke-width="1.2"/>
+      <circle cx="12" cy="12" r="8" fill="none" stroke="#fef08a" stroke-width="0.8" stroke-dasharray="2 1"/>
+      <text x="12" y="15.5" text-anchor="middle" font-family="'Impact', 'Arial Black', sans-serif" font-size="10.5" font-weight="900" fill="#78350f">W</text>
+    </svg>
+  `;
+}
+
+export async function shareProduct(rewardId) {
+  const item = (lastRenderedCatalog || []).find(r => r.id === rewardId) ||
+    (vm?.catalog || []).find(r => r.id === rewardId);
+  if (!item) return;
+
+  const url = window.location.origin + window.location.pathname + '#product-' + rewardId;
+  const shareData = {
+    title: `${item.title} · MeltyDeays Wired Club`,
+    text: `¡Mira esta recompensa en The Wired Club! ${item.title} disponible para canjear con Wired Points.`,
+    url: url
+  };
+
+  if (typeof navigator !== "undefined" && navigator.share) {
+    try {
+      await navigator.share(shareData);
+      return;
+    } catch (e) {
+      if (e.name === 'AbortError') return;
+    }
+  }
+
+  try {
+    await navigator.clipboard.writeText(url);
+    if (typeof showToast === "function") {
+      showToast("🔗 ¡Enlace del producto copiado al portapapeles!", "success");
+    } else {
+      alert("Enlace copiado: " + url);
+    }
+  } catch (err) {
+    prompt("Copia el enlace de este producto:", url);
+  }
+}
+
+export function updateSpecsModalCalculation(rewardId, pointsApplied) {
+  const item = (lastRenderedCatalog || []).find(r => r.id === rewardId) ||
+    (vm?.catalog || []).find(r => r.id === rewardId);
+  if (!item) return;
+
+  const pts = Math.max(0, Number(pointsApplied) || 0);
+  const maxCapPts = item.pointsCost || 0;
+  const maxPct = Number(item.maxDiscountPct || 5);
+  const appliedPct = maxCapPts > 0 ? Number(((pts / maxCapPts) * maxPct).toFixed(1)) : 0;
+  const usdPerPoint = (maxCapPts > 0 && item.maxDiscountUsd > 0) ? (item.maxDiscountUsd / maxCapPts) : 0;
+  const appliedDiscUsd = Math.min(item.maxDiscountUsd || 0, pts * usdPerPoint);
+  const cashToPay = Math.max(0, (item.priceUsd || 0) - appliedDiscUsd);
+
+  const discEl = document.getElementById(`specs-calc-disc-${rewardId}`);
+  const cashEl = document.getElementById(`specs-calc-cash-${rewardId}`);
+  const sliderEl = document.getElementById(`specs-slider-${rewardId}`);
+  const ptsLabel = document.getElementById(`specs-slider-val-${rewardId}`);
+
+  if (discEl) discEl.textContent = `-$${appliedDiscUsd.toFixed(2)} USD (-${appliedPct}%)`;
+  if (cashEl) cashEl.innerHTML = formatDualPrice(cashToPay);
+  if (sliderEl) sliderEl.value = pts;
+  if (ptsLabel) ptsLabel.textContent = `${pts} WP aplicados`;
+}
+
+export async function submitProductComment(rewardId) {
+  const textEl = document.getElementById(`comment-input-text-${rewardId}`);
+  const nameEl = document.getElementById(`comment-input-name-${rewardId}`);
+  if (!textEl || !textEl.value.trim()) return;
+
+  const text = textEl.value.trim();
+  const name = (nameEl && nameEl.value.trim()) || (vm?.currentUser?.displayName) || "Cliente";
+
+  const commentData = {
+    rewardId: rewardId,
+    userId: vm?.currentUser?.uid || "guest",
+    userName: name,
+    questionText: text,
+    answerText: null,
+    answeredBy: null,
+    answeredAt: null,
+    createdAt: new Date().toISOString()
+  };
+
+  try {
+    await FirestoreService.addProductComment(commentData);
+    textEl.value = "";
+    if (typeof showToast === "function") {
+      showToast("✅ Tu pregunta fue enviada con éxito.", "success");
+    }
+    await loadProductComments(rewardId);
+  } catch (e) {
+    if (typeof showToast === "function") {
+      showToast("No se pudo enviar la pregunta: " + e.message, "error");
+    }
+  }
+}
+
+export async function loadProductComments(rewardId) {
+  const listEl = document.getElementById(`comments-list-${rewardId}`);
+  if (!listEl) return;
+
+  try {
+    const comments = await FirestoreService.fetchProductComments(rewardId);
+    if (!comments || comments.length === 0) {
+      listEl.innerHTML = `
+        <div style="text-align: center; padding: 14px; color: #94a3b8; font-size: 0.72rem; font-family: var(--font-mono); background: #f8fafc; border-radius: 4px; border: 1px dashed #cbd5e1;">
+          💬 Aún no hay preguntas sobre este artículo. ¡Sé el primero en consultar!
+        </div>
+      `;
+      return;
+    }
+
+    listEl.innerHTML = comments.map(c => {
+      const dateStr = c.createdAt ? new Date(c.createdAt).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' }) : '';
+      const hasAnswer = Boolean(c.answerText);
+
+      return `
+        <div class="temu-comment-card">
+          <div class="temu-comment-user-row">
+            <span class="temu-comment-username">👤 ${c.userName || 'Cliente'}</span>
+            <span class="temu-comment-date">${dateStr}</span>
+          </div>
+          <div class="temu-comment-text">${c.questionText}</div>
+          ${hasAnswer ? `
+            <div class="temu-comment-reply-box">
+              <span class="temu-comment-reply-tag">🛡️ MeltyDeays Soporte</span>
+              <div class="temu-comment-reply-text">${c.answerText}</div>
+            </div>
+          ` : `
+            <div style="font-size: 0.65rem; color: #94a3b8; font-style: italic; margin-top: 2px;">
+              ⏳ Pendiente de respuesta por el equipo de tienda
+            </div>
+          `}
+        </div>
+      `;
+    }).join("");
+  } catch (err) {
+    listEl.innerHTML = `
+      <div style="text-align: center; padding: 8px; color: #94a3b8; font-size: 0.72rem;">
+        No fue posible cargar los comentarios en este momento.
+      </div>
+    `;
+  }
+}
+
 export function openProductSpecsModal(rewardId, imgIdx = 0) {
   let item = null;
   if (vm && vm.catalog) {
@@ -302,6 +451,28 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
   const footer = document.getElementById("modal-specs-footer");
   if (!modal || !body) return;
 
+  // Actualizar topbar con botón Volver y botón Compartir
+  const topbar = modal.querySelector(".modal-specs-topbar");
+  if (topbar) {
+    topbar.innerHTML = `
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <button type="button" class="btn-secondary" style="padding: 4px 8px; font-size: 0.72rem; display: flex; align-items: center; gap: 4px;" onclick="closeProductSpecsModal()">
+          <span>←</span> <span>Volver</span>
+        </button>
+        <div class="modal-specs-kicker">
+          <span class="kicker-dot"></span>
+          <span>WIRED SHOP // DETALLE</span>
+        </div>
+      </div>
+      <div class="specs-topbar-actions">
+        <button type="button" class="specs-topbar-share-btn" onclick="shareProduct('${item.id}')" title="Compartir este producto">
+          <span>📤</span> <span>Compartir</span>
+        </button>
+        <button class="modal-close-btn" onclick="closeProductSpecsModal()" aria-label="Cerrar" style="position: static !important; width: 30px; height: 30px;">&times;</button>
+      </div>
+    `;
+  }
+
   const parsed = parseProductDescription(item.description);
   const isPartial = item.rewardType === "PARTIAL_DISCOUNT" || (typeof item.isPartialDiscount === "function" && item.isPartialDiscount());
   const maxPct = Number(item.maxDiscountPct || item.max_discount_pct || item.maxDiscountPercent || (isPartial ? 5 : 0));
@@ -314,7 +485,6 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
     currentSpecsImgIndex = 0;
   }
   const mainHeroImg = productImages[currentSpecsImgIndex] || item.imageUrl || "";
-  const escapedTitle = (item.title || "").replace(/'/g, "\\'");
 
   let carouselHtml = "";
   if (productImages.length > 0) {
@@ -391,20 +561,102 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
     `;
   }).join("");
 
+  // Cálculo de valores de puntos del usuario para el banner
+  const user = vm?.currentUser;
+  const userPts = user ? (user.wiredPoints || 0) : 0;
+  const maxCapPts = item.pointsCost || 0;
+  const maxUsable = Math.min(userPts, maxCapPts);
+
+  let appliedPts = 0;
+  let appliedPct = 0;
+  let appliedDiscountUsd = 0;
+  let cashToPayWithPts = item.priceUsd || 0;
+
+  if (isPartial) {
+    appliedPts = maxUsable;
+    appliedPct = maxCapPts > 0 ? Number(((appliedPts / maxCapPts) * maxPct).toFixed(1)) : 0;
+    const usdPerPoint = (maxCapPts > 0 && item.maxDiscountUsd > 0) ? (item.maxDiscountUsd / maxCapPts) : 0;
+    appliedDiscountUsd = Number(Math.min(item.maxDiscountUsd || 0, appliedPts * usdPerPoint).toFixed(2));
+    cashToPayWithPts = Math.max(0, Number(((item.priceUsd || 0) - appliedDiscountUsd).toFixed(2)));
+  }
+
+  const formattedAppliedPct = appliedPct % 1 === 0 ? appliedPct.toFixed(0) : appliedPct.toFixed(1);
+
+  // Banner de precios estilo Temu
+  let saleBannerHtml = "";
+  if (isPartial) {
+    saleBannerHtml = `
+      <div class="temu-sale-banner">
+        <div class="temu-sale-header">
+          <span>🏷️ SÚPER DESCUENTOS WIRED POINTS</span>
+          <span class="temu-sale-badge">HASTA -${maxPct}% OFF</span>
+        </div>
+        <div class="temu-sale-prices-row">
+          <span class="temu-sale-price-curr" id="specs-calc-cash-${item.id}">${formatDualPrice(cashToPayWithPts)}</span>
+          <span class="temu-sale-price-orig">${formatPrice(item.priceUsd)}</span>
+        </div>
+        <div style="font-size: 0.75rem; color: #78350f; font-family: var(--font-mono); font-weight: 700; display: flex; align-items: center; gap: 4px;">
+          ${renderWiredCoinSvg()}
+          <span>Ahorro con puntos: <strong id="specs-calc-disc-${item.id}" style="color: #059669;">-${formatPrice(appliedDiscountUsd)} (-${formattedAppliedPct}%)</strong></span>
+        </div>
+        ${user && maxUsable > 0 ? `
+          <div style="background: rgba(255, 255, 255, 0.75); border: 1px solid #fcd34d; border-radius: 4px; padding: 6px 8px; margin-top: 4px;">
+            <div style="display: flex; justify-content: space-between; font-size: 0.68rem; font-weight: 800; color: #92400e; margin-bottom: 3px;">
+              <span>CALCULADORA DE DESCUENTO:</span>
+              <span id="specs-slider-val-${item.id}">${appliedPts} WP aplicados</span>
+            </div>
+            <input type="range" id="specs-slider-${item.id}" min="0" max="${maxUsable}" value="${appliedPts}" step="1" style="width: 100%; accent-color: #d97706; cursor: pointer;" oninput="updateSpecsModalCalculation('${item.id}', this.value)">
+            <div style="display: flex; justify-content: space-between; margin-top: 2px;">
+              <button type="button" class="btn-outline-sm" style="font-size: 0.62rem; padding: 1px 5px; background: #fff;" onclick="updateSpecsModalCalculation('${item.id}', 0)">0 WP (Sin desc.)</button>
+              <button type="button" class="btn-outline-sm" style="font-size: 0.62rem; padding: 1px 5px; background: #fff;" onclick="updateSpecsModalCalculation('${item.id}', ${maxUsable})">Tope (${maxUsable} WP)</button>
+            </div>
+          </div>
+        ` : ''}
+      </div>
+    `;
+  } else {
+    saleBannerHtml = `
+      <div class="temu-sale-banner" style="background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border-color: #34d399;">
+        <div class="temu-sale-header" style="color: #065f46;">
+          <span>🎁 RECOMPENSA 100% CANJEABLE</span>
+          <span class="temu-sale-badge" style="background: #059669;">100% GRATIS</span>
+        </div>
+        <div class="temu-sale-prices-row">
+          <span class="temu-sale-price-curr" style="color: #059669;">¡GRATIS!</span>
+          ${item.priceUsd ? `<span class="temu-sale-price-orig">${formatPrice(item.priceUsd)}</span>` : ''}
+        </div>
+        <div style="font-size: 0.75rem; color: #065f46; font-family: var(--font-mono); font-weight: 700; display: flex; align-items: center; gap: 4px;">
+          ${renderWiredCoinSvg()}
+          <span>Costo total en puntos: <strong>${item.pointsCost.toLocaleString()} WP</strong></span>
+        </div>
+      </div>
+    `;
+  }
+
   body.innerHTML = `
     ${carouselHtml}
 
     <div class="modal-product-hero specs-header-info">
-      <h3 class="specs-header-title">${item.title}</h3>
       <div class="specs-badges-bar">
-        <span class="specs-badge-item count">📋 ${parsed.specs.length} Especificaciones</span>
+        <span class="specs-badge-item" style="background: #0f172a; color: #38bdf8; border: 1px solid #334155;">⚡ WIRED CHOICE</span>
         ${productImages.length > 1 ? `<span class="specs-badge-item frames">[ 0${productImages.length} FRAMES ]</span>` : ''}
         ${isPartial 
           ? `<span class="specs-badge-item discount">🏷️ Hasta ${maxPct}% OFF</span>` 
           : `<span class="specs-badge-item points">⚡ ${item.pointsCost.toLocaleString()} WP</span>`
         }
       </div>
+      <h3 class="specs-header-title">${item.title}</h3>
+      <div class="temu-sheet-rating-row">
+        <span class="stars">★★★★★</span>
+        <span>4.9</span>
+        <span class="divider">|</span>
+        <span class="sales">120+ canjes en tienda</span>
+        <span class="divider">|</span>
+        <span style="color: #059669; font-weight: 800;">✓ En vitrina</span>
+      </div>
     </div>
+
+    ${saleBannerHtml}
 
     ${parsed.intro ? `
       <div class="modal-intro-callout">
@@ -412,12 +664,46 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
       </div>
     ` : ''}
 
-    <div class="modal-specs-list-title">
-      <span>CARACTERÍSTICAS & FICHA TÉCNICA</span>
+    <!-- ACORDEÓN DE ESPECIFICACIONES TÉCNICAS (ESTILO TEMU) -->
+    <details class="temu-specs-details" open>
+      <summary class="temu-specs-summary">
+        <span>📋 Ficha técnica & Especificaciones (${parsed.specs.length})</span>
+        <span class="temu-specs-arrow">▾</span>
+      </summary>
+      <div class="temu-specs-body">
+        <div class="modal-specs-cards-container">
+          ${formattedSpecsHtml}
+        </div>
+      </div>
+    </details>
+
+    <!-- COMPROMISOS Y GARANTÍAS DE TIENDA -->
+    <div class="temu-service-commitments">
+      <div class="temu-service-item"><span>🏬</span> <span><strong>Retiro en Mostrador MeltyDeays:</strong> Prueba física presencial al momento de la entrega.</span></div>
+      <div class="temu-service-item"><span>🛡️</span> <span><strong>Garantía Comercial:</strong> 30 días de cobertura y soporte técnico directo.</span></div>
+      <div class="temu-service-item"><span>⚡</span> <span><strong>Reserva Inmediata:</strong> Apartado activo al instante con tus Wired Points.</span></div>
     </div>
 
-    <div class="modal-specs-cards-container">
-      ${formattedSpecsHtml}
+    <!-- MÓDULO DE PREGUNTAS Y COMENTARIOS DE LA COMUNIDAD -->
+    <div class="temu-comments-section" id="temu-comments-container">
+      <div class="temu-comments-header">
+        <div class="temu-comments-title">
+          <span>💬</span> <span>Preguntas & Dudas</span>
+        </div>
+        <span style="font-size: 0.68rem; color: #64748b; font-family: var(--font-mono);">COMUNIDAD WIRED</span>
+      </div>
+      
+      <form class="temu-comment-form" onsubmit="event.preventDefault(); submitProductComment('${item.id}')">
+        <textarea id="comment-input-text-${item.id}" class="temu-comment-textarea" placeholder="¿Tienes alguna duda sobre este producto? Escríbela aquí..." required></textarea>
+        <div class="temu-comment-row">
+          <input type="text" id="comment-input-name-${item.id}" class="temu-comment-author-input" placeholder="Tu nombre o socio" value="${user?.displayName || ''}">
+          <button type="submit" class="temu-comment-btn-submit">Publicar Pregunta</button>
+        </div>
+      </form>
+
+      <div class="temu-comments-list" id="comments-list-${item.id}">
+        <div style="text-align: center; padding: 10px; color: #94a3b8; font-size: 0.72rem;">Cargando preguntas de la comunidad...</div>
+      </div>
     </div>
   `;
 
@@ -428,7 +714,7 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
       if (isPartial) {
         actionBtn = `
           <button type="button" class="btn-primary" style="background: linear-gradient(135deg, #d97706, #b45309); border-color: var(--dark); padding: 0.5rem 1.1rem; font-size: 0.78rem; display: flex; align-items: center; gap: 6px;" onclick="closeProductSpecsModal(); confirmRedeem('${item.id}');">
-            <span>🏷️</span> <span>Canjear en Tienda</span>
+            <span>🏷️</span> <span>Canjear / Comprar</span>
           </button>
         `;
       } else {
@@ -438,17 +724,28 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
           </button>
         `;
       }
+    } else {
+      actionBtn = `<button type="button" class="btn-secondary" disabled style="padding: 0.5rem 1.1rem; font-size: 0.78rem;">❌ Agotado</button>`;
     }
 
+    const waText = encodeURIComponent(`Hola MeltyDeays! Quisiera consultar sobre el producto: ${item.title} (Código: ${item.id})`);
+    const waUrl = `https://api.whatsapp.com/send?phone=50558438412&text=${waText}`;
+
     footer.innerHTML = `
-      <button type="button" class="btn-secondary" style="padding: 0.5rem 1.1rem; font-size: 0.78rem;" onclick="closeProductSpecsModal()">
-        ✕ Cerrar
+      <a href="${waUrl}" target="_blank" class="btn-secondary" style="padding: 0.5rem 0.85rem; font-size: 0.78rem; display: flex; align-items: center; gap: 6px; text-decoration: none; background: #ecfdf5; border-color: #059669; color: #065f46;">
+        <span>💬</span> <span>WhatsApp</span>
+      </a>
+      <button type="button" class="btn-secondary" style="padding: 0.5rem 0.85rem; font-size: 0.78rem; display: flex; align-items: center; gap: 6px;" onclick="shareProduct('${item.id}')">
+        <span>📤</span> <span>Compartir</span>
       </button>
       ${actionBtn}
     `;
   }
 
   modal.style.display = "flex";
+
+  // Cargar comentarios en segundo plano
+  loadProductComments(item.id);
 }
 
 export function closeProductSpecsModal() {
@@ -483,6 +780,25 @@ export function initCustomerCatalogView(deps) {
     if (deps.showVoucherModal) showVoucherModal = deps.showVoucherModal;
     if (deps.formatPrice) formatPrice = deps.formatPrice;
     if (deps.formatDualPrice) formatDualPrice = deps.formatDualPrice;
+  }
+
+  // Soporte deep linking para URLs compartidas (#product-[id])
+  const checkProductHash = () => {
+    if (typeof window === "undefined") return;
+    const hash = window.location.hash || "";
+    if (hash.startsWith("#product-")) {
+      const prodId = hash.replace("#product-", "").trim();
+      if (prodId) {
+        setTimeout(() => {
+          openProductSpecsModal(prodId);
+        }, 350);
+      }
+    }
+  };
+
+  if (typeof window !== "undefined") {
+    window.addEventListener("hashchange", checkProductHash);
+    checkProductHash();
   }
 }
 
@@ -555,22 +871,66 @@ export function renderCatalog(catalog, user) {
     }
     const formattedAppliedPct = appliedPct % 1 === 0 ? appliedPct.toFixed(0) : appliedPct.toFixed(1);
 
+    // Cálculos para la píldora Temu & Moneda Wired Point
+    let temuPriceMain = "";
+    let temuPriceOrig = "";
+    let temuCoinPillText = "";
+
+    if (isPartial) {
+      if (user && appliedPts > 0) {
+        temuPriceMain = formatPrice(cashToPayWithPts);
+        temuPriceOrig = formatPrice(item.priceUsd);
+        if (userPts >= maxCapPts) {
+          temuCoinPillText = `-${maxPct}% Aplicado (Tope)`;
+        } else {
+          temuCoinPillText = `-${formattedAppliedPct}% Aplicado · Máx ${maxPct}%`;
+        }
+      } else {
+        temuPriceMain = formatPrice(item.priceUsd);
+        temuPriceOrig = "";
+        temuCoinPillText = `Hasta -${maxPct}% con WP`;
+      }
+    } else {
+      temuPriceMain = "¡GRATIS!";
+      temuPriceOrig = item.priceUsd ? formatPrice(item.priceUsd) : "";
+      temuCoinPillText = `${item.pointsCost.toLocaleString()} WP (100% Puntos)`;
+    }
+
+    const temuMetaHtml = `
+      <div class="reward-temu-meta">
+        <div class="reward-temu-social">
+          <span class="stars">★★★★★</span>
+          <span>4.9</span>
+          <span style="color:#cbd5e1;">·</span>
+          <span>100+ canjes</span>
+        </div>
+        <div class="reward-temu-price-line">
+          <span class="reward-temu-price-main">${temuPriceMain}</span>
+          ${temuPriceOrig ? `<span class="reward-temu-price-orig">${temuPriceOrig}</span>` : ''}
+        </div>
+        <div class="reward-temu-coin-pill">
+          ${renderWiredCoinSvg()}
+          <span>${temuCoinPillText}</span>
+        </div>
+      </div>
+    `;
+
     let btnHtml = "";
     if (isOut) {
       btnHtml = `<button class="btn-redeem out" disabled>❌ AGOTADO</button>`;
     } else if (!user) {
-      btnHtml = `<button class="btn-redeem login-req" onclick="openAuthModal('login', 'Inicia sesión para canjear')">🔒 Iniciar Sesión</button>`;
+      btnHtml = `<button class="btn-redeem login-req" onclick="event.stopPropagation(); openAuthModal('login', 'Inicia sesión para canjear')">🔒 Iniciar Sesión</button>`;
     } else if (isPartial) {
       if (userPts > 0) {
-        btnHtml = `<button class="btn-redeem active-canje" style="background: linear-gradient(135deg, #d97706, #b45309);" onclick="confirmRedeem('${item.id}')">🏷️ APLICAR DESCUENTO (${formattedAppliedPct}%)</button>`;
+        btnHtml = `<button class="btn-redeem active-canje" style="background: linear-gradient(135deg, #d97706, #b45309);" onclick="event.stopPropagation(); confirmRedeem('${item.id}')">🏷️ APLICAR DESCUENTO (${formattedAppliedPct}%)</button>`;
       } else {
-        btnHtml = `<button class="btn-redeem active-canje" style="background: linear-gradient(135deg, #0284c7, #0369a1);" onclick="confirmRedeem('${item.id}')">🛒 COMPRAR EN TIENDA</button>`;
+        btnHtml = `<button class="btn-redeem active-canje" style="background: linear-gradient(135deg, #0284c7, #0369a1);" onclick="event.stopPropagation(); confirmRedeem('${item.id}')">🛒 COMPRAR EN TIENDA</button>`;
       }
     } else if (!canAfford) {
       const missing = item.pointsCost - user.wiredPoints;
-      btnHtml = `<button class="btn-redeem locked" onclick="showToast('Te faltan ${missing.toLocaleString()} WP para este producto', 'info')">🔒 Faltan ${missing.toLocaleString()} WP</button>`;
+      btnHtml = `<button class="btn-redeem locked" onclick="event.stopPropagation(); showToast('Te faltan ${missing.toLocaleString()} WP para este producto', 'info')">🔒 Faltan ${missing.toLocaleString()} WP</button>`;
     } else {
-      btnHtml = `<button class="btn-redeem active-canje" onclick="confirmRedeem('${item.id}')">⚡ CANJEAR AHORA</button>`;
+      btnHtml = `<button class="btn-redeem active-canje" onclick="event.stopPropagation(); confirmRedeem('${item.id}')">⚡ CANJEAR AHORA</button>`;
     }
 
     let modeBadge = "";
@@ -683,7 +1043,7 @@ export function renderCatalog(catalog, user) {
       } else if (!user) {
         footerHtml = `
           <div class="reward-footer reward-footer-partial">
-            <button type="button" class="btn-redeem btn-redeem-partial shop-btn active-canje" onclick="confirmRedeem('${item.id}')">
+            <button type="button" class="btn-redeem btn-redeem-partial shop-btn active-canje" onclick="event.stopPropagation(); confirmRedeem('${item.id}')">
               <div class="btn-redeem-content">
                 <span class="btn-redeem-icon">🛒</span>
                 <span class="btn-redeem-text">COMPRAR EN TIENDA</span>
@@ -695,7 +1055,7 @@ export function renderCatalog(catalog, user) {
       } else if (userPts >= maxCapPts) {
         footerHtml = `
           <div class="reward-footer reward-footer-partial">
-            <button type="button" class="btn-redeem btn-redeem-partial active-canje" onclick="confirmRedeem('${item.id}')">
+            <button type="button" class="btn-redeem btn-redeem-partial active-canje" onclick="event.stopPropagation(); confirmRedeem('${item.id}')">
               <div class="btn-redeem-content">
                 <span class="btn-redeem-icon">🏷️</span>
                 <span class="btn-redeem-text">APLICAR DESCUENTO (${maxPct}%)</span>
@@ -707,7 +1067,7 @@ export function renderCatalog(catalog, user) {
       } else if (userPts > 0) {
         footerHtml = `
           <div class="reward-footer reward-footer-partial">
-            <button type="button" class="btn-redeem btn-redeem-partial active-canje" onclick="confirmRedeem('${item.id}')">
+            <button type="button" class="btn-redeem btn-redeem-partial active-canje" onclick="event.stopPropagation(); confirmRedeem('${item.id}')">
               <div class="btn-redeem-content">
                 <span class="btn-redeem-icon">🏷️</span>
                 <span class="btn-redeem-text">APLICAR DESCUENTO (${formattedAppliedPct}%)</span>
@@ -719,7 +1079,7 @@ export function renderCatalog(catalog, user) {
       } else {
         footerHtml = `
           <div class="reward-footer reward-footer-partial">
-            <button type="button" class="btn-redeem btn-redeem-partial shop-btn active-canje" onclick="confirmRedeem('${item.id}')">
+            <button type="button" class="btn-redeem btn-redeem-partial shop-btn active-canje" onclick="event.stopPropagation(); confirmRedeem('${item.id}')">
               <div class="btn-redeem-content">
                 <span class="btn-redeem-icon">🛒</span>
                 <span class="btn-redeem-text">COMPRAR EN TIENDA</span>
@@ -744,14 +1104,14 @@ export function renderCatalog(catalog, user) {
         <div class="reward-desc-wrap" id="desc-wrap-${item.id}">
           <div class="reward-desc-intro" title="${parsed.intro}">${parsed.intro}</div>
           <div class="reward-specs-box">
-            <button type="button" class="reward-specs-toggle-btn" onclick="toggleRewardSpecs('${item.id}')" id="specs-btn-${item.id}">
+            <button type="button" class="reward-specs-toggle-btn" onclick="event.stopPropagation(); toggleRewardSpecs('${item.id}')" id="specs-btn-${item.id}">
               <span class="btn-specs-label">📋 Ver especificaciones (${parsed.specs.length})</span>
               <span class="btn-specs-icon">▾</span>
             </button>
-            <div class="reward-specs-dropdown" id="specs-drop-${item.id}" style="display:none;">
+            <div class="reward-specs-dropdown" id="specs-drop-${item.id}" style="display:none;" onclick="event.stopPropagation();">
               <div class="specs-dropdown-header">
                 <span class="specs-dropdown-title">ESPECIFICACIONES (${parsed.specs.length})</span>
-                <button type="button" class="specs-modal-trigger-btn" onclick="openProductSpecsModal('${item.id}')" title="Ver especificaciones en pantalla completa">
+                <button type="button" class="specs-modal-trigger-btn" onclick="event.stopPropagation(); openProductSpecsModal('${item.id}')" title="Ver especificaciones en pantalla completa">
                   <span>⛶</span> <span>Ampliar</span>
                 </button>
               </div>
@@ -781,7 +1141,7 @@ export function renderCatalog(catalog, user) {
     const escapedTitle = (item.title || "").replace(/'/g, "\\'");
 
     return `
-      <div class="reward-card ${isOut ? 'is-sold-out' : ''}">
+      <div class="reward-card ${isOut ? 'is-sold-out' : ''}" onclick="openProductSpecsModal('${item.id}')">
         <div class="reward-img-wrap" style="${!mainCover ? 'background: linear-gradient(135deg, #0d131f 0%, #17243b 100%); display:flex; align-items:center; justify-content:center;' : ''}">
           ${modeBadge}
           ${hasMultipleImgs ? `
@@ -792,9 +1152,9 @@ export function renderCatalog(catalog, user) {
           ` : ''}
           ${mainCover
             ? `
-              <img src="${mainCover}" alt="${item.title}" class="reward-img" onclick="openImageLightbox('${item.id}', 0, '${escapedTitle}')" title="Clic para ampliar imagen" onerror="this.onerror=null; this.src=''; this.parentElement.style.background='#0d131f';">
+              <img src="${mainCover}" alt="${item.title}" class="reward-img" onclick="event.stopPropagation(); openImageLightbox('${item.id}', 0, '${escapedTitle}')" title="Clic para ampliar imagen" onerror="this.onerror=null; this.src=''; this.parentElement.style.background='#0d131f';">
               ${!isOut ? `
-                <div class="reward-img-action-overlay" onclick="openImageLightbox('${item.id}', 0, '${escapedTitle}')">
+                <div class="reward-img-action-overlay" onclick="event.stopPropagation(); openImageLightbox('${item.id}', 0, '${escapedTitle}')">
                   <div class="reward-img-expand-badge">
                     <span style="font-size:0.85rem; line-height:1;">⛶</span>
                     <span>AMPLIAR // WIRED_VIEW</span>
@@ -881,6 +1241,7 @@ export function renderCatalog(catalog, user) {
         </div>
         <div class="reward-body">
           <div class="reward-title" title="${item.title}">${item.title}</div>
+          ${temuMetaHtml}
           ${descHtml}
           ${partialBreakdown}
           ${footerHtml}
