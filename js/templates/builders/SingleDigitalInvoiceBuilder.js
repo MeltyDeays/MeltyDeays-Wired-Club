@@ -650,7 +650,7 @@ export class SingleDigitalInvoiceBuilder {
         "\ud83d\udee1\ufe0f Garant\u00eda oficial MeltyDeays por defectos de f\u00e1brica." + nl + nl +
         "\u00a1Agradecemos tu confianza!"
       );
-      window.open("https://wa.me/" + (rawPhone || "50558438412") + "?text=" + textMsg, "_blank");
+      window.open("https://api.whatsapp.com/send?phone=" + (rawPhone || "50558438412") + "&text=" + textMsg, "_blank");
     }
 
     function downloadHtmlFile() {

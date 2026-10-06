@@ -452,7 +452,7 @@ async function submitSingleDigitalInvoice(action = 'print') {
         `🛡️ Garantía oficial MeltyDeays: ${warrantyText}\n\n` +
         `¡Agradecemos tu preferencia!`
       );
-      window.open("https://wa.me/" + (rawPhone || "50558438412") + "?text=" + textMsg, "_blank");
+      window.open("https://api.whatsapp.com/send?phone=" + (rawPhone || "50558438412") + "&text=" + textMsg, "_blank");
     }
 
     renderTokensTable(vm.tokens);

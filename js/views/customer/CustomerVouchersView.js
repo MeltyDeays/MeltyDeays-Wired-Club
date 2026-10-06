@@ -405,96 +405,97 @@ export function showVoucherModal(voucherCode) {
         }
       }
 
-      const ptsSpent = Number(voucher.pointsSpent || voucher.pointsCost || 0);
-      let textMsg = "";
-
-      if (!isCommercial) {
-        const msgLines = [
-          `🎁 *CANJE DE RECOMPENSA · WIRED CLUB*`,
-          `━━━━━━━━━━━━━━━━━━━━━━`,
-          `👋 *¡Hola MeltyDeays!*`,
-          ``,
-          `He canjeado exitosamente una recompensa con mis Wired Points:`,
-          ``,
-          `🎫 *Código:* \`${voucher.voucherCode}\``,
-          `🛍️ *Artículo:* *${voucher.rewardTitle}*`,
-          `👤 *Socio:* ${voucher.userName || "Cliente"}`,
-          `⭐ *Puntos canjeados:* ${ptsSpent.toLocaleString()} WP`,
-          `💵 *Costo:* ¡Gratis! (0.00)`,
-          ``,
-          `🛡️ *Premio de fidelidad:* Se entrega probado personalmente en mostrador.`,
-          ...(fullImageUrl ? [``, `🖼️ *Foto del Producto:*`, fullImageUrl] : []),
-          `━━━━━━━━━━━━━━━━━━━━━━`,
-          `Quisiera coordinar la entrega física de mi producto. ¡Muchas gracias!`
-        ];
-        textMsg = encodeURIComponent(msgLines.join("\n"));
-      } else if (isPaid) {
-        const msgLines = [
-          `✅ *COMPROBANTE DE COMPRA PAGADA · MELTYDEAYS*`,
-          `━━━━━━━━━━━━━━━━━━━━━━`,
-          `👋 *¡Hola MeltyDeays!*`,
-          ``,
-          `Ya he realizado el pago de mi vale y deseo coordinar la entrega física:`,
-          ``,
-          `🎫 *Código:* \`${voucher.voucherCode}\``,
-          `🛍️ *Artículo:* *${voucher.rewardTitle}*`,
-          `👤 *Socio:* ${voucher.userName || "Cliente"}`,
-          `💰 *Monto Abonado:* *${formatDualPricePlain(voucher.cashToPayUsd)}*`,
-          `💵 *Estado de Pago:* CONFIRMADO`,
-          ``,
-          `🛡️ *Garantía:* 30 días de soporte técnico oficial amparada por tu compra.`,
-          ...(fullImageUrl ? [``, `🖼️ *Foto del Producto:*`, fullImageUrl] : []),
-          `━━━━━━━━━━━━━━━━━━━━━━`,
-          `Adjunto mi comprobante para agendar retiro en tienda. ¡Saludos!`
-        ];
-        textMsg = encodeURIComponent(msgLines.join("\n"));
-      } else if (voucher.discountUsd > 0) {
-        const msgLines = [
-          `🎟️ *VALE DE DESCUENTO PENDIENTE · MELTYDEAYS*`,
-          `━━━━━━━━━━━━━━━━━━━━━━`,
-          `👋 *¡Hola MeltyDeays!*`,
-          ``,
-          `He generado un vale de canje con mis puntos Wired Club:`,
-          ``,
-          `🎫 *Código:* \`${voucher.voucherCode}\``,
-          `🛍️ *Artículo:* *${voucher.rewardTitle}*`,
-          `👤 *Socio:* ${voucher.userName || "Cliente"}`,
-          ``,
-          `📊 *DETALLE ECONÓMICO:*`,
-          `🏷️ *Descuento aplicado:* -${formatDualPricePlain(voucher.discountUsd)} (${ptsSpent.toLocaleString()} WP)`,
-          `💵 *Saldo a abonar en mostrador:* *${formatDualPricePlain(voucher.cashToPayUsd)}*`,
-          ``,
-          `⏱️ *Plazo de reserva:* 3 días para coordinar el abono y retiro`,
-          `🛡️ *Garantía:* 30 días de soporte técnico oficial tras concretar compra`,
-          ...(fullImageUrl ? [``, `🖼️ *Foto del Producto:*`, fullImageUrl] : []),
-          `━━━━━━━━━━━━━━━━━━━━━━`,
-          `Quisiera coordinar el abono y retiro de mi artículo. ¡Muchas gracias!`
-        ];
-        textMsg = encodeURIComponent(msgLines.join("\n"));
-      } else {
-        const msgLines = [
-          `🛒 *RESERVA DE COMPRA EN TIENDA · MELTYDEAYS*`,
-          `━━━━━━━━━━━━━━━━━━━━━━`,
-          `👋 *¡Hola MeltyDeays!*`,
-          ``,
-          `He generado una reserva de compra en mostrador:`,
-          ``,
-          `🎫 *Código:* \`${voucher.voucherCode}\``,
-          `🛍️ *Artículo:* *${voucher.rewardTitle}*`,
-          `👤 *Socio:* ${voucher.userName || "Cliente"}`,
-          ``,
-          `📊 *DETALLE DE PAGO:*`,
-          `💵 *Total a abonar en mostrador:* *${formatDualPricePlain(voucher.cashToPayUsd)}*`,
-          ``,
-          `⏱️ *Plazo de reserva:* 3 días para concretar el pago`,
-          `🛡️ *Garantía:* 30 días de garantía técnica comercial`,
-          ...(fullImageUrl ? [``, `🖼️ *Foto del Producto:*`, fullImageUrl] : []),
-          `━━━━━━━━━━━━━━━━━━━━━━`,
-          `Quisiera coordinar el abono y retiro de mi artículo. ¡Muchas gracias!`
-        ];
-        textMsg = encodeURIComponent(msgLines.join("\n"));
+      if (fullImageUrl) {
+        fullImageUrl = fullImageUrl.replace(/format\/(avif|webp)/gi, "format/jpg");
       }
-      waBtn.href = `https://wa.me/${phone}?text=${textMsg}`;
+
+      const ptsSpent = Number(voucher.pointsSpent || voucher.pointsCost || 0);
+      const socio = voucher.userName || "Cliente";
+      const expStr = voucher.expiresAt
+        ? new Date(voucher.expiresAt).toLocaleDateString("es-NI", { weekday: "long", day: "2-digit", month: "long", hour: "2-digit", minute: "2-digit" })
+        : "";
+
+      let tpl;
+      if (!isCommercial) {
+        tpl = {
+          head: "🎁 *CANJE DE RECOMPENSA*",
+          intro: "¡Canjeé una recompensa 100% gratis con mis Wired Points! ✨",
+          details: [
+            `🎫 Código: \`${voucher.voucherCode}\``,
+            `👤 Socio: ${socio}`,
+            `⭐ Puntos usados: *${ptsSpent.toLocaleString()} WP*`,
+            `💚 Total a pagar: *¡GRATIS!*`
+          ],
+          notes: ["🎀 Premio de fidelidad · Se entrega probado en mostrador"],
+          close: "¿Cuándo puedo pasar a retirarlo? 🙌"
+        };
+      } else if (isPaid) {
+        tpl = {
+          head: "✅ *COMPRA PAGADA*",
+          intro: "Ya realicé el pago de mi vale 💳",
+          details: [
+            `🎫 Código: \`${voucher.voucherCode}\``,
+            `👤 Socio: ${socio}`,
+            `💰 Monto abonado: *${formatDualPricePlain(voucher.cashToPayUsd)}*`,
+            `📌 Estado: *PAGO CONFIRMADO*`
+          ],
+          notes: ["🛡 Garantía técnica de 30 días incluida"],
+          close: "Adjunto mi comprobante para coordinar la entrega 📦"
+        };
+      } else if (voucher.discountUsd > 0) {
+        tpl = {
+          head: "🎟️ *VALE DE DESCUENTO*",
+          intro: "Generé un vale de descuento con mis Wired Points ✨",
+          details: [
+            `🎫 Código: \`${voucher.voucherCode}\``,
+            `👤 Socio: ${socio}`,
+            `🏷 Descuento: -${formatDualPricePlain(voucher.discountUsd)}`,
+            `⭐ Puntos usados: ${ptsSpent.toLocaleString()} WP`,
+            `💵 A pagar en mostrador: *${formatDualPricePlain(voucher.cashToPayUsd)}*`
+          ],
+          notes: [
+            expStr ? `⏳ Reserva válida hasta: _${expStr}_` : "⏳ Reserva válida por 3 días",
+            "🛡 Garantía técnica de 30 días tras el pago"
+          ],
+          close: "¿Me ayudas a coordinar el pago y la entrega? 🙌"
+        };
+      } else {
+        tpl = {
+          head: "🛒 *RESERVA DE COMPRA*",
+          intro: "Reservé un producto para comprarlo en tienda 🛍",
+          details: [
+            `🎫 Código: \`${voucher.voucherCode}\``,
+            `👤 Socio: ${socio}`,
+            `💵 Total a pagar: *${formatDualPricePlain(voucher.cashToPayUsd)}*`
+          ],
+          notes: [
+            expStr ? `⏳ Reserva válida hasta: _${expStr}_` : "⏳ Reserva válida por 3 días",
+            "🛡 Garantía técnica de 30 días tras el pago"
+          ],
+          close: "¿Me ayudas a coordinar el pago y la entrega? 🙌"
+        };
+      }
+
+      const msgLines = [
+        `${tpl.head}`,
+        "_Wired Club · MeltyDeays_ ⚡",
+        "",
+        "¡Hola, MeltyDeays! 👋",
+        tpl.intro,
+        "",
+        "📦 *Producto*",
+        `*${voucher.rewardTitle || "Recompensa"}*`,
+        "",
+        "🧾 *Detalle*",
+        ...tpl.details,
+        "",
+        ...tpl.notes,
+        ...(fullImageUrl ? ["", "📸 *Foto del producto:*", fullImageUrl] : []),
+        "",
+        tpl.close
+      ];
+      const textMsg = encodeURIComponent(msgLines.join("\n"));
+      waBtn.href = `https://api.whatsapp.com/send?phone=${phone}&text=${textMsg}`;
     }
 
     // Botón para cancelar compra / devolver puntos
