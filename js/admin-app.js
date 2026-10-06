@@ -27,6 +27,11 @@ import {
   setProductDiscountPreset,
   recalculateProductDiscount,
   applyCalculatedDiscountToProduct,
+  setIncomingArrivalPreset,
+  setIncomingDiscountType,
+  setIncomingDiscountVal,
+  recalculateIncomingPresale,
+  applyCalculatedIncomingToProduct,
   // 2. Calculadora de Puntos de Venta
   openSalePointsCalculatorModal,
   setSaleFreightPreset,
@@ -155,6 +160,7 @@ import {
   executeConfirmMarkSold,
   handleAdminDecrementStock,
   handleAdminRestock,
+  handleAdminReleaseIncoming,
   filterLainSeries,
   setActiveLainTemplate,
   cycleLainTemplate,
@@ -354,7 +360,7 @@ function filterCatalogAdmin() {
 
 function filterCatalogByType(type) {
   catalogTypeFilter = type || "ALL";
-  const types = ["ALL", "FREE", "PARTIAL"];
+  const types = ["ALL", "FREE", "PARTIAL", "INCOMING"];
   types.forEach(t => {
     const btn = document.getElementById("catalog-filter-" + t);
     if (btn) {
@@ -379,9 +385,11 @@ function renderCatalogTable(catalog) {
   let filtered = [...(catalog || [])];
 
   if (catalogTypeFilter === "FREE") {
-    filtered = filtered.filter(p => p.rewardType !== "PARTIAL_DISCOUNT" && !(typeof p.isPartialDiscount === "function" && p.isPartialDiscount()));
+    filtered = filtered.filter(p => p.status !== "INCOMING" && !(typeof p.isIncoming === "function" && p.isIncoming()) && p.rewardType !== "PARTIAL_DISCOUNT" && !(typeof p.isPartialDiscount === "function" && p.isPartialDiscount()));
   } else if (catalogTypeFilter === "PARTIAL") {
-    filtered = filtered.filter(p => p.rewardType === "PARTIAL_DISCOUNT" || (typeof p.isPartialDiscount === "function" && p.isPartialDiscount()));
+    filtered = filtered.filter(p => p.status !== "INCOMING" && !(typeof p.isIncoming === "function" && p.isIncoming()) && (p.rewardType === "PARTIAL_DISCOUNT" || (typeof p.isPartialDiscount === "function" && p.isPartialDiscount())));
+  } else if (catalogTypeFilter === "INCOMING") {
+    filtered = filtered.filter(p => p.status === "INCOMING" || (typeof p.isIncoming === "function" && p.isIncoming()));
   }
 
   if (catalogFilterQuery) {
@@ -431,18 +439,25 @@ function renderCatalogTable(catalog) {
   }
 
   tbody.innerHTML = filtered.map(p => {
-    const isPartial = p.rewardType === "PARTIAL_DISCOUNT" || (typeof p.isPartialDiscount === "function" && p.isPartialDiscount());
-    const typeBadge = isPartial
-      ? `<span class="badge-navi" style="background:#fef3c7; color:#92400e; border:1px solid #fcd34d; font-size:0.68rem;">🏷️ VENTA TOPADA (${p.maxDiscountPct || 5}%)</span>`
-      : `<span class="badge-navi" style="background:#ecfdf5; color:#065f46; border:1px solid #a7f3d0; font-size:0.68rem;">🎁 100% CANJE</span>`;
+    const isIncoming = p.status === "INCOMING" || (typeof p.isIncoming === "function" && p.isIncoming());
+    const isPartial = !isIncoming && (p.rewardType === "PARTIAL_DISCOUNT" || (typeof p.isPartialDiscount === "function" && p.isPartialDiscount()));
+    const typeBadge = isIncoming
+      ? `<span class="badge-navi" style="background:#faf5ff; color:#7e22ce; border:1px solid #c084fc; font-size:0.68rem;">灰羽 EN CAMINO</span>`
+      : (isPartial
+        ? `<span class="badge-navi" style="background:#fef3c7; color:#92400e; border:1px solid #fcd34d; font-size:0.68rem;">🏷️ VENTA TOPADA (${p.maxDiscountPct || 5}%)</span>`
+        : `<span class="badge-navi" style="background:#ecfdf5; color:#065f46; border:1px solid #a7f3d0; font-size:0.68rem;">🎁 100% CANJE</span>`);
 
-    const costDisplay = isPartial
-      ? `<div><strong style="color:#b45309;">${p.pointsCost.toLocaleString()} WP</strong></div><div style="font-size:0.7rem; color:#059669; font-weight:700;">-$${(p.maxDiscountUsd || 0).toFixed(2)} USD</div>`
-      : `<strong style="color:var(--dark);">${p.pointsCost.toLocaleString()} WP</strong>`;
+    const costDisplay = isIncoming
+      ? `<div style="font-size:0.85rem; font-weight:800; color:#7e22ce;">Preventa: $${(p.presalePriceUsd || 0).toFixed(2)} USD</div><div style="font-size:0.7rem; color:var(--gray-500); text-decoration:line-through;">Reg: $${(p.priceUsd || 0).toFixed(2)} USD (-$${(p.presaleDiscountUsd || 0).toFixed(2)})</div><div style="font-size:0.68rem; color:#059669; font-weight:700;">0 WP (Directo)</div>`
+      : (isPartial
+        ? `<div><strong style="color:#b45309;">${p.pointsCost.toLocaleString()} WP</strong></div><div style="font-size:0.7rem; color:#059669; font-weight:700;">-$${(p.maxDiscountUsd || 0).toFixed(2)} USD</div>`
+        : `<strong style="color:var(--dark);">${p.pointsCost.toLocaleString()} WP</strong>`);
 
-    const priceInfo = isPartial
-      ? `<div style="font-size:0.72rem; font-family:var(--font-mono); color:var(--dark); margin-top:3px;">Precio: $${(p.priceUsd || 0).toFixed(2)} · <span style="color:#dc2626; font-weight:800;">Cobrar: $${(p.cashToPayUsd || 0).toFixed(2)} USD</span></div>`
-      : "";
+    const priceInfo = isIncoming
+      ? `<div style="font-size:0.72rem; font-family:var(--font-mono); color:#7e22ce; margin-top:3px;">Preventa Directa · 🛡️ Sin consumo de puntos Wired</div>`
+      : (isPartial
+        ? `<div style="font-size:0.72rem; font-family:var(--font-mono); color:var(--dark); margin-top:3px;">Precio: $${(p.priceUsd || 0).toFixed(2)} · <span style="color:#dc2626; font-weight:800;">Cobrar: $${(p.cashToPayUsd || 0).toFixed(2)} USD</span></div>`
+        : "");
 
     const parsed = parseProductDescription(p.description);
     const descDisplay = parsed.hasSpecs
@@ -474,18 +489,20 @@ function renderCatalogTable(catalog) {
         </div>
       `
       : `
-        <div style="width: 44px; height: 44px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: var(--gray-100); border-radius: 4px; border: 1px solid var(--gray-300); font-size: 1.2rem;">
-          ${isPartial ? '🏷️' : '🎁'}
+        <div style="width: 44px; height: 44px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: ${isIncoming ? '#faf5ff' : 'var(--gray-100)'}; border-radius: 4px; border: 1px solid ${isIncoming ? '#d8b4fe' : 'var(--gray-300)'}; font-size: 1.2rem;">
+          ${isIncoming ? '灰羽' : (isPartial ? '🏷️' : '🎁')}
         </div>
       `;
 
-    const isSoldOut = (p.stock || 0) <= 0 || (typeof p.isSoldOut === "function" && p.isSoldOut()) || p.status === "SOLD_OUT";
+    const isSoldOut = !isIncoming && ((p.stock || 0) <= 0 || (typeof p.isSoldOut === "function" && p.isSoldOut()) || p.status === "SOLD_OUT");
 
-    const stockDisplay = isSoldOut
-      ? `<span class="badge-stock-sold">🔴 VENDIDO</span>`
-      : (p.stock === 1
-        ? `<div class="stock-cell-wrap"><strong style="color:var(--dark);">1</strong> un. <span class="badge-stock-unique">ÚNICO</span></div>`
-        : `<div class="stock-cell-wrap"><strong style="color:var(--dark);">${p.stock}</strong> un.</div>`);
+    const stockDisplay = isIncoming
+      ? `<div class="stock-cell-wrap"><strong style="color:#7e22ce;">${p.stock}</strong> un. en reserva</div><div style="font-size:0.7rem; color:#6366f1; font-family:var(--font-mono); margin-top:2px;">⏱️ Llegada: ${p.estimatedArrival ? new Date(p.estimatedArrival).toLocaleDateString() : 'Por definir'}</div>`
+      : (isSoldOut
+        ? `<span class="badge-stock-sold">🔴 VENDIDO</span>`
+        : (p.stock === 1
+          ? `<div class="stock-cell-wrap"><strong style="color:var(--dark);">1</strong> un. <span class="badge-stock-unique">ÚNICO</span></div>`
+          : `<div class="stock-cell-wrap"><strong style="color:var(--dark);">${p.stock}</strong> un.</div>`));
 
     return `
       <tr>
@@ -507,7 +524,11 @@ function renderCatalogTable(catalog) {
         <td style="max-width: 380px;">${descDisplay}</td>
         <td style="text-align: right; white-space: nowrap;">
           <div style="display: inline-flex; align-items: center; gap: 6px; justify-content: flex-end;">
-            ${!isSoldOut ? `
+            ${isIncoming ? `
+              <button type="button" class="catalog-action-btn" style="background:#faf5ff; color:#7e22ce; border-color:#c084fc; font-weight:800;" onclick="handleAdminReleaseIncoming('${p.id}')" title="Desembarcar producto y pasarlo a disponible de inmediato">
+                <span class="btn-icon">⚡</span> <span>Desembarcar</span>
+              </button>
+            ` : (!isSoldOut ? `
               <button type="button" class="catalog-action-btn btn-sold" onclick="handleAdminMarkSold('${p.id}', '${escapedTitle}')" title="Marcar como vendido externamente (Stock a 0)">
                 <span class="btn-icon">🏷️</span> <span>Vendido</span>
               </button>
@@ -520,7 +541,7 @@ function renderCatalogTable(catalog) {
               <button type="button" class="catalog-action-btn btn-restock" onclick="handleAdminRestock('${p.id}', 1, '${escapedTitle}')" title="Reponer 1 unidad">
                 <span class="btn-icon">➕</span> <span>+1 un.</span>
               </button>
-            `}
+            `)}
             <button type="button" class="catalog-action-btn btn-edit" onclick="openEditProductModal('${p.id}')" title="Editar producto ${p.id}">
               <span class="btn-icon">✏️</span> <span>Editar</span>
             </button>
@@ -1009,6 +1030,12 @@ document.addEventListener("DOMContentLoaded", () => {
   window.setProductDiscountPreset = setProductDiscountPreset;
   window.recalculateProductDiscount = recalculateProductDiscount;
   window.applyCalculatedDiscountToProduct = applyCalculatedDiscountToProduct;
+  window.setIncomingArrivalPreset = setIncomingArrivalPreset;
+  window.setIncomingDiscountType = setIncomingDiscountType;
+  window.setIncomingDiscountVal = setIncomingDiscountVal;
+  window.recalculateIncomingPresale = recalculateIncomingPresale;
+  window.applyCalculatedIncomingToProduct = applyCalculatedIncomingToProduct;
+  window.handleAdminReleaseIncoming = handleAdminReleaseIncoming;
 
   // Calculadora de Puntos por Venta (Factura 4x1)
   window.openSalePointsCalculatorModal = openSalePointsCalculatorModal;

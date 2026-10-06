@@ -61,6 +61,153 @@ export function toggleRewardSpecs(itemId) {
 }
 
 let lastRenderedCatalog = [];
+let activeCatalogCountdownTimer = null;
+const registeredCatalogCountdowns = new Map();
+
+export function formatArrivalHint(isoDate) {
+  if (!isoDate) return "FECHA POR CONFIRMAR";
+  const d = new Date(isoDate);
+  if (isNaN(d.getTime())) return "FECHA POR CONFIRMAR";
+  try {
+    const options = { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", hour12: false };
+    return d.toLocaleDateString("es-ES", options).toUpperCase();
+  } catch (_) {
+    return d.toISOString().slice(0, 16).replace("T", " ");
+  }
+}
+
+export function openReservationModal(rewardId) {
+  if (typeof window !== "undefined" && typeof window.openReservationModal === "function" && window.openReservationModal !== openReservationModal) {
+    window.openReservationModal(rewardId);
+    return;
+  }
+  const modal = document.getElementById("modal-preorder-reservation");
+  if (modal) {
+    modal.style.display = "flex";
+    document.body.classList.add("modal-open");
+    if (typeof window.initPreOrderModalForProduct === "function") {
+      window.initPreOrderModalForProduct(rewardId);
+    }
+  } else if (typeof showToast === "function") {
+    showToast("Abriendo formulario de reserva...", "info");
+  }
+}
+
+export function handleComingSoonTransition(item) {
+  registeredCatalogCountdowns.delete(item.id);
+
+  if (typeof item.checkIncomingTransition === "function") {
+    item.checkIncomingTransition();
+  } else if (typeof item.transitionToActive === "function") {
+    item.transitionToActive();
+  } else {
+    item.status = "ACTIVE";
+    item.isIncomingFlag = false;
+    if ("isIncoming" in item && typeof item.isIncoming !== "function") item.isIncoming = false;
+  }
+
+  if (FirestoreService && typeof FirestoreService.saveReward === "function") {
+    FirestoreService.saveReward(item).catch(console.warn);
+  }
+
+  if (typeof showToast === "function") {
+    showToast(`🎉 ¡"${item.title}" ha llegado a tienda y ya está disponible en venta general!`, "success");
+  }
+
+  if (vm && typeof vm.notify === "function") {
+    vm.notify();
+  } else if (Array.isArray(lastRenderedCatalog)) {
+    renderCatalog(lastRenderedCatalog, vm?.currentUser);
+  }
+
+  if (currentSpecsItem && currentSpecsItem.id === item.id) {
+    openProductSpecsModal(item.id, currentSpecsImgIndex);
+  }
+}
+
+export function tickCatalogCountdowns() {
+  const now = Date.now();
+
+  registeredCatalogCountdowns.forEach((data, itemId) => {
+    const { targetTime, item, expired } = data;
+    const remainingMs = targetTime - now;
+
+    if (remainingMs <= 0) {
+      if (!expired) {
+        data.expired = true;
+        handleComingSoonTransition(item);
+      }
+      return;
+    }
+
+    const totalSeconds = Math.floor(remainingMs / 1000);
+    const d = Math.floor(totalSeconds / 86400);
+    const h = Math.floor((totalSeconds % 86400) / 3600);
+    const m = Math.floor((totalSeconds % 3600) / 60);
+    const s = totalSeconds % 60;
+
+    const dStr = String(d).padStart(2, "0");
+    const hStr = String(h).padStart(2, "0");
+    const mStr = String(m).padStart(2, "0");
+    const sStr = String(s).padStart(2, "0");
+
+    const elD = document.getElementById(`cd-days-${itemId}`);
+    const elH = document.getElementById(`cd-hours-${itemId}`);
+    const elM = document.getElementById(`cd-mins-${itemId}`);
+    const elS = document.getElementById(`cd-secs-${itemId}`);
+
+    if (elD && elD.textContent !== dStr) elD.textContent = dStr;
+    if (elH && elH.textContent !== hStr) elH.textContent = hStr;
+    if (elM && elM.textContent !== mStr) elM.textContent = mStr;
+    if (elS && elS.textContent !== sStr) elS.textContent = sStr;
+
+    const specD = document.getElementById(`specs-cd-days-${itemId}`);
+    const specH = document.getElementById(`specs-cd-hours-${itemId}`);
+    const specM = document.getElementById(`specs-cd-mins-${itemId}`);
+    const specS = document.getElementById(`specs-cd-secs-${itemId}`);
+
+    if (specD && specD.textContent !== dStr) specD.textContent = dStr;
+    if (specH && specH.textContent !== hStr) specH.textContent = hStr;
+    if (specM && specM.textContent !== mStr) specM.textContent = mStr;
+    if (specS && specS.textContent !== sStr) specS.textContent = sStr;
+  });
+}
+
+export function setupCatalogCountdowns(catalogItems) {
+  if (activeCatalogCountdownTimer) {
+    clearInterval(activeCatalogCountdownTimer);
+    activeCatalogCountdownTimer = null;
+  }
+  registeredCatalogCountdowns.clear();
+
+  const now = Date.now();
+  (catalogItems || []).forEach(item => {
+    const isIncoming = (typeof item.isIncoming === "function" ? item.isIncoming() : (item.status === "INCOMING" || Boolean(item.isIncoming || item.is_incoming))) && !(typeof item.isIncomingExpired === "function" && item.isIncomingExpired());
+    if (isIncoming && item.estimatedArrival) {
+      const targetTime = new Date(item.estimatedArrival).getTime();
+      if (!isNaN(targetTime)) {
+        registeredCatalogCountdowns.set(item.id, {
+          targetTime,
+          item,
+          expired: targetTime <= now
+        });
+      }
+    }
+  });
+
+  if (registeredCatalogCountdowns.size > 0) {
+    tickCatalogCountdowns();
+    activeCatalogCountdownTimer = setInterval(tickCatalogCountdowns, 1000);
+  }
+}
+
+if (typeof window !== "undefined") {
+  window.openReservationModal = openReservationModal;
+  window.setupCatalogCountdowns = setupCatalogCountdowns;
+  window.tickCatalogCountdowns = tickCatalogCountdowns;
+  window.handleComingSoonTransition = handleComingSoonTransition;
+}
+
 
 // ==========================================
 // CONTROLADOR DE LIGHTBOX (PANTALLA COMPLETA & GALERÍA)
@@ -708,6 +855,11 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
   }
 
   const parsed = parseProductDescription(item.description);
+  const isIncoming = (typeof item.isIncoming === "function" ? item.isIncoming() : (item.status === "INCOMING" || Boolean(item.isIncoming || item.is_incoming))) && !(typeof item.isIncomingExpired === "function" && item.isIncomingExpired());
+  const presalePrice = Number(item.presalePriceUsd ?? (item.priceUsd * (1 - (item.presaleDiscountPct || item.presaleDiscountValue || 0) / 100)));
+  const presaleDiscUsd = Number(item.presaleDiscountUsd ?? Math.max(0, item.priceUsd - presalePrice));
+  const presaleDiscPct = item.presaleDiscountType === "PERCENTAGE" ? Number(item.presaleDiscountValue || 0) : (item.priceUsd > 0 ? Math.round((presaleDiscUsd / item.priceUsd) * 100) : 0);
+
   const isPartial = item.rewardType === "PARTIAL_DISCOUNT" || (typeof item.isPartialDiscount === "function" && item.isPartialDiscount());
   const maxPct = Number(item.maxDiscountPct || item.max_discount_pct || item.maxDiscountPercent || (isPartial ? 5 : 0));
 
@@ -818,7 +970,55 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
 
   // Banner de precios estilo Temu
   let saleBannerHtml = "";
-  if (isPartial) {
+  if (isIncoming) {
+    saleBannerHtml = `
+      <div class="temu-sale-banner temu-sale-banner-incoming" style="background: linear-gradient(135deg, #091322 0%, #0f1f38 100%); border-color: #0284c7;">
+        <div class="temu-sale-header" style="color: #38bdf8;">
+          <span>🕊️ EN CAMINO // RESERVA ANTICIPADA</span>
+          <span class="temu-sale-badge" style="background: linear-gradient(135deg, #0284c7, #0369a1); color: #fff;">-${presaleDiscPct}% DIRECTO</span>
+        </div>
+        <div class="temu-sale-prices-row">
+          <span class="temu-sale-price-curr" style="color: #38bdf8;">${formatPrice(item.presalePriceUsd ?? presalePrice)}</span>
+          <span class="temu-sale-price-orig">${formatPrice(item.priceUsd)}</span>
+        </div>
+        <div style="font-size: 0.75rem; color: #94a3b8; font-family: var(--font-mono); font-weight: 700; display: flex; align-items: center; gap: 4px;">
+          <span>Ahorro preventa: <strong style="color: #38bdf8;">-${formatPrice(item.presaleDiscountUsd ?? presaleDiscUsd)} (-${presaleDiscPct}%)</strong></span>
+          <span style="color: #64748b; margin-left: 8px;">(Sin gastar puntos Wired)</span>
+        </div>
+
+        <div class="haibane-countdown-box specs-countdown-box" id="specs-countdown-modal-${item.id}">
+          <div class="haibane-countdown-header">
+            <div style="display:flex; align-items:center; gap:5px;">
+              <span class="cd-pulse-orb"></span>
+              <span class="cd-header-text">LLEGADA EN TIENDA // COUNTDOWN</span>
+            </div>
+            <span class="cd-date-hint">${formatArrivalHint(item.estimatedArrival)}</span>
+          </div>
+          <div class="haibane-countdown-grid">
+            <div class="cd-segment">
+              <span class="cd-num" id="specs-cd-days-${item.id}">00</span>
+              <span class="cd-label">DÍAS</span>
+            </div>
+            <span class="cd-divider">:</span>
+            <div class="cd-segment">
+              <span class="cd-num" id="specs-cd-hours-${item.id}">00</span>
+              <span class="cd-label">HRS</span>
+            </div>
+            <span class="cd-divider">:</span>
+            <div class="cd-segment">
+              <span class="cd-num" id="specs-cd-mins-${item.id}">00</span>
+              <span class="cd-label">MIN</span>
+            </div>
+            <span class="cd-divider">:</span>
+            <div class="cd-segment">
+              <span class="cd-num" id="specs-cd-secs-${item.id}">00</span>
+              <span class="cd-label">SEG</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  } else if (isPartial) {
     saleBannerHtml = `
       <div class="temu-sale-banner">
         <div class="temu-sale-header">
@@ -878,9 +1078,12 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
       <div class="specs-badges-bar">
         <span class="specs-badge-item" style="background: #0f172a; color: #38bdf8; border: 1px solid #334155;">⚡ WIRED CHOICE</span>
         ${productImages.length > 1 ? `<span class="specs-badge-item frames">[ 0${productImages.length} FRAMES ]</span>` : ''}
-        ${isPartial 
-          ? `<span class="specs-badge-item discount">🏷️ Hasta ${maxPct}% OFF</span>` 
-          : `<span class="specs-badge-item points">⚡ ${item.pointsCost.toLocaleString()} WP</span>`
+        ${isIncoming
+          ? `<span class="specs-badge-item incoming" style="background: rgba(14, 165, 233, 0.2); color: #38bdf8; border: 1px solid #0284c7;">🕊️ EXPEDICIÓN EN VUELO · PREVENTA</span>`
+          : (isPartial 
+            ? `<span class="specs-badge-item discount">🏷️ Hasta ${maxPct}% OFF</span>` 
+            : `<span class="specs-badge-item points">⚡ ${item.pointsCost.toLocaleString()} WP</span>`
+          )
         }
       </div>
       <h3 class="specs-header-title">${item.title}</h3>
@@ -896,15 +1099,18 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
 
     <!-- DESPLEGABLE DE ESPECIFICACIONES TÉCNICAS (IDÉNTICO A PRODUCCIÓN) -->
     <div class="reward-specs-box" style="margin: 0.75rem 0 1rem 0;">
-      <button type="button" class="reward-specs-toggle-btn" onclick="toggleModalProductSpecs('${item.id}')" id="modal-specs-btn-${item.id}">
-        <span class="btn-specs-label">📋 Ver especificaciones (${parsed.specs.length})</span>
-        <span class="btn-specs-icon">▾</span>
+      <button type="button" class="reward-specs-toggle-btn expanded" onclick="toggleModalProductSpecs('${item.id}')" id="modal-specs-btn-${item.id}">
+        <span class="btn-specs-label">✕ Ocultar especificaciones</span>
+        <span class="btn-specs-icon">▴</span>
       </button>
-      <div class="reward-specs-dropdown" id="modal-specs-drop-${item.id}" style="display:none; max-height: 280px; overflow-y: auto;">
+      <div class="reward-specs-dropdown" id="modal-specs-drop-${item.id}" style="display:block; max-height: 280px; overflow-y: auto;">
         <div class="specs-dropdown-header">
           <span class="specs-dropdown-title">ESPECIFICACIONES (${parsed.specs.length})</span>
         </div>
-        <ul class="reward-specs-ul">
+        <div class="modal-specs-cards-container">
+          ${formattedSpecsHtml}
+        </div>
+        <ul class="reward-specs-ul" style="display:none;">
           ${parsed.specs.map(s => `<li><span class="spec-bullet">▸</span><span class="spec-content">${s}</span></li>`).join("")}
         </ul>
       </div>
@@ -973,7 +1179,14 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
     `;
 
     let actionBtn = "";
-    if (!isOut) {
+    if (isIncoming) {
+      actionBtn = `
+        <button type="button" class="modal-specs-action-btn btn-reserve-incoming" onclick="closeProductSpecsModal(); openReservationModal('${item.id}');">
+          <span style="font-size: 1rem;">📅</span>
+          <span>Reservar en Preventa (-${presaleDiscPct}%)</span>
+        </button>
+      `;
+    } else if (!isOut) {
       if (isPartial) {
         actionBtn = `
           <button type="button" class="modal-specs-action-btn btn-redeem-gold" onclick="closeProductSpecsModal(); confirmRedeem('${item.id}');">
@@ -1015,6 +1228,11 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
     fab.classList.add("is-hidden");
     fab.style.setProperty("display", "none", "important");
   }
+
+  if (isIncoming) {
+    tickCatalogCountdowns();
+  }
+
 
   // Cargar comentarios y suscribir en tiempo real reactivo
   if (typeof activeCommentsUnsubscribe === "function") {
@@ -1168,12 +1386,17 @@ export function renderCatalog(catalog, user) {
   }
 
   container.innerHTML = visibleCatalog.map(item => {
-    const isOut = item.stock <= 0 || item.status === "SOLD_OUT";
+    const isIncoming = (typeof item.isIncoming === "function" ? item.isIncoming() : (item.status === "INCOMING" || Boolean(item.isIncoming || item.is_incoming))) && !(typeof item.isIncomingExpired === "function" && item.isIncomingExpired());
+    const isOut = !isIncoming && (item.stock <= 0 || item.status === "SOLD_OUT");
     const canAfford = user && user.wiredPoints >= item.pointsCost;
     const isPartial = item.rewardType === "PARTIAL_DISCOUNT" || (typeof item.isPartialDiscount === "function" && item.isPartialDiscount());
     const userPts = user ? (user.wiredPoints || 0) : 0;
     const maxCapPts = item.pointsCost || 0;
     const maxPct = item.maxDiscountPct || 5;
+
+    const presalePrice = Number(item.presalePriceUsd ?? (item.priceUsd * (1 - (item.presaleDiscountPct || item.presaleDiscountValue || 0) / 100)));
+    const presaleDiscUsd = Number(item.presaleDiscountUsd ?? Math.max(0, item.priceUsd - presalePrice));
+    const presaleDiscPct = item.presaleDiscountType === "PERCENTAGE" ? Number(item.presaleDiscountValue || 0) : (item.priceUsd > 0 ? Math.round((presaleDiscUsd / item.priceUsd) * 100) : 0);
 
     let appliedPts = 0;
     let appliedPct = 0;
@@ -1194,7 +1417,11 @@ export function renderCatalog(catalog, user) {
     let temuPriceOrig = "";
     let temuCoinPillText = "";
 
-    if (isPartial) {
+    if (isIncoming) {
+      temuPriceMain = formatPrice(presalePrice);
+      temuPriceOrig = formatPrice(item.priceUsd);
+      temuCoinPillText = `🕊️ PREVENTA (-${presaleDiscPct}% DIRECTO)`;
+    } else if (isPartial) {
       if (user && appliedPts > 0) {
         temuPriceMain = formatPrice(cashToPayWithPts);
         temuPriceOrig = formatPrice(item.priceUsd);
@@ -1228,7 +1455,17 @@ export function renderCatalog(catalog, user) {
     `;
 
     let btnHtml = "";
-    if (isOut) {
+    if (isIncoming) {
+      btnHtml = `
+        <button type="button" class="btn-redeem btn-reserve-coming" onclick="event.stopPropagation(); openReservationModal('${item.id}')">
+          <div class="btn-redeem-content">
+            <span class="btn-redeem-icon">📅</span>
+            <span class="btn-redeem-text">RESERVAR EN PREVENTA</span>
+          </div>
+          <div class="btn-reserve-badge">-${presaleDiscPct}% OFF</div>
+        </button>
+      `;
+    } else if (isOut) {
       btnHtml = `<button class="btn-redeem out" disabled>❌ AGOTADO</button>`;
     } else if (!user) {
       btnHtml = `<button class="btn-redeem login-req" onclick="event.stopPropagation(); openAuthModal('login', 'Inicia sesión para canjear')">🔒 Iniciar Sesión</button>`;
@@ -1246,7 +1483,9 @@ export function renderCatalog(catalog, user) {
     }
 
     let modeBadge = "";
-    if (isPartial) {
+    if (isIncoming) {
+      modeBadge = `<div class="badge-tag badge-coming-soon" style="position: absolute; top: 8px; left: 8px; background: rgba(15, 23, 42, 0.95); color: #38bdf8; border: 1px solid #0284c7; font-family: var(--font-mono); font-size: 0.65rem; font-weight: 800; padding: 2px 6px; border-radius: 3px; z-index: 2; box-shadow: 0 0 8px rgba(56, 189, 248, 0.3);">🕊️ LLEGA EN // -${presaleDiscPct}%</div>`;
+    } else if (isPartial) {
       if (user && userPts >= maxCapPts) {
         modeBadge = `<div class="badge-tag" style="position: absolute; top: 8px; left: 8px; background: rgba(15, 23, 42, 0.9); color: #fbbf24; border: 1px solid #d97706; font-family: var(--font-mono); font-size: 0.65rem; font-weight: 800; padding: 2px 6px; border-radius: 3px; z-index: 2;">🏷️ TOPE ${maxPct}% OFF</div>`;
       } else if (user && userPts > 0) {
@@ -1259,7 +1498,27 @@ export function renderCatalog(catalog, user) {
     }
 
     let partialBreakdown = "";
-    if (isPartial) {
+    if (isIncoming) {
+      partialBreakdown = `
+        <div class="reward-pricing-box reward-pricing-incoming">
+          <div class="pricing-row">
+            <span class="pricing-label">Precio regular:</span>
+            <span class="pricing-val">${formatPrice(item.priceUsd)}</span>
+          </div>
+          <div class="pricing-row discount-row">
+            <span class="pricing-label">Descuento Preventa (-${presaleDiscPct}%):</span>
+            <span class="pricing-val green">-${formatPrice(presaleDiscUsd)}</span>
+          </div>
+          <div class="pricing-row total-row">
+            <span class="pricing-label">Total en Preventa:</span>
+            <span class="pricing-val total" style="color: #38bdf8;">${formatPrice(presalePrice)}</span>
+          </div>
+          <div class="pricing-row footnote-row" style="color: #94a3b8; font-size: 0.65rem;">
+            <span class="pricing-label" style="grid-column: span 2;">✨ Descuento directo de preventa. No requiere puntos Wired.</span>
+          </div>
+        </div>
+      `;
+    } else if (isPartial) {
       if (user && userPts >= maxCapPts) {
         partialBreakdown = `
           <div class="reward-pricing-box">
@@ -1340,7 +1599,13 @@ export function renderCatalog(catalog, user) {
     }
 
     let footerHtml = "";
-    if (isPartial) {
+    if (isIncoming) {
+      footerHtml = `
+        <div class="reward-footer reward-footer-incoming">
+          ${btnHtml}
+        </div>
+      `;
+    } else if (isPartial) {
       if (isOut) {
         footerHtml = `
           <div class="reward-footer reward-footer-partial">
@@ -1410,8 +1675,42 @@ export function renderCatalog(catalog, user) {
       `;
     }
 
+    const countdownHtml = `
+      <div class="haibane-countdown-box" id="countdown-card-${item.id}" data-target="${item.estimatedArrival || ''}">
+        <div class="haibane-countdown-header">
+          <div style="display:flex; align-items:center; gap:5px;">
+            <span class="cd-pulse-orb"></span>
+            <span class="cd-header-text">LLEGADA EN // COUNTDOWN</span>
+          </div>
+          <span class="cd-date-hint">${formatArrivalHint(item.estimatedArrival)}</span>
+        </div>
+        <div class="haibane-countdown-grid">
+          <div class="cd-segment">
+            <span class="cd-num" id="cd-days-${item.id}">00</span>
+            <span class="cd-label">DÍAS</span>
+          </div>
+          <span class="cd-divider">:</span>
+          <div class="cd-segment">
+            <span class="cd-num" id="cd-hours-${item.id}">00</span>
+            <span class="cd-label">HRS</span>
+          </div>
+          <span class="cd-divider">:</span>
+          <div class="cd-segment">
+            <span class="cd-num" id="cd-mins-${item.id}">00</span>
+            <span class="cd-label">MIN</span>
+          </div>
+          <span class="cd-divider">:</span>
+          <div class="cd-segment">
+            <span class="cd-num" id="cd-secs-${item.id}">00</span>
+            <span class="cd-label">SEG</span>
+          </div>
+        </div>
+      </div>
+    `;
+
     const parsed = parseProductDescription(item.description);
-    const descHtml = parsed.hasSpecs
+    const hasRealSpecs = parsed.hasSpecs && item.description && (item.description.includes("\n") || /[•▸✓✔]/.test(item.description));
+    const descHtml = hasRealSpecs
       ? `
         <div class="reward-desc-wrap" id="desc-wrap-${item.id}">
           <div class="reward-desc-intro" title="${parsed.intro}">${parsed.intro}</div>
@@ -1436,10 +1735,10 @@ export function renderCatalog(catalog, user) {
       `
       : `
         <div class="reward-desc-wrap" id="desc-wrap-${item.id}">
-          <div class="reward-desc-intro" title="${parsed.intro || ''}">${parsed.intro || (isPartial ? 'Producto comercial con descuento tope en Wired Points.' : 'Recompensa oficial MeltyDeays.')}</div>
+          <div class="reward-desc-intro" title="${parsed.intro || ''}">${parsed.intro || (isIncoming ? 'Artículo en camino con descuento directo de preventa.' : (isPartial ? 'Producto comercial con descuento tope en Wired Points.' : 'Recompensa oficial MeltyDeays.'))}</div>
           <div class="reward-specs-box">
             <div class="reward-specs-empty-pill">
-              <span class="spec-info-text">✨ ${isPartial ? 'Garantía y entrega directa en tienda' : 'Recompensa oficial MeltyDeays'}</span>
+              <span class="spec-info-text">✨ ${isIncoming ? 'Preventa garantizada MeltyDeays' : (isPartial ? 'Garantía y entrega directa en tienda' : 'Recompensa oficial MeltyDeays')}</span>
             </div>
           </div>
         </div>
@@ -1453,7 +1752,7 @@ export function renderCatalog(catalog, user) {
     const escapedTitle = (item.title || "").replace(/'/g, "\\'");
 
     return `
-      <div class="reward-card ${isOut ? 'is-sold-out' : ''}" onclick="openProductSpecsModal('${item.id}')">
+      <div class="reward-card ${isOut ? 'is-sold-out' : (isIncoming ? 'is-incoming-item' : '')}" onclick="openProductSpecsModal('${item.id}')">
         <div class="reward-img-wrap" style="${!mainCover ? 'background: linear-gradient(135deg, #0d131f 0%, #17243b 100%); display:flex; align-items:center; justify-content:center;' : ''}">
           ${modeBadge}
           ${hasMultipleImgs ? `
@@ -1468,13 +1767,13 @@ export function renderCatalog(catalog, user) {
               ${!isOut ? `
                 <div class="reward-img-action-overlay" onclick="event.stopPropagation(); openProductSpecsModal('${item.id}')">
                   <div class="reward-img-expand-badge">
-                    <span style="font-size:0.85rem; line-height:1;">⚡</span>
-                    <span>VER DETALLES // WIRED_VIEW</span>
+                    <span style="font-size:0.85rem; line-height:1;">${isIncoming ? '🕊️' : '⚡'}</span>
+                    <span>${isIncoming ? 'VER DETALLES // PREVENTA' : 'VER DETALLES // WIRED_VIEW'}</span>
                   </div>
                 </div>
               ` : ''}
             `
-            : `<div style="text-align:center; padding:1rem;"><span style="font-size:2.2rem;">${isPartial ? '🏷️' : '🎁'}</span><div style="font-family:var(--font-mono); font-size:0.68rem; color:#38bdf8; margin-top:4px;">${isPartial ? 'SALE_DISCOUNT' : 'TECH_REWARD'}</div></div>`
+            : `<div style="text-align:center; padding:1rem;"><span style="font-size:2.2rem;">${isIncoming ? '🕊️' : (isPartial ? '🏷️' : '🎁')}</span><div style="font-family:var(--font-mono); font-size:0.68rem; color:#38bdf8; margin-top:4px;">${isIncoming ? 'PREORDER_ITEM' : (isPartial ? 'SALE_DISCOUNT' : 'TECH_REWARD')}</div></div>`
           }
           ${isOut ? `
             <div class="reward-sold-stamp-container">
@@ -1516,11 +1815,9 @@ export function renderCatalog(catalog, user) {
                     </g>
 
                     <!-- 2. CHARCOAL FEATHER WINGS (灰羽 - Feather Plumage) -->
-                    <!-- Left Wing -->
                     <path d="M92 56 C72 40 46 26 12 20 C10 34 18 48 28 58 C16 55 8 55 5 64 C16 74 30 80 46 84 C34 85 24 90 26 98 C40 104 62 98 76 90 C66 96 56 104 58 110 C74 112 90 102 98 90 Z" fill="url(#haibaneWingL-${item.id})" stroke="url(#haibaneGold-${item.id})" stroke-width="1.6" stroke-linejoin="round" />
                     <path d="M86 60 C68 48 46 36 24 30 C28 40 38 50 48 58 C34 56 26 56 22 64 C32 72 46 76 60 78 Z" fill="#64748b" opacity="0.4" />
 
-                    <!-- Right Wing -->
                     <path d="M148 56 C168 40 194 26 228 20 C230 34 222 48 212 58 C224 55 232 55 235 64 C224 74 210 80 194 84 C206 85 216 90 214 98 C200 104 178 98 164 90 C174 96 184 104 182 110 C166 112 150 102 142 90 Z" fill="url(#haibaneWingR-${item.id})" stroke="url(#haibaneGold-${item.id})" stroke-width="1.6" stroke-linejoin="round" />
                     <path d="M154 60 C172 48 194 36 216 30 C212 40 202 50 192 58 C206 56 214 56 218 64 C208 72 194 76 180 78 Z" fill="#64748b" opacity="0.4" />
 
@@ -1548,12 +1845,85 @@ export function renderCatalog(catalog, user) {
                 </svg>
               </div>
             </div>
-          ` : ''}
-          <div class="stock-tag ${isOut ? 'out' : ''}">${isOut ? 'VENDIDO' : (item.stock === 1 ? '1 DISP. · ÚNICO' : item.stock + ' DISP.')}</div>
+          ` : (isIncoming ? `
+            <div class="reward-incoming-stamp-container">
+              <div class="reward-incoming-stamp">
+                <svg class="incoming-seal-svg" viewBox="0 0 240 120" width="190" height="95">
+                  <defs>
+                    <linearGradient id="haibaneGoldInc-${item.id}" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stop-color="#fffbeb" />
+                      <stop offset="30%" stop-color="#fbbf24" />
+                      <stop offset="70%" stop-color="#d97706" />
+                      <stop offset="100%" stop-color="#78350f" />
+                    </linearGradient>
+                    <linearGradient id="haibaneWingIncL-${item.id}" x1="100%" y1="0%" x2="0%" y2="100%">
+                      <stop offset="0%" stop-color="#38bdf8" />
+                      <stop offset="40%" stop-color="#0284c7" />
+                      <stop offset="80%" stop-color="#1e293b" />
+                      <stop offset="100%" stop-color="#0f172a" />
+                    </linearGradient>
+                    <linearGradient id="haibaneWingIncR-${item.id}" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stop-color="#38bdf8" />
+                      <stop offset="40%" stop-color="#0284c7" />
+                      <stop offset="80%" stop-color="#1e293b" />
+                      <stop offset="100%" stop-color="#0f172a" />
+                    </linearGradient>
+                    <linearGradient id="haibanePlaqueInc-${item.id}" x1="0%" y1="0%" x2="0%" y2="100%">
+                      <stop offset="0%" stop-color="#1e293b" />
+                      <stop offset="45%" stop-color="#0f172a" />
+                      <stop offset="100%" stop-color="#020617" />
+                    </linearGradient>
+                  </defs>
+
+                  <g>
+                    <!-- 1. AUREOLA SAGRADA DE GLIE (Resplandor Radiante) -->
+                    <g transform="translate(120, 16)">
+                      <ellipse cx="0" cy="0" rx="38" ry="9" fill="none" stroke="#78350f" stroke-width="4.5" />
+                      <ellipse cx="0" cy="0" rx="38" ry="9" fill="none" stroke="url(#haibaneGoldInc-${item.id})" stroke-width="2.6" />
+                      <ellipse cx="0" cy="0" rx="38" ry="9" fill="none" stroke="#ffffff" stroke-width="1.2" stroke-dasharray="6 3" opacity="0.9" />
+                      <line x1="0" y1="-12" x2="0" y2="-6" stroke="#fef08a" stroke-width="2" stroke-linecap="round" />
+                      <line x1="-20" y1="-9" x2="-18" y2="-4" stroke="#fef08a" stroke-width="1.5" stroke-linecap="round" />
+                      <line x1="20" y1="-9" x2="18" y2="-4" stroke="#fef08a" stroke-width="1.5" stroke-linecap="round" />
+                    </g>
+
+                    <!-- 2. ALAS DE PLUMAS AL VIENTO (Plumaje en Tránsito 灰羽) -->
+                    <path d="M92 56 C72 40 46 26 12 20 C10 34 18 48 28 58 C16 55 8 55 5 64 C16 74 30 80 46 84 C34 85 24 90 26 98 C40 104 62 98 76 90 C66 96 56 104 58 110 C74 112 90 102 98 90 Z" fill="url(#haibaneWingIncL-${item.id})" stroke="url(#haibaneGoldInc-${item.id})" stroke-width="1.6" stroke-linejoin="round" />
+                    <path d="M86 60 C68 48 46 36 24 30 C28 40 38 50 48 58 C34 56 26 56 22 64 C32 72 46 76 60 78 Z" fill="#38bdf8" opacity="0.4" />
+
+                    <path d="M148 56 C168 40 194 26 228 20 C230 34 222 48 212 58 C224 55 232 55 235 64 C224 74 210 80 194 84 C206 85 216 90 214 98 C200 104 178 98 164 90 C174 96 184 104 182 110 C166 112 150 102 142 90 Z" fill="url(#haibaneWingIncR-${item.id})" stroke="url(#haibaneGoldInc-${item.id})" stroke-width="1.6" stroke-linejoin="round" />
+                    <path d="M154 60 C172 48 194 36 216 30 C212 40 202 50 192 58 C206 56 214 56 218 64 C208 72 194 76 180 78 Z" fill="#38bdf8" opacity="0.4" />
+
+                    <!-- 3. PLACA CENTRAL OBSIDIANA -->
+                    <rect x="36" y="28" width="168" height="74" rx="6" fill="#080d1a" stroke="url(#haibaneGoldInc-${item.id})" stroke-width="2.2" />
+                    <rect x="40" y="32" width="160" height="66" rx="4" fill="url(#haibanePlaqueInc-${item.id})" stroke="#d97706" stroke-width="1" />
+                    <rect x="43" y="35" width="154" height="60" rx="3" fill="none" stroke="#38bdf8" stroke-width="0.8" stroke-dasharray="3 2" opacity="0.6" />
+
+                    <!-- Diamantes en esquinas -->
+                    <polygon points="46,38 48,41 46,44 44,41" fill="#fef08a" />
+                    <polygon points="194,38 196,41 194,44 192,41" fill="#fef08a" />
+                    <polygon points="46,88 48,91 46,94 44,91" fill="#fef08a" />
+                    <polygon points="194,88 196,91 194,94 192,91" fill="#fef08a" />
+
+                    <!-- Encabezado Kanji: 灰羽 · HAIBANE RENMEI -->
+                    <text x="120" y="49" text-anchor="middle" fill="#fbbf24" font-family="'Cinzel', 'Noto Serif JP', 'Georgia', serif" font-size="9.5" font-weight="900" letter-spacing="2.5">灰羽 · HAIBANE RENMEI</text>
+                    <line x1="56" y1="54" x2="184" y2="54" stroke="url(#haibaneGoldInc-${item.id})" stroke-width="0.8" opacity="0.7" />
+
+                    <!-- Inscripción Monumental Principal: EN CAMINO -->
+                    <text x="120" y="78" text-anchor="middle" fill="#ffffff" font-family="'Impact', 'Arial Black', 'Cinzel', 'Trebuchet MS', sans-serif" font-size="22" font-weight="900" letter-spacing="4">EN CAMINO</text>
+
+                    <!-- Subtítulo de Tránsito: EXPEDICIÓN EN VUELO -->
+                    <text x="120" y="91" text-anchor="middle" fill="#fef08a" font-family="'Cinzel', 'Georgia', serif" font-size="7.5" font-weight="800" letter-spacing="2">✦ EXPEDICIÓN EN VUELO ✦</text>
+                  </g>
+                </svg>
+              </div>
+            </div>
+          ` : '')}
+          <div class="stock-tag ${isOut ? 'out' : (isIncoming ? 'incoming' : '')}">${isOut ? 'VENDIDO' : (isIncoming ? 'EN CAMINO · PREVENTA' : (item.stock === 1 ? '1 DISP. · ÚNICO' : item.stock + ' DISP.'))}</div>
         </div>
         <div class="reward-body">
           <div class="reward-title" title="${item.title}">${item.title}</div>
           ${temuMetaHtml}
+          ${isIncoming ? countdownHtml : ''}
           ${descHtml}
           ${partialBreakdown}
           ${footerHtml}
@@ -1561,6 +1931,8 @@ export function renderCatalog(catalog, user) {
       </div>
     `;
   }).join("");
+
+  setupCatalogCountdowns(visibleCatalog);
 }
 
 

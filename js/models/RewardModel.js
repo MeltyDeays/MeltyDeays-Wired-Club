@@ -94,26 +94,56 @@ export class RewardModel {
   constructor(data = {}) {
     this.id = data.id || data.reward_id || "";
     this.title = data.title || "";
-    this.rewardType = data.rewardType || data.reward_type || "FREE_REWARD"; // "FREE_REWARD" | "PARTIAL_DISCOUNT"
-    if (this.rewardType !== "PARTIAL_DISCOUNT") {
+    const rawType = data.rewardType || data.reward_type;
+    const isIncomingData = Boolean(data.isIncoming || data.is_incoming || data.status === "INCOMING" || rawType === "INCOMING");
+
+    if (isIncomingData) {
+      this.rewardType = "INCOMING";
+      this.priceUsd = Number(data.priceUsd || data.price_usd || 0);
+      this.maxDiscountPct = 0;
+      this.maxDiscountUsd = 0;
+      this.cashToPayUsd = 0;
+    } else if (rawType === "PARTIAL_DISCOUNT") {
+      this.rewardType = "PARTIAL_DISCOUNT";
+      this.priceUsd = Number(data.priceUsd || data.price_usd || 0);
+      this.maxDiscountPct = Number(data.maxDiscountPct || data.max_discount_pct || 0);
+      this.maxDiscountUsd = Number(data.maxDiscountUsd || data.max_discount_usd || 0);
+      this.cashToPayUsd = Number(data.cashToPayUsd || data.cash_to_pay_usd || 0);
+    } else {
       this.rewardType = "FREE_REWARD";
       this.priceUsd = 0;
       this.maxDiscountPct = 0;
       this.maxDiscountUsd = 0;
       this.cashToPayUsd = 0;
-    } else {
-      this.priceUsd = Number(data.priceUsd || data.price_usd || 0);
-      this.maxDiscountPct = Number(data.maxDiscountPct || data.max_discount_pct || 0);
-      this.maxDiscountUsd = Number(data.maxDiscountUsd || data.max_discount_usd || 0);
-      this.cashToPayUsd = Number(data.cashToPayUsd || data.cash_to_pay_usd || 0);
     }
-    this.pointsCost = Number(data.pointsCost || data.points_cost || 0);
+
+    this.pointsCost = Number(data.pointsCost !== undefined ? data.pointsCost : (data.points_cost !== undefined ? data.points_cost : 0));
     this.stock = Number(data.stock != null ? data.stock : 0);
     this.initialStock = Number(data.initialStock || data.initial_stock || this.stock || 1);
     this.isUnique = Boolean(data.isUnique || data.is_unique || (this.initialStock === 1));
-    this.status = data.status || (this.stock > 0 ? "ACTIVE" : "SOLD_OUT");
-    if (this.status === "SOLD_OUT" && this.stock > 0) this.status = "ACTIVE";
-    this.soldOutAt = (this.status === "ACTIVE" && this.stock > 0) ? null : (data.soldOutAt || data.sold_out_at || (this.stock === 0 ? new Date().toISOString() : null));
+
+    this.isIncomingFlag = isIncomingData;
+    this.estimatedArrival = data.estimatedArrival || data.estimated_arrival || null;
+    this.presaleDiscountType = data.presaleDiscountType || data.presale_discount_type || "PERCENTAGE";
+    this.presaleDiscountValue = Number(data.presaleDiscountValue ?? data.presale_discount_value ?? 0);
+
+    let calcDiscUsd = 0;
+    if (this.presaleDiscountType === "PERCENTAGE") {
+      calcDiscUsd = Number((this.priceUsd * (this.presaleDiscountValue / 100)).toFixed(2));
+    } else {
+      calcDiscUsd = Math.min(this.priceUsd, Number(this.presaleDiscountValue.toFixed(2)));
+    }
+    this.presaleDiscountUsd = Number(data.presaleDiscountUsd ?? data.presale_discount_usd ?? calcDiscUsd);
+    const calcPresalePrice = Math.max(0, Number((this.priceUsd - this.presaleDiscountUsd).toFixed(2)));
+    this.presalePriceUsd = Number(data.presalePriceUsd ?? data.presale_price_usd ?? calcPresalePrice);
+
+    if (isIncomingData && data.status !== "SOLD_OUT") {
+      this.status = "INCOMING";
+    } else {
+      this.status = data.status || (this.stock > 0 ? "ACTIVE" : "SOLD_OUT");
+      if (this.status === "SOLD_OUT" && this.stock > 0) this.status = "ACTIVE";
+    }
+    this.soldOutAt = (this.status === "ACTIVE" || this.status === "INCOMING") ? null : (data.soldOutAt || data.sold_out_at || (this.stock === 0 ? new Date().toISOString() : null));
     this.soldOutReason = data.soldOutReason || data.sold_out_reason || "";
 
     // Soporte multi-imagen con retrocompatibilidad
@@ -151,17 +181,48 @@ export class RewardModel {
     return parseProductDescription(this.description);
   }
 
+  isIncoming() {
+    if (this.status !== "INCOMING" && !this.isIncomingFlag) return false;
+    return !this.isIncomingExpired();
+  }
+
+  isIncomingExpired() {
+    if (!this.estimatedArrival) return false;
+    return new Date() >= new Date(this.estimatedArrival);
+  }
+
+  getRemainingArrivalMs() {
+    if (!this.estimatedArrival) return 0;
+    return Math.max(0, new Date(this.estimatedArrival).getTime() - Date.now());
+  }
+
+  checkIncomingTransition() {
+    if ((this.status === "INCOMING" || this.isIncomingFlag) && this.isIncomingExpired()) {
+      this.status = "ACTIVE";
+      this.isIncomingFlag = false;
+      this.updatedAt = new Date().toISOString();
+      return true;
+    }
+    return false;
+  }
+
   isAvailable() {
+    if (this.status === "INCOMING" || this.isIncoming()) return false;
     return this.stock > 0 && this.status !== "SOLD_OUT";
   }
 
   isSoldOut() {
+    if (this.status === "INCOMING" || this.isIncoming()) return false;
     return this.stock <= 0 || this.status === "SOLD_OUT";
   }
 
   // Comprueba si debe ser visible en el catálogo de clientes:
+  // Si es preventa en camino, siempre es visible.
   // Si está agotado, solo permanece visible durante las primeras 12 horas desde que se agotó.
   isVisibleToCustomer() {
+    if (this.isIncoming()) {
+      return true;
+    }
     if (this.stock > 0 && this.status !== "SOLD_OUT") {
       return true;
     }
@@ -219,15 +280,35 @@ export class RewardModel {
       reward_id: this.id,
       title: this.title,
       reward_type: this.rewardType,
+      rewardType: this.rewardType,
       price_usd: this.priceUsd,
+      priceUsd: this.priceUsd,
       max_discount_pct: this.maxDiscountPct,
+      maxDiscountPct: this.maxDiscountPct,
       max_discount_usd: this.maxDiscountUsd,
+      maxDiscountUsd: this.maxDiscountUsd,
       cash_to_pay_usd: this.cashToPayUsd,
+      cashToPayUsd: this.cashToPayUsd,
       points_cost: this.pointsCost,
+      pointsCost: this.pointsCost,
       stock: this.stock,
       initial_stock: this.initialStock,
+      initialStock: this.initialStock,
       is_unique: this.isUnique,
+      isUnique: this.isUnique,
       status: this.status,
+      is_incoming: this.isIncoming(),
+      isIncoming: this.isIncoming(),
+      estimated_arrival: this.estimatedArrival,
+      estimatedArrival: this.estimatedArrival,
+      presale_discount_type: this.presaleDiscountType,
+      presaleDiscountType: this.presaleDiscountType,
+      presale_discount_value: this.presaleDiscountValue,
+      presaleDiscountValue: this.presaleDiscountValue,
+      presale_discount_usd: this.presaleDiscountUsd,
+      presaleDiscountUsd: this.presaleDiscountUsd,
+      presale_price_usd: this.presalePriceUsd,
+      presalePriceUsd: this.presalePriceUsd,
       sold_out_at: this.soldOutAt,
       soldOutAt: this.soldOutAt,
       sold_out_reason: this.soldOutReason,
@@ -236,7 +317,8 @@ export class RewardModel {
       images: this.images,
       description: this.description,
       category: this.category,
-      updated_at: this.updatedAt
+      updated_at: this.updatedAt,
+      updatedAt: this.updatedAt
     };
   }
 }

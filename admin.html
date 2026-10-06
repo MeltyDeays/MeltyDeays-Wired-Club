@@ -592,6 +592,7 @@
             <button type="button" class="btn-secondary active" id="catalog-filter-ALL" style="padding: 3px 8px; font-size: 0.72rem;" onclick="filterCatalogByType('ALL')">Todos</button>
             <button type="button" class="btn-secondary" id="catalog-filter-FREE" style="padding: 3px 8px; font-size: 0.72rem;" onclick="filterCatalogByType('FREE')">🎁 100% Puntos</button>
             <button type="button" class="btn-secondary" id="catalog-filter-PARTIAL" style="padding: 3px 8px; font-size: 0.72rem;" onclick="filterCatalogByType('PARTIAL')">🏷️ Venta Topada</button>
+            <button type="button" class="btn-secondary" id="catalog-filter-INCOMING" style="padding: 3px 8px; font-size: 0.72rem;" onclick="filterCatalogByType('INCOMING')">灰羽 En Camino</button>
           </div>
           <div style="display: flex; gap: 0.35rem; align-items: center;">
             <span style="font-family: var(--font-mono); font-size: 0.72rem; font-weight: 700; color: var(--gray-500);">ORDENAR:</span>
@@ -1645,7 +1646,7 @@
             MODO: 🎁 100% CANJEABLE
           </span>
         </div>
-        <div class="prod-mode-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+        <div class="prod-mode-grid" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.5rem;">
           <button type="button" id="btn-prod-mode-free" class="btn-secondary active" style="padding: 0.55rem 0.5rem; font-size: 0.75rem; font-weight: 800; border-radius: 4px; display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; border: 2px solid #059669; background: #ecfdf5; color: #065f46;" onclick="setProductPublicationMode('FREE_REWARD')">
             <span style="font-size: 1.15rem;">🎁</span>
             <strong>100% CANJEABLE (GRATIS)</strong>
@@ -1655,6 +1656,11 @@
             <span style="font-size: 1.15rem;">🏷️</span>
             <strong>VENTA CON DESCUENTO TOPE</strong>
             <span style="font-size: 0.65rem; color: #b45309; font-weight: 600;">Precio de venta + Tope de descuento en WP</span>
+          </button>
+          <button type="button" id="btn-prod-mode-incoming" class="btn-secondary" style="padding: 0.55rem 0.5rem; font-size: 0.75rem; font-weight: 800; border-radius: 4px; display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; border: 1.5px solid #cbd5e1; background: #f8fafc; color: #475569;" onclick="setProductPublicationMode('INCOMING')">
+            <span style="font-size: 1.15rem;">灰羽</span>
+            <strong>EN CAMINO (PREVENTA)</strong>
+            <span style="font-size: 0.65rem; color: #86198f; font-weight: 700;">Contrarreloj + Descuento Directo</span>
           </button>
         </div>
       </div>
@@ -1840,12 +1846,112 @@
         </div>
       </div>
 
+      <!-- SECCIÓN A-TER: CONFIGURACIÓN DE PRODUCTO EN CAMINO & PREVENTA DIRECTA (ESTÉTICA HAIBANE) -->
+      <div id="sec-product-incoming-calc" style="display: none; background: #faf5ff; border: 1.5px solid #a855f7; border-radius: 6px; padding: 0.95rem; margin-bottom: 1.25rem; box-shadow: 3px 3px 0px #7e22ce;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.65rem; border-bottom: 1px dashed #d8b4fe; padding-bottom: 0.35rem;">
+          <div style="font-family: var(--font-mono); font-size: 0.75rem; font-weight: 900; color: #581c87; display: flex; align-items: center; gap: 5px;">
+            <span>灰羽</span> CONFIGURACIÓN DE PREVENTA & CONTRARRELOJ (EN CAMINO)
+          </div>
+          <span class="noc-pulse-chip" style="background: #f3e8ff; color: #7e22ce; border-color: #c084fc; font-size: 0.65rem; padding: 1px 6px;">
+            <span class="pulse-dot" style="background: #a855f7;"></span> CONTRARRELOJ ACTIVO
+          </span>
+        </div>
+
+        <!-- FILA 1: PRECIO REGULAR Y FECHA/HORA DE LLEGADA -->
+        <div style="display: grid; grid-template-columns: 1fr 1.3fr; gap: 0.75rem; margin-bottom: 0.65rem;">
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" style="height: 18px; line-height: 18px; font-size: 0.68rem; margin-bottom: 3px; color: #581c87;">
+              💵 PRECIO REGULAR DE LISTA ($ USD)
+            </label>
+            <input type="number" id="calc-incoming-price-usd" class="form-input" placeholder="50.00" step="1.0" value="50.00" min="1"
+                   style="height: 38px; width: 100%; box-sizing: border-box; font-family: var(--font-mono); font-weight: 900; font-size: 1.05rem; text-align: center; color: #1e1b4b;"
+                   oninput="recalculateIncomingPresale()">
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" style="height: 18px; line-height: 18px; font-size: 0.68rem; margin-bottom: 3px; color: #581c87;">
+              📅 FECHA Y HORA ESTIMADA DE LLEGADA
+            </label>
+            <input type="datetime-local" id="calc-incoming-arrival-datetime" class="form-input"
+                   style="height: 38px; width: 100%; box-sizing: border-box; font-family: var(--font-mono); font-weight: 700; font-size: 0.85rem; color: #4c1d95;"
+                   oninput="recalculateIncomingPresale()">
+          </div>
+        </div>
+
+        <!-- PRESETS RÁPIDOS DE FECHA DE LLEGADA -->
+        <div style="display: flex; gap: 0.35rem; justify-content: flex-end; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap;">
+          <span style="font-family: var(--font-mono); font-size: 0.65rem; color: #7e22ce; font-weight: 800;">LLEGADA RÁPIDA:</span>
+          <button type="button" class="btn-secondary" id="btn-incoming-arrival-3" style="padding: 2px 7px; font-size: 0.68rem;" onclick="setIncomingArrivalPreset(3)">+3 Días</button>
+          <button type="button" class="btn-secondary active" id="btn-incoming-arrival-7" style="padding: 2px 7px; font-size: 0.68rem;" onclick="setIncomingArrivalPreset(7)">+7 Días</button>
+          <button type="button" class="btn-secondary" id="btn-incoming-arrival-14" style="padding: 2px 7px; font-size: 0.68rem;" onclick="setIncomingArrivalPreset(14)">+14 Días</button>
+          <button type="button" class="btn-secondary" id="btn-incoming-arrival-30" style="padding: 2px 7px; font-size: 0.68rem;" onclick="setIncomingArrivalPreset(30)">+30 Días</button>
+        </div>
+
+        <!-- FILA 2: REGULADOR DE DESCUENTO PREVENTA (DIRECTO EN PRECIO) -->
+        <div style="background: #ffffff; border: 1.5px solid #d8b4fe; border-radius: 4px; padding: 0.75rem; margin-bottom: 0.75rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.45rem;">
+            <label class="form-label" style="font-size: 0.7rem; font-weight: 900; margin-bottom: 0; color: #581c87;">
+              🏷️ DESCUENTO DE PREVENTA DIRECTO (100% INDEPENDIENTE DE PUNTOS WIRED)
+            </label>
+            <div style="display: flex; gap: 4px;">
+              <button type="button" class="btn-secondary active" id="btn-incoming-disc-type-pct" style="padding: 2px 6px; font-size: 0.65rem; font-weight: 800;" onclick="setIncomingDiscountType('PERCENTAGE')">% Porcentaje</button>
+              <button type="button" class="btn-secondary" id="btn-incoming-disc-type-usd" style="padding: 2px 6px; font-size: 0.65rem; font-weight: 800;" onclick="setIncomingDiscountType('FIXED_AMOUNT')">$ Monto Fijo</button>
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 0.6rem; align-items: center;">
+            <input type="number" id="calc-incoming-discount-val" class="form-input" value="15" min="1" step="1"
+                   style="height: 36px; width: 110px; font-family: var(--font-mono); font-weight: 900; font-size: 1.05rem; text-align: center; color: #7e22ce;"
+                   oninput="recalculateIncomingPresale()">
+            <span id="incoming-discount-unit-label" style="font-family: var(--font-mono); font-weight: 900; color: #581c87; font-size: 0.95rem;">%</span>
+
+            <!-- Presets de descuento de preventa -->
+            <div style="display: flex; gap: 0.3rem; flex-wrap: wrap; margin-left: auto;">
+              <button type="button" class="btn-secondary" id="btn-incoming-disc-5" style="padding: 2px 6px; font-size: 0.68rem;" onclick="setIncomingDiscountVal(5)">5%</button>
+              <button type="button" class="btn-secondary" id="btn-incoming-disc-10" style="padding: 2px 6px; font-size: 0.68rem;" onclick="setIncomingDiscountVal(10)">10%</button>
+              <button type="button" class="btn-secondary active" id="btn-incoming-disc-15" style="padding: 2px 6px; font-size: 0.68rem;" onclick="setIncomingDiscountVal(15)">15%</button>
+              <button type="button" class="btn-secondary" id="btn-incoming-disc-20" style="padding: 2px 6px; font-size: 0.68rem;" onclick="setIncomingDiscountVal(20)">20%</button>
+              <button type="button" class="btn-secondary" id="btn-incoming-disc-25" style="padding: 2px 6px; font-size: 0.68rem;" onclick="setIncomingDiscountVal(25)">25%</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- RESUMEN FINANCIERO DE PREVENTA & CUENTA REGRESIVA PREVIA -->
+        <div style="background: #ffffff; border: 1.5px solid #a855f7; border-radius: 4px; padding: 0.65rem 0.85rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+          <div style="font-family: var(--font-mono); font-size: 0.75rem;">
+            <div style="color: #6b21a8;">
+              Precio Regular: <strong id="calc-incoming-summary-regular" style="color: #1e1b4b; font-weight: 900;">$50.00 USD</strong>
+              · Descuento: <strong id="calc-incoming-summary-disc" style="color: #059669; font-weight: 900;">-$7.50 USD (15%)</strong>
+            </div>
+            <div style="color: #581c87; font-size: 0.85rem; margin-top: 3px;">
+              Cobrar en Preventa: <strong id="calc-incoming-summary-final" style="color: #7e22ce; font-weight: 900; font-size: 1.05rem;">$42.50 USD</strong>
+            </div>
+            <div id="calc-incoming-countdown-preview" style="color: #4338ca; font-size: 0.68rem; margin-top: 2px; font-weight: 700;">
+              ⏱️ Tiempo restante estimado: 7 días, 0 hrs, 0 mins
+            </div>
+            <div style="color: #64748b; font-size: 0.65rem; margin-top: 2px;">
+              🛡️ 100% Independiente de Puntos Wired: El cliente reserva sin gastar saldo de puntos.
+            </div>
+          </div>
+          <div>
+            <button type="button" class="btn-primary" onclick="applyCalculatedIncomingToProduct()" style="padding: 0.45rem 0.75rem; font-size: 0.75rem; font-weight: 800; white-space: nowrap; background: #7e22ce; border-color: #6b21a8;">
+              ⚡ Fijar Parámetros Preventa
+            </button>
+          </div>
+        </div>
+      </div>
+
       <!-- SECCIÓN B: DATOS DEL ARTÍCULO FÍSICO -->
       <input type="hidden" id="prod-reward-type" value="FREE_REWARD">
       <input type="hidden" id="prod-price-usd" value="0">
       <input type="hidden" id="prod-max-discount-pct" value="0">
       <input type="hidden" id="prod-max-discount-usd" value="0">
       <input type="hidden" id="prod-cash-to-pay-usd" value="0">
+      <input type="hidden" id="prod-is-incoming" value="false">
+      <input type="hidden" id="prod-estimated-arrival" value="">
+      <input type="hidden" id="prod-presale-discount-type" value="PERCENTAGE">
+      <input type="hidden" id="prod-presale-discount-val" value="0">
+      <input type="hidden" id="prod-presale-discount-usd" value="0">
+      <input type="hidden" id="prod-presale-price-usd" value="0">
 
       <div class="form-grid" style="margin-bottom: 0.85rem;">
         <div id="prod-commercial-summary-pill" style="display: none; grid-column: span 2; background: #fef3c7; border: 1.5px solid #f59e0b; border-radius: 4px; padding: 6px 10px; font-family: var(--font-mono); font-size: 0.72rem; color: #92400e;">

@@ -8,6 +8,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <link rel="stylesheet" href="./styles.css?v=2.9.8">
+  <link rel="stylesheet" href="./css/modals/preorder.css?v=2.9.8">
   
   <!-- Limpieza inmediata de cachés viejos residuales antes de cargar módulos -->
   <script>
@@ -401,6 +402,111 @@
               ⚡ AUTORIZAR CANJE WIRED
             </button>
           </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: RESERVA DE PRODUCTO PRÓXIMAMENTE [COPLAND OS / HAIBANE] -->
+  <div id="modal-preorder-reservation" class="modal-overlay" style="display: none;">
+    <div class="modal-content lain-card preorder-modal-container">
+      <div class="tech-corner top-left">+</div>
+      <div class="tech-corner top-right">+</div>
+      <div class="tech-corner bottom-left">+</div>
+      <div class="tech-corner bottom-right">+</div>
+      <button class="modal-close-btn" onclick="closePreOrderModal()" aria-label="Cerrar">&times;</button>
+
+      <!-- Header Estilo Copland / Haibane -->
+      <div class="lain-modal-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1.5px solid var(--dark); padding-bottom: 0.5rem; margin-bottom: 1rem; padding-right: 2rem;">
+        <span class="badge-navi" style="background: #0f172a; color: #38bdf8; border: 1px solid #0284c7;">
+          COPLAND OS 21.0 // PRE-ORDER RESERVATION PROTOCOL
+        </span>
+        <span id="preorder-modal-status-badge" class="badge-navi" style="background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe;">
+          ⏱️ EN CAMINO
+        </span>
+      </div>
+
+      <!-- Layout en 2 Columnas (Desktop >= 780px) -->
+      <div class="preorder-modal-grid">
+        <!-- Columna Izquierda: Ficha y Desglose Financiero -->
+        <div class="preorder-col-summary">
+          <div class="preorder-product-card">
+            <div class="preorder-img-wrap">
+              <img id="preorder-product-img" src="" alt="Producto" class="preorder-img" style="display: none;">
+              <span id="preorder-product-img-fallback" class="preorder-img-fallback">📦</span>
+            </div>
+            <div class="preorder-product-info">
+              <h3 id="preorder-product-title">-</h3>
+              <div id="preorder-eta-countdown" class="preorder-countdown-pill">
+                ⏱️ Llega en: <strong id="preorder-countdown-timer">--d --h --m --s</strong>
+              </div>
+            </div>
+          </div>
+
+          <!-- Desglose de Descuento Directo -->
+          <div class="preorder-financial-breakdown">
+            <div class="financial-row">
+              <span>Precio Regular:</span>
+              <span id="preorder-regular-price">$0.00 USD</span>
+            </div>
+            <div class="financial-row discount-row">
+              <span>Descuento Preventa Directo:</span>
+              <span id="preorder-discount-val">-$0.00 USD</span>
+            </div>
+            <div class="financial-row final-row">
+              <span>Abono al Llegar:</span>
+              <span id="preorder-cash-final">$0.00 USD</span>
+            </div>
+            <div class="preorder-points-invariant-note">
+              🛡️ <strong>Sin consumo de puntos:</strong> Tu saldo de Wired Points permanece 100% intacto (0 WP gastados).
+            </div>
+          </div>
+        </div>
+
+        <!-- Columna Derecha: Formulario de Compromiso con Validación Estricta -->
+        <div class="preorder-col-form">
+          <form id="form-preorder-reservation" onsubmit="event.preventDefault(); submitPreOrderReservation();" novalidate>
+            <!-- 1. Cédula Nicaragüense -->
+            <div class="form-group">
+              <label class="form-label" for="preorder-cedula">Cédula de Identidad (Nicaragua) *</label>
+              <input type="text" id="preorder-cedula" class="form-input font-mono" placeholder="001-010190-0001N" maxlength="16" autocomplete="off" required>
+              <div id="preorder-cedula-feedback" class="field-feedback"></div>
+            </div>
+
+            <!-- 2. Nombre Completo -->
+            <div class="form-group">
+              <label class="form-label" for="preorder-name">Nombres y Apellidos Completos *</label>
+              <input type="text" id="preorder-name" class="form-input" placeholder="Ej: Augusto César Sandino" autocomplete="name" required>
+              <div id="preorder-name-feedback" class="field-feedback"></div>
+            </div>
+
+            <!-- 3. Teléfono / WhatsApp -->
+            <div class="form-group">
+              <label class="form-label" for="preorder-phone">Teléfono / WhatsApp *</label>
+              <div class="phone-input-group" id="preorder-phone-group">
+                <span class="phone-prefix-addon">🇳🇮 +505</span>
+                <input type="tel" id="preorder-phone" class="form-input" placeholder="5843-8412" maxlength="9" autocomplete="tel" required>
+              </div>
+              <div id="preorder-phone-feedback" class="field-feedback"></div>
+            </div>
+
+            <!-- 4. Correo Electrónico -->
+            <div class="form-group">
+              <label class="form-label" for="preorder-email">Correo Electrónico Válido *</label>
+              <input type="email" id="preorder-email" class="form-input" placeholder="socio@ejemplo.com" autocomplete="email" required>
+              <div id="preorder-email-feedback" class="field-feedback"></div>
+            </div>
+
+            <!-- Botones de Acción -->
+            <div class="preorder-actions">
+              <button type="submit" id="btn-submit-preorder" class="btn-primary" disabled style="width: 100%;">
+                🔮 CONFIRMAR RESERVA DE PREVENTA
+              </button>
+              <button type="button" class="btn-secondary" onclick="closePreOrderModal()" style="width: 100%;">
+                Cancelar
+              </button>
+            </div>
+          </form>
         </div>
       </div>
     </div>

@@ -3,7 +3,14 @@
  */
 import { InvoiceTemplateService } from "../services/InvoiceTemplateService.js";
 import { FirestoreService } from "../services/FirestoreService.js";
-import { setProductPublicationMode, recalculateProductDiscount } from "./AdminCatalogCalculatorView.js";
+import {
+  setProductPublicationMode,
+  recalculateProductDiscount,
+  setIncomingDiscountType,
+  recalculateIncomingPresale,
+  applyCalculatedIncomingToProduct
+} from "./AdminCatalogCalculatorView.js";
+import { RewardModel } from "../models/RewardModel.js";
 import { isProduction, getEnvironmentInfo } from "../config/env.js";
 
 let vm = null;
@@ -81,7 +88,10 @@ export function openNewProductModal() {
   const titleInput = document.getElementById("prod-title");
   if (titleInput) titleInput.value = "";
   const costInput = document.getElementById("prod-cost");
-  if (costInput) costInput.value = "";
+  if (costInput) {
+    costInput.value = "";
+    costInput.placeholder = "820";
+  }
   const stockInput = document.getElementById("prod-stock");
   if (stockInput) stockInput.value = "1";
   const imgInput = document.getElementById("prod-img");
@@ -89,6 +99,26 @@ export function openNewProductModal() {
   const descInput = document.getElementById("prod-desc");
   if (descInput) descInput.value = "";
   clearProductImageUpload();
+
+  // Limpiar campos y parámetros de preventa
+  const isIncInput = document.getElementById("prod-is-incoming");
+  if (isIncInput) isIncInput.value = "false";
+  const estArrInput = document.getElementById("prod-estimated-arrival");
+  if (estArrInput) estArrInput.value = "";
+  const dtInput = document.getElementById("calc-incoming-arrival-datetime");
+  if (dtInput) dtInput.value = "";
+  const incPriceInput = document.getElementById("calc-incoming-price-usd");
+  if (incPriceInput) incPriceInput.value = "50.00";
+  const incDiscValInput = document.getElementById("calc-incoming-discount-val");
+  if (incDiscValInput) incDiscValInput.value = "15";
+  const discTypeInput = document.getElementById("prod-presale-discount-type");
+  if (discTypeInput) discTypeInput.value = "PERCENTAGE";
+  const discValHidden = document.getElementById("prod-presale-discount-val");
+  if (discValHidden) discValHidden.value = "0";
+  const discUsdHidden = document.getElementById("prod-presale-discount-usd");
+  if (discUsdHidden) discUsdHidden.value = "0";
+  const presalePriceHidden = document.getElementById("prod-presale-price-usd");
+  if (presalePriceHidden) presalePriceHidden.value = "0";
 
   modal.style.display = "flex";
   setProductPublicationMode("FREE_REWARD");
@@ -113,19 +143,27 @@ export function openEditProductModal(productId) {
   const btnSubmit = document.getElementById("btn-save-product-submit");
   if (btnSubmit) btnSubmit.textContent = "💾 ACTUALIZAR PRODUCTO";
 
-  const isPartial = product.rewardType === "PARTIAL_DISCOUNT" || (typeof product.isPartialDiscount === "function" && product.isPartialDiscount());
-  setProductPublicationMode(isPartial ? "PARTIAL_DISCOUNT" : "FREE_REWARD");
+  const isIncoming = product.status === "INCOMING" || Boolean(product.isIncomingFlag) || (typeof product.isIncoming === "function" && product.isIncoming());
+  const isPartial = !isIncoming && (product.rewardType === "PARTIAL_DISCOUNT" || (typeof product.isPartialDiscount === "function" && product.isPartialDiscount()));
 
-  const titleInput = document.getElementById("prod-title");
-  if (titleInput) titleInput.value = product.title || "";
-  const costInput = document.getElementById("prod-cost");
-  if (costInput) costInput.value = product.pointsCost != null ? product.pointsCost : "";
-  const stockInput = document.getElementById("prod-stock");
-  if (stockInput) stockInput.value = product.stock != null ? product.stock : 1;
-  const descInput = document.getElementById("prod-desc");
-  if (descInput) descInput.value = product.description || "";
-
-  if (isPartial) {
+  if (isIncoming) {
+    setProductPublicationMode("INCOMING");
+    const incPrice = document.getElementById("calc-incoming-price-usd");
+    if (incPrice) incPrice.value = (product.priceUsd || 50).toFixed(2);
+    if (product.estimatedArrival) {
+      const d = new Date(product.estimatedArrival);
+      const pad = n => String(n).padStart(2, "0");
+      const localStr = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+      const dtInput = document.getElementById("calc-incoming-arrival-datetime");
+      if (dtInput) dtInput.value = localStr;
+    }
+    const valInput = document.getElementById("calc-incoming-discount-val");
+    if (valInput) valInput.value = product.presaleDiscountValue || 15;
+    setIncomingDiscountType(product.presaleDiscountType || "PERCENTAGE");
+    recalculateIncomingPresale();
+    applyCalculatedIncomingToProduct();
+  } else if (isPartial) {
+    setProductPublicationMode("PARTIAL_DISCOUNT");
     const priceInput = document.getElementById("calc-sale-prod-price-usd");
     if (priceInput) priceInput.value = (product.priceUsd || 0).toFixed(2);
     const discInput = document.getElementById("calc-sale-prod-discount-pct");
@@ -138,7 +176,18 @@ export function openEditProductModal(productId) {
     if (prodMaxUsdHidden) prodMaxUsdHidden.value = product.maxDiscountUsd || 0;
     const prodCashHidden = document.getElementById("prod-cash-to-pay-usd");
     if (prodCashHidden) prodCashHidden.value = product.cashToPayUsd || 0;
+  } else {
+    setProductPublicationMode("FREE_REWARD");
   }
+
+  const titleInput = document.getElementById("prod-title");
+  if (titleInput) titleInput.value = product.title || "";
+  const costInput = document.getElementById("prod-cost");
+  if (costInput) costInput.value = isIncoming ? 0 : (product.pointsCost != null ? product.pointsCost : "");
+  const stockInput = document.getElementById("prod-stock");
+  if (stockInput) stockInput.value = product.stock != null ? product.stock : 1;
+  const descInput = document.getElementById("prod-desc");
+  if (descInput) descInput.value = product.description || "";
 
   const productImages = typeof product.getImages === "function" 
     ? product.getImages() 
@@ -476,7 +525,8 @@ export function previewProductImageFromUrl(url) {
 
 export async function saveProductAdmin() {
   const title = (document.getElementById("prod-title").value || "").trim();
-  const pointsCost = parseInt(document.getElementById("prod-cost").value, 10);
+  const rawCost = document.getElementById("prod-cost")?.value;
+  const pointsCost = parseInt(rawCost, 10);
   const stock = parseInt(document.getElementById("prod-stock").value, 10) || 1;
   const description = (document.getElementById("prod-desc").value || "").trim();
 
@@ -492,6 +542,82 @@ export async function saveProductAdmin() {
   const imageUrl = images[0] || (pendingUrl && !pendingUrl.includes(" ") ? pendingUrl : "");
 
   const activeProductMode = document.getElementById("prod-reward-type")?.value || "FREE_REWARD";
+  const editId = (document.getElementById("prod-edit-id")?.value || "").trim();
+
+  if (!title) {
+    showToast("⚠️ El nombre del producto es obligatorio.", "error");
+    return;
+  }
+
+  if (activeProductMode === "INCOMING") {
+    const calc = recalculateIncomingPresale();
+    if (calc.regularPrice <= 0) {
+      showToast("⚠️ Ingresa un precio regular de lista mayor a $0 USD.", "error");
+      return;
+    }
+    if (!calc.arrivalDatetime) {
+      showToast("⚠️ Ingresa la fecha y hora estimada de llegada del producto.", "error");
+      return;
+    }
+    const targetDate = new Date(calc.arrivalDatetime);
+    if (isNaN(targetDate.getTime())) {
+      showToast("⚠️ Fecha de llegada inválida.", "error");
+      return;
+    }
+
+    try {
+      const reward = new RewardModel({
+        id: editId || ("REW-" + Math.random().toString(36).substring(2, 8).toUpperCase()),
+        title,
+        status: "INCOMING",
+        isIncoming: true,
+        rewardType: "INCOMING",
+        priceUsd: calc.regularPrice,
+        presaleDiscountType: calc.discountType,
+        presaleDiscountValue: calc.discountVal,
+        presaleDiscountUsd: calc.discountUsd,
+        presalePriceUsd: calc.presalePrice,
+        estimatedArrival: targetDate.toISOString(),
+        pointsCost: 0, // 100% independiente de puntos Wired
+        stock,
+        imageUrl,
+        images,
+        description
+      });
+
+      await FirestoreService.saveReward(reward.toJSON());
+      if (vm && typeof vm.refreshData === "function") {
+        await vm.refreshData();
+      }
+
+      closeModal("modal-new-product");
+      const editInput = document.getElementById("prod-edit-id");
+      if (editInput) editInput.value = "";
+      document.getElementById("prod-title").value = "";
+      document.getElementById("prod-cost").value = "";
+      document.getElementById("prod-stock").value = "1";
+      document.getElementById("prod-img").value = "";
+      document.getElementById("prod-desc").value = "";
+      document.getElementById("prod-reward-type").value = "FREE_REWARD";
+      document.getElementById("prod-price-usd").value = "0";
+      document.getElementById("prod-max-discount-pct").value = "0";
+      document.getElementById("prod-max-discount-usd").value = "0";
+      document.getElementById("prod-cash-to-pay-usd").value = "0";
+      const isIncInput = document.getElementById("prod-is-incoming");
+      if (isIncInput) isIncInput.value = "false";
+      const dtInput = document.getElementById("calc-incoming-arrival-datetime");
+      if (dtInput) dtInput.value = "";
+      const pill = document.getElementById("prod-commercial-summary-pill");
+      if (pill) pill.style.display = "none";
+      clearProductImageUpload();
+      showToast(editId ? "✓ Producto en preventa actualizado con éxito." : "✓ Producto en preventa registrado con éxito en el catálogo.", "success");
+    } catch (err) {
+      showToast("❌ " + err.message, "error");
+    }
+    return;
+  }
+
+  // Modos estándar FREE_REWARD y PARTIAL_DISCOUNT
   let rewardType = activeProductMode === "PARTIAL_DISCOUNT" ? "PARTIAL_DISCOUNT" : "FREE_REWARD";
   let priceUsd = 0;
   let maxDiscountPct = 0;
@@ -506,16 +632,10 @@ export async function saveProductAdmin() {
     cashToPayUsd = calc.cashDue;
   }
 
-  if (!title) {
-    showToast("⚠️ El nombre del producto es obligatorio.", "error");
-    return;
-  }
   if (isNaN(pointsCost) || pointsCost <= 0) {
     showToast("⚠️ Ingresa un costo válido en Wired Points.", "error");
     return;
   }
-
-  const editId = (document.getElementById("prod-edit-id")?.value || "").trim();
 
   try {
     const rewardPayload = {
@@ -559,6 +679,29 @@ export async function saveProductAdmin() {
 }
 
 export const saveNewProduct = saveProductAdmin;
+
+export async function handleAdminReleaseIncoming(rewardId) {
+  const product = (vm?.catalog || []).find(p => p.id === rewardId);
+  const title = product?.title || rewardId;
+  if (!confirm(`¿Desembarcar "${title}" y pasarlo a disponible de inmediato?\n\nEl producto dejará el estado En Camino y pasará a venta general activa.`)) {
+    return;
+  }
+  try {
+    const raw = await FirestoreService.getReward(rewardId);
+    const reward = raw ? new RewardModel(raw) : (product ? new RewardModel(product) : null);
+    if (!reward) throw new Error("Producto no encontrado.");
+    reward.status = "ACTIVE";
+    reward.isIncomingFlag = false;
+    reward.updatedAt = new Date().toISOString();
+    await FirestoreService.saveReward(reward.toJSON());
+    if (vm && typeof vm.refreshData === "function") {
+      await vm.refreshData();
+    }
+    showToast(`✓ "${title}" ha sido desembarcado y ya está disponible en venta general.`, "success");
+  } catch (err) {
+    showToast("❌ Error al desembarcar producto: " + err.message, "error");
+  }
+}
 
 export async function removeProductAdmin(id) {
   if (confirm("¿Estás seguro de eliminar este producto del catálogo?")) {

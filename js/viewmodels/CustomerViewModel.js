@@ -5,6 +5,7 @@ import { RewardModel } from "../models/RewardModel.js";
 import { VoucherModel } from "../models/VoucherModel.js";
 import { TokenModel } from "../models/TokenModel.js";
 import { getStorageKey } from "../config/env.js";
+import { NicaraguanCedulaValidator } from "../utils/NicaraguanCedulaValidator.js";
 
 export class CustomerViewModel {
   constructor() {
@@ -616,5 +617,138 @@ export class CustomerViewModel {
       pointsRefunded: pointsToRefund,
       newBalance: this.currentUser.wiredPoints
     };
+  }
+
+  async reservePreOrder(rewardId, customerData = {}) {
+    // 1. Buscar producto en catálogo local o Firestore
+    let reward = (this.catalog || []).find(r => r.id === rewardId);
+    if (!reward && rewardId) {
+      const raw = await FirestoreService.getReward(rewardId);
+      if (raw) reward = new RewardModel(raw);
+    }
+    if (!reward) {
+      throw new Error("Producto no encontrado en el catálogo.");
+    }
+
+    // 2. Validar estado de preventa
+    const isIncoming = reward.status === "INCOMING" || (typeof reward.isIncoming === "function" && reward.isIncoming());
+    if (!isIncoming) {
+      throw new Error("Este producto no se encuentra disponible en modalidad preventa.");
+    }
+
+    if (typeof reward.isIncomingExpired === "function" && reward.isIncomingExpired()) {
+      throw new Error("El periodo de preventa para este producto ha finalizado.");
+    }
+
+    // 3. Validar datos requeridos del cliente
+    const cedulaInput = (customerData.cedula || "").trim().toUpperCase();
+    const fullName = (customerData.fullName || customerData.name || "").trim();
+    const phone = (customerData.phone || "").trim();
+    const email = (customerData.email || "").trim();
+
+    if (!cedulaInput) throw new Error("La cédula de identidad es obligatoria.");
+    const cedulaCheck = NicaraguanCedulaValidator.validate(cedulaInput);
+    if (!cedulaCheck.isValid) {
+      throw new Error(`Cédula inválida: ${cedulaCheck.reason}`);
+    }
+    const cedula = cedulaCheck.formatted;
+    if (!fullName || fullName.split(/\s+/).length < 2) {
+      throw new Error("Por favor ingresa tu nombre y apellido completos.");
+    }
+    const cleanPhoneDigits = phone.replace(/\D/g, "");
+    if (cleanPhoneDigits.length !== 8 && !(cleanPhoneDigits.startsWith("505") && cleanPhoneDigits.length === 11)) {
+      throw new Error("Ingresa un número telefónico válido de 8 dígitos.");
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      throw new Error("Por favor ingresa un correo electrónico válido.");
+    }
+
+    // 4. Cálculo del Descuento Directo de Preventa (Independiente de Puntos Wired)
+    const regularPrice = Math.max(0, Number(reward.priceUsd) || 0);
+    const discType = reward.presaleDiscountType || reward.preOrderDiscountType || "PERCENTAGE";
+    const discVal = Number(reward.presaleDiscountValue ?? reward.preOrderDiscountVal ?? reward.presaleDiscountUsd ?? 0);
+    let discountUsd = 0;
+
+    if (discType === "PERCENTAGE") {
+      const clampedPct = Math.max(0, Math.min(100, discVal));
+      discountUsd = Math.round((regularPrice * (clampedPct / 100)) * 100) / 100;
+    } else {
+      const clampedFixed = Math.max(0, discVal);
+      discountUsd = Math.min(regularPrice, Math.round(clampedFixed * 100) / 100);
+    }
+    const cashToPayUsd = Math.max(0, Math.round((regularPrice - discountUsd) * 100) / 100);
+
+    // 5. INVARIANTE ESTRICTO DE PUNTOS WIRED: 0 WP DEDUCIDOS
+    // El balance de puntos del usuario permanece 100% inalterado
+    const pointsSpent = 0;
+
+    // 6. Generación de Voucher de Preventa RES-XXXX
+    let voucherCode = null;
+    for (let attempt = 0; attempt < 12 && !voucherCode; attempt++) {
+      const candidate = "RES-" + Math.floor(1000 + Math.random() * 9000);
+      const existing = await FirestoreService.getVoucher(candidate).catch(() => null);
+      if (!existing) voucherCode = candidate;
+    }
+    if (!voucherCode) {
+      voucherCode = "RES-" + Date.now().toString(36).toUpperCase().slice(-6);
+    }
+    const cleanPhone8 = (cleanPhoneDigits.startsWith("505") && cleanPhoneDigits.length === 11) ? cleanPhoneDigits.slice(3) : cleanPhoneDigits;
+    const userUid = this.currentUser ? this.currentUser.uid : ("GUEST-" + cleanPhone8);
+
+    const voucher = new VoucherModel({
+      voucherCode,
+      userUid,
+      userName: fullName,
+      userDisplayName: fullName,
+      customerInfo: {
+        cedula,
+        fullName,
+        phone: cleanPhone8,
+        email
+      },
+      rewardId: reward.id,
+      rewardTitle: reward.title,
+      rewardType: "PREORDER_RESERVATION",
+      imageUrl: reward.imageUrl || (Array.isArray(reward.images) && reward.images[0]) || "",
+      pointsSpent: 0,
+      pointsCost: 0,
+      priceUsd: regularPrice,
+      discountUsd,
+      cashToPayUsd,
+      status: "RESERVED_UPCOMING",
+      isPaid: false,
+      estimatedArrival: reward.estimatedArrival || null,
+      createdAt: new Date().toISOString(),
+      expiresAt: null
+    });
+
+    // 7. Persistir en Firestore / LocalStorage
+    await FirestoreService.saveVoucher(voucher.toJSON());
+
+    // 8. Registro en Ledger Contable si hay sesión de usuario activa (0 puntos delta)
+    if (this.currentUser) {
+      const entry = {
+        id: "TX-" + Date.now(),
+        type: "PREORDER_RESERVATION",
+        delta: 0,
+        balance_after: this.currentUser.wiredPoints,
+        ref_id: voucher.voucherCode,
+        note: `🔮 Reserva Preventa de ${reward.title}: Descuento -$${discountUsd.toFixed(2)} USD aplicado (0 WP gastados). Saldo a liquidar al llegar: $${cashToPayUsd.toFixed(2)} USD`,
+        created_at: new Date().toISOString()
+      };
+      FirestoreService.addLedgerEntry(this.currentUser.uid, entry);
+      await this.refreshUserData();
+    }
+
+    this.notify();
+
+    // 9. Compatibilidad y retorno
+    voucher.voucher = voucher;
+    voucher.success = true;
+    voucher.newBalance = this.currentUser ? this.currentUser.wiredPoints : 0;
+    voucher.cost = 0;
+
+    return voucher;
   }
 }

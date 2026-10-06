@@ -52,7 +52,8 @@ export function renderVouchers(vouchers) {
       ${vouchers.map(v => {
     const isDelivered = v.status === "DELIVERED" || (typeof v.isDelivered === "function" && v.isDelivered()) || Boolean(v.deliveredAt);
     const isCancelled = v.status === "CANCELLED" || (typeof v.isCancelled === "function" && v.isCancelled()) || Boolean(v.cancelledAt);
-    const isCommercial = typeof v.isCommercial === "function" ? v.isCommercial() : (v.rewardType === "PARTIAL_DISCOUNT" || (v.cashToPayUsd && v.cashToPayUsd > 0));
+    const isPreOrder = v.rewardType === "PREORDER_RESERVATION" || v.status === "RESERVED_UPCOMING" || (typeof v.isPreOrder === "function" && v.isPreOrder()) || (typeof v.voucherCode === "string" && v.voucherCode.startsWith("RES-"));
+    const isCommercial = !isPreOrder && (typeof v.isCommercial === "function" ? v.isCommercial() : (v.rewardType === "PARTIAL_DISCOUNT" || (v.cashToPayUsd && v.cashToPayUsd > 0)));
     const isPaid = typeof v.isPaidVoucher === "function" ? v.isPaidVoucher() : Boolean(v.isPaid || v.status === "PAID" || v.paidAt);
     const isExpired = v.status === "EXPIRED" || (typeof v.isExpired === "function" ? v.isExpired() : (isCommercial && !isPaid && !isDelivered && !isCancelled && v.expiresAt && new Date() > new Date(v.expiresAt)));
     const cost = v.pointsSpent || v.pointsCost || 0;
@@ -63,6 +64,8 @@ export function renderVouchers(vouchers) {
       badgeHtml = `<div class="voucher-badge delivered" style="background:#ecfdf5; color:#065f46; border:1px solid #a7f3d0; font-family:var(--font-mono); font-size:0.68rem; font-weight:800; padding:2px 7px; border-radius:3px;">✓ ENTREGADO</div>`;
     } else if (isCancelled) {
       badgeHtml = `<div class="voucher-badge cancelled" style="background:#fee2e2; color:#991b1b; border:1px solid #fca5a5; font-family:var(--font-mono); font-size:0.68rem; font-weight:800; padding:2px 7px; border-radius:3px;">❌ CANCELADO</div>`;
+    } else if (isPreOrder) {
+      badgeHtml = `<div class="voucher-badge preorder" style="background:#eff6ff; color:#1e40af; border:1px solid #bfdbfe; font-family:var(--font-mono); font-size:0.68rem; font-weight:800; padding:2px 7px; border-radius:3px;">🔮 RESERVA EN CAMINO (PREVENTA)</div>`;
     } else if (isExpired) {
       badgeHtml = `<div class="voucher-badge expired" style="background:#fef2f2; color:#b91c1c; border:1px solid #fecaca; font-family:var(--font-mono); font-size:0.68rem; font-weight:800; padding:2px 7px; border-radius:3px;">⚠️ CADUCADO (3D)</div>`;
     } else if (isPaid) {
@@ -74,7 +77,10 @@ export function renderVouchers(vouchers) {
     }
 
     let expInfo = "";
-    if (isExpired) {
+    if (isPreOrder) {
+      const etaFormatted = v.estimatedArrival ? new Date(v.estimatedArrival).toLocaleDateString("es-NI", { day: "2-digit", month: "short", year: "numeric" }) : "Por confirmar";
+      expInfo = `<div style="font-family:var(--font-mono); font-size:0.68rem; color:#0284c7; font-weight:700; margin-top:3px;">⏱️ Llegada estimada: ${etaFormatted} · Sin caducidad previa</div>`;
+    } else if (isExpired) {
       expInfo = cost > 0
         ? `<div style="font-family:var(--font-mono); font-size:0.68rem; color:#dc2626; font-weight:800; margin-top:3px;">⚠️ Plazo de 3 días vencido · -10 WP penalización por irresponsabilidad</div>`
         : `<div style="font-family:var(--font-mono); font-size:0.68rem; color:#dc2626; font-weight:800; margin-top:3px;">⚠️ Plazo de 3 días para pagar vencido · Stock devuelto a tienda</div>`;
@@ -112,7 +118,14 @@ export function renderVouchers(vouchers) {
               ${badgeHtml}
             </div>
             <div class="voucher-code" style="font-family:var(--font-mono); font-size:1.35rem; font-weight:900; letter-spacing:2px; color:var(--dark); margin:0.35rem 0;">${v.voucherCode}</div>
-            ${(v.cashToPayUsd && v.cashToPayUsd > 0) ? `
+            ${isPreOrder ? `
+              <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:3px; padding:3px 6px; font-family:var(--font-mono); font-size:0.72rem; color:#1e40af; margin: 4px 0;">
+                🏷️ Descuento Preventa: -${formatPrice(v.discountUsd)} · <strong style="color:#0284c7;">Abonar al llegar: ${formatPrice(v.cashToPayUsd)}</strong>
+                ${(v.customerInfo && (v.customerInfo.fullName || v.customerInfo.cedula)) ? `
+                  <div style="font-size:0.68rem; color:#475569; margin-top:2px;">👤 Titular: ${v.customerInfo.fullName || v.userName} ${v.customerInfo.cedula ? '· 🪪 ' + v.customerInfo.cedula : ''}</div>
+                ` : ''}
+              </div>
+            ` : ((v.cashToPayUsd && v.cashToPayUsd > 0) ? `
               <div style="background:${isPaid ? '#ecfdf5' : '#fffbeb'}; border:1px solid ${isPaid ? '#a7f3d0' : '#fcd34d'}; border-radius:3px; padding:3px 6px; font-family:var(--font-mono); font-size:0.72rem; color:${isPaid ? '#065f46' : '#92400e'}; margin: 4px 0;">
                 ${isPaid
           ? `✅ <strong>Abonado: ${formatPrice(v.cashToPayUsd)}</strong> (Pago confirmado)`
@@ -121,10 +134,10 @@ export function renderVouchers(vouchers) {
             : `🛒 Compra en tienda · <strong style="color:#dc2626;">Abonar: ${formatPrice(v.cashToPayUsd)}</strong>`)
         }
               </div>
-            ` : ''}
+            ` : '')}
             ${expInfo}
             <div class="voucher-meta" style="display:flex; justify-content:space-between; align-items:center; font-family:var(--font-mono); font-size:0.75rem; color:var(--gray-600); border-top:1px dashed var(--gray-300); padding-top:0.6rem; margin-top:0.6rem;">
-              <div>Puntos: <strong style="color:var(--dark);">${cost > 0 ? cost.toLocaleString() + ' WP' : '0 WP (Sin desc.)'}</strong></div>
+              <div>Puntos: <strong style="color:var(--dark);">${cost > 0 ? cost.toLocaleString() + ' WP' : (isPreOrder ? '0 WP (Preventa directa)' : '0 WP (Sin desc.)')}</strong></div>
               <div>${dateStr}</div>
               <div style="display: flex; gap: 4px; align-items: center;">
                 ${canCancel ? `
@@ -286,22 +299,37 @@ export function showVoucherModal(voucherCode) {
     if (subtitleEl) subtitleEl.textContent = "Vale sin validez comercial (cancelado y reembolsado).";
     if (closeBtn) closeBtn.textContent = "✓ Cerrar Vale";
   } else {
-    const isCommercial = typeof voucher.isCommercial === "function"
+    const isPreOrder = voucher.rewardType === "PREORDER_RESERVATION" ||
+      voucher.status === "RESERVED_UPCOMING" ||
+      (typeof voucher.isPreOrder === "function" && voucher.isPreOrder()) ||
+      (typeof voucher.voucherCode === "string" && voucher.voucherCode.startsWith("RES-"));
+
+    const isCommercial = !isPreOrder && (typeof voucher.isCommercial === "function"
       ? voucher.isCommercial()
-      : (voucher.rewardType === "PARTIAL_DISCOUNT" || (voucher.cashToPayUsd && voucher.cashToPayUsd > 0));
+      : (voucher.rewardType === "PARTIAL_DISCOUNT" || (voucher.cashToPayUsd && voucher.cashToPayUsd > 0)));
     const isPaid = typeof voucher.isPaidVoucher === "function"
       ? voucher.isPaidVoucher()
       : Boolean(voucher.isPaid || voucher.status === "PAID" || voucher.paidAt);
     const isExpired = typeof voucher.isExpired === "function"
       ? voucher.isExpired()
-      : (isCommercial && !isPaid && voucher.expiresAt && new Date() > new Date(voucher.expiresAt));
+      : (!isPreOrder && isCommercial && !isPaid && voucher.expiresAt && new Date() > new Date(voucher.expiresAt));
 
     const cashPill = document.getElementById("modal-voucher-cash-pill");
     const cashVal = document.getElementById("modal-voucher-cash-val");
     const cashLabel = document.getElementById("modal-voucher-cash-label");
 
     if (cashPill) {
-      if (isCommercial) {
+      if (isPreOrder) {
+        cashPill.style.display = "block";
+        cashPill.style.background = "#f0f9ff";
+        cashPill.style.borderColor = "#7dd3fc";
+        cashPill.style.color = "#0369a1";
+        if (cashLabel) cashLabel.innerHTML = `🏷️ <strong>DESCUENTO PREVENTA: -${formatPrice(voucher.discountUsd)}</strong> · 💵 <strong>ABONO AL RETIRAR EN TIENDA:</strong>`;
+        if (cashVal) {
+          cashVal.style.color = "#0284c7";
+          cashVal.textContent = formatPrice(voucher.cashToPayUsd);
+        }
+      } else if (isCommercial) {
         cashPill.style.display = "block";
         if (isPaid) {
           cashPill.style.background = "#ecfdf5";
@@ -328,9 +356,18 @@ export function showVoucherModal(voucherCode) {
       }
     }
 
-    // Píldora de vigencia / tiempo (SIN LÍMITE para gratis ni pagados; 3 días para compras impagas)
+    // Píldora de vigencia / tiempo (SIN LÍMITE para preventa, gratis ni pagados; 3 días para compras impagas)
     if (expPill && expText) {
-      if (!isCommercial) {
+      if (isPreOrder) {
+        expPill.style.display = "block";
+        expPill.style.background = "#eff6ff";
+        expPill.style.borderColor = "#bfdbfe";
+        expPill.style.color = "#1e40af";
+        const etaText = voucher.estimatedArrival
+          ? new Date(voucher.estimatedArrival).toLocaleDateString("es-NI", { weekday: "long", day: "2-digit", month: "long", year: "numeric" })
+          : "Por confirmar";
+        expText.innerHTML = `⏱️ <strong>Fecha Estimada de Llegada:</strong> ${etaText} · Sin caducidad previa`;
+      } else if (!isCommercial) {
         // Recompensa 100% Gratis: NUNCA expira, CERO avisos de pago
         expPill.style.display = "block";
         expPill.style.background = "#ecfdf5";
@@ -373,7 +410,11 @@ export function showVoucherModal(voucherCode) {
 
     if (instructionsBox) {
       instructionsBox.style.display = "block";
-      if (!isCommercial) {
+      if (isPreOrder) {
+        const custName = (voucher.customerInfo && voucher.customerInfo.fullName) || voucher.userName || "Cliente";
+        const custCedula = (voucher.customerInfo && voucher.customerInfo.cedula) ? ` · Cédula: <strong>${voucher.customerInfo.cedula}</strong>` : "";
+        instructionsBox.innerHTML = `📌 <strong>Instrucciones de Preventa:</strong> Presenta este código QR o envíalo por WhatsApp a MeltyDeays cuando tu producto arribe a tienda física para abonar el saldo pendiente de <strong>${formatPrice(voucher.cashToPayUsd)}</strong> y retirar tu artículo.<div style="margin-top:4px; font-size:0.68rem; color:#0369a1; font-family:var(--font-mono);">👤 Titular: <strong>${custName}</strong>${custCedula}<br>🛡️ Descuento comercial directo garantizado · Cero Puntos Wired consumidos.</div>`;
+      } else if (!isCommercial) {
         instructionsBox.innerHTML = `📌 <strong>Instrucciones:</strong> Muestra este código QR o envíalo por WhatsApp a MeltyDeays para coordinar la entrega personal de tu producto 100% gratis.<div style="margin-top:4px; font-size:0.68rem; color:#64748b; font-family:var(--font-mono);">🛡️ Premio de fidelidad: Se entrega probado personalmente. Exento de garantía comercial posterior de 30 días.</div>`;
       } else if (isPaid) {
         instructionsBox.innerHTML = `📌 <strong>Pago Registrado con Éxito:</strong> Ya cancelaste <strong>${formatPrice(voucher.cashToPayUsd)}</strong>. Envía el comprobante por WhatsApp a MeltyDeays para pactar la entrega personal en el momento que te sea más conveniente.<div style="margin-top:4px; font-size:0.68rem; color:#047857; font-family:var(--font-mono);">🛡️ Garantía técnica oficial de 30 días amparada por tu compra comercial.</div>`;
@@ -410,90 +451,123 @@ export function showVoucherModal(voucherCode) {
       }
 
       const ptsSpent = Number(voucher.pointsSpent || voucher.pointsCost || 0);
-      const socio = voucher.userName || "Cliente";
+      const socio = (voucher.customerInfo && voucher.customerInfo.fullName) || voucher.userName || "Cliente";
       const expStr = voucher.expiresAt
         ? new Date(voucher.expiresAt).toLocaleDateString("es-NI", { weekday: "long", day: "2-digit", month: "long", hour: "2-digit", minute: "2-digit" })
         : "";
 
-      let tpl;
-      if (!isCommercial) {
-        tpl = {
-          head: "🎁 *CANJE DE RECOMPENSA*",
-          intro: "¡Canjeé una recompensa 100% gratis con mis Wired Points! ✨",
-          details: [
-            `🎫 Código: \`${voucher.voucherCode}\``,
-            `👤 Socio: ${socio}`,
-            `⭐ Puntos usados: *${ptsSpent.toLocaleString()} WP*`,
-            `💚 Total a pagar: *¡GRATIS!*`
-          ],
-          notes: ["🎀 Premio de fidelidad · Se entrega probado en mostrador"],
-          close: "¿Cuándo puedo pasar a retirarlo? 🙌"
-        };
-      } else if (isPaid) {
-        tpl = {
-          head: "✅ *COMPRA PAGADA*",
-          intro: "Ya realicé el pago de mi vale 💳",
-          details: [
-            `🎫 Código: \`${voucher.voucherCode}\``,
-            `👤 Socio: ${socio}`,
-            `💰 Monto abonado: *${formatDualPricePlain(voucher.cashToPayUsd)}*`,
-            `📌 Estado: *PAGO CONFIRMADO*`
-          ],
-          notes: ["🛡 Garantía técnica de 30 días incluida"],
-          close: "Adjunto mi comprobante para coordinar la entrega 📦"
-        };
-      } else if (voucher.discountUsd > 0) {
-        tpl = {
-          head: "🎟️ *VALE DE DESCUENTO*",
-          intro: "Generé un vale de descuento con mis Wired Points ✨",
-          details: [
-            `🎫 Código: \`${voucher.voucherCode}\``,
-            `👤 Socio: ${socio}`,
-            `🏷 Descuento: -${formatDualPricePlain(voucher.discountUsd)}`,
-            `⭐ Puntos usados: ${ptsSpent.toLocaleString()} WP`,
-            `💵 A pagar en mostrador: *${formatDualPricePlain(voucher.cashToPayUsd)}*`
-          ],
-          notes: [
-            expStr ? `⏳ Reserva válida hasta: _${expStr}_` : "⏳ Reserva válida por 3 días",
-            "🛡 Garantía técnica de 30 días tras el pago"
-          ],
-          close: "¿Me ayudas a coordinar el pago y la entrega? 🙌"
-        };
+      let msgLines = [];
+
+      if (isPreOrder) {
+        const custName = (voucher.customerInfo && voucher.customerInfo.fullName) || voucher.userName || "Cliente";
+        const custCedula = (voucher.customerInfo && voucher.customerInfo.cedula) || "-";
+        const etaFormatted = voucher.estimatedArrival
+          ? new Date(voucher.estimatedArrival).toLocaleDateString("es-NI", { day: "2-digit", month: "short", year: "numeric" })
+          : (voucher.estimatedArrival || "Por confirmar");
+        const discFormatted = Number(voucher.discountUsd || 0).toFixed(2);
+        const cashFormatted = Number(voucher.cashToPayUsd || 0).toFixed(2);
+
+        msgLines = [
+          "🔮 *RESERVA DE PREVENTA · MELTYDEAYS* ⚡",
+          "_The Wired Club · Productos en Camino_",
+          "",
+          "¡Hola, MeltyDeays! 👋",
+          "Registré mi reserva anticipada de preventa con descuento directo:",
+          "",
+          `📦 *Producto:* ${voucher.rewardTitle || "Recompensa"}`,
+          `🎫 *Código de Vale:* \`${voucher.voucherCode}\``,
+          `👤 *Titular:* ${custName}`,
+          `🪪 *Cédula:* ${custCedula}`,
+          `🏷️ *Descuento Preventa:* -$${discFormatted} USD`,
+          `💵 *Saldo a pagar al llegar:* $${cashFormatted} USD`,
+          `⏱️ *Fecha Estimada de Llegada:* ${etaFormatted}`,
+          `⭐ *Puntos gastados:* 0 WP (Descuento directo)`,
+          ...(fullImageUrl ? ["", "📸 *Foto del Producto:*", fullImageUrl] : []),
+          "",
+          "Quedo a la espera de la notificación cuando el producto arribe a tienda física. 🙌"
+        ];
       } else {
-        tpl = {
-          head: "🛒 *RESERVA DE COMPRA*",
-          intro: "Reservé un producto para comprarlo en tienda 🛍",
-          details: [
-            `🎫 Código: \`${voucher.voucherCode}\``,
-            `👤 Socio: ${socio}`,
-            `💵 Total a pagar: *${formatDualPricePlain(voucher.cashToPayUsd)}*`
-          ],
-          notes: [
-            expStr ? `⏳ Reserva válida hasta: _${expStr}_` : "⏳ Reserva válida por 3 días",
-            "🛡 Garantía técnica de 30 días tras el pago"
-          ],
-          close: "¿Me ayudas a coordinar el pago y la entrega? 🙌"
-        };
+        let tpl;
+        if (!isCommercial) {
+          tpl = {
+            head: "🎁 *CANJE DE RECOMPENSA*",
+            intro: "¡Canjeé una recompensa 100% gratis con mis Wired Points! ✨",
+            details: [
+              `🎫 Código: \`${voucher.voucherCode}\``,
+              `👤 Socio: ${socio}`,
+              `⭐ Puntos usados: *${ptsSpent.toLocaleString()} WP*`,
+              `💚 Total a pagar: *¡GRATIS!*`
+            ],
+            notes: ["🎀 Premio de fidelidad · Se entrega probado en mostrador"],
+            close: "¿Cuándo puedo pasar a retirarlo? 🙌"
+          };
+        } else if (isPaid) {
+          tpl = {
+            head: "✅ *COMPRA PAGADA*",
+            intro: "Ya realicé el pago de mi vale 💳",
+            details: [
+              `🎫 Código: \`${voucher.voucherCode}\``,
+              `👤 Socio: ${socio}`,
+              `💰 Monto abonado: *${formatDualPricePlain(voucher.cashToPayUsd)}*`,
+              `📌 Estado: *PAGO CONFIRMADO*`
+            ],
+            notes: ["🛡 Garantía técnica de 30 días incluida"],
+            close: "Adjunto mi comprobante para coordinar la entrega 📦"
+          };
+        } else if (voucher.discountUsd > 0) {
+          tpl = {
+            head: "🎟️ *VALE DE DESCUENTO*",
+            intro: "Generé un vale de descuento con mis Wired Points ✨",
+            details: [
+              `🎫 Código: \`${voucher.voucherCode}\``,
+              `👤 Socio: ${socio}`,
+              `🏷 Descuento: -${formatDualPricePlain(voucher.discountUsd)}`,
+              `⭐ Puntos usados: ${ptsSpent.toLocaleString()} WP`,
+              `💵 A pagar en mostrador: *${formatDualPricePlain(voucher.cashToPayUsd)}*`
+            ],
+            notes: [
+              expStr ? `⏳ Reserva válida hasta: _${expStr}_` : "⏳ Reserva válida por 3 días",
+              "🛡 Garantía técnica de 30 días tras el pago"
+            ],
+            close: "¿Me ayudas a coordinar el pago y la entrega? 🙌"
+          };
+        } else {
+          tpl = {
+            head: "🛒 *RESERVA DE COMPRA*",
+            intro: "Reservé un producto para comprarlo en tienda 🛍",
+            details: [
+              `🎫 Código: \`${voucher.voucherCode}\``,
+              `👤 Socio: ${socio}`,
+              `💵 Total a pagar: *${formatDualPricePlain(voucher.cashToPayUsd)}*`
+            ],
+            notes: [
+              expStr ? `⏳ Reserva válida hasta: _${expStr}_` : "⏳ Reserva válida por 3 días",
+              "🛡 Garantía técnica de 30 días tras el pago"
+            ],
+            close: "¿Me ayudas a coordinar el pago y la entrega? 🙌"
+          };
+        }
+
+        msgLines = [
+          `${tpl.head}`,
+          "_Wired Club · MeltyDeays_ ⚡",
+          "",
+          "¡Hola, MeltyDeays! 👋",
+          tpl.intro,
+          "",
+          "📦 *Producto*",
+          `*${voucher.rewardTitle || "Recompensa"}*`,
+          "",
+          "🧾 *Detalle*",
+          ...tpl.details,
+          "",
+          ...tpl.notes,
+          ...(fullImageUrl ? ["", "📸 *Foto del Producto:*", fullImageUrl] : []),
+          "",
+          tpl.close
+        ];
       }
 
-      const msgLines = [
-        `${tpl.head}`,
-        "_Wired Club · MeltyDeays_ ⚡",
-        "",
-        "¡Hola, MeltyDeays! 👋",
-        tpl.intro,
-        "",
-        "📦 *Producto*",
-        `*${voucher.rewardTitle || "Recompensa"}*`,
-        "",
-        "🧾 *Detalle*",
-        ...tpl.details,
-        "",
-        ...tpl.notes,
-        ...(fullImageUrl ? ["", "📸 *Foto del producto:*", fullImageUrl] : []),
-        "",
-        tpl.close
-      ];
       const textMsg = encodeURIComponent(msgLines.join("\n"));
       waBtn.href = `https://api.whatsapp.com/send?phone=${phone}&text=${textMsg}`;
     }
@@ -503,10 +577,14 @@ export function showVoucherModal(voucherCode) {
     if (cancelBtn) {
       if (canCancel) {
         cancelBtn.style.display = "block";
-        const pts = voucher.pointsSpent || 0;
-        cancelBtn.textContent = pts > 0
-          ? `❌ Cancelar Vale / Reembolsar ${pts.toLocaleString()} WP`
-          : `❌ Cancelar Reserva de Compra`;
+        if (isPreOrder) {
+          cancelBtn.textContent = "❌ Cancelar Reserva de Preventa";
+        } else {
+          const pts = voucher.pointsSpent || 0;
+          cancelBtn.textContent = pts > 0
+            ? `❌ Cancelar Vale / Reembolsar ${pts.toLocaleString()} WP`
+            : `❌ Cancelar Reserva de Compra`;
+        }
       } else {
         cancelBtn.style.display = "none";
       }
@@ -515,7 +593,12 @@ export function showVoucherModal(voucherCode) {
     if (deliveredBanner) deliveredBanner.style.display = "none";
     if (deliveredStamp) deliveredStamp.style.display = "none";
     if (statusBadge) {
-      if (isPaid) {
+      if (isPreOrder) {
+        statusBadge.textContent = "🔮 RESERVA EN CAMINO (PREVENTA)";
+        statusBadge.style.background = "#eff6ff";
+        statusBadge.style.color = "#1e40af";
+        statusBadge.style.borderColor = "#bfdbfe";
+      } else if (isPaid) {
         statusBadge.textContent = "💵 PAGO CONFIRMADO";
         statusBadge.style.background = "#f0fdf4";
         statusBadge.style.color = "#15803d";
@@ -539,7 +622,9 @@ export function showVoucherModal(voucherCode) {
     }
 
     if (subtitleEl) {
-      if (!isCommercial) {
+      if (isPreOrder) {
+        subtitleEl.textContent = "Comprobante digital de reserva anticipada con descuento directo (0 WP gastados).";
+      } else if (!isCommercial) {
         subtitleEl.textContent = "Válido para entrega personal de producto con MeltyDeays (Sin límite de tiempo).";
       } else if (isPaid) {
         subtitleEl.textContent = "Pago completado. Coordinando entrega física personal con MeltyDeays.";
@@ -607,7 +692,11 @@ export function promptCancelVoucher(voucherCode) {
     summaryEl.innerHTML = `
       <div><strong>Vale:</strong> ${voucher.voucherCode}</div>
       <div><strong>Artículo:</strong> ${voucher.rewardTitle}</div>
-      ${pts > 0 ? `
+      ${(voucher.rewardType === "PREORDER_RESERVATION" || voucher.status === "RESERVED_UPCOMING") ? `
+        <div style="margin-top:6px; color:#1e40af; font-size:0.82rem; font-weight:700;">
+          🔮 Reserva de Preventa anticipada (0 WP gastados). Se cancelará el comprobante y se liberará la reserva.
+        </div>
+      ` : (pts > 0 ? `
         <div style="margin-top:6px; font-weight:800; color:#059669; font-size:0.82rem;">
           ✓ Se te devolverán: <strong>+${pts.toLocaleString()} WP</strong> a tu saldo.
         </div>
@@ -615,7 +704,7 @@ export function promptCancelVoucher(voucherCode) {
         <div style="margin-top:6px; color:#475569;">
           • Compra a precio de tienda (0 WP gastados). Se liberará el producto reservado.
         </div>
-      `}
+      `)}
       <div style="margin-top:6px; color:#64748b; font-size:0.7rem; border-top:1px dashed #fecdd3; padding-top:4px;">
         El stock en tienda se repondrá inmediatamente (+1 disponible).
       </div>

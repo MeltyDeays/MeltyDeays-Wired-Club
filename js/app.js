@@ -93,6 +93,13 @@ import {
   testChromePushNotification,
   renderProfileDrawer
 } from "./views/customer/index.js";
+import {
+  initCustomerPreOrderModalView,
+  openPreOrderModal,
+  openReservationModal,
+  closePreOrderModal,
+  submitPreOrderReservation
+} from "./views/customer/CustomerPreOrderModalView.js";
 import { PushNotificationService } from "./services/PushNotificationService.js";
 
 const vm = new CustomerViewModel();
@@ -203,6 +210,17 @@ export function switchTab(tabId) {
 initCustomerViews({
   vm,
   showToast,
+  attachPhoneMask,
+  formatPrice,
+  formatDualPrice,
+  formatDualPricePlain,
+  USD_TO_NIO_RATE
+});
+
+initCustomerPreOrderModalView({
+  vm,
+  showToast,
+  showVoucherModal,
   attachPhoneMask,
   formatPrice,
   formatDualPrice,
@@ -428,6 +446,13 @@ document.addEventListener("DOMContentLoaded", () => {
   window.setAppCurrency = setAppCurrency;
   window.showToast = showToast;
 
+  // Handlers del Modal de Preventa y Cédula (M3)
+  window.openPreOrderModal = openPreOrderModal;
+  window.openReservationModal = openReservationModal;
+  window.closePreOrderModal = closePreOrderModal;
+  window.submitPreOrderReservation = submitPreOrderReservation;
+  window.initPreOrderModalForProduct = openPreOrderModal;
+
   // Inicializar máscara telefónica en campos de acceso
   attachPhoneMask(document.getElementById("login-phone"));
   attachPhoneMask(document.getElementById("reg-phone"));
@@ -464,3 +489,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }, { passive: false });
 });
+
+export {
+  openPreOrderModal,
+  openReservationModal,
+  closePreOrderModal,
+  submitPreOrderReservation
+};

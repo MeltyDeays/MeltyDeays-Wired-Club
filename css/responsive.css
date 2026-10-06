@@ -1811,6 +1811,53 @@
     display: none !important;
   }
 
+  /* SELLOS MONUMENTALES EN MÓVIL (HAIBANE RENMEI) */
+  .sold-seal-svg,
+  .incoming-seal-svg {
+    max-width: 90% !important;
+    height: auto !important;
+  }
+
+  /* CRONÓMETRO COMPACTO PARA TARJETA MÓVIL (2 COLUMNAS) */
+  .reward-card .haibane-countdown-box {
+    padding: 0.35rem 0.45rem !important;
+    margin: 0.35rem 0 !important;
+  }
+
+  .reward-card .haibane-countdown-header {
+    margin-bottom: 0.25rem !important;
+    padding-bottom: 0.2rem !important;
+    font-size: 0.58rem !important;
+  }
+
+  .reward-card .cd-date-hint {
+    font-size: 0.55rem !important;
+    padding: 1px 3px !important;
+  }
+
+  .reward-card .haibane-countdown-grid {
+    gap: 3px !important;
+  }
+
+  .reward-card .cd-segment {
+    padding: 2px 4px !important;
+    min-width: 28px !important;
+    border-radius: 4px !important;
+  }
+
+  .reward-card .cd-num {
+    font-size: 0.82rem !important;
+  }
+
+  .reward-card .cd-label {
+    font-size: 0.48rem !important;
+  }
+
+  .reward-card .cd-divider {
+    font-size: 0.75rem !important;
+    margin-top: -4px !important;
+  }
+
   /* BLOQUE DE PRECIO & MONEDA WIRED POINT ESTILO TEMU (MÓVIL) */
   .reward-temu-meta {
     display: flex !important;

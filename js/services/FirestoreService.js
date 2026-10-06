@@ -113,7 +113,7 @@ export class FirestoreService {
 
         if (!isProduction()) {
           const list = Object.values(local.rewards);
-          const needsEnrich = list.length === 0 || list.some(r => r.id && r.id.startsWith("REW-DEMO") && (!r.description || !r.description.includes("\n")));
+          const needsEnrich = list.length > 0 && list.some(r => r.id && r.id.startsWith("REW-DEMO") && (!r.description || !r.description.includes("\n")));
           if (needsEnrich) {
             await this.seedDevData();
             return Object.values(engine.getSnapshot().rewards || {});
@@ -128,7 +128,7 @@ export class FirestoreService {
     const snap = engine.getSnapshot();
     if (!isProduction()) {
       const list = Object.values(snap.rewards || {});
-      const needsEnrich = list.length === 0 || list.some(r => r.id && r.id.startsWith("REW-DEMO") && (!r.description || !r.description.includes("\n")));
+      const needsEnrich = list.length > 0 && list.some(r => r.id && r.id.startsWith("REW-DEMO") && (!r.description || !r.description.includes("\n")));
       if (needsEnrich) {
         await this.seedDevData();
         return Object.values(engine.getSnapshot().rewards || {});
@@ -595,12 +595,22 @@ export class FirestoreService {
 
   static getUserVouchers(userUid) {
     const snap = engine.getSnapshot();
-    return Object.values(snap.vouchers).filter(v => (
-      v.user_uid === userUid ||
-      v.userUid === userUid ||
-      v.userId === userUid ||
-      v.user_id === userUid
-    ));
+    const cleanUid = (userUid || "").trim();
+    const cleanPhone = cleanUid.replace(/^CLIENT-/, "").replace(/^GUEST-/, "");
+    return Object.values(snap.vouchers || {}).filter(v => {
+      const vUid = v.user_uid || v.userUid || v.userId || v.user_id || "";
+      if (vUid === cleanUid) return true;
+      if (cleanPhone && (vUid === `CLIENT-${cleanPhone}` || vUid === `GUEST-${cleanPhone}`)) return true;
+      if (v.customerInfo && v.customerInfo.phone) {
+        const vPhone = String(v.customerInfo.phone).replace(/\D/g, "");
+        if (cleanPhone && vPhone === cleanPhone) return true;
+      }
+      if (v.customer_info && v.customer_info.phone) {
+        const vPhone = String(v.customer_info.phone).replace(/\D/g, "");
+        if (cleanPhone && vPhone === cleanPhone) return true;
+      }
+      return false;
+    });
   }
 
   // Purga integral de facturas/tokens de prueba y reinicio limpio
