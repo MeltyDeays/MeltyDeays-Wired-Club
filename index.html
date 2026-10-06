@@ -102,6 +102,16 @@
       <button class="btn-primary" onclick="openClaimModal()" style="font-size:0.78rem; padding:0.4rem 0.85rem;">
         + Reclamar Factura
       </button>
+
+      <!-- Botón Hamburguesa Móvil -->
+      <button type="button" class="btn-mobile-hamburger" id="btn-mobile-menu-toggle" onclick="openMobileProfileDrawer()" title="Abrir Menú de Socio y Ajustes">
+        <span class="hamburger-box">
+          <span class="hamburger-line"></span>
+          <span class="hamburger-line"></span>
+          <span class="hamburger-line"></span>
+        </span>
+        <span class="drawer-notif-badge-indicator" style="display:none;">0</span>
+      </button>
     </div>
   </header>
 
@@ -673,6 +683,35 @@
       <div id="lightbox-thumbnails-bar" class="lightbox-thumbnails-bar"></div>
     </div>
   </div>
+
+  <!-- BOTÓN FLOTANTE (FAB) MÓVIL STICKY CON ACCESO A PERFIL Y NOTIFICACIONES -->
+  <button type="button" class="fab-mobile-menu-btn" id="fab-mobile-menu" onclick="openMobileProfileDrawer()" title="Menú de Socio, Notificaciones y Ajustes">
+    <div class="fab-icon-wrap">
+      <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2.2" fill="none">
+        <line x1="3" y1="12" x2="21" y2="12"></line>
+        <line x1="3" y1="6" x2="21" y2="6"></line>
+        <line x1="3" y1="18" x2="21" y2="18"></line>
+      </svg>
+    </div>
+    <span class="drawer-notif-badge-indicator" style="display:none;">0</span>
+  </button>
+
+  <!-- DRAWER LATERAL OFF-CANVAS: PERFIL DE SOCIO, FOTO, MONEDA & NOTIFICACIONES -->
+  <div id="drawer-profile-overlay" class="drawer-profile-overlay" onclick="closeMobileProfileDrawer()"></div>
+  <aside id="drawer-mobile-profile" class="drawer-mobile-profile">
+    <div class="drawer-profile-topbar">
+      <div class="drawer-topbar-title">
+        <span class="drawer-chip-icon">⚡</span>
+        <span>THE WIRED PASS</span>
+      </div>
+      <button type="button" class="btn-drawer-close" onclick="closeMobileProfileDrawer()" title="Cerrar panel">
+        ✕
+      </button>
+    </div>
+    <div id="drawer-profile-body" class="drawer-profile-body">
+      <!-- Se inyecta dinámicamente mediante CustomerProfileDrawer.renderProfileDrawer() -->
+    </div>
+  </aside>
 
   <!-- CONTENEDOR TOAST FLOTANTE -->
   <div id="toast-container" class="toast-container"></div>

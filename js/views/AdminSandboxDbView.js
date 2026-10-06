@@ -167,7 +167,7 @@ export async function executeSeedDevData() {
     showToast("⚠️ Acción restringida en entorno de producción.", "error");
     return;
   }
-  if (!safeConfirm("🌱 ¿Deseas sembrar datos demo estándar (3 socios y 3 productos de prueba)?")) {
+  if (!safeConfirm("🌱 ¿Deseas sembrar datos demo estándar (3 socios, 6 productos con especificaciones y comentarios)?")) {
     return;
   }
   showToast("Sembrando datos de demostración...", "info");
@@ -175,7 +175,7 @@ export async function executeSeedDevData() {
     const res = await vm.seedDevData();
     renderSandboxDbView();
     if (typeof renderAdmin === "function") renderAdmin(vm);
-    showToast(`✓ Datos demo sembrados: ${res.usersSeeded} socios y ${res.rewardsSeeded} premios.`, "success");
+    showToast(`✓ Datos demo sembrados: ${res.usersSeeded} socios, ${res.rewardsSeeded} productos y ${res.commentsSeeded || 0} comentarios.`, "success");
   } catch (err) {
     showToast("❌ Error al sembrar datos demo: " + err.message, "error");
   }

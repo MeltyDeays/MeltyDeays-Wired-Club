@@ -5,11 +5,13 @@ import * as AuthView from "./CustomerAuthView.js";
 import * as ClaimView from "./CustomerClaimView.js";
 import * as CatalogView from "./CustomerCatalogView.js";
 import * as VouchersView from "./CustomerVouchersView.js";
+import * as ProfileDrawerView from "./CustomerProfileDrawer.js";
 
 export * from "./CustomerAuthView.js";
 export * from "./CustomerClaimView.js";
 export * from "./CustomerCatalogView.js";
 export * from "./CustomerVouchersView.js";
+export * from "./CustomerProfileDrawer.js";
 
 export function initCustomerViews(deps) {
   AuthView.initCustomerAuthView(deps);
@@ -23,4 +25,8 @@ export function initCustomerViews(deps) {
     showVoucherModal: VouchersView.showVoucherModal
   });
   VouchersView.initCustomerVouchersView(deps);
+  ProfileDrawerView.initCustomerProfileDrawer({
+    ...deps,
+    openAuthModal: AuthView.openAuthModal
+  });
 }

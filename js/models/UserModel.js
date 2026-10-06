@@ -11,6 +11,9 @@ export class UserModel {
     this.tier = data.tier || this.calculateTier();
     this.status = data.status || "ACTIVE";
     this.currency = (data.currency || data.preferredCurrency || data.preferred_currency || "USD").toUpperCase() === "NIO" ? "NIO" : "USD";
+    this.avatarUrl = data.avatarUrl || data.avatar_url || data.photoUrl || "";
+    this.bannerUrl = data.bannerUrl || data.banner_url || data.coverUrl || "";
+    this.notifications = Array.isArray(data.notifications) ? data.notifications : [];
     this.createdAt = data.createdAt || data.created_at || new Date().toISOString();
   }
 
@@ -71,6 +74,11 @@ export class UserModel {
       status: this.status,
       currency: this.currency,
       preferred_currency: this.currency,
+      avatarUrl: this.avatarUrl,
+      avatar_url: this.avatarUrl,
+      bannerUrl: this.bannerUrl,
+      banner_url: this.bannerUrl,
+      notifications: this.notifications,
       createdAt: this.createdAt,
       created_at: this.createdAt
     };

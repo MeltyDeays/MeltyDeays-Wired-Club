@@ -110,12 +110,30 @@ export class FirestoreService {
           });
         }
         engine.saveSnapshot(local);
+
+        if (!isProduction()) {
+          const list = Object.values(local.rewards);
+          const needsEnrich = list.length === 0 || list.some(r => r.id && r.id.startsWith("REW-DEMO") && (!r.description || !r.description.includes("\n")));
+          if (needsEnrich) {
+            await this.seedDevData();
+            return Object.values(engine.getSnapshot().rewards || {});
+          }
+        }
+
         return Object.values(local.rewards);
       } catch (e) {
         console.warn("Firestore fetchRewards fallback a local:", e.message);
       }
     }
     const snap = engine.getSnapshot();
+    if (!isProduction()) {
+      const list = Object.values(snap.rewards || {});
+      const needsEnrich = list.length === 0 || list.some(r => r.id && r.id.startsWith("REW-DEMO") && (!r.description || !r.description.includes("\n")));
+      if (needsEnrich) {
+        await this.seedDevData();
+        return Object.values(engine.getSnapshot().rewards || {});
+      }
+    }
     return Object.values(snap.rewards || {});
   }
 
@@ -1093,36 +1111,185 @@ export class FirestoreService {
       {
         id: "REW-DEMO-01",
         title: "Mouse Pad Melty Cyberpunk XL",
-        description: "Superficie de microfibra de alta precisión con costuras reforzadas y base de goma antideslizante (Demo).",
+        description: `Superficie de microfibra de alta precisión con costuras reforzadas perimetrales y base de goma natural antideslizante.
+• Dimensiones: 900 x 400 x 4 mm (Formato Extendido XXL)
+• Material: Microfibra nano-optimizada híbrida Speed / Control
+• Base: Goma natural estriada de alta adherencia sobre cualquier superficie
+• Bordes: Costura overlock perimetral reforzada anti-deshilachado 360°
+• Resistencia: Revestimiento hidrofóbico repelente a salpicaduras accidentales
+• Diseño: Estética cyberpunk The Wired Club en sublimación de alta densidad`,
         pointsCost: 150,
         stock: 5,
-        imageUrl: "https://images.unsplash.com/photo-1616440347437-b1c73416efc2?auto=format&fit=crop&w=600&q=80",
+        imageUrl: "https://images.unsplash.com/photo-1616440347437-b1c73416efc2?auto=format&fit=crop&w=800&q=80",
+        images: [
+          "https://images.unsplash.com/photo-1616440347437-b1c73416efc2?auto=format&fit=crop&w=800&q=80",
+          "https://images.unsplash.com/photo-1629429408209-1f912961dbd8?auto=format&fit=crop&w=800&q=80",
+          "https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?auto=format&fit=crop&w=800&q=80"
+        ],
         rewardType: "FREE_REWARD",
         status: "ACTIVE"
       },
       {
         id: "REW-DEMO-02",
         title: "Keycaps Artesanales Serial Experiments Lain",
-        description: "Set de 4 teclas artesanales PBT sublimadas con estética retro tech (Demo).",
+        description: `Set exclusivo de teclas artesanales PBT sublimadas con arte conceptual de Cyberpunk & The Wired.
+• Compatibilidad: Switches mecánicos formato Cherry MX, Gateron, Kailh y derivados
+• Perfil: OEM / Cherry Profile para tecleo ergonómico y cómodo
+• Material: PBT de 1.5mm de grosor con acabado mate anti-brillo
+• Proceso: Sublimación térmica permanente de 5 lados (Dye-Sub resistente al desgaste)
+• Teclas Incluidas: Esc (1u), Enter (2.25u), Barra Espaciadora (6.25u) y Backspace (2u)
+• Textura: Acabado sutilmente rugoso resistente a sudoración y grasa dactilar`,
         pointsCost: 300,
         stock: 3,
-        imageUrl: "https://images.unsplash.com/photo-1595225476474-87563907a212?auto=format&fit=crop&w=600&q=80",
+        imageUrl: "https://images.unsplash.com/photo-1595225476474-87563907a212?auto=format&fit=crop&w=800&q=80",
+        images: [
+          "https://images.unsplash.com/photo-1595225476474-87563907a212?auto=format&fit=crop&w=800&q=80",
+          "https://images.unsplash.com/photo-1587829741301-dc798b83add3?auto=format&fit=crop&w=800&q=80",
+          "https://images.unsplash.com/photo-1541140532154-b024d705b909?auto=format&fit=crop&w=800&q=80"
+        ],
         rewardType: "FREE_REWARD",
         status: "ACTIVE"
       },
       {
         id: "REW-DEMO-03",
         title: "Mouse Gamer Óptico RGB 12000 DPI",
-        description: "Sensor óptico de alta precisión, switches mecánicos Omron y cable paracord ultraligero (Demo).",
+        description: `Mouse gamer ergonómico ultra-ligero diseñado para eSports, seguimiento milimétrico y shooters competitivos.
+• Sensor Óptico: PixArt PMW3327 hasta 12,000 DPI nativos ajustables
+• Tasa de Sondeo (Polling Rate): 1000 Hz / 1ms con conexión libre de interferencias
+• Switches Principales: Omron mecánicos certificados para 20 millones de clics
+• Peso: 68 gramos con chasis ventilado ultraliviano
+• Iluminación: RGB Chroma dinámico con 16.8M de colores y 6 efectos integrados
+• Cable: Paracord flexible de 1.8 metros ultra-maleable anti-arrastre
+• Deslizadores: Skates de PTFE 100% puro para deslizamiento suave sobre cualquier pad`,
         pointsCost: 200,
         priceUsd: 35.0,
         cashToPayUsd: 15.0,
         maxDiscountUsd: 20.0,
         maxDiscountPct: 57,
         stock: 2,
-        imageUrl: "https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?auto=format&fit=crop&w=600&q=80",
+        imageUrl: "https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?auto=format&fit=crop&w=800&q=80",
+        images: [
+          "https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?auto=format&fit=crop&w=800&q=80",
+          "https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?auto=format&fit=crop&w=800&q=80",
+          "https://images.unsplash.com/photo-1626218174358-7769486c4b79?auto=format&fit=crop&w=800&q=80"
+        ],
         rewardType: "PARTIAL_DISCOUNT",
         status: "ACTIVE"
+      },
+      {
+        id: "REW-DEMO-04",
+        title: "Teclado Mecánico 65% Hot-Swap RGB",
+        description: `Teclado mecánico compacto al 65% con switches intercambiables en caliente y montaje acústico tipo gasket.
+• Formato: Compacto 65% (68 teclas) con bloque de navegación y flechas dedicadas
+• Switches: Gateron Pro Yellow lineales pre-lubricados de fábrica para pulsación ultra-suave
+• PCB: Hot-Swap universal compatible con switches de 3 y 5 pines sin necesidad de soldadura
+• Estructura: Montaje amortiguado Gasket Mount con almohadillas de silicona y espuma Poron
+• Conectividad: Cable desmontable USB-C mallado con blindaje magnético
+• Iluminación: Retroiluminación RGB por tecla con 18 modos dinámicos pre-configurados
+• Keycaps: PBT Double-Shot de perfil Cherry resistentes a decoloración`,
+        pointsCost: 250,
+        priceUsd: 48.0,
+        cashToPayUsd: 23.0,
+        maxDiscountUsd: 25.0,
+        maxDiscountPct: 52,
+        stock: 4,
+        imageUrl: "https://images.unsplash.com/photo-1587829741301-dc798b83add3?auto=format&fit=crop&w=800&q=80",
+        images: [
+          "https://images.unsplash.com/photo-1587829741301-dc798b83add3?auto=format&fit=crop&w=800&q=80",
+          "https://images.unsplash.com/photo-1618384887929-16ec33fab9ef?auto=format&fit=crop&w=800&q=80",
+          "https://images.unsplash.com/photo-1595225476474-87563907a212?auto=format&fit=crop&w=800&q=80"
+        ],
+        rewardType: "PARTIAL_DISCOUNT",
+        status: "ACTIVE"
+      },
+      {
+        id: "REW-DEMO-05",
+        title: "Mando Inalámbrico GameSir Nova Lite Hall Effect",
+        description: `Controlador bluetooth multiplataforma de grado competitivo con joysticks electromagnéticos anti-drift.
+• Joysticks: Sensores electromagnéticos Hall Effect (Zero Drift garantizado de por vida)
+• Gatillos: Analógicos Hall Effect con precisión de recorrido lineal y respuesta inmediata
+• Conectividad: Tri-Modo (Bluetooth 5.3, Dongle inalámbrico 2.4 GHz de baja latencia y USB-C)
+• Compatibilidad: PC Windows 10/11, Nintendo Switch, Android, iOS y Steam Deck
+• Batería: Ion de litio recargable de 600 mAh con hasta 15 horas de autonomía ininterrumpida
+• Vibración: Motores hápticos asimétricos duales con intensidad personalizable
+• Ergonomía: Empuñaduras con textura de micro-puntos antideslizantes para sesiones largas`,
+        pointsCost: 300,
+        priceUsd: 42.0,
+        cashToPayUsd: 20.0,
+        maxDiscountUsd: 22.0,
+        maxDiscountPct: 52,
+        stock: 3,
+        imageUrl: "https://images.unsplash.com/photo-1600080972464-8e5f35f63d08?auto=format&fit=crop&w=800&q=80",
+        images: [
+          "https://images.unsplash.com/photo-1600080972464-8e5f35f63d08?auto=format&fit=crop&w=800&q=80",
+          "https://images.unsplash.com/photo-1592840496694-26d035b52b48?auto=format&fit=crop&w=800&q=80",
+          "https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?auto=format&fit=crop&w=800&q=80"
+        ],
+        rewardType: "PARTIAL_DISCOUNT",
+        status: "ACTIVE"
+      },
+      {
+        id: "REW-DEMO-06",
+        title: "Headset Gamer 7.1 Surround Ultraligero",
+        description: `Audífonos gamers circumaurales con posicionamiento de audio espacial 7.1 y micrófono de estudio.
+• Drivers: Altavoces de neodimio de 50 mm con calibración acústica de rango dinámico amplio
+• Audio Espacial: Sonido envolvente virtual 7.1 optimizado para pasos y disparos tácticos
+• Micrófono: Cardioide flexible desmontable con filtro pop y cancelación de ruido ambiental
+• Almohadillas: Espuma viscoelástica con memoria y tejido transpirable térmico
+• Estructura: Diadema reforzada de aluminio aeroespacial ultraliviano (peso: 245 gramos)
+• Conector: Jack de audio 3.5 mm universal bañado en oro + tarjeta de sonido USB 7.1`,
+        pointsCost: 180,
+        priceUsd: 38.0,
+        cashToPayUsd: 20.0,
+        maxDiscountUsd: 18.0,
+        maxDiscountPct: 47,
+        stock: 4,
+        imageUrl: "https://images.unsplash.com/photo-1546435770-a3e426bf472b?auto=format&fit=crop&w=800&q=80",
+        images: [
+          "https://images.unsplash.com/photo-1546435770-a3e426bf472b?auto=format&fit=crop&w=800&q=80",
+          "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=800&q=80"
+        ],
+        rewardType: "PARTIAL_DISCOUNT",
+        status: "ACTIVE"
+      }
+    ];
+
+    const demoComments = [
+      {
+        id: "COMM-DEMO-01",
+        rewardId: "REW-DEMO-03",
+        userName: "Gabriel Torres",
+        userTier: "NAVI_PRO",
+        comment: "¿El cable es realmente flexible o se siente pesado al moverlo en el mousepad?",
+        createdAt: new Date(Date.now() - 3600000 * 5).toISOString(),
+        reply: "¡Hola Gabriel! Es un cable paracord ultra-liviano con trenzado suave, prácticamente se siente inalámbrico sobre cualquier mousepad.",
+        replyAuthor: "MeltyDeays · Soporte Oficial",
+        replyAt: new Date(Date.now() - 3600000 * 4).toISOString(),
+        status: "APPROVED"
+      },
+      {
+        id: "COMM-DEMO-02",
+        rewardId: "REW-DEMO-03",
+        userName: "Sofía M.",
+        userTier: "ELITE",
+        comment: "¿Tienen entrega disponible en tienda física hoy mismo si aparto con mis puntos?",
+        createdAt: new Date(Date.now() - 3600000 * 2).toISOString(),
+        reply: "¡Hola Sofía! Sí, al generar tu vale con puntos queda reservado inmediatamente a tu nombre para retiro en nuestro mostrador.",
+        replyAuthor: "MeltyDeays · Soporte Oficial",
+        replyAt: new Date(Date.now() - 3600000 * 1).toISOString(),
+        status: "APPROVED"
+      },
+      {
+        id: "COMM-DEMO-03",
+        rewardId: "REW-DEMO-05",
+        userName: "Marcos L.",
+        userTier: "NAVI_USER",
+        comment: "¿Viene incluido el adaptador USB para PC o solo conecta por bluetooth?",
+        createdAt: new Date(Date.now() - 3600000 * 8).toISOString(),
+        reply: "¡Hola Marcos! Incluye tanto el receptor USB inalámbrico de 2.4 GHz como soporte para Bluetooth 5.3 y cable desmontable.",
+        replyAuthor: "MeltyDeays · Soporte Oficial",
+        replyAt: new Date(Date.now() - 3600000 * 7).toISOString(),
+        status: "APPROVED"
       }
     ];
 
@@ -1132,10 +1299,14 @@ export class FirestoreService {
     for (const r of demoRewards) {
       await this.saveReward(r);
     }
+    for (const c of demoComments) {
+      await this.addProductComment(c);
+    }
 
     return {
       usersSeeded: demoUsers.length,
-      rewardsSeeded: demoRewards.length
+      rewardsSeeded: demoRewards.length,
+      commentsSeeded: demoComments.length
     };
   }
 

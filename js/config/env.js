@@ -85,7 +85,7 @@ export function injectEnvironmentBadge() {
         font-weight: 800;
         cursor: pointer;
         margin-left: 4px;
-      " title="Cargar 3 socios y 3 productos ficticios en la base de datos de pruebas">
+      " title="Cargar 3 socios, 6 productos con especificaciones y comentarios ficticios en la base de datos de pruebas">
         ⚡ Datos Demo
       </button>
     </div>

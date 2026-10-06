@@ -66,7 +66,21 @@ import {
   claimFromBanner,
   openAdminAssignModal,
   closeAdminAssignModal,
-  submitAdminAssignFromScan
+  submitAdminAssignFromScan,
+  // 5. Drawer de Perfil Móvil y Notificaciones
+  openMobileProfileDrawer,
+  closeMobileProfileDrawer,
+  saveProfileDisplayName,
+  applyDrawerCurrency,
+  toggleBannerPresetPicker,
+  toggleAvatarPresetPicker,
+  selectBannerPreset,
+  selectAvatarPreset,
+  handleAvatarFileInput,
+  handleBannerFileInput,
+  executeProfilePinUpdate,
+  markAllNotificationsRead,
+  renderProfileDrawer
 } from "./views/customer/index.js";
 
 const vm = new CustomerViewModel();
@@ -311,11 +325,29 @@ function render(model) {
 
   // 6. Libro Mayor (Ledger)
   renderLedger(model.ledger);
+
+  // 7. Drawer de Perfil y Notificaciones
+  renderProfileDrawer();
 }
 
 document.addEventListener("DOMContentLoaded", () => {
   // Suscribirse a cambios en el ViewModel
   vm.subscribe(render);
+
+  // Drawer de Perfil Móvil y Personalización
+  window.openMobileProfileDrawer = openMobileProfileDrawer;
+  window.closeMobileProfileDrawer = closeMobileProfileDrawer;
+  window.saveProfileDisplayName = saveProfileDisplayName;
+  window.applyDrawerCurrency = applyDrawerCurrency;
+  window.toggleBannerPresetPicker = toggleBannerPresetPicker;
+  window.toggleAvatarPresetPicker = toggleAvatarPresetPicker;
+  window.selectBannerPreset = selectBannerPreset;
+  window.selectAvatarPreset = selectAvatarPreset;
+  window.handleAvatarFileInput = handleAvatarFileInput;
+  window.handleBannerFileInput = handleBannerFileInput;
+  window.executeProfilePinUpdate = executeProfilePinUpdate;
+  window.markAllNotificationsRead = markAllNotificationsRead;
+  window.renderProfileDrawer = renderProfileDrawer;
 
   // Vincular funciones a window para eventos HTML onclick
   window.openAuthModal = openAuthModal;
