@@ -19,6 +19,7 @@ import {
   // 2. Catálogo y Canje
   renderCatalog,
   toggleRewardSpecs,
+  toggleModalProductSpecs,
   openProductSpecsModal,
   closeProductSpecsModal,
   specsModalNextImage,
@@ -372,6 +373,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   window.confirmRedeem = confirmRedeem;
   window.toggleRewardSpecs = toggleRewardSpecs;
+  window.toggleModalProductSpecs = toggleModalProductSpecs;
   window.openProductSpecsModal = openProductSpecsModal;
   window.closeProductSpecsModal = closeProductSpecsModal;
   window.specsModalNextImage = specsModalNextImage;

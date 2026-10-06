@@ -399,19 +399,22 @@ export async function loadProductComments(rewardId) {
 
     listEl.innerHTML = comments.map(c => {
       const dateStr = c.createdAt ? new Date(c.createdAt).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' }) : '';
-      const hasAnswer = Boolean(c.answerText);
+      const qText = c.questionText || c.comment || c.text || 'Consulta sobre el producto';
+      const aText = c.answerText || c.reply || c.response || '';
+      const hasAnswer = Boolean(aText);
+      const authorName = c.userName || c.author || 'Socio';
 
       return `
         <div class="temu-comment-card">
           <div class="temu-comment-user-row">
-            <span class="temu-comment-username">👤 ${c.userName || 'Cliente'}</span>
+            <span class="temu-comment-username">👤 ${authorName}</span>
             <span class="temu-comment-date">${dateStr}</span>
           </div>
-          <div class="temu-comment-text">${c.questionText}</div>
+          <div class="temu-comment-text">${qText}</div>
           ${hasAnswer ? `
             <div class="temu-comment-reply-box">
               <span class="temu-comment-reply-tag">🛡️ MeltyDeays Soporte</span>
-              <div class="temu-comment-reply-text">${c.answerText}</div>
+              <div class="temu-comment-reply-text">${aText}</div>
             </div>
           ` : `
             <div style="font-size: 0.65rem; color: #94a3b8; font-style: italic; margin-top: 2px;">
@@ -450,6 +453,9 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
   const body = document.getElementById("modal-specs-body");
   const footer = document.getElementById("modal-specs-footer");
   if (!modal || !body) return;
+
+  const fab = document.getElementById("fab-mobile-menu");
+  if (fab) fab.style.display = "none";
 
   // Actualizar topbar con botón Volver y botón Compartir
   const topbar = modal.querySelector(".modal-specs-topbar");
@@ -664,18 +670,21 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
       </div>
     ` : ''}
 
-    <!-- ACORDEÓN DE ESPECIFICACIONES TÉCNICAS (ESTILO TEMU) -->
-    <details class="temu-specs-details" open>
-      <summary class="temu-specs-summary">
-        <span>📋 Ficha técnica & Especificaciones (${parsed.specs.length})</span>
-        <span class="temu-specs-arrow">▾</span>
-      </summary>
-      <div class="temu-specs-body">
-        <div class="modal-specs-cards-container">
-          ${formattedSpecsHtml}
+    <!-- DESPLEGABLE DE ESPECIFICACIONES TÉCNICAS (IDÉNTICO A PRODUCCIÓN) -->
+    <div class="reward-specs-box" style="margin: 0.75rem 0 1rem 0;">
+      <button type="button" class="reward-specs-toggle-btn expanded" onclick="toggleModalProductSpecs('${item.id}')" id="modal-specs-btn-${item.id}">
+        <span class="btn-specs-label">✕ Ocultar especificaciones</span>
+        <span class="btn-specs-icon">▴</span>
+      </button>
+      <div class="reward-specs-dropdown" id="modal-specs-drop-${item.id}" style="display:block; max-height: 280px; overflow-y: auto;">
+        <div class="specs-dropdown-header">
+          <span class="specs-dropdown-title">ESPECIFICACIONES (${parsed.specs.length})</span>
         </div>
+        <ul class="reward-specs-ul">
+          ${parsed.specs.map(s => `<li><span class="spec-bullet">▸</span><span class="spec-content">${s}</span></li>`).join("")}
+        </ul>
       </div>
-    </details>
+    </div>
 
     <!-- COMPROMISOS Y GARANTÍAS DE TIENDA -->
     <div class="temu-service-commitments">
@@ -751,6 +760,32 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
 export function closeProductSpecsModal() {
   const modal = document.getElementById("modal-product-specs");
   if (modal) modal.style.display = "none";
+  const fab = document.getElementById("fab-mobile-menu");
+  if (fab) fab.style.display = "";
+}
+
+export function toggleModalProductSpecs(itemId) {
+  const drop = document.getElementById("modal-specs-drop-" + itemId);
+  const btn = document.getElementById("modal-specs-btn-" + itemId);
+  if (!drop || !btn) return;
+
+  const isHidden = drop.style.display === "none";
+  if (isHidden) {
+    drop.style.display = "block";
+    btn.classList.add("expanded");
+    const label = btn.querySelector(".btn-specs-label");
+    const icon = btn.querySelector(".btn-specs-icon");
+    if (label) label.textContent = "✕ Ocultar especificaciones";
+    if (icon) icon.textContent = "▴";
+  } else {
+    drop.style.display = "none";
+    btn.classList.remove("expanded");
+    const count = drop.querySelectorAll("li").length;
+    const label = btn.querySelector(".btn-specs-label");
+    const icon = btn.querySelector(".btn-specs-icon");
+    if (label) label.textContent = `📋 Ver especificaciones (${count})`;
+    if (icon) icon.textContent = "▾";
+  }
 }
 
 if (typeof document !== "undefined" && typeof document.addEventListener === "function") {

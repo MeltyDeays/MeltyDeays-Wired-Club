@@ -1,12 +1,18 @@
 export function parseProductDescription(rawText) {
-  if (!rawText || typeof rawText !== "string") {
-    return { intro: "", specs: [], hasSpecs: false, fullText: "" };
+  if (!rawText || typeof rawText !== "string" || !rawText.trim()) {
+    return {
+      intro: "Artículo oficial verificado de la tienda MeltyDeays.",
+      specs: [
+        "Entrega física y prueba técnica en mostrador",
+        "Garantía oficial MeltyDeays por 30 días",
+        "Soporte directo para miembros Wired Club"
+      ],
+      hasSpecs: true,
+      fullText: ""
+    };
   }
 
   const trimmed = rawText.trim();
-  if (!trimmed) {
-    return { intro: "", specs: [], hasSpecs: false, fullText: "" };
-  }
 
   // 1. Si contiene saltos de línea explícitos
   if (trimmed.includes("\n")) {
@@ -45,15 +51,8 @@ export function parseProductDescription(rawText) {
 
     if (parts.length > 1) {
       const firstIsBullet = /^(?:[•▸✓✔-]|\p{Extended_Pictographic})/u.test(parts[0]);
-      let intro = "";
-      let specs = [];
-      if (!firstIsBullet) {
-        intro = parts[0];
-        specs = parts.slice(1);
-      } else {
-        intro = parts[0];
-        specs = parts.slice(1);
-      }
+      let intro = parts[0];
+      let specs = parts.slice(1).map(l => l.replace(/^[•\-\*▸✓✔]\s*/, ""));
       return {
         intro,
         specs,
@@ -63,24 +62,16 @@ export function parseProductDescription(rawText) {
     }
   }
 
-  // 3. Párrafo largo continuo (>120 caracteres) sin viñetas
-  if (trimmed.length > 120) {
-    const firstPeriodIdx = trimmed.indexOf(". ");
-    if (firstPeriodIdx > 30 && firstPeriodIdx < 160) {
-      const intro = trimmed.slice(0, firstPeriodIdx + 1);
-      const remaining = trimmed.slice(firstPeriodIdx + 2).trim();
-      if (remaining) {
-        return {
-          intro,
-          specs: [remaining],
-          hasSpecs: true,
-          fullText: trimmed
-        };
-      }
-    }
+  // 3. Extracción de cláusulas por signos de puntuación, comas o conectores ("con", "y")
+  const subClauses = trimmed
+    .split(/(?:[;\n\r]|,\s*|\.\s+|\s+con\s+|\s+y\s+)/i)
+    .map(c => c.trim().replace(/^[•\-\*▸✓✔]\s*/, ""))
+    .filter(c => c.length > 3);
+
+  if (subClauses.length > 1) {
     return {
-      intro: trimmed.slice(0, 110) + "...",
-      specs: [trimmed],
+      intro: subClauses[0],
+      specs: subClauses.slice(1).map(c => c.charAt(0).toUpperCase() + c.slice(1)),
       hasSpecs: true,
       fullText: trimmed
     };
@@ -88,8 +79,12 @@ export function parseProductDescription(rawText) {
 
   return {
     intro: trimmed,
-    specs: [],
-    hasSpecs: false,
+    specs: [
+      trimmed,
+      "Garantía oficial y soporte técnico directo en mostrador MeltyDeays (30 días)",
+      "Retiro inmediato con verificación presencial de funcionamiento"
+    ],
+    hasSpecs: true,
     fullText: trimmed
   };
 }
