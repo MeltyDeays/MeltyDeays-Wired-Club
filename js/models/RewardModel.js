@@ -117,7 +117,8 @@ export class RewardModel {
     this.initialStock = Number(data.initialStock || data.initial_stock || this.stock || 1);
     this.isUnique = Boolean(data.isUnique || data.is_unique || (this.initialStock === 1));
     this.status = data.status || (this.stock > 0 ? "ACTIVE" : "SOLD_OUT");
-    this.soldOutAt = data.soldOutAt || data.sold_out_at || (this.stock === 0 ? new Date().toISOString() : null);
+    if (this.status === "SOLD_OUT" && this.stock > 0) this.status = "ACTIVE";
+    this.soldOutAt = (this.status === "ACTIVE" && this.stock > 0) ? null : (data.soldOutAt || data.sold_out_at || (this.stock === 0 ? new Date().toISOString() : null));
     this.soldOutReason = data.soldOutReason || data.sold_out_reason || "";
 
     // Soporte multi-imagen con retrocompatibilidad
@@ -211,6 +212,10 @@ export class RewardModel {
       this.soldOutReason = "";
     }
     this.updatedAt = new Date().toISOString();
+  }
+
+  incrementStock(qty = 1) {
+    this.restock(qty);
   }
 
   toJSON() {
