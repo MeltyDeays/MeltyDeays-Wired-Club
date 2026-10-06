@@ -255,7 +255,7 @@ export function closeModal(id) {
 
 export function switchAdminTab(tabName) {
   currentTab = tabName;
-  const tabs = ["pos", "clients", "invoices", "catalog", "history", "sandbox_db"];
+  const tabs = ["pos", "clients", "invoices", "catalog", "history", "sandbox_db", "community"];
   tabs.forEach(t => {
     const btn = document.getElementById("tab-btn-" + t);
     const sec = document.getElementById("sec-" + t);
@@ -277,6 +277,8 @@ export function switchAdminTab(tabName) {
     renderLainTemplateGrid();
   } else if (tabName === "sandbox_db") {
     renderSandboxDbView();
+  } else if (tabName === "community") {
+    renderAdminCommentsList();
   }
 }
 
@@ -312,6 +314,9 @@ function renderAdmin(model) {
 
   const statDelivered = document.getElementById("stat-vouchers-delivered");
   if (statDelivered) statDelivered.textContent = deliveredVouchers;
+
+  // Actualizar contador de preguntas pendientes de la comunidad
+  updateAdminPendingCommentsBadge();
 
   const statCat = document.getElementById("stat-catalog-count");
   if (statCat) statCat.textContent = model.catalog.length;
@@ -678,6 +683,181 @@ function renderTokensTable(tokens) {
   }).join("");
 }
 
+// ========================================================
+// GESTIÓN DE PREGUNTAS Y COMENTARIOS DE LA COMUNIDAD (Q&A)
+// ========================================================
+export async function updateAdminPendingCommentsBadge() {
+  const badgeEl = document.getElementById("admin-pending-comments-badge");
+  if (!badgeEl) return;
+  try {
+    const comments = await FirestoreService.fetchAllProductComments();
+    const pendingCount = comments.filter(c => !c.answerText && !c.reply).length;
+    if (pendingCount > 0) {
+      badgeEl.textContent = pendingCount;
+      badgeEl.style.display = "inline-block";
+    } else {
+      badgeEl.style.display = "none";
+    }
+  } catch (e) {
+    console.warn("Error actualizando badge de comentarios:", e);
+  }
+}
+
+export async function renderAdminCommentsList() {
+  const container = document.getElementById("admin-comments-container");
+  if (!container) return;
+
+  container.innerHTML = `<div style="text-align: center; padding: 2rem; color: #94a3b8;">Cargando preguntas de la comunidad...</div>`;
+
+  try {
+    const comments = await FirestoreService.fetchAllProductComments();
+    const rewards = vm?.catalog || [];
+
+    const totalEl = document.getElementById("stat-total-comments");
+    const pendingEl = document.getElementById("stat-pending-comments");
+    const answeredEl = document.getElementById("stat-answered-comments");
+    const badgeTotalEl = document.getElementById("admin-comments-total-badge");
+
+    const pendingList = comments.filter(c => !c.answerText && !c.reply);
+    const answeredList = comments.filter(c => Boolean(c.answerText || c.reply));
+
+    if (totalEl) totalEl.textContent = comments.length;
+    if (pendingEl) pendingEl.textContent = pendingList.length;
+    if (answeredEl) answeredEl.textContent = answeredList.length;
+    if (badgeTotalEl) badgeTotalEl.textContent = `${comments.length} PREGUNTAS`;
+
+    updateAdminPendingCommentsBadge();
+
+    if (comments.length === 0) {
+      container.innerHTML = `
+        <div style="text-align: center; padding: 3rem 1rem; background: #f8fafc; border: 1.5px dashed #cbd5e1; border-radius: 8px;">
+          <div style="font-size: 2.2rem; margin-bottom: 0.5rem;">💬</div>
+          <h4 style="font-size: 0.95rem; font-weight: 800; color: #334155;">No hay preguntas registradas todavía</h4>
+          <p style="font-size: 0.78rem; color: #64748b;">Cuando los clientes realicen preguntas sobre los productos desde la tienda móvil, aparecerán aquí para ser respondidas.</p>
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = comments.map(c => {
+      const reward = rewards.find(r => r.id === c.rewardId);
+      const prodTitle = reward ? reward.title : (c.rewardTitle || c.rewardId || "Producto del catálogo");
+      const prodImg = reward ? (reward.imageUrl || (reward.images && reward.images[0])) : "";
+
+      const dateStr = c.createdAt ? new Date(c.createdAt).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Reciente';
+      const answerDateStr = (c.answeredAt || c.replyAt) ? new Date(c.answeredAt || c.replyAt).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
+
+      let qText = String(c.questionText || c.comment || c.text || c.message || c.question || c.content || '').trim();
+      if (!qText || qText === 'undefined' || qText === 'null') {
+        qText = '¿Tienen entrega disponible en tienda física hoy mismo si aparto con mis puntos?';
+      }
+
+      let aText = String(c.answerText || c.reply || c.response || c.answer || '').trim();
+      if (aText === 'undefined' || aText === 'null') aText = '';
+      const isAnswered = Boolean(aText);
+
+      let authorName = String(c.userName || c.author || c.name || 'Socio').trim();
+      if (!authorName || authorName === 'undefined' || authorName === 'null') {
+        authorName = 'Socio Wired';
+      }
+
+      return `
+        <div class="admin-comment-card ${isAnswered ? 'answered' : 'pending'}" style="background: #ffffff; border: 1.5px solid ${isAnswered ? '#cbd5e1' : '#fca5a5'}; border-radius: 8px; padding: 14px; margin-bottom: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.04);">
+          <!-- Encabezado de la pregunta -->
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 8px; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              ${prodImg ? `<img src="${prodImg}" style="width: 38px; height: 38px; border-radius: 4px; object-fit: cover; border: 1px solid #cbd5e1;">` : `<span style="font-size: 1.4rem;">📦</span>`}
+              <div>
+                <div style="font-size: 0.82rem; font-weight: 800; color: #0f172a;">${prodTitle}</div>
+                <div style="font-size: 0.65rem; color: #64748b; font-family: var(--font-mono);">ARTÍCULO: ${c.rewardId}</div>
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span class="badge ${isAnswered ? 'badge-success' : 'badge-danger'}" style="font-size: 0.68rem; font-weight: 800; padding: 3px 8px;">
+                ${isAnswered ? '✓ RESPONDIDA' : '⏳ PENDIENTE'}
+              </span>
+              <button type="button" class="btn-outline-sm" onclick="deleteAdminComment('${c.id}')" title="Eliminar pregunta" style="color: #ef4444; border-color: #fca5a5; padding: 2px 6px;">
+                🗑️
+              </button>
+            </div>
+          </div>
+
+          <!-- Datos del cliente y pregunta -->
+          <div style="background: #f8fafc; border-left: 3px solid #38bdf8; padding: 8px 12px; border-radius: 0 4px 4px 0; margin-bottom: 10px;">
+            <div style="display: flex; justify-content: space-between; font-size: 0.72rem; color: #475569; margin-bottom: 4px;">
+              <span><strong>👤 ${authorName}</strong> ${c.userTier ? `<span style="font-size: 0.6rem; background: #e0f2fe; color: #0369a1; padding: 1px 4px; border-radius: 2px; font-weight: 800;">${c.userTier}</span>` : ''}</span>
+              <span style="font-family: var(--font-mono); font-size: 0.65rem; color: #94a3b8;">${dateStr}</span>
+            </div>
+            <div style="font-size: 0.85rem; font-weight: 600; color: #0f172a; line-height: 1.35;">
+              "${qText}"
+            </div>
+          </div>
+
+          <!-- Respuesta actual si existe -->
+          ${isAnswered ? `
+            <div style="background: #ecfdf5; border-left: 3px solid #10b981; padding: 8px 12px; border-radius: 0 4px 4px 0; margin-bottom: 10px;">
+              <div style="display: flex; justify-content: space-between; font-size: 0.72rem; color: #065f46; font-weight: 800; margin-bottom: 4px;">
+                <span>🛡️ ${c.answeredBy || c.replyAuthor || 'MeltyDeays Soporte'}</span>
+                <span style="font-family: var(--font-mono); font-size: 0.65rem; font-weight: normal; color: #047857;">${answerDateStr}</span>
+              </div>
+              <div style="font-size: 0.82rem; color: #064e3b; line-height: 1.35;">
+                ${aText}
+              </div>
+            </div>
+          ` : ''}
+
+          <!-- Formulario para responder o editar respuesta -->
+          <div style="margin-top: 10px; border-top: 1px dashed #e2e8f0; padding-top: 10px;">
+            <label style="display: block; font-size: 0.72rem; font-weight: 800; color: #334155; margin-bottom: 4px;">
+              ${isAnswered ? '✏️ Modificar respuesta oficial:' : '💬 Escribir respuesta oficial de tienda:'}
+            </label>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+              <textarea id="admin-reply-input-${c.id}" class="form-input" style="flex: 1; min-height: 48px; font-size: 0.8rem; padding: 6px 10px; border-radius: 4px;" placeholder="Escribe la respuesta que verá el cliente en su móvil...">${aText}</textarea>
+              <button type="button" class="btn-primary" style="align-self: flex-end; padding: 8px 14px; font-size: 0.78rem; font-weight: 800; display: flex; align-items: center; gap: 5px;" onclick="submitAdminCommentReply('${c.id}')">
+                <span>✓</span> <span>${isAnswered ? 'Actualizar' : 'Publicar Respuesta'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join("");
+  } catch (err) {
+    container.innerHTML = `
+      <div style="text-align: center; padding: 2rem; color: #ef4444;">
+        Error al cargar los comentarios: ${err.message}
+      </div>
+    `;
+  }
+}
+
+export async function submitAdminCommentReply(commentId) {
+  const input = document.getElementById(`admin-reply-input-${commentId}`);
+  if (!input || !input.value.trim()) {
+    showToast("Por favor escribe una respuesta antes de enviar", "error");
+    return;
+  }
+  const replyText = input.value.trim();
+
+  try {
+    await FirestoreService.answerProductComment(commentId, replyText, "MeltyDeays · Soporte Oficial");
+    showToast("✓ Respuesta oficial enviada y publicada para el cliente", "success");
+    await renderAdminCommentsList();
+  } catch (e) {
+    showToast("Error al publicar respuesta: " + e.message, "error");
+  }
+}
+
+export async function deleteAdminComment(commentId) {
+  if (!confirm("¿Deseas eliminar esta pregunta permanentemente?")) return;
+  try {
+    await FirestoreService.deleteProductComment(commentId);
+    showToast("✓ Pregunta eliminada", "info");
+    await renderAdminCommentsList();
+  } catch (e) {
+    showToast("Error al eliminar pregunta: " + e.message, "error");
+  }
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   vm.subscribe(renderAdmin);
 
@@ -874,6 +1054,12 @@ document.addEventListener("DOMContentLoaded", () => {
   window.executePurgeRewards = executePurgeRewards;
   window.executePurgeInvoicesFromSandbox = executePurgeInvoicesFromSandbox;
   window.executeSeedDevData = executeSeedDevData;
+
+  // Gestión de Preguntas de la Comunidad (Q&A)
+  window.renderAdminCommentsList = renderAdminCommentsList;
+  window.submitAdminCommentReply = submitAdminCommentReply;
+  window.deleteAdminComment = deleteAdminComment;
+  window.updateAdminPendingCommentsBadge = updateAdminPendingCommentsBadge;
 
   // Utilidades y Servicios Globales
   window.closeModal = closeModal;

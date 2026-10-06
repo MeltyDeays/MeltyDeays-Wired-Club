@@ -30,6 +30,8 @@ import {
   updateSpecsModalCalculation,
   submitProductComment,
   loadProductComments,
+  toggleCommentReplyForm,
+  submitClientCommentReply,
   openImageLightbox,
   closeImageLightbox,
   lightboxNextImage,
@@ -395,6 +397,8 @@ document.addEventListener("DOMContentLoaded", () => {
   window.updateSpecsModalCalculation = updateSpecsModalCalculation;
   window.submitProductComment = submitProductComment;
   window.loadProductComments = loadProductComments;
+  window.toggleCommentReplyForm = toggleCommentReplyForm;
+  window.submitClientCommentReply = submitClientCommentReply;
   window.openImageLightbox = openImageLightbox;
   window.closeImageLightbox = closeImageLightbox;
   window.lightboxNextImage = lightboxNextImage;

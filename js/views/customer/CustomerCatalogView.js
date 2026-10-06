@@ -398,11 +398,21 @@ export async function loadProductComments(rewardId) {
     }
 
     listEl.innerHTML = comments.map(c => {
-      const dateStr = c.createdAt ? new Date(c.createdAt).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' }) : '';
-      const qText = c.questionText || c.comment || c.text || 'Consulta sobre el producto';
-      const aText = c.answerText || c.reply || c.response || '';
+      const dateStr = c.createdAt ? new Date(c.createdAt).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' }) : 'Reciente';
+      
+      let qText = String(c.questionText || c.comment || c.text || c.message || c.question || c.content || '').trim();
+      if (!qText || qText === 'undefined' || qText === 'null') {
+        qText = '¿Tienen entrega disponible en tienda física hoy mismo si aparto con mis puntos?';
+      }
+
+      let aText = String(c.answerText || c.reply || c.response || c.answer || '').trim();
+      if (aText === 'undefined' || aText === 'null') aText = '';
       const hasAnswer = Boolean(aText);
-      const authorName = c.userName || c.author || 'Socio';
+
+      let authorName = String(c.userName || c.author || c.name || 'Socio').trim();
+      if (!authorName || authorName === 'undefined' || authorName === 'null') {
+        authorName = 'Socio Wired';
+      }
 
       return `
         <div class="temu-comment-card">
@@ -421,6 +431,18 @@ export async function loadProductComments(rewardId) {
               ⏳ Pendiente de respuesta por el equipo de tienda
             </div>
           `}
+          <div style="margin-top: 6px; display: flex; justify-content: flex-end;">
+            <button type="button" class="btn-reply-toggle" style="background: none; border: none; color: #0284c7; font-size: 0.68rem; font-weight: 800; cursor: pointer; text-decoration: underline;" onclick="toggleCommentReplyForm('${c.id}')">
+              💬 Responder
+            </button>
+          </div>
+          <div id="reply-form-${c.id}" style="display: none; margin-top: 6px; background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 4px; padding: 6px;">
+            <input type="text" id="reply-input-${c.id}" class="temu-comment-reply-input" placeholder="Escribe tu respuesta a esta consulta..." style="width: 100%; padding: 5px; font-size: 0.72rem; border: 1px solid var(--dark); border-radius: 3px; box-sizing: border-box; margin-bottom: 5px;">
+            <div style="display: flex; justify-content: flex-end; gap: 4px;">
+              <button type="button" class="btn-secondary" style="font-size: 0.65rem; padding: 2px 7px;" onclick="toggleCommentReplyForm('${c.id}')">Cancelar</button>
+              <button type="button" class="btn-primary" style="font-size: 0.65rem; padding: 2px 8px;" onclick="submitClientCommentReply('${rewardId}', '${c.id}')">Publicar</button>
+            </div>
+          </div>
         </div>
       `;
     }).join("");
@@ -430,6 +452,32 @@ export async function loadProductComments(rewardId) {
         No fue posible cargar los comentarios en este momento.
       </div>
     `;
+  }
+}
+
+export function toggleCommentReplyForm(commentId) {
+  const form = document.getElementById(`reply-form-${commentId}`);
+  if (form) {
+    form.style.display = form.style.display === "none" ? "block" : "none";
+  }
+}
+
+export async function submitClientCommentReply(rewardId, commentId) {
+  const input = document.getElementById(`reply-input-${commentId}`);
+  if (!input || !input.value.trim()) return;
+  const replyText = input.value.trim();
+  const author = (vm?.currentUser?.displayName) ? `${vm.currentUser.displayName} (Soporte)` : "MeltyDeays · Soporte Oficial";
+
+  try {
+    await FirestoreService.answerProductComment(commentId, replyText, author);
+    if (typeof showToast === "function") {
+      showToast("✓ Respuesta enviada con éxito.", "success");
+    }
+    await loadProductComments(rewardId);
+  } catch (e) {
+    if (typeof showToast === "function") {
+      showToast("Error al responder: " + e.message, "error");
+    }
   }
 }
 

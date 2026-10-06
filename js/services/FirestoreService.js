@@ -1397,5 +1397,76 @@ export class FirestoreService {
       return () => {};
     }
   }
+
+  static async fetchAllProductComments() {
+    if (db) {
+      try {
+        const snap = await db.collection(getCollectionName("product_comments")).get();
+        const local = engine.getSnapshot();
+        if (!local.comments) local.comments = {};
+        const list = [];
+        if (snap && !snap.empty) {
+          snap.forEach(doc => {
+            const data = doc.data();
+            local.comments[doc.id] = data;
+            list.push(data);
+          });
+        }
+        engine.saveSnapshot(local);
+        return list.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+      } catch (e) {
+        console.warn("Firestore fetchAllProductComments fallback:", e.message);
+      }
+    }
+    const snap = engine.getSnapshot();
+    const all = Object.values(snap.comments || {});
+    return all.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+  }
+
+  static async answerProductComment(commentId, answerText, answeredBy = "MeltyDeays · Soporte Oficial") {
+    if (!commentId || !answerText) throw new Error("ID de comentario o texto de respuesta faltante");
+
+    const snap = engine.getSnapshot();
+    if (!snap.comments) snap.comments = {};
+    const comment = snap.comments[commentId] || { id: commentId };
+
+    const now = new Date().toISOString();
+    comment.answerText = answerText.trim();
+    comment.reply = answerText.trim();
+    comment.answeredBy = answeredBy;
+    comment.replyAuthor = answeredBy;
+    comment.answeredAt = now;
+    comment.replyAt = now;
+    comment.status = "ANSWERED";
+
+    snap.comments[commentId] = comment;
+    engine.saveSnapshot(snap);
+
+    if (db) {
+      try {
+        await db.collection(getCollectionName("product_comments")).doc(commentId).set(comment, { merge: true });
+      } catch (e) {
+        console.warn("Firestore answerProductComment local only:", e.message);
+      }
+    }
+    return comment;
+  }
+
+  static async deleteProductComment(commentId) {
+    if (!commentId) return false;
+    const snap = engine.getSnapshot();
+    if (snap.comments && snap.comments[commentId]) {
+      delete snap.comments[commentId];
+      engine.saveSnapshot(snap);
+    }
+    if (db) {
+      try {
+        await db.collection(getCollectionName("product_comments")).doc(commentId).delete();
+      } catch (e) {
+        console.warn("Firestore deleteProductComment local only:", e.message);
+      }
+    }
+    return true;
+  }
 }
 

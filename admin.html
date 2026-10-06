@@ -204,6 +204,9 @@
       <button class="admin-tab-btn" id="tab-btn-sandbox_db" onclick="switchAdminTab('sandbox_db')">
         🧪 BD Sandbox
       </button>
+      <button class="admin-tab-btn" id="tab-btn-community" onclick="switchAdminTab('community')">
+        💬 Comunidad & Q&A <span id="admin-pending-comments-badge" style="background: #ef4444; color: #fff; font-size: 0.62rem; padding: 1px 6px; border-radius: 9px; margin-left: 5px; font-weight: 800; display: none;">0</span>
+      </button>
     </nav>
 
     <!-- MÓDULO 1: TERMINAL 1-SCAN POS DE ENTREGA EN MOSTRADOR -->
@@ -918,6 +921,48 @@
     <!-- SECCIÓN 6: GESTIÓN DE BASE DE DATOS SANDBOX / PRUEBAS -->
     <div id="sec-sandbox_db" class="admin-tab-content" style="display: none;">
       <div id="sandbox-db-root"></div>
+    </div>
+
+    <!-- SECCIÓN 7: GESTIÓN DE PREGUNTAS Y COMENTARIOS DE PRODUCTOS (Q&A) -->
+    <div id="sec-community" class="admin-tab-content" style="display: none;">
+      <div class="admin-section">
+        <div class="admin-section-header">
+          <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <h2>💬 Soporte y Preguntas de la Comunidad (Q&A)</h2>
+            <span class="badge badge-primary" id="admin-comments-total-badge">0 PREGUNTAS</span>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <button type="button" class="btn-secondary" onclick="renderAdminCommentsList()" style="font-size: 0.75rem; padding: 4px 10px;">
+              🔄 Refrescar
+            </button>
+          </div>
+        </div>
+
+        <p style="color: var(--gray-700); font-size: 0.85rem; margin-bottom: 1rem;">
+          Responde a las consultas de los socios sobre artículos de catálogo. Tus respuestas se publican en tiempo real con la insignia oficial <strong>🛡️ MeltyDeays Soporte</strong> visible en la aplicación móvil de clientes.
+        </p>
+
+        <!-- TARJETAS DE ESTADÍSTICAS RÁPIDAS -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin-bottom: 1.25rem;">
+          <div style="background: #fef2f2; border: 1.5px solid #fca5a5; border-radius: 6px; padding: 10px 14px;">
+            <div style="font-size: 0.68rem; font-weight: 800; color: #991b1b; font-family: var(--font-mono);">PENDIENTES DE RESPUESTA</div>
+            <div style="font-size: 1.6rem; font-weight: 900; color: #dc2626;" id="stat-pending-comments">0</div>
+          </div>
+          <div style="background: #ecfdf5; border: 1.5px solid #6ee7b7; border-radius: 6px; padding: 10px 14px;">
+            <div style="font-size: 0.68rem; font-weight: 800; color: #065f46; font-family: var(--font-mono);">RESPONDIDAS</div>
+            <div style="font-size: 1.6rem; font-weight: 900; color: #059669;" id="stat-answered-comments">0</div>
+          </div>
+          <div style="background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 6px; padding: 10px 14px;">
+            <div style="font-size: 0.68rem; font-weight: 800; color: #475569; font-family: var(--font-mono);">TOTAL REGISTRADAS</div>
+            <div style="font-size: 1.6rem; font-weight: 900; color: #0f172a;" id="stat-total-comments">0</div>
+          </div>
+        </div>
+
+        <!-- CONTENEDOR DE LA LISTA DE PREGUNTAS -->
+        <div id="admin-comments-container">
+          <div style="text-align: center; padding: 2rem; color: #94a3b8;">Cargando preguntas de la comunidad...</div>
+        </div>
+      </div>
     </div>
   </main>
 
