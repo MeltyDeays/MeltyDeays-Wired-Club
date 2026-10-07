@@ -580,8 +580,9 @@
   box-shadow: 1px 1px 0px var(--dark);
 }
 .modal-specs-action-btn.btn-reserve-incoming {
-  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+  background: linear-gradient(135deg, #b45309 0%, #d97706 100%);
   color: #ffffff;
+  border-color: #78350f;
 }
 .modal-specs-action-btn.btn-redeem-gold {
   background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
@@ -904,9 +905,9 @@
 }
 
 .specs-badge-item.stock-incoming {
-  background: rgba(14, 165, 233, 0.12);
-  color: #0284c7;
-  border: 1px solid rgba(14, 165, 233, 0.4);
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fcd34d;
 }
 
 .modal-intro-callout {

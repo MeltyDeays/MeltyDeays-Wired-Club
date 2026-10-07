@@ -1190,7 +1190,7 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
         <span class="specs-badge-item" style="background: #0f172a; color: #38bdf8; border: 1px solid #334155;">⚡ WIRED CHOICE</span>
         ${productImages.length > 1 ? `<span class="specs-badge-item frames">[ 0${productImages.length} FRAMES ]</span>` : ''}
         ${isIncoming
-          ? `<span class="specs-badge-item incoming" style="background: rgba(14, 165, 233, 0.2); color: #38bdf8; border: 1px solid #0284c7;">🕊️ EXPEDICIÓN EN VUELO · PREVENTA</span>`
+          ? `<span class="specs-badge-item incoming" style="background: #fef3c7; color: #92400e; border: 1px solid #fcd34d;">🕊️ EXPEDICIÓN EN VUELO · PREVENTA</span>`
           : (isPartial 
             ? `<span class="specs-badge-item discount">🏷️ Hasta ${maxPct}% OFF</span>` 
             : `<span class="specs-badge-item points">⚡ ${item.pointsCost.toLocaleString()} WP</span>`
@@ -2016,21 +2016,21 @@ export function renderCatalog(catalog, user) {
                       <stop offset="100%" stop-color="#78350f" />
                     </linearGradient>
                     <linearGradient id="haibaneWingIncL-${item.id}" x1="100%" y1="0%" x2="0%" y2="100%">
-                      <stop offset="0%" stop-color="#38bdf8" />
-                      <stop offset="40%" stop-color="#0284c7" />
-                      <stop offset="80%" stop-color="#1e293b" />
-                      <stop offset="100%" stop-color="#0f172a" />
+                      <stop offset="0%" stop-color="#fef08a" />
+                      <stop offset="40%" stop-color="#d97706" />
+                      <stop offset="80%" stop-color="#92400e" />
+                      <stop offset="100%" stop-color="#78350f" />
                     </linearGradient>
                     <linearGradient id="haibaneWingIncR-${item.id}" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stop-color="#38bdf8" />
-                      <stop offset="40%" stop-color="#0284c7" />
-                      <stop offset="80%" stop-color="#1e293b" />
-                      <stop offset="100%" stop-color="#0f172a" />
+                      <stop offset="0%" stop-color="#fef08a" />
+                      <stop offset="40%" stop-color="#d97706" />
+                      <stop offset="80%" stop-color="#92400e" />
+                      <stop offset="100%" stop-color="#78350f" />
                     </linearGradient>
                     <linearGradient id="haibanePlaqueInc-${item.id}" x1="0%" y1="0%" x2="0%" y2="100%">
-                      <stop offset="0%" stop-color="#1e293b" />
-                      <stop offset="45%" stop-color="#0f172a" />
-                      <stop offset="100%" stop-color="#020617" />
+                      <stop offset="0%" stop-color="#78350f" />
+                      <stop offset="45%" stop-color="#451a03" />
+                      <stop offset="100%" stop-color="#1c1917" />
                     </linearGradient>
                   </defs>
 
@@ -2047,15 +2047,15 @@ export function renderCatalog(catalog, user) {
 
                     <!-- 2. ALAS DE PLUMAS AL VIENTO (Plumaje en Tránsito 灰羽) -->
                     <path d="M92 56 C72 40 46 26 12 20 C10 34 18 48 28 58 C16 55 8 55 5 64 C16 74 30 80 46 84 C34 85 24 90 26 98 C40 104 62 98 76 90 C66 96 56 104 58 110 C74 112 90 102 98 90 Z" fill="url(#haibaneWingIncL-${item.id})" stroke="url(#haibaneGoldInc-${item.id})" stroke-width="1.6" stroke-linejoin="round" />
-                    <path d="M86 60 C68 48 46 36 24 30 C28 40 38 50 48 58 C34 56 26 56 22 64 C32 72 46 76 60 78 Z" fill="#38bdf8" opacity="0.4" />
+                    <path d="M86 60 C68 48 46 36 24 30 C28 40 38 50 48 58 C34 56 26 56 22 64 C32 72 46 76 60 78 Z" fill="#fef08a" opacity="0.35" />
 
                     <path d="M148 56 C168 40 194 26 228 20 C230 34 222 48 212 58 C224 55 232 55 235 64 C224 74 210 80 194 84 C206 85 216 90 214 98 C200 104 178 98 164 90 C174 96 184 104 182 110 C166 112 150 102 142 90 Z" fill="url(#haibaneWingIncR-${item.id})" stroke="url(#haibaneGoldInc-${item.id})" stroke-width="1.6" stroke-linejoin="round" />
-                    <path d="M154 60 C172 48 194 36 216 30 C212 40 202 50 192 58 C206 56 214 56 218 64 C208 72 194 76 180 78 Z" fill="#38bdf8" opacity="0.4" />
+                    <path d="M154 60 C172 48 194 36 216 30 C212 40 202 50 192 58 C206 56 214 56 218 64 C208 72 194 76 180 78 Z" fill="#fef08a" opacity="0.35" />
 
-                    <!-- 3. PLACA CENTRAL OBSIDIANA -->
-                    <rect x="36" y="28" width="168" height="74" rx="6" fill="#080d1a" stroke="url(#haibaneGoldInc-${item.id})" stroke-width="2.2" />
+                    <!-- 3. PLACA CENTRAL BRONCE / LATÓN SACRO -->
+                    <rect x="36" y="28" width="168" height="74" rx="6" fill="#1c1917" stroke="url(#haibaneGoldInc-${item.id})" stroke-width="2.2" />
                     <rect x="40" y="32" width="160" height="66" rx="4" fill="url(#haibanePlaqueInc-${item.id})" stroke="#d97706" stroke-width="1" />
-                    <rect x="43" y="35" width="154" height="60" rx="3" fill="none" stroke="#38bdf8" stroke-width="0.8" stroke-dasharray="3 2" opacity="0.6" />
+                    <rect x="43" y="35" width="154" height="60" rx="3" fill="none" stroke="#fcd34d" stroke-width="0.8" stroke-dasharray="3 2" opacity="0.6" />
 
                     <!-- Diamantes en esquinas -->
                     <polygon points="46,38 48,41 46,44 44,41" fill="#fef08a" />
