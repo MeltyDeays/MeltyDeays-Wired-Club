@@ -2035,60 +2035,227 @@
     box-sizing: border-box !important;
   }
 
-  /* MODAL AGREGAR PRODUCTO (CALCULADORA DE FLETE Y CANJE) */
+  /* MODAL AGREGAR PRODUCTO (CALCULADORA DE FLETE, MODALIDAD Y CATÁLOGO) */
+  #modal-new-product .modal-content {
+    padding: 1rem 0.75rem !important;
+    max-width: 96vw !important;
+  }
+  #modal-new-product h3#modal-product-title {
+    font-size: 1.05rem !important;
+  }
   .prod-mode-grid {
-    grid-template-columns: 1fr !important;
-    gap: 0.5rem !important;
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 0.35rem !important;
+  }
+  .prod-mode-grid button {
+    padding: 0.45rem 0.2rem !important;
+    min-height: 46px !important;
+    gap: 1px !important;
+    border-radius: 4px !important;
+    justify-content: center !important;
+  }
+  .prod-mode-grid .prod-mode-icon {
+    font-size: 0.95rem !important;
+    line-height: 1 !important;
+  }
+  .prod-mode-grid .prod-mode-label {
+    font-size: 0.65rem !important;
+    line-height: 1.15 !important;
+  }
+  .prod-mode-grid .prod-mode-sub {
+    display: none !important;
+  }
+
+  /* CALCULADORAS: FLETE, DESCUENTO Y PREVENTA COMPACTAS */
+  #sec-product-free-calc,
+  #sec-product-discount-calc,
+  #sec-product-incoming-calc {
+    padding: 0.65rem 0.55rem !important;
+    margin-bottom: 0.85rem !important;
   }
   .prod-calc-3col {
-    grid-template-columns: 1fr !important;
-    gap: 0.5rem !important;
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 0.35rem !important;
+  }
+  .prod-calc-3col .form-label {
+    font-size: 0.62rem !important;
+    height: 16px !important;
+    line-height: 16px !important;
+    margin-bottom: 2px !important;
+    text-align: center !important;
+  }
+  .prod-calc-3col .form-input {
+    height: 34px !important;
+    font-size: 0.85rem !important;
+    padding: 2px 4px !important;
   }
   .freight-presets-row {
     display: flex !important;
     flex-wrap: wrap !important;
-    gap: 0.35rem !important;
+    gap: 0.25rem !important;
     width: 100% !important;
-    justify-content: flex-start !important;
-    margin-top: 0.35rem !important;
+    justify-content: flex-end !important;
+    margin-top: 0.25rem !important;
+    margin-bottom: 0.45rem !important;
   }
   .freight-presets-row button {
-    flex: 1 1 auto !important;
-    text-align: center !important;
+    flex: 0 1 auto !important;
+    padding: 2px 6px !important;
+    font-size: 0.65rem !important;
+    height: 24px !important;
+  }
+  .calc-freq-grid {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 0.25rem !important;
+  }
+  .calc-freq-grid button {
+    padding: 3px 2px !important;
+    font-size: 0.68rem !important;
+    height: 28px !important;
   }
   .calc-ticket-row {
     display: flex !important;
     align-items: center !important;
-    gap: 4px !important;
+    gap: 3px !important;
     flex-wrap: wrap !important;
     width: 100% !important;
   }
-  .calc-financial-summary-card {
-    flex-direction: column !important;
-    align-items: stretch !important;
-    gap: 0.75rem !important;
+  .calc-ticket-row .form-input {
+    height: 26px !important;
+    width: 58px !important;
+    font-size: 0.78rem !important;
+    padding: 2px 4px !important;
   }
-  .calc-financial-summary-actions {
-    width: 100% !important;
-    display: flex !important;
+  .calc-ticket-row button {
+    padding: 2px 5px !important;
+    font-size: 0.65rem !important;
+    height: 24px !important;
+  }
+  .calc-financial-summary-card {
+    flex-direction: row !important;
     justify-content: space-between !important;
     align-items: center !important;
-    border-top: 1px dashed #cbd5e1 !important;
-    padding-top: 0.65rem !important;
-    margin-top: 0.25rem !important;
+    padding: 0.5rem 0.65rem !important;
+    gap: 0.4rem !important;
   }
+  .calc-financial-summary-actions {
+    width: auto !important;
+    display: flex !important;
+    justify-content: flex-end !important;
+    align-items: center !important;
+    border-top: none !important;
+    padding-top: 0 !important;
+    margin-top: 0 !important;
+    gap: 0.4rem !important;
+  }
+
+  /* DESCUENTO TOPE Y PREVENTA EN MÓVIL */
+  .prod-discount-inputs-grid {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 0.4rem !important;
+    margin-bottom: 0.45rem !important;
+  }
+  .prod-discount-inputs-grid .form-input {
+    height: 34px !important;
+    font-size: 0.95rem !important;
+  }
+  .prod-discount-presets-row {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 0.25rem !important;
+    width: 100% !important;
+    justify-content: flex-end !important;
+    margin-top: 0.25rem !important;
+    margin-bottom: 0.45rem !important;
+  }
+  .prod-discount-presets-row button {
+    padding: 2px 6px !important;
+    font-size: 0.65rem !important;
+    height: 24px !important;
+  }
+  .prod-incoming-row1-grid {
+    display: grid !important;
+    grid-template-columns: 1fr 1.3fr !important;
+    gap: 0.4rem !important;
+    margin-bottom: 0.45rem !important;
+  }
+  .prod-incoming-row1-grid .form-input {
+    height: 34px !important;
+    font-size: 0.85rem !important;
+  }
+  .prod-incoming-arrival-presets-row {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 0.25rem !important;
+    width: 100% !important;
+    justify-content: flex-end !important;
+    margin-top: 0.25rem !important;
+    margin-bottom: 0.45rem !important;
+  }
+  .prod-incoming-arrival-presets-row button {
+    padding: 2px 6px !important;
+    font-size: 0.65rem !important;
+    height: 24px !important;
+  }
+
+  /* DATOS DEL ARTÍCULO: FILA DUAL COSTO WP + STOCK */
+  .prod-cost-stock-grid {
+    grid-column: 1 / -1 !important;
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 0.45rem !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .prod-cost-stock-grid > .form-group {
+    grid-column: auto !important;
+    width: 100% !important;
+    margin-bottom: 0 !important;
+  }
+  .prod-cost-stock-grid .form-input {
+    height: 36px !important;
+    font-size: 0.95rem !important;
+  }
+
   .prod-img-upload-row {
     display: flex !important;
-    flex-direction: column !important;
-    align-items: stretch !important;
+    flex-direction: row !important;
+    align-items: center !important;
     gap: 0.4rem !important;
     width: 100% !important;
   }
   .prod-img-upload-row button {
-    width: 100% !important;
+    width: auto !important;
+    flex: 1 1 auto !important;
     justify-content: center !important;
     text-align: center !important;
+    padding: 0.35rem 0.5rem !important;
+    font-size: 0.75rem !important;
+    height: 32px !important;
   }
+  #modal-new-product textarea#prod-desc {
+    min-height: 65px !important;
+    height: 75px !important;
+    font-size: 0.75rem !important;
+    padding: 6px !important;
+  }
+  #modal-new-product .modal-actions-responsive {
+    display: grid !important;
+    grid-template-columns: 1fr 1.6fr !important;
+    gap: 0.45rem !important;
+    width: 100% !important;
+  }
+  #modal-new-product .modal-actions-responsive button {
+    min-height: 38px !important;
+    height: 38px !important;
+    font-size: 0.78rem !important;
+    width: 100% !important;
+  }
+
   .form-grid > *,
   .form-grid > .form-group,
   .form-grid > div {

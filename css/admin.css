@@ -2912,4 +2912,29 @@
   background: #e2e8f0;
 }
 
+/* Foco limpio y estética Copland OS en modal nuevo producto (cero borde rojo) */
+#modal-new-product .form-input,
+#modal-new-product textarea,
+#modal-new-product select {
+  border: 1.5px solid var(--dark);
+  border-radius: 4px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  background: #ffffff;
+}
+
+#modal-new-product .form-input:focus,
+#modal-new-product textarea:focus,
+#modal-new-product select:focus {
+  border-color: #4f46e5 !important;
+  box-shadow: 2px 2px 0px #4f46e5 !important;
+  outline: none !important;
+}
+
+.prod-cost-stock-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  width: 100%;
+}
+
 
