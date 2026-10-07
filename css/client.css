@@ -1343,84 +1343,210 @@
   justify-content: space-between;
   gap: 8px;
   margin-bottom: 0.25rem;
+  flex-wrap: nowrap;
 }
 
 .haibane-specs-kanji {
   font-family: 'Cinzel', 'Noto Serif JP', 'Georgia', serif;
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   font-weight: 900;
   color: #78350f;
-  letter-spacing: 1.5px;
+  letter-spacing: 0.8px;
+  white-space: nowrap !important;
+  flex-shrink: 1;
 }
 
 .haibane-specs-badge {
   font-family: var(--font-mono, monospace);
-  font-size: 0.68rem;
+  font-size: 0.65rem;
   font-weight: 900;
   letter-spacing: 0.5px;
   color: #92400e;
   background: #fef3c7;
   border: 1px solid #fcd34d;
-  padding: 2px 7px;
+  padding: 2px 6px;
   border-radius: 4px;
   box-shadow: 0 1px 3px rgba(180, 83, 9, 0.12);
+  white-space: nowrap !important;
+  flex-shrink: 0;
 }
 
 .haibane-specs-subtitle {
   font-family: var(--font-mono, monospace);
-  font-size: 0.68rem;
+  font-size: 0.65rem;
   font-weight: 800;
   color: #854d0e;
-  letter-spacing: 0.8px;
+  letter-spacing: 0.5px;
   text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .haibane-specs-pricing-row {
   display: flex;
-  align-items: baseline;
+  align-items: flex-end;
+  justify-content: space-between;
   gap: 10px;
-  margin-bottom: 0.35rem;
+  margin: 0.55rem 0 0.5rem 0;
+  padding: 0.5rem 0.75rem;
+  background: rgba(254, 243, 199, 0.35);
+  border: 1px solid rgba(217, 119, 6, 0.2);
+  border-radius: 6px;
+}
+
+.haibane-price-main-block {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.haibane-price-label {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.58rem;
+  font-weight: 800;
+  color: #854d0e;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
 }
 
 .haibane-specs-price-curr {
   font-family: var(--font-mono, monospace);
-  font-size: 1.35rem;
+  font-size: 1.25rem;
   font-weight: 900;
   color: #1c1917;
-  letter-spacing: -0.5px;
+  letter-spacing: -0.3px;
+  line-height: 1.2;
+}
+
+.haibane-specs-price-curr strong {
+  color: #1c1917;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.haibane-specs-price-curr span {
+  display: inline-block;
+  font-size: 0.72rem !important;
+  color: #78716c !important;
+  font-weight: 700 !important;
+  white-space: nowrap;
+}
+
+.haibane-price-orig-block {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  flex-shrink: 0;
+  text-align: right;
+  white-space: nowrap !important;
+}
+
+.haibane-orig-label {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.56rem;
+  font-weight: 800;
+  color: #78716c;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
 }
 
 .haibane-specs-price-orig {
   font-family: var(--font-mono, monospace);
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   color: #a8a29e;
   text-decoration: line-through;
+  white-space: nowrap !important;
+  font-weight: 800;
+  line-height: 1.2;
 }
 
 .haibane-specs-savings-row {
   display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 0.75rem;
+  padding: 0.45rem 0.65rem;
+  background: #ffffff;
+  border: 1px solid #fed7aa;
+  border-left: 3px solid #047857;
+  border-radius: 5px;
+  box-shadow: 0 1px 3px rgba(120, 53, 15, 0.04);
+}
+
+.savings-primary-line {
+  display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 6px;
-  font-size: 0.75rem;
-  color: #44403c;
+  gap: 4px 6px;
   font-family: var(--font-mono, monospace);
-  margin-bottom: 0.75rem;
+  font-size: 0.72rem;
+  line-height: 1.3;
 }
 
 .savings-gem {
-  color: #b45309;
+  color: #d97706;
   font-size: 0.85rem;
+  line-height: 1;
+}
+
+.savings-label {
+  color: #78350f;
+  font-weight: 800;
+  white-space: nowrap;
 }
 
 .savings-highlight {
   color: #047857;
-  font-weight: 800;
+  font-weight: 900;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.savings-highlight strong {
+  color: #047857;
+  font-weight: 900;
+}
+
+.savings-highlight span {
+  font-size: 0.68rem !important;
+  color: #065f46 !important;
+  font-weight: 700 !important;
+}
+
+.savings-badge-pill {
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+  font-size: 0.64rem;
+  font-weight: 900;
+  padding: 1px 5px;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+
+.savings-secondary-line {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--font-mono, monospace);
+  font-size: 0.65rem;
+  color: #78716c;
+  line-height: 1.25;
+}
+
+.savings-shield-icon {
+  font-size: 0.72rem;
+  line-height: 1;
 }
 
 .savings-note {
   color: #78716c;
-  font-size: 0.72rem;
+  font-weight: 700;
 }
 
 /* RELICARIO CRONÓMETRO GLIE DENTRO DE FICHA TÉCNICA */
@@ -1437,8 +1563,9 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 0.45rem;
-  padding-bottom: 0.35rem;
+  gap: 8px;
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.4rem;
   border-bottom: 1px dashed rgba(180, 83, 9, 0.25);
 }
 
@@ -1446,6 +1573,8 @@
   display: flex;
   align-items: center;
   gap: 6px;
+  min-width: 0;
+  flex: 1;
 }
 
 .haibane-halo-dot {
@@ -1455,32 +1584,36 @@
   background: #f59e0b;
   box-shadow: 0 0 4px #f59e0b;
   animation: cdPulse 1.6s ease-in-out infinite;
+  flex-shrink: 0;
 }
 
 .relic-header-title {
   font-family: var(--font-mono, monospace);
-  font-size: 0.68rem;
+  font-size: 0.65rem;
   font-weight: 800;
   color: #78350f;
   letter-spacing: 0.5px;
+  white-space: nowrap;
 }
 
 .haibane-specs-date-tag {
   color: #92400e;
   font-family: var(--font-mono, monospace);
-  font-size: 0.66rem;
+  font-size: 0.64rem;
   font-weight: 800;
   background: #fef3c7;
-  padding: 1px 6px;
-  border-radius: 3px;
+  padding: 2px 6px;
+  border-radius: 4px;
   border: 1px solid #fde68a;
+  white-space: nowrap !important;
+  flex-shrink: 0;
 }
 
 .haibane-specs-relic-grid {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 6px;
+  justify-content: space-between;
+  gap: 4px;
 }
 
 .specs-relic-seg {
@@ -1489,17 +1622,19 @@
   align-items: center;
   justify-content: center;
   background: #ffffff;
-  border: 1px solid #e7e5e4;
+  border: 1px solid #fed7aa;
   border-radius: 5px;
-  padding: 3px 6px;
-  min-width: 38px;
+  padding: 4px 6px;
+  min-width: 42px;
+  flex: 1;
+  max-width: 58px;
   box-shadow: 0 1px 3px rgba(120, 53, 15, 0.08);
 }
 
 .specs-relic-num {
   font-family: var(--font-mono, monospace);
   font-variant-numeric: tabular-nums;
-  font-size: 1.05rem;
+  font-size: 1.15rem;
   font-weight: 900;
   color: #78350f;
   line-height: 1.1;
@@ -1507,20 +1642,21 @@
 
 .specs-relic-lbl {
   font-family: 'Cinzel', sans-serif;
-  font-size: 0.55rem;
+  font-size: 0.52rem;
   font-weight: 800;
   color: #78716c;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.6px;
   margin-top: 1px;
 }
 
 .specs-relic-divider {
   font-family: var(--font-mono, monospace);
-  font-size: 0.95rem;
+  font-size: 1.15rem;
   font-weight: 900;
   color: #b45309;
-  margin-top: -6px;
+  margin-bottom: 9px;
   animation: cdPulse 1.6s ease-in-out infinite;
+  user-select: none;
 }
 
 /* BOTONES DE RESERVA PREVENTA */

@@ -1080,20 +1080,35 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
         <div class="haibane-specs-header">
           <div class="haibane-specs-title-row">
             <span class="haibane-specs-kanji">灰羽 · HAIBANE RENMEI</span>
-            <span class="haibane-specs-badge">✦ -${presaleDiscPct}% DIRECTO ✦</span>
+            <span class="haibane-specs-badge">-${presaleDiscPct}% DIRECTO</span>
           </div>
-          <div class="haibane-specs-subtitle">🕊️ EXPEDICIÓN EN VUELO · RESERVA DE PREVENTA</div>
+          <div class="haibane-specs-subtitle">🕊️ EXPEDICIÓN EN VUELO · PREVENTA</div>
         </div>
 
         <!-- Fila de Precios Sacra -->
         <div class="haibane-specs-pricing-row">
-          <span class="haibane-specs-price-curr">${formatDualPrice(item.presalePriceUsd ?? presalePrice)}</span>
-          <span class="haibane-specs-price-orig">${formatPrice(item.priceUsd)}</span>
+          <div class="haibane-price-main-block">
+            <span class="haibane-price-label">PRECIO PREVENTA</span>
+            <div class="haibane-specs-price-curr">${formatDualPrice(item.presalePriceUsd ?? presalePrice)}</div>
+          </div>
+          <div class="haibane-price-orig-block">
+            <span class="haibane-orig-label">PRECIO REGULAR</span>
+            <span class="haibane-specs-price-orig">${formatPrice(item.priceUsd)}</span>
+          </div>
         </div>
+
+        <!-- Tarjeta de Ahorro Preventa y Garantía de Puntos -->
         <div class="haibane-specs-savings-row">
-          <span class="savings-gem">✧</span>
-          <span>Ahorro preventa: <strong class="savings-highlight">-${formatDualPrice(item.presaleDiscountUsd ?? presaleDiscUsd)} (-${presaleDiscPct}%)</strong></span>
-          <span class="savings-note">(0 WP requeridos · Puntos intactos)</span>
+          <div class="savings-primary-line">
+            <span class="savings-gem">✧</span>
+            <span class="savings-label">Ahorro preventa:</span>
+            <span class="savings-highlight">-${formatDualPrice(item.presaleDiscountUsd ?? presaleDiscUsd)}</span>
+            <span class="savings-badge-pill">(-${presaleDiscPct}%)</span>
+          </div>
+          <div class="savings-secondary-line">
+            <span class="savings-shield-icon">🛡️</span>
+            <span class="savings-note">0 WP requeridos · Saldo de puntos 100% intacto</span>
+          </div>
         </div>
 
         <!-- Relicario Cronómetro Glie (D/H/M/S) -->
@@ -1101,9 +1116,9 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
           <div class="haibane-specs-relic-header">
             <div class="relic-header-left">
               <span class="haibane-halo-dot"></span>
-              <span class="relic-header-title">ARRIBO ESTIMADO EN TIENDA // COUNTDOWN</span>
+              <span class="relic-header-title">ARRIBO // COUNTDOWN</span>
             </div>
-            <span class="haibane-specs-date-tag">${formatArrivalHint(item.estimatedArrival)}</span>
+            <span class="haibane-specs-date-tag">LLEGADA: ${formatArrivalHint(item.estimatedArrival)}</span>
           </div>
           <div class="haibane-specs-relic-grid">
             <div class="specs-relic-seg">

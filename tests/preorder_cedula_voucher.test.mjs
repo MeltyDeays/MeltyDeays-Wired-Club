@@ -469,9 +469,10 @@ export async function runTier1Tests() {
   });
 
   await ctx.test('T1.F4.2: Countdown formats with zero-padding in tabular-nums format', async () => {
+    const now = Date.now();
     const offsetMs = (1 * 86400000) + (2 * 3600000) + (3 * 60000) + (4 * 1000);
-    const targetIso = new Date(Date.now() + offsetMs).toISOString();
-    const result = CanonicalCountdownTimer.calculateRemaining(targetIso, Date.now());
+    const targetIso = new Date(now + offsetMs).toISOString();
+    const result = CanonicalCountdownTimer.calculateRemaining(targetIso, now);
 
     expect(result.formatted).toBe("01d 02h 03m 04s", "Format must pad components with leading zeros");
   });
