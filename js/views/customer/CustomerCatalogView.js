@@ -521,6 +521,100 @@ function updateSpecsModalImage() {
   });
 }
 
+export function initSpecsCarouselSwipe(stageEl) {
+  if (!stageEl || stageEl.dataset.swipeAttached === "true") return;
+  stageEl.dataset.swipeAttached = "true";
+
+  let startX = 0;
+  let startY = 0;
+  let startTime = 0;
+  let isHorizontal = false;
+  let wasSwiping = false;
+
+  // Soporte táctil móvil fluido (iOS Safari / Android Chrome)
+  stageEl.addEventListener("touchstart", (e) => {
+    if (!e.touches || e.touches.length !== 1) return;
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+    startTime = Date.now();
+    isHorizontal = false;
+  }, { passive: true });
+
+  stageEl.addEventListener("touchmove", (e) => {
+    if (!e.touches || e.touches.length !== 1) return;
+    const currentX = e.touches[0].clientX;
+    const currentY = e.touches[0].clientY;
+    const dx = currentX - startX;
+    const dy = currentY - startY;
+
+    if (!isHorizontal && Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy)) {
+      isHorizontal = true;
+    }
+
+    if (isHorizontal && e.cancelable) {
+      e.preventDefault();
+    }
+  }, { passive: false });
+
+  stageEl.addEventListener("touchend", (e) => {
+    if (!e.changedTouches || e.changedTouches.length !== 1) return;
+    const endX = e.changedTouches[0].clientX;
+    const endY = e.changedTouches[0].clientY;
+    const dx = endX - startX;
+    const dy = endY - startY;
+    const dt = Date.now() - startTime;
+
+    const isSwipe = (Math.abs(dx) > 35 && Math.abs(dx) > Math.abs(dy) * 1.1) ||
+                    (dt < 350 && Math.abs(dx) > 25 && Math.abs(dx) > Math.abs(dy));
+
+    if (isSwipe) {
+      wasSwiping = true;
+      setTimeout(() => { wasSwiping = false; }, 320);
+      if (dx < 0) {
+        specsModalNextImage();
+      } else {
+        specsModalPrevImage();
+      }
+    }
+  }, { passive: true });
+
+  // Soporte para arrastre con ratón en escritorio
+  let isPointerDown = false;
+  stageEl.addEventListener("pointerdown", (e) => {
+    if (e.pointerType === "touch") return;
+    isPointerDown = true;
+    startX = e.clientX;
+    startY = e.clientY;
+    startTime = Date.now();
+  });
+
+  stageEl.addEventListener("pointerup", (e) => {
+    if (e.pointerType === "touch" || !isPointerDown) return;
+    isPointerDown = false;
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+
+    if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) {
+      wasSwiping = true;
+      setTimeout(() => { wasSwiping = false; }, 320);
+      if (dx < 0) {
+        specsModalNextImage();
+      } else {
+        specsModalPrevImage();
+      }
+    }
+  });
+
+  // Prevenir que un gesto de swipe abra el lightbox accidentalmente
+  stageEl.addEventListener("click", (e) => {
+    if (wasSwiping) {
+      e.preventDefault();
+      e.stopPropagation();
+      wasSwiping = false;
+    }
+  }, true);
+}
+
 export function openLightboxFromSpecs() {
   if (!currentSpecsItem) return;
   const escapedTitle = (currentSpecsItem.title || "").replace(/'/g, "\\'");
@@ -1254,6 +1348,12 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
   if (fab) {
     fab.classList.add("is-hidden");
     fab.style.setProperty("display", "none", "important");
+  }
+
+  // Activar soporte de swipe gestual en el carrusel de fotos
+  const stageEl = modal.querySelector(".specs-carousel-stage");
+  if (stageEl) {
+    initSpecsCarouselSwipe(stageEl);
   }
 
   body.dataset.openedJustNow = "1";

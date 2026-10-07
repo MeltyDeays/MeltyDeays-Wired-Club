@@ -683,6 +683,13 @@
   justify-content: center;
   box-shadow: 2px 2px 0px var(--dark);
   user-select: none;
+  -webkit-user-select: none;
+  touch-action: pan-y pinch-zoom;
+  cursor: grab;
+}
+
+.specs-carousel-stage:active {
+  cursor: grabbing;
 }
 
 .specs-carousel-stage img {
@@ -691,7 +698,12 @@
   object-fit: contain;
   padding: 8px;
   cursor: pointer;
-  transition: transform 0.2s ease;
+  transition: transform 0.2s ease, opacity 0.15s ease;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-user-drag: none;
+  touch-action: pan-y pinch-zoom;
+  pointer-events: auto;
 }
 
 .specs-carousel-stage:hover img {

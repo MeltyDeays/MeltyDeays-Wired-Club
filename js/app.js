@@ -25,6 +25,7 @@ import {
   specsModalNextImage,
   specsModalPrevImage,
   setSpecsModalImageIndex,
+  initSpecsCarouselSwipe,
   openLightboxFromSpecs,
   shareProduct,
   updateSpecsModalCalculation,
@@ -415,6 +416,7 @@ document.addEventListener("DOMContentLoaded", () => {
   window.specsModalNextImage = specsModalNextImage;
   window.specsModalPrevImage = specsModalPrevImage;
   window.setSpecsModalImageIndex = setSpecsModalImageIndex;
+  window.initSpecsCarouselSwipe = initSpecsCarouselSwipe;
   window.openLightboxFromSpecs = openLightboxFromSpecs;
   window.shareProduct = shareProduct;
   window.updateSpecsModalCalculation = updateSpecsModalCalculation;
