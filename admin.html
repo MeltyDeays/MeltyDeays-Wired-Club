@@ -1957,63 +1957,63 @@
       <input type="hidden" id="prod-presale-discount-usd" value="0">
       <input type="hidden" id="prod-presale-price-usd" value="0">
 
-      <div class="form-grid" style="margin-bottom: 0.5rem;">
-        <div id="prod-commercial-summary-pill" style="display: none; grid-column: span 2; background: #fef3c7; border: 1.5px solid #f59e0b; border-radius: 4px; padding: 4px 8px; font-family: var(--font-mono); font-size: 0.68rem; color: #92400e;">
+      <div class="prod-form-stack" style="display: flex; flex-direction: column; gap: 0.45rem; width: 100%; box-sizing: border-box; margin-bottom: 0.5rem;">
+        <div id="prod-commercial-summary-pill" style="display: none; width: 100%; box-sizing: border-box; background: #fef3c7; border: 1.5px solid #f59e0b; border-radius: 4px; padding: 4px 8px; font-family: var(--font-mono); font-size: 0.68rem; color: #92400e;">
           🏷️ <strong>VENTA TOPADA:</strong> <span id="pill-summary-price">$40.00 USD</span> · Dcto <span id="pill-summary-pct">5%</span> (-<span id="pill-summary-disc">$2.00 USD</span> con <span id="pill-summary-wp">100 WP</span>) · <strong>Cobrar: <span id="pill-summary-cash" style="color: #dc2626;">$38.00 USD</span></strong>
         </div>
 
-        <div class="form-group" style="grid-column: span 2; margin-bottom: 0.35rem;">
+        <div class="form-group" style="width: 100%; box-sizing: border-box; min-width: 0; margin-bottom: 0.35rem;">
           <label class="form-label" style="height: 16px; line-height: 16px; margin-bottom: 2px; font-size: 0.72rem;">👤 NOMBRE DEL PRODUCTO FÍSICO</label>
-          <input type="text" id="prod-title" class="form-input" placeholder="Ej: Mando Inalámbrico GameSir Nova Lite / Mouse Gamer" style="height: 36px; font-size: 0.85rem;">
+          <input type="text" id="prod-title" class="form-input" placeholder="Ej: Mando Inalámbrico GameSir Nova Lite / Mouse Gamer" style="height: 36px; font-size: 0.85rem; width: 100%; min-width: 0; box-sizing: border-box;">
         </div>
 
-        <div class="prod-cost-stock-grid" style="grid-column: span 2; display: grid; grid-template-columns: 1fr 1fr; gap: 0.45rem; margin-top: 0.1rem; margin-bottom: 0.35rem;">
-          <div class="form-group" style="margin-bottom: 0;">
-            <label class="form-label" style="height: 16px; line-height: 16px; margin-bottom: 2px; font-size: 0.68rem;">⚡ COSTO (WP)</label>
+        <div class="prod-cost-stock-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.45rem; width: 100%; box-sizing: border-box; margin-top: 0.1rem; margin-bottom: 0.35rem;">
+          <div class="form-group" style="margin-bottom: 0; width: 100%; min-width: 0; box-sizing: border-box;">
+            <label class="form-label" style="height: 16px; line-height: 16px; margin-bottom: 2px; font-size: 0.68rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">⚡ COSTO (WP)</label>
             <input type="number" id="prod-cost" class="form-input lain-number-input" placeholder="820"
-                   style="height: 36px; font-size: 0.95rem; color: #4338ca; text-align: center; font-weight: 800;">
+                   style="height: 36px; font-size: 0.95rem; color: #4338ca; text-align: center; font-weight: 800; width: 100%; min-width: 0; box-sizing: border-box;">
           </div>
-          <div class="form-group" style="margin-bottom: 0;">
-            <label class="form-label" style="height: 16px; line-height: 16px; margin-bottom: 2px; font-size: 0.68rem;">📦 STOCK FÍSICO</label>
-            <input type="number" id="prod-stock" class="form-input lain-number-input" placeholder="1" value="1" min="0" style="height: 36px; font-size: 0.95rem; text-align: center; font-weight: 800;">
+          <div class="form-group" style="margin-bottom: 0; width: 100%; min-width: 0; box-sizing: border-box;">
+            <label class="form-label" style="height: 16px; line-height: 16px; margin-bottom: 2px; font-size: 0.68rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">📦 STOCK FÍSICO</label>
+            <input type="number" id="prod-stock" class="form-input lain-number-input" placeholder="1" value="1" min="0" style="height: 36px; font-size: 0.95rem; text-align: center; font-weight: 800; width: 100%; min-width: 0; box-sizing: border-box;">
           </div>
         </div>
 
-        <div class="form-group" style="grid-column: span 2; margin-top: 0.1rem; margin-bottom: 0.35rem;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
+        <div class="form-group" style="width: 100%; box-sizing: border-box; min-width: 0; margin-top: 0.1rem; margin-bottom: 0.35rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px; width: 100%; box-sizing: border-box;">
             <label class="form-label" style="height: 16px; line-height: 16px; margin-bottom: 0; font-size: 0.72rem;">🖼️ FOTOS DEL ARTÍCULO (GALERÍA)</label>
-            <span id="prod-images-count-badge" class="badge-navi" style="background: #eef2ff; color: #4338ca; border: 1px solid #c7d2fe; font-size: 0.62rem; padding: 1px 5px;">0 FOTOS</span>
+            <span id="prod-images-count-badge" class="badge-navi" style="background: #eef2ff; color: #4338ca; border: 1px solid #c7d2fe; font-size: 0.62rem; padding: 1px 5px; flex-shrink: 0;">0 FOTOS</span>
           </div>
-          <div class="prod-img-upload-row" style="display: flex; gap: 0.35rem; align-items: center; flex-wrap: wrap;">
+          <div class="prod-img-upload-row" style="display: flex; gap: 0.35rem; align-items: center; flex-wrap: wrap; width: 100%; box-sizing: border-box;">
             <input type="file" id="prod-file-input" accept="image/*" multiple style="display: none;" onchange="handleProductImageFile(this)">
-            <button type="button" class="btn-secondary" style="font-size: 0.73rem; padding: 0.3rem 0.6rem; font-weight: 800; background: #ecfdf5; color: #065f46; border-color: #059669; height: 32px;" onclick="document.getElementById('prod-file-input').click()">
+            <button type="button" class="btn-secondary" style="font-size: 0.73rem; padding: 0.3rem 0.6rem; font-weight: 800; background: #ecfdf5; color: #065f46; border-color: #059669; height: 32px; flex: 1 1 auto; min-width: 0; justify-content: center;" onclick="document.getElementById('prod-file-input').click()">
               📁 + Subir Fotos (PC)
             </button>
-            <button type="button" class="btn-secondary" style="font-size: 0.72rem; padding: 0.3rem 0.55rem; color: #dc2626; height: 32px;" onclick="clearProductImageUpload()" id="btn-clear-all-images" style="display: none;">
+            <button type="button" class="btn-secondary" style="font-size: 0.72rem; padding: 0.3rem 0.55rem; color: #dc2626; height: 32px; flex: 0 0 auto; display: none;" onclick="clearProductImageUpload()" id="btn-clear-all-images">
               🗑️ Quitar Todas
             </button>
           </div>
           
-          <div style="display: flex; gap: 0.35rem; margin-top: 0.35rem; align-items: center;">
-            <input type="text" id="prod-img" class="form-input" placeholder="O pega URL web (https://...) y pulsa Enter" style="height: 34px; font-size: 0.78rem;" onkeydown="if(event.key==='Enter'){event.preventDefault(); addProductImageUrl();}">
-            <button type="button" class="btn-secondary" style="padding: 0.3rem 0.65rem; font-size: 0.72rem; font-weight: 800; white-space: nowrap; height: 34px;" onclick="addProductImageUrl()">
+          <div style="display: flex; gap: 0.35rem; margin-top: 0.35rem; align-items: center; width: 100%; box-sizing: border-box;">
+            <input type="text" id="prod-img" class="form-input" placeholder="O pega URL web (https://...)" style="flex: 1 1 0; min-width: 0; box-sizing: border-box; height: 34px; font-size: 0.78rem;" onkeydown="if(event.key==='Enter'){event.preventDefault(); addProductImageUrl();}">
+            <button type="button" class="btn-secondary" style="padding: 0.3rem 0.65rem; font-size: 0.72rem; font-weight: 800; white-space: nowrap; height: 34px; flex-shrink: 0;" onclick="addProductImageUrl()">
               + Añadir URL
             </button>
           </div>
 
           <!-- Contenedor Visual de la Galería Multi-Imagen (oculto estrictamente cuando no tiene fotos) -->
-          <div id="prod-images-container" class="admin-multi-img-grid" style="display: none;"></div>
-          <div id="prod-images-helper" style="font-size: 0.68rem; color: #4338ca; background: #eef2ff; border: 1px solid #c7d2fe; border-radius: 4px; padding: 4px 8px; margin-top: 4px; font-family: var(--font-mono); display: none;">
+          <div id="prod-images-container" class="admin-multi-img-grid" style="display: none; width: 100%; box-sizing: border-box;"></div>
+          <div id="prod-images-helper" style="font-size: 0.68rem; color: #4338ca; background: #eef2ff; border: 1px solid #c7d2fe; border-radius: 4px; padding: 4px 8px; margin-top: 4px; font-family: var(--font-mono); display: none; width: 100%; box-sizing: border-box;">
             💡 <strong>La imagen con etiqueta ⭐ PORTADA es la principal en catálogo.</strong> Haz clic en "⭐ Hacer Portada" para cambiarla.
           </div>
         </div>
 
-        <div class="form-group" style="grid-column: span 2; margin-top: 0.1rem; margin-bottom: 0;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
+        <div class="form-group" style="width: 100%; box-sizing: border-box; min-width: 0; margin-top: 0.1rem; margin-bottom: 0;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px; width: 100%; box-sizing: border-box;">
             <label class="form-label" style="height: 16px; line-height: 16px; margin-bottom: 0; font-size: 0.72rem;">📝 DESCRIPCIÓN TÉCNICA Y ESPECIFICACIONES</label>
-            <span style="font-size: 0.65rem; color: var(--gray-500); font-family: var(--font-mono);">Viñetas automáticas</span>
+            <span style="font-size: 0.65rem; color: var(--gray-500); font-family: var(--font-mono); flex-shrink: 0; white-space: nowrap;">Viñetas automáticas</span>
           </div>
-          <textarea id="prod-desc" class="form-input" rows="2" placeholder="Escribe la descripción o especificaciones del artículo (viñetas • automáticas)..." style="min-height: 55px; max-height: 140px; line-height: 1.4; resize: vertical; font-family: var(--font-mono); font-size: 0.78rem; padding: 6px; border: 1.5px solid var(--dark); border-radius: 4px;"></textarea>
+          <textarea id="prod-desc" class="form-input" rows="2" placeholder="Escribe la descripción o especificaciones del artículo (viñetas • automáticas)..." style="min-height: 55px; max-height: 140px; line-height: 1.4; resize: vertical; font-family: var(--font-mono); font-size: 0.78rem; padding: 6px; border: 1.5px solid var(--dark); border-radius: 4px; width: 100%; min-width: 0; box-sizing: border-box;"></textarea>
         </div>
       </div>
 

@@ -6,8 +6,12 @@
 .btn-mobile-hamburger,
 .fab-mobile-menu-btn,
 .drawer-mobile-profile,
-.drawer-profile-overlay {
-  display: none;
+.drawer-profile-overlay,
+[data-vercel-toolbar],
+vercel-live-feedback,
+#vercel-live-feedback,
+.__vercel-toolbar {
+  display: none !important;
 }
 
 @media (max-width: 900px) {
@@ -2043,6 +2047,9 @@
   #modal-new-product .modal-content {
     padding: 1rem 0.75rem !important;
     max-width: 96vw !important;
+    width: calc(100vw - 20px) !important;
+    box-sizing: border-box !important;
+    overflow-x: hidden !important;
   }
   #modal-new-product h3#modal-product-title {
     font-size: 1.05rem !important;
@@ -2054,10 +2061,11 @@
   }
   .prod-mode-grid button {
     padding: 0.45rem 0.2rem !important;
-    min-height: 46px !important;
-    gap: 1px !important;
+    min-height: 44px !important;
+    gap: 3px !important;
     border-radius: 4px !important;
     justify-content: center !important;
+    white-space: nowrap !important;
   }
   .prod-mode-grid .prod-mode-icon {
     font-size: 0.95rem !important;
@@ -2217,16 +2225,48 @@
     grid-template-columns: 1fr 1fr !important;
     gap: 0.45rem !important;
     width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
     box-sizing: border-box !important;
   }
   .prod-cost-stock-grid > .form-group {
     grid-column: auto !important;
     width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
     margin-bottom: 0 !important;
   }
   .prod-cost-stock-grid .form-input {
     height: 36px !important;
     font-size: 0.95rem !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+    text-align: center !important;
+  }
+
+  .prod-form-stack {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.45rem !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+  .prod-form-stack > * {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+  #modal-new-product .form-input,
+  #modal-new-product textarea {
+    box-sizing: border-box !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
   }
 
   .prod-img-upload-row {

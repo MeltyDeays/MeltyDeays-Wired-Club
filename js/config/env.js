@@ -134,7 +134,7 @@ export function injectEnvironmentBadge() {
         " title="Mantén presionado para arrastrar a cualquier lugar">
           <span style="cursor: grab; opacity: 0.6; font-size: 0.85rem;" title="Asa de arrastre">⠿</span>
           <span style="font-size: 0.85rem;">🧪</span>
-          <span style="white-space: nowrap;">MODO PRUEBAS</span>
+          <span style="white-space: nowrap;">MODO PRUEBAS (SANDBOX)</span>
           <span style="background:#0f172a; color:#fef08a; padding:1.5px 5px; border-radius:3px; font-size:0.62rem; white-space:nowrap;">BD: dev_*</span>
           <button id="btn-seed-dev-data" type="button" style="
             background: #0f172a;
