@@ -40,6 +40,9 @@ function openSalePointsCalculatorModal(target = "pos") {
   }
 
   modal.style.display = "flex";
+  if (typeof window !== "undefined" && typeof window.syncModalScrollLock === "function") {
+    window.syncModalScrollLock();
+  }
   recalculateSalePoints();
 }
 

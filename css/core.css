@@ -62,8 +62,14 @@ body.modal-open {
 }
 
 body.modal-open #dev-env-badge,
-body.modal-open #dev-env-badge * {
+body.modal-open #dev-env-badge *,
+body.modal-open .admin-bottom-dock,
+html.modal-open .admin-bottom-dock {
   display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  z-index: -9999 !important;
 }
 
 /* NAVBAR TÉCNICA ESTILO ENCABEZADO DE FACTURA */

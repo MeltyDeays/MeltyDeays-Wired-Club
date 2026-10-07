@@ -6,7 +6,13 @@ import { FirestoreService } from "../services/FirestoreService.js";
 
 let vm = null;
 let showToast = () => {};
-let closeModal = (modalId) => { const el = document.getElementById(modalId); if (el) el.style.display = "none"; };
+let closeModal = (modalId) => {
+  const el = document.getElementById(modalId);
+  if (el) el.style.display = "none";
+  if (typeof window !== "undefined" && typeof window.syncModalScrollLock === "function") {
+    window.syncModalScrollLock();
+  }
+};
 let getSelectedPaperDimensions = () => ({ name: 'Carta (Letter)', widthMm: 215.9, heightMm: 279.4, cssSize: 'letter portrait' });
 let renderTokensTable = () => {};
 
@@ -130,6 +136,9 @@ function openSingleDigitalInvoiceModal(targetTokenCode = null, forceEdit = false
 
   calcSingleInvoiceTotals();
   modal.style.display = "flex";
+  if (typeof window !== "undefined" && typeof window.syncModalScrollLock === "function") {
+    window.syncModalScrollLock();
+  }
 }
 
 function refreshSingleInvoiceFolio() {

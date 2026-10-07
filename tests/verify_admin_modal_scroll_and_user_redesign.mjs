@@ -106,6 +106,26 @@ check('responsive.css define reglas móviles para .new-user-phone-pin-row',
 check('responsive.css define acciones móviles de dos columnas para .new-user-modal-actions',
   responsiveCss.includes('.new-user-modal-actions'));
 
+console.log('\n--- 5. Verificación de Ocultación de Dock Móvil y Blindaje Anti-Deslizamiento ---');
+check('base.css tiene z-index: 10000 !important en .modal-overlay',
+  baseCss.includes('z-index: 10000 !important;'));
+check('responsive.css asigna z-index 950 al dock para no sobrepasar a los modales',
+  responsiveCss.includes('z-index: 950 !important;'));
+check('responsive.css oculta .admin-bottom-dock con display: none en body.modal-open',
+  responsiveCss.includes('body.modal-open .admin-bottom-dock') && responsiveCss.includes('display: none !important;'));
+check('core.css oculta .admin-bottom-dock con display: none en body.modal-open',
+  coreCss.includes('body.modal-open .admin-bottom-dock') && coreCss.includes('display: none !important;'));
+check('admin-app.js oculta dinámicamente admin-bottom-dock en syncModalScrollLock',
+  adminAppJs.includes('bottomDock.style.display = "none"'));
+check('admin-app.js congela el body con position: fixed al abrir modales',
+  adminAppJs.includes('document.body.style.position = "fixed"'));
+check('admin-app.js tiene listener de wheel con passive: false para blindar contra scroll residual',
+  adminAppJs.includes('document.addEventListener("wheel"') && adminAppJs.includes('{ passive: false }'));
+check('AdminInvoiceModalView.js sincroniza syncModalScrollLock al abrir factura digital',
+  fs.readFileSync(path.join(projectRoot, 'js', 'views', 'AdminInvoiceModalView.js'), 'utf8').includes('syncModalScrollLock'));
+check('AdminSalePointsCalculatorView.js sincroniza syncModalScrollLock al abrir calculadora de puntos',
+  fs.readFileSync(path.join(projectRoot, 'js', 'views', 'AdminSalePointsCalculatorView.js'), 'utf8').includes('syncModalScrollLock'));
+
 console.log('====================================================');
 console.log(` RESULT: ALL ${passedChecks}/${passedChecks} CHECKS PASSED (0 failures) `);
 console.log('====================================================');

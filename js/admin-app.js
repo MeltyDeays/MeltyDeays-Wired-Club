@@ -254,6 +254,9 @@ export function showToast(message, type = "info") {
   }, 3500);
 }
 
+let savedScrollY = 0;
+let isScrollLocked = false;
+
 export function syncModalScrollLock() {
   if (typeof document === "undefined") return;
   const overlays = document.querySelectorAll(".modal-overlay");
@@ -264,19 +267,58 @@ export function syncModalScrollLock() {
       break;
     }
   }
+
+  // Ocultar de inmediato y de forma garantizada el dock inferior móvil cuando hay un modal abierto
+  const bottomDock = document.getElementById("admin-bottom-dock");
+  if (bottomDock && bottomDock.style) {
+    if (hasOpenModal) {
+      bottomDock.style.display = "none";
+      if (typeof bottomDock.setAttribute === "function") bottomDock.setAttribute("aria-hidden", "true");
+    } else {
+      bottomDock.style.display = "";
+      if (typeof bottomDock.removeAttribute === "function") bottomDock.removeAttribute("aria-hidden");
+    }
+  }
+
   if (hasOpenModal) {
+    if (!isScrollLocked) {
+      savedScrollY = (typeof window !== "undefined" && (window.pageYOffset || (window.document && window.document.documentElement && window.document.documentElement.scrollTop))) || (document.body ? document.body.scrollTop : 0) || 0;
+      isScrollLocked = true;
+    }
     if (document.documentElement && document.documentElement.classList) {
       document.documentElement.classList.add("modal-open");
     }
-    if (document.body && document.body.classList) {
-      document.body.classList.add("modal-open");
+    if (document.body) {
+      if (document.body.classList) document.body.classList.add("modal-open");
+      if (document.body.style) {
+        document.body.style.position = "fixed";
+        document.body.style.top = `-${savedScrollY}px`;
+        document.body.style.left = "0";
+        document.body.style.right = "0";
+        document.body.style.width = "100%";
+        document.body.style.overflow = "hidden";
+      }
     }
   } else {
     if (document.documentElement && document.documentElement.classList) {
       document.documentElement.classList.remove("modal-open");
     }
-    if (document.body && document.body.classList) {
-      document.body.classList.remove("modal-open");
+    if (document.body) {
+      if (document.body.classList) document.body.classList.remove("modal-open");
+      if (isScrollLocked) {
+        if (document.body.style) {
+          document.body.style.position = "";
+          document.body.style.top = "";
+          document.body.style.left = "";
+          document.body.style.right = "";
+          document.body.style.width = "";
+          document.body.style.overflow = "";
+        }
+        isScrollLocked = false;
+        if (typeof window !== "undefined" && typeof window.scrollTo === "function") {
+          window.scrollTo(0, savedScrollY);
+        }
+      }
     }
   }
 }
@@ -1241,4 +1283,22 @@ document.addEventListener("DOMContentLoaded", () => {
       e.preventDefault();
     }
   }, { passive: false });
+
+  // Bloqueo hermético de fuga de scroll por rueda de mouse cuando hay un modal abierto
+  if (typeof document !== "undefined") {
+    document.addEventListener("wheel", (e) => {
+      if (!document.body || !document.body.classList.contains("modal-open")) return;
+      const target = e.target;
+      const overlay = target && target.closest ? target.closest(".modal-overlay") : null;
+      if (!overlay) {
+        e.preventDefault();
+        return;
+      }
+      const atTop = overlay.scrollTop <= 0 && e.deltaY < 0;
+      const atBottom = (overlay.scrollTop + overlay.clientHeight >= overlay.scrollHeight - 1) && e.deltaY > 0;
+      if (atTop || atBottom) {
+        e.preventDefault();
+      }
+    }, { passive: false });
+  }
 });
