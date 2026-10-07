@@ -1367,39 +1367,92 @@
   .noc-hud-header {
     flex-direction: column !important;
     align-items: flex-start !important;
-    gap: 0.65rem !important;
+    gap: 0.45rem !important;
+    padding-bottom: 0.5rem !important;
+    margin-bottom: 0.75rem !important;
   }
 
-  .noc-hud-right {
-    display: flex !important;
-    flex-wrap: wrap !important;
-    gap: 0.5rem !important;
+  .noc-hud-title-col {
     width: 100% !important;
   }
 
+  .noc-badge-main {
+    font-size: 0.72rem !important;
+    padding: 2px 6px !important;
+    letter-spacing: 0.4px !important;
+  }
+
+  .noc-pulse-chip {
+    font-size: 0.64rem !important;
+    padding: 2px 6px !important;
+  }
+
+  .noc-sub-tag {
+    font-size: 0.59rem !important;
+    letter-spacing: 0.2px !important;
+    line-height: 1.25 !important;
+    margin-top: 3px !important;
+    white-space: normal !important;
+  }
+
+  .noc-hud-right {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 4px !important;
+    width: 100% !important;
+    margin-top: 2px !important;
+  }
+
   .noc-telemetry-item {
-    font-size: 0.68rem !important;
+    font-size: 0.62rem !important;
+    padding: 3px 2px !important;
+    text-align: center !important;
+    font-family: var(--font-mono, monospace) !important;
+    background: #f8fafc !important;
+    border: 1.2px solid #cbd5e1 !important;
+    border-radius: 4px !important;
+    white-space: nowrap !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
   }
 
   .noc-stats-grid {
+    display: grid !important;
     grid-template-columns: repeat(2, 1fr) !important;
-    gap: 0.55rem !important;
+    gap: 6px !important;
   }
 
   .noc-stat-box {
-    padding: 0.75rem 0.65rem !important;
-  }
-
-  .noc-stat-val {
-    font-size: 1.45rem !important;
+    padding: 8px 10px !important;
+    border-radius: 6px !important;
+    border: 1.5px solid var(--dark) !important;
+    box-shadow: 2px 2px 0px var(--dark) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+    min-height: 76px !important;
+    box-sizing: border-box !important;
   }
 
   .noc-stat-label {
-    font-size: 0.62rem !important;
+    font-size: 0.63rem !important;
+    font-weight: 800 !important;
+    line-height: 1.15 !important;
+    letter-spacing: 0.2px !important;
+  }
+
+  .noc-stat-val {
+    font-size: 1.35rem !important;
+    font-weight: 900 !important;
+    margin: 2px 0 !important;
+    line-height: 1.1 !important;
   }
 
   .noc-stat-sub {
-    font-size: 0.62rem !important;
+    font-size: 0.58rem !important;
+    line-height: 1.15 !important;
+    color: var(--gray-500) !important;
   }
 
   /* MOSTRADOR POS 1-SCAN */
@@ -2415,7 +2468,21 @@
     font-size: 0.8rem !important;
   }
   .noc-stats-grid {
-    grid-template-columns: 1fr !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 5px !important;
+  }
+  .noc-stat-box {
+    padding: 6px 7px !important;
+    min-height: 70px !important;
+  }
+  .noc-stat-label {
+    font-size: 0.58rem !important;
+  }
+  .noc-stat-val {
+    font-size: 1.25rem !important;
+  }
+  .noc-stat-sub {
+    font-size: 0.53rem !important;
   }
   .balance-amount {
     font-size: 1.85rem !important;
