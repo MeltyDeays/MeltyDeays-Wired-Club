@@ -362,10 +362,21 @@ export function openPreOrderModal(rewardId) {
 
   validatePreOrderForm();
 
-  // 6. Visualizar modal
+  // 6. Visualizar modal y autofijar scroll al inicio
   const modal = document.getElementById("modal-preorder-reservation");
   if (modal) {
     modal.style.display = "flex";
+    modal.scrollTop = 0;
+    const dialog = modal.querySelector(".preorder-modal-dialog") || modal.querySelector(".modal-content");
+    if (dialog) dialog.scrollTop = 0;
+    const scrollableBody = modal.querySelector(".preorder-modal-body");
+    if (scrollableBody) scrollableBody.scrollTop = 0;
+    if (typeof modal.scrollTo === "function") modal.scrollTo(0, 0);
+    requestAnimationFrame(() => {
+      if (modal) modal.scrollTop = 0;
+      if (dialog) dialog.scrollTop = 0;
+      if (scrollableBody) scrollableBody.scrollTop = 0;
+    });
     document.body.classList.add("modal-open");
   }
 }
@@ -389,6 +400,11 @@ export function closePreOrderModal() {
   const modal = document.getElementById("modal-preorder-reservation");
   if (modal) {
     modal.style.display = "none";
+    modal.scrollTop = 0;
+    const dialog = modal.querySelector(".preorder-modal-dialog") || modal.querySelector(".modal-content");
+    if (dialog) dialog.scrollTop = 0;
+    const scrollableBody = modal.querySelector(".preorder-modal-body");
+    if (scrollableBody) scrollableBody.scrollTop = 0;
     document.body.classList.remove("modal-open");
   }
 }

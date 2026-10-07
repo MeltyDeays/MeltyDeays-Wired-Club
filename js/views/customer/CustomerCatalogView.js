@@ -836,6 +836,14 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
   const footer = document.getElementById("modal-specs-footer");
   if (!modal || !body) return;
 
+  // Restablecer scroll al inicio inmediatamente
+  body.scrollTop = 0;
+  modal.scrollTop = 0;
+  const dialog = modal.querySelector(".modal-specs-dialog");
+  if (dialog) dialog.scrollTop = 0;
+  if (typeof body.scrollTo === "function") body.scrollTo(0, 0);
+  if (typeof modal.scrollTo === "function") modal.scrollTo(0, 0);
+
   const fab = document.getElementById("fab-mobile-menu");
   if (fab) fab.style.display = "none";
 
@@ -972,47 +980,55 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
   let saleBannerHtml = "";
   if (isIncoming) {
     saleBannerHtml = `
-      <div class="temu-sale-banner temu-sale-banner-incoming" style="background: linear-gradient(135deg, #091322 0%, #0f1f38 100%); border-color: #0284c7;">
-        <div class="temu-sale-header" style="color: #38bdf8;">
-          <span>🕊️ EN CAMINO // RESERVA ANTICIPADA</span>
-          <span class="temu-sale-badge" style="background: linear-gradient(135deg, #0284c7, #0369a1); color: #fff;">-${presaleDiscPct}% DIRECTO</span>
-        </div>
-        <div class="temu-sale-prices-row">
-          <span class="temu-sale-price-curr" style="color: #38bdf8;">${formatPrice(item.presalePriceUsd ?? presalePrice)}</span>
-          <span class="temu-sale-price-orig">${formatPrice(item.priceUsd)}</span>
-        </div>
-        <div style="font-size: 0.75rem; color: #94a3b8; font-family: var(--font-mono); font-weight: 700; display: flex; align-items: center; gap: 4px;">
-          <span>Ahorro preventa: <strong style="color: #38bdf8;">-${formatPrice(item.presaleDiscountUsd ?? presaleDiscUsd)} (-${presaleDiscPct}%)</strong></span>
-          <span style="color: #64748b; margin-left: 8px;">(Sin gastar puntos Wired)</span>
+      <div class="haibane-specs-banner" id="haibane-specs-banner-${item.id}">
+        <!-- Encabezado Sacro Haibane Renmei -->
+        <div class="haibane-specs-header">
+          <div class="haibane-specs-title-row">
+            <span class="haibane-specs-kanji">灰羽 · HAIBANE RENMEI</span>
+            <span class="haibane-specs-badge">✦ -${presaleDiscPct}% DIRECTO ✦</span>
+          </div>
+          <div class="haibane-specs-subtitle">🕊️ EXPEDICIÓN EN VUELO · RESERVA DE PREVENTA</div>
         </div>
 
-        <div class="haibane-countdown-box specs-countdown-box" id="specs-countdown-modal-${item.id}">
-          <div class="haibane-countdown-header">
-            <div style="display:flex; align-items:center; gap:5px;">
-              <span class="cd-pulse-orb"></span>
-              <span class="cd-header-text">LLEGADA EN TIENDA // COUNTDOWN</span>
+        <!-- Fila de Precios Sacra -->
+        <div class="haibane-specs-pricing-row">
+          <span class="haibane-specs-price-curr">${formatDualPrice(item.presalePriceUsd ?? presalePrice)}</span>
+          <span class="haibane-specs-price-orig">${formatPrice(item.priceUsd)}</span>
+        </div>
+        <div class="haibane-specs-savings-row">
+          <span class="savings-gem">✧</span>
+          <span>Ahorro preventa: <strong class="savings-highlight">-${formatDualPrice(item.presaleDiscountUsd ?? presaleDiscUsd)} (-${presaleDiscPct}%)</strong></span>
+          <span class="savings-note">(0 WP requeridos · Puntos intactos)</span>
+        </div>
+
+        <!-- Relicario Cronómetro Glie (D/H/M/S) -->
+        <div class="haibane-specs-relic-box" id="specs-countdown-modal-${item.id}">
+          <div class="haibane-specs-relic-header">
+            <div class="relic-header-left">
+              <span class="haibane-halo-dot"></span>
+              <span class="relic-header-title">ARRIBO ESTIMADO EN TIENDA // COUNTDOWN</span>
             </div>
-            <span class="cd-date-hint">${formatArrivalHint(item.estimatedArrival)}</span>
+            <span class="haibane-specs-date-tag">${formatArrivalHint(item.estimatedArrival)}</span>
           </div>
-          <div class="haibane-countdown-grid">
-            <div class="cd-segment">
-              <span class="cd-num" id="specs-cd-days-${item.id}">00</span>
-              <span class="cd-label">DÍAS</span>
+          <div class="haibane-specs-relic-grid">
+            <div class="specs-relic-seg">
+              <span class="specs-relic-num" id="specs-cd-days-${item.id}">00</span>
+              <span class="specs-relic-lbl">DÍAS</span>
             </div>
-            <span class="cd-divider">:</span>
-            <div class="cd-segment">
-              <span class="cd-num" id="specs-cd-hours-${item.id}">00</span>
-              <span class="cd-label">HRS</span>
+            <span class="specs-relic-divider">:</span>
+            <div class="specs-relic-seg">
+              <span class="specs-relic-num" id="specs-cd-hours-${item.id}">00</span>
+              <span class="specs-relic-lbl">HRS</span>
             </div>
-            <span class="cd-divider">:</span>
-            <div class="cd-segment">
-              <span class="cd-num" id="specs-cd-mins-${item.id}">00</span>
-              <span class="cd-label">MIN</span>
+            <span class="specs-relic-divider">:</span>
+            <div class="specs-relic-seg">
+              <span class="specs-relic-num" id="specs-cd-mins-${item.id}">00</span>
+              <span class="specs-relic-lbl">MIN</span>
             </div>
-            <span class="cd-divider">:</span>
-            <div class="cd-segment">
-              <span class="cd-num" id="specs-cd-secs-${item.id}">00</span>
-              <span class="cd-label">SEG</span>
+            <span class="specs-relic-divider">:</span>
+            <div class="specs-relic-seg">
+              <span class="specs-relic-num" id="specs-cd-secs-${item.id}">00</span>
+              <span class="specs-relic-lbl">SEG</span>
             </div>
           </div>
         </div>
@@ -1182,8 +1198,9 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
     if (isIncoming) {
       actionBtn = `
         <button type="button" class="modal-specs-action-btn btn-reserve-incoming" onclick="closeProductSpecsModal(); openReservationModal('${item.id}');">
-          <span style="font-size: 1rem;">📅</span>
-          <span>Reservar en Preventa (-${presaleDiscPct}%)</span>
+          <span class="btn-reserve-icon">📅</span>
+          <span class="btn-reserve-text-full">Reservar en Preventa (-${presaleDiscPct}%)</span>
+          <span class="btn-reserve-text-short">Reservar (-${presaleDiscPct}%)</span>
         </button>
       `;
     } else if (!isOut) {
@@ -1229,6 +1246,24 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
     fab.style.setProperty("display", "none", "important");
   }
 
+  // Garantizar autofijado de scroll en el inicio al abrir
+  body.scrollTop = 0;
+  modal.scrollTop = 0;
+  if (typeof body.scrollTo === "function") body.scrollTo(0, 0);
+  if (typeof modal.scrollTo === "function") modal.scrollTo(0, 0);
+  requestAnimationFrame(() => {
+    if (body) {
+      body.scrollTop = 0;
+      if (typeof body.scrollTo === "function") body.scrollTo(0, 0);
+    }
+    if (modal) {
+      modal.scrollTop = 0;
+      if (typeof modal.scrollTo === "function") modal.scrollTo(0, 0);
+    }
+    const currentDialog = modal ? modal.querySelector(".modal-specs-dialog") : null;
+    if (currentDialog) currentDialog.scrollTop = 0;
+  });
+
   if (isIncoming) {
     tickCatalogCountdowns();
   }
@@ -1251,7 +1286,17 @@ export function closeProductSpecsModal() {
     activeCommentsUnsubscribe = null;
   }
   const modal = document.getElementById("modal-product-specs");
-  if (modal) modal.style.display = "none";
+  if (modal) {
+    modal.style.display = "none";
+    modal.scrollTop = 0;
+    const body = document.getElementById("modal-specs-body");
+    if (body) {
+      body.scrollTop = 0;
+      if (typeof body.scrollTo === "function") body.scrollTo(0, 0);
+    }
+    const dialog = modal.querySelector(".modal-specs-dialog");
+    if (dialog) dialog.scrollTop = 0;
+  }
 
   const lightboxModal = document.getElementById("modal-image-lightbox");
   const isLightboxOpen = lightboxModal && lightboxModal.style.display !== "none" && lightboxModal.style.display !== "";
@@ -1675,39 +1720,6 @@ export function renderCatalog(catalog, user) {
       `;
     }
 
-    const countdownHtml = `
-      <div class="haibane-countdown-box" id="countdown-card-${item.id}" data-target="${item.estimatedArrival || ''}">
-        <div class="haibane-countdown-header">
-          <div style="display:flex; align-items:center; gap:5px;">
-            <span class="cd-pulse-orb"></span>
-            <span class="cd-header-text">LLEGADA EN // COUNTDOWN</span>
-          </div>
-          <span class="cd-date-hint">${formatArrivalHint(item.estimatedArrival)}</span>
-        </div>
-        <div class="haibane-countdown-grid">
-          <div class="cd-segment">
-            <span class="cd-num" id="cd-days-${item.id}">00</span>
-            <span class="cd-label">DÍAS</span>
-          </div>
-          <span class="cd-divider">:</span>
-          <div class="cd-segment">
-            <span class="cd-num" id="cd-hours-${item.id}">00</span>
-            <span class="cd-label">HRS</span>
-          </div>
-          <span class="cd-divider">:</span>
-          <div class="cd-segment">
-            <span class="cd-num" id="cd-mins-${item.id}">00</span>
-            <span class="cd-label">MIN</span>
-          </div>
-          <span class="cd-divider">:</span>
-          <div class="cd-segment">
-            <span class="cd-num" id="cd-secs-${item.id}">00</span>
-            <span class="cd-label">SEG</span>
-          </div>
-        </div>
-      </div>
-    `;
-
     const parsed = parseProductDescription(item.description);
     const hasRealSpecs = parsed.hasSpecs && item.description && (item.description.includes("\n") || /[•▸✓✔]/.test(item.description));
     const descHtml = hasRealSpecs
@@ -1846,9 +1858,28 @@ export function renderCatalog(catalog, user) {
               </div>
             </div>
           ` : (isIncoming ? `
-            <div class="reward-incoming-stamp-container">
-              <div class="reward-incoming-stamp">
-                <svg class="incoming-seal-svg" viewBox="0 0 240 120" width="190" height="95">
+            <div class="reward-incoming-stamp-container" id="incoming-stamp-wrap-${item.id}">
+              <!-- Destellos y rayos de luz celestial descendentes desde el cielo hacia el halo -->
+              <div class="haibane-celestial-godrays" aria-hidden="true">
+                <div class="godray-beam godray-beam-1"></div>
+                <div class="godray-beam godray-beam-2"></div>
+                <div class="godray-beam godray-beam-3"></div>
+              </div>
+
+              <!-- Campo de partículas de brillo, glitter y estela -->
+              <div class="haibane-glitter-field" aria-hidden="true">
+                <span class="haibane-sparkle hs-1">✦</span>
+                <span class="haibane-sparkle hs-2">✧</span>
+                <span class="haibane-sparkle hs-3">✦</span>
+                <span class="haibane-sparkle hs-4">✧</span>
+                <span class="haibane-sparkle hs-5">✦</span>
+                <span class="haibane-sparkle hs-6">✧</span>
+                <span class="haibane-shimmer-sweep"></span>
+              </div>
+
+              <!-- Sello sagrado levitando suavemente -->
+              <div class="reward-incoming-stamp haibane-levitating">
+                <svg class="incoming-seal-svg" viewBox="0 0 240 120" width="180" height="90">
                   <defs>
                     <linearGradient id="haibaneGoldInc-${item.id}" x1="0%" y1="0%" x2="100%" y2="100%">
                       <stop offset="0%" stop-color="#fffbeb" />
@@ -1915,6 +1946,31 @@ export function renderCatalog(catalog, user) {
                     <text x="120" y="91" text-anchor="middle" fill="#fef08a" font-family="'Cinzel', 'Georgia', serif" font-size="7.5" font-weight="800" letter-spacing="2">✦ EXPEDICIÓN EN VUELO ✦</text>
                   </g>
                 </svg>
+
+                <!-- 4. CRONÓMETRO CONTRARRELOJ INTEGRADO EN EL RELICARIO SACRO -->
+                <div class="haibane-relic-countdown" id="countdown-card-${item.id}" data-target="${item.estimatedArrival || ''}">
+                  <div class="haibane-relic-digits">
+                    <div class="relic-digit-box">
+                      <span class="relic-num" id="cd-days-${item.id}">00</span>
+                      <span class="relic-lbl">DÍAS</span>
+                    </div>
+                    <span class="relic-colon">:</span>
+                    <div class="relic-digit-box">
+                      <span class="relic-num" id="cd-hours-${item.id}">00</span>
+                      <span class="relic-lbl">HRS</span>
+                    </div>
+                    <span class="relic-colon">:</span>
+                    <div class="relic-digit-box">
+                      <span class="relic-num" id="cd-mins-${item.id}">00</span>
+                      <span class="relic-lbl">MIN</span>
+                    </div>
+                    <span class="relic-colon">:</span>
+                    <div class="relic-digit-box">
+                      <span class="relic-num" id="cd-secs-${item.id}">00</span>
+                      <span class="relic-lbl">SEG</span>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           ` : '')}
@@ -1923,7 +1979,6 @@ export function renderCatalog(catalog, user) {
         <div class="reward-body">
           <div class="reward-title" title="${item.title}">${item.title}</div>
           ${temuMetaHtml}
-          ${isIncoming ? countdownHtml : ''}
           ${descHtml}
           ${partialBreakdown}
           ${footerHtml}
@@ -2055,7 +2110,16 @@ export function confirmRedeem(rewardId) {
   }
 
   const modal = document.getElementById("modal-confirm-redeem");
-  if (modal) modal.style.display = "flex";
+  if (modal) {
+    modal.style.display = "flex";
+    modal.scrollTop = 0;
+    const content = modal.querySelector(".modal-content");
+    if (content) content.scrollTop = 0;
+    requestAnimationFrame(() => {
+      if (modal) modal.scrollTop = 0;
+      if (content) content.scrollTop = 0;
+    });
+  }
 }
 
 export function updateConfirmCalculation() {
@@ -2169,7 +2233,12 @@ export function closeRedeemModal() {
   currentRedeemReward = null;
   selectedPointsToApply = 0;
   const modal = document.getElementById("modal-confirm-redeem");
-  if (modal) modal.style.display = "none";
+  if (modal) {
+    modal.style.display = "none";
+    modal.scrollTop = 0;
+    const content = modal.querySelector(".modal-content");
+    if (content) content.scrollTop = 0;
+  }
 }
 
 export async function executeRedeem() {
