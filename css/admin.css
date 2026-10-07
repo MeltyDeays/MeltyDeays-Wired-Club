@@ -513,6 +513,12 @@
   box-shadow: 1px 1px 0px var(--dark);
 }
 
+/* COMPONENTES MÓVILES ADMINISTRADOR (OCULTOS EN ESCRITORIO > 640px) */
+.admin-mobile-header-actions,
+.admin-bottom-dock {
+  display: none;
+}
+
 /* ESTILOS DE TERMINAL POS DE MOSTRADOR (SIN ALERTS) */
 /* ========================================================= */
 

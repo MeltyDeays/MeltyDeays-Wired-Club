@@ -109,33 +109,43 @@
     display: none !important;
   }
 
-  /* NAVBAR DE ADMINISTRADOR MÓVIL REFINADA & COMPACTA (COPLAND OS) */
+  /* NAVBAR DE ADMINISTRADOR MÓVIL ULTRA-LIMPIA DE 1 LÍNEA (48px) + DOCK INFERIOR */
   .admin-navbar {
     display: flex !important;
-    flex-wrap: wrap !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
     align-items: center !important;
     justify-content: space-between !important;
-    padding: 0.5rem 0.75rem !important;
-    gap: 0 !important;
+    height: 48px !important;
+    min-height: 48px !important;
+    max-height: 48px !important;
+    padding: 0.35rem 0.85rem !important;
+    gap: 0.5rem !important;
     background: #ffffff !important;
     border-bottom: 2px solid var(--dark) !important;
+    box-sizing: border-box !important;
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 200 !important;
   }
 
   .admin-navbar .brand-wrapper {
+    display: flex !important;
+    align-items: center !important;
+    gap: 7px !important;
     flex: 1 1 auto !important;
     min-width: 0 !important;
-    gap: 6px !important;
   }
 
   .admin-navbar .brand-badge-icon {
-    width: 28px !important;
-    height: 28px !important;
+    width: 26px !important;
+    height: 26px !important;
     flex-shrink: 0 !important;
   }
 
   .admin-navbar .brand-badge-icon svg {
-    width: 28px !important;
-    height: 28px !important;
+    width: 26px !important;
+    height: 26px !important;
   }
 
   .admin-navbar .brand-text-col {
@@ -147,88 +157,138 @@
 
   .admin-navbar .brand-name-line {
     font-size: 0.88rem !important;
-    line-height: 1.15 !important;
+    line-height: 1.1 !important;
     display: flex !important;
     align-items: center !important;
     gap: 4px !important;
+    white-space: nowrap !important;
   }
 
   .admin-navbar .brand-pill-tag {
-    font-size: 0.55rem !important;
+    font-size: 0.52rem !important;
     padding: 1px 4px !important;
     line-height: 1 !important;
   }
 
-  .admin-navbar .brand-kicker {
-    font-size: 0.52rem !important;
-    letter-spacing: 0.2px !important;
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    max-width: 180px !important;
-    margin-top: 1px !important;
-  }
-
+  /* Ocultar textos extensos y controles de escritorio en móvil */
+  .admin-navbar .brand-kicker,
+  .admin-navbar .brand-subitems,
   .admin-navbar .admin-nav-controls {
-    display: contents !important;
+    display: none !important;
   }
 
-  /* Fila 1: Botones secundarios (Vista Cliente y Salir) a la derecha del logo */
-  .admin-navbar .admin-nav-actions-secondary {
+  /* Botón discreto de salida en la cabecera */
+  .admin-mobile-header-actions {
+    display: flex !important;
+    align-items: center !important;
+    flex-shrink: 0 !important;
+  }
+
+  .admin-mobile-logout-btn {
     display: inline-flex !important;
     align-items: center !important;
     gap: 4px !important;
-    flex: 0 0 auto !important;
-    margin-left: auto !important;
-  }
-
-  .admin-navbar .admin-nav-actions-secondary .admin-nav-btn {
-    height: 27px !important;
-    padding: 2px 7px !important;
-    font-size: 0.68rem !important;
+    height: 28px !important;
+    padding: 2px 8px !important;
+    font-family: var(--font-mono, monospace) !important;
+    font-size: 0.7rem !important;
     font-weight: 700 !important;
-    border-radius: 4px !important;
-    box-shadow: 1px 1px 0px var(--dark) !important;
-    border-width: 1.3px !important;
+    color: var(--accent, #e11d48) !important;
+    background: #fff1f2 !important;
+    border: 1.3px solid #fecdd3 !important;
+    border-radius: 5px !important;
+    cursor: pointer !important;
+    box-shadow: 1px 1px 0px rgba(225, 29, 72, 0.2) !important;
     box-sizing: border-box !important;
+    transition: background 0.15s ease !important;
   }
 
-  /* Fila 2: Acciones clave de mostrador (+ Factura Digital y Calc WP) en cuadrícula simétrica al 50% */
-  .admin-navbar .admin-nav-actions-primary {
-    display: grid !important;
-    grid-template-columns: 1fr 1fr !important;
-    gap: 6px !important;
-    width: 100% !important;
-    margin-top: 6px !important;
-    padding-top: 6px !important;
-    border-top: 1px dashed #cbd5e1 !important;
-    box-sizing: border-box !important;
+  .admin-mobile-logout-btn:active {
+    background: #ffe4e6 !important;
   }
 
-  .admin-navbar .admin-nav-actions-primary .admin-nav-btn {
-    width: 100% !important;
-    height: 33px !important;
-    padding: 3px 6px !important;
-    font-size: 0.73rem !important;
-    font-weight: 800 !important;
+  /* BARRA DE ACCIONES INFERIOR MÓVIL (BOTTOM DOCK - ERGONOMÍA ZONA DEL PULGAR) */
+  .admin-bottom-dock {
+    display: flex !important;
+    position: fixed !important;
+    bottom: calc(12px + env(safe-area-inset-bottom, 0px)) !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    width: calc(100% - 24px) !important;
+    max-width: 440px !important;
+    height: 52px !important;
+    z-index: 9999 !important;
+    background: rgba(15, 23, 42, 0.94) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    border: 1.5px solid rgba(255, 255, 255, 0.18) !important;
+    border-radius: 14px !important;
+    padding: 5px 8px !important;
+    box-shadow: 0 10px 25px -4px rgba(15, 23, 42, 0.5), 0 4px 10px -2px rgba(15, 23, 42, 0.3) !important;
+    box-sizing: border-box !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 8px !important;
+  }
+
+  .admin-bottom-dock .dock-btn {
+    display: inline-flex !important;
+    align-items: center !important;
     justify-content: center !important;
-    text-align: center !important;
+    gap: 5px !important;
+    height: 40px !important;
+    border-radius: 9px !important;
+    font-family: 'JetBrains Mono', monospace !important;
+    font-size: 0.74rem !important;
+    font-weight: 800 !important;
+    cursor: pointer !important;
     box-sizing: border-box !important;
+    text-decoration: none !important;
+    transition: transform 0.12s ease, opacity 0.12s ease !important;
     white-space: nowrap !important;
-    box-shadow: 1.5px 1.5px 0px var(--dark) !important;
-    border-width: 1.5px !important;
   }
 
-  .admin-navbar .lain-nav-invoice-btn {
-    background: #f0f9ff !important;
-    color: #0284c7 !important;
-    border-color: var(--dark) !important;
+  .admin-bottom-dock .dock-btn:active {
+    transform: scale(0.96) !important;
   }
 
-  .admin-navbar .lain-nav-calc-btn {
-    background: #eef2ff !important;
-    color: #4338ca !important;
-    border-color: var(--dark) !important;
+  .admin-bottom-dock .dock-btn-primary {
+    flex: 1.35 1 auto !important;
+    background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
+    color: #ffffff !important;
+    border: 1.2px solid rgba(255, 255, 255, 0.3) !important;
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.4) !important;
+    padding: 0 10px !important;
+  }
+
+  .admin-bottom-dock .dock-btn-secondary {
+    flex: 1 1 auto !important;
+    background: rgba(255, 255, 255, 0.1) !important;
+    color: #f1f5f9 !important;
+    border: 1.2px solid rgba(255, 255, 255, 0.15) !important;
+    padding: 0 8px !important;
+  }
+
+  .admin-bottom-dock .dock-btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.18) !important;
+    color: #ffffff !important;
+  }
+
+  .admin-bottom-dock .dock-icon {
+    font-size: 0.88rem !important;
+    line-height: 1 !important;
+  }
+
+  .admin-bottom-dock .dock-text {
+    line-height: 1 !important;
+    letter-spacing: -0.2px !important;
+  }
+
+  /* Amortiguación inferior para que el dock no tape elementos al hacer scroll */
+  #admin-app,
+  body.admin-mode,
+  .main-container {
+    padding-bottom: 78px !important;
   }
 
   /* BOTÓN HAMBURGUESA EN NAVBAR MÓVIL */
@@ -2338,21 +2398,21 @@
   }
 }
 
-@media (max-width: 380px) {
-  .admin-navbar .brand-kicker {
-    display: none !important;
+  .admin-bottom-dock {
+    width: calc(100% - 16px) !important;
+    padding: 4px 6px !important;
+    gap: 5px !important;
+    height: 48px !important;
+    bottom: calc(8px + env(safe-area-inset-bottom, 0px)) !important;
   }
-  .admin-navbar .admin-nav-actions-secondary .nav-label {
-    display: none !important;
+  .admin-bottom-dock .dock-btn {
+    height: 38px !important;
+    font-size: 0.68rem !important;
+    gap: 3px !important;
+    padding: 0 4px !important;
   }
-  .admin-navbar .admin-nav-actions-secondary .admin-nav-btn {
-    padding: 2px 6px !important;
-    font-size: 0.75rem !important;
-  }
-  .admin-navbar .admin-nav-actions-primary .admin-nav-btn {
-    font-size: 0.67rem !important;
-    letter-spacing: -0.2px !important;
-    padding: 2px 3px !important;
+  .admin-bottom-dock .dock-icon {
+    font-size: 0.8rem !important;
   }
   .noc-stats-grid {
     grid-template-columns: 1fr !important;
