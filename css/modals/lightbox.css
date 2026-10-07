@@ -1003,7 +1003,7 @@
 
 /* GESTOR MULTI-IMAGEN EN PANEL DE ADMINISTRADOR */
 .admin-multi-img-grid {
-  display: grid !important;
+  display: grid;
   grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
   gap: 12px;
   margin-top: 10px;
@@ -1014,6 +1014,15 @@
   max-height: 340px;
   overflow-y: auto;
   box-sizing: border-box;
+}
+
+.admin-multi-img-grid[style*="display: none"],
+.admin-multi-img-grid:empty {
+  display: none !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  height: 0 !important;
 }
 
 .admin-img-card {

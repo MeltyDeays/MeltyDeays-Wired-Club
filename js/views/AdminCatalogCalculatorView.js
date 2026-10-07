@@ -514,6 +514,24 @@ function applyCalculatedDiscountToProduct() {
   if (pCash) pCash.textContent = `$${cashDue.toFixed(2)} USD`;
 }
 
+function toggleProductCalculatorAccordion() {
+  const content = document.getElementById("prod-calc-accordion-body");
+  const arrow = document.getElementById("calc-toggle-arrow");
+  if (!content) return;
+  const isCurrentlyOpen = content.style.display !== "none" && content.style.display !== "";
+  if (isCurrentlyOpen) {
+    content.style.display = "none";
+    if (arrow) arrow.textContent = "▾ ABRIR";
+  } else {
+    content.style.display = "block";
+    if (arrow) arrow.textContent = "▴ CERRAR";
+  }
+}
+
+if (typeof window !== "undefined") {
+  window.toggleProductCalculatorAccordion = toggleProductCalculatorAccordion;
+}
+
 export {
   setFreightPreset,
   setSalesFrequency,
@@ -530,5 +548,6 @@ export {
   setIncomingDiscountType,
   setIncomingDiscountVal,
   recalculateIncomingPresale,
-  applyCalculatedIncomingToProduct
+  applyCalculatedIncomingToProduct,
+  toggleProductCalculatorAccordion
 };

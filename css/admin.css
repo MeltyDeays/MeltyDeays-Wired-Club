@@ -2937,4 +2937,21 @@
   width: 100%;
 }
 
+.prod-calc-collapsible-wrapper {
+  width: 100%;
+}
+
+#btn-toggle-prod-calc {
+  transition: background-color 0.15s ease, transform 0.1s ease;
+}
+
+#btn-toggle-prod-calc:hover {
+  background: #f1f5f9;
+}
+
+#btn-toggle-prod-calc:active {
+  transform: translate(1px, 1px);
+}
+
+
 

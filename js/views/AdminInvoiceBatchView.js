@@ -121,6 +121,9 @@ export function openNewProductModal() {
   if (presalePriceHidden) presalePriceHidden.value = "0";
 
   modal.style.display = "flex";
+  if (typeof window !== "undefined" && typeof window.syncModalScrollLock === "function") {
+    window.syncModalScrollLock();
+  }
   setProductPublicationMode("FREE_REWARD");
   setTimeout(() => {
     if (titleInput) titleInput.focus();
@@ -200,6 +203,9 @@ export function openEditProductModal(productId) {
   renderProductImagesPreview();
 
   modal.style.display = "flex";
+  if (typeof window !== "undefined" && typeof window.syncModalScrollLock === "function") {
+    window.syncModalScrollLock();
+  }
   setTimeout(() => {
     if (titleInput) titleInput.focus();
   }, 100);

@@ -373,7 +373,11 @@
   .admin-bottom-dock.is-hidden,
   body.drawer-open .admin-bottom-dock,
   body.modal-open .admin-bottom-dock,
-  html.modal-open .admin-bottom-dock {
+  html.modal-open .admin-bottom-dock,
+  body:has(.modal-overlay[style*="display: flex"]) .fab-mobile-menu-btn,
+  body:has(.modal-overlay[style*="display: block"]) .fab-mobile-menu-btn,
+  body:has(.modal-overlay[style*="display: flex"]) .admin-bottom-dock,
+  body:has(.modal-overlay[style*="display: block"]) .admin-bottom-dock {
     display: none !important;
     visibility: hidden !important;
     opacity: 0 !important;
@@ -2112,9 +2116,13 @@
     gap: 0.25rem !important;
   }
   .calc-freq-grid button {
-    padding: 3px 2px !important;
-    font-size: 0.68rem !important;
+    padding: 2px 1px !important;
+    font-size: 0.66rem !important;
     height: 28px !important;
+    line-height: 24px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
   }
   .calc-ticket-row {
     display: flex !important;

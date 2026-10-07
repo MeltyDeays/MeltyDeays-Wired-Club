@@ -32,6 +32,7 @@ import {
   setIncomingDiscountVal,
   recalculateIncomingPresale,
   applyCalculatedIncomingToProduct,
+  toggleProductCalculatorAccordion,
   // 2. Calculadora de Puntos de Venta
   openSalePointsCalculatorModal,
   setSaleFreightPreset,
@@ -245,7 +246,9 @@ export function showToast(message, type = "info") {
   }
   const toast = document.createElement("div");
   toast.className = "toast " + type;
-  toast.innerHTML = `<span style="font-weight:900; font-size:1rem;">•</span><span>${message}</span>`;
+  const hasEmoji = /^(\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff])/i.test(message.trim());
+  const prefix = hasEmoji ? "" : `<span style="font-weight:900; font-size:1rem; margin-right:4px;">•</span>`;
+  toast.innerHTML = `${prefix}<span>${message}</span>`;
   container.appendChild(toast);
   setTimeout(() => {
     toast.style.opacity = "0";
@@ -1105,6 +1108,7 @@ document.addEventListener("DOMContentLoaded", () => {
   window.setIncomingDiscountVal = setIncomingDiscountVal;
   window.recalculateIncomingPresale = recalculateIncomingPresale;
   window.applyCalculatedIncomingToProduct = applyCalculatedIncomingToProduct;
+  window.toggleProductCalculatorAccordion = toggleProductCalculatorAccordion;
   window.handleAdminReleaseIncoming = handleAdminReleaseIncoming;
 
   // Calculadora de Puntos por Venta (Factura 4x1)
