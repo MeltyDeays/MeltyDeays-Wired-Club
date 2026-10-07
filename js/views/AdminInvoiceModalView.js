@@ -45,6 +45,15 @@ function openSingleDigitalInvoiceModal(targetTokenCode = null, forceEdit = false
   const timeInput = document.getElementById("s-inv-time");
   if (timeInput) timeInput.value = today.toLocaleTimeString("es-NI", { hour: "2-digit", minute: "2-digit" });
 
+  const datePreview = document.getElementById("s-inv-date-preview");
+  if (datePreview) {
+    const dVal = (dateInput ? dateInput.value : today.toISOString().split("T")[0]);
+    const parts = dVal.split("-");
+    datePreview.textContent = parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : dVal;
+  }
+  const timePreview = document.getElementById("s-inv-time-preview");
+  if (timePreview) timePreview.textContent = timeInput ? timeInput.value : today.toLocaleTimeString("es-NI", { hour: "2-digit", minute: "2-digit" });
+
   const token = targetTokenCode ? (vm.tokens || []).find(t => t.tokenCode === targetTokenCode) : null;
   const inv = token && token.invoiceData ? token.invoiceData : null;
 
@@ -68,8 +77,17 @@ function openSingleDigitalInvoiceModal(targetTokenCode = null, forceEdit = false
       if (currEl) { currEl.value = inv.currency || "USD"; updateSingleInvoiceCurrency(); }
       const pmEl = document.getElementById("s-inv-payment-method");
       if (pmEl) pmEl.value = inv.paymentMethod || "Efectivo";
-      if (inv.date && dateInput) dateInput.value = inv.date;
-      if (inv.time && timeInput) timeInput.value = inv.time;
+      if (inv.date && dateInput) {
+        dateInput.value = inv.date;
+        if (datePreview) {
+          const parts = inv.date.split("-");
+          datePreview.textContent = parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : inv.date;
+        }
+      }
+      if (inv.time && timeInput) {
+        timeInput.value = inv.time;
+        if (timePreview) timePreview.textContent = inv.time;
+      }
       const discEl = document.getElementById("s-inv-discount-input");
       if (discEl) discEl.value = (inv.discount || 0).toFixed(2);
       const wEl = document.getElementById("s-inv-warranty-text");
@@ -136,26 +154,25 @@ function addSingleInvoiceItemRow(cant = 1, desc = "", price = 0) {
   if (!tbody) return;
 
   const row = document.createElement("tr");
+  row.className = "copland-item-row";
   row.style.borderBottom = "1px solid #e2e8f0";
   row.innerHTML = `
-    <td style="padding: 7px 8px; text-align: center;">
+    <td class="copland-td-cant" style="text-align: center;">
       <input type="number" class="form-input s-row-cant" value="${cant}" min="1" step="1"
-             style="height: 34px; width: 60px; text-align: center; font-family: var(--font-mono); font-weight: 800; font-size: 0.88rem; padding: 2px 4px; border: 1.5px solid var(--dark); border-radius: 4px;"
              oninput="calcSingleInvoiceTotals()">
     </td>
-    <td style="padding: 7px 8px;">
-      <input type="text" class="form-input s-row-desc" value="${desc.replace(/"/g, '&quot;')}" placeholder="Ej: Laptop Gaming ASUS / Mando Inalámbrico / Combo Gamer"
-             style="height: 34px; font-weight: 700; font-size: 0.84rem; padding: 2px 10px; border: 1.5px solid var(--dark); border-radius: 4px;">
+    <td class="copland-td-desc">
+      <input type="text" class="form-input s-row-desc" value="${desc.replace(/"/g, '&quot;')}" placeholder="Descripción del artículo..."
+             autocomplete="off">
     </td>
-    <td style="padding: 7px 8px; text-align: right;">
+    <td class="copland-td-price" style="text-align: right;">
       <input type="number" class="form-input s-row-price" value="${Number(price).toFixed(2)}" min="0" step="0.5"
-             style="height: 34px; width: 120px; text-align: right; font-family: var(--font-mono); font-weight: 800; font-size: 0.88rem; padding: 2px 8px; border: 1.5px solid var(--dark); border-radius: 4px;"
              oninput="calcSingleInvoiceTotals()">
     </td>
-    <td style="padding: 7px 8px; text-align: right;">
-      <strong class="s-row-total" style="font-family: var(--font-mono); font-size: 0.92rem; font-weight: 900; color: #0f172a;">$ 0.00</strong>
+    <td class="copland-td-total" style="text-align: right;">
+      <strong class="s-row-total" style="font-family: var(--font-mono); font-weight: 900; color: #0f172a;">$ 0.00</strong>
     </td>
-    <td style="padding: 7px 8px; text-align: center;">
+    <td class="copland-td-del" style="text-align: center;">
       <button type="button" class="copland-btn-del-row" onclick="removeSingleInvoiceItemRow(this)" title="Quitar fila">✕</button>
     </td>
   `;

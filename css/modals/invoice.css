@@ -138,6 +138,34 @@
   background: #ffffff;
 }
 
+/* FICHA DE FECHA Y HORA */
+.copland-datetime-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #ffffff;
+  border: 1.5px solid var(--dark);
+  border-radius: 4px;
+  padding: 2px 7px;
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: var(--dark);
+  box-shadow: 1px 1px 0px var(--dark);
+}
+
+.copland-datetime-pill .datetime-pill-divider {
+  color: #94a3b8;
+  font-weight: 900;
+}
+
+.copland-control-compact-row {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
 /* GRIDS RESPONSIVOS */
 .copland-grid-4 {
   display: grid;
@@ -325,6 +353,66 @@
 
 .copland-items-table tbody tr:hover {
   background: #f8fafc;
+}
+
+.copland-th-cant, .copland-td-cant {
+  width: 65px;
+  text-align: center;
+}
+.copland-td-cant input {
+  height: 32px;
+  width: 100%;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-weight: 800;
+  font-size: 0.86rem;
+  border: 1.5px solid var(--dark);
+  border-radius: 4px;
+}
+
+.copland-th-desc, .copland-td-desc {
+  text-align: left;
+}
+.copland-td-desc input {
+  height: 32px;
+  width: 100%;
+  font-weight: 700;
+  font-size: 0.84rem;
+  padding: 2px 8px;
+  border: 1.5px solid var(--dark);
+  border-radius: 4px;
+}
+
+.copland-th-price, .copland-td-price {
+  width: 110px;
+  text-align: right;
+}
+.copland-td-price input {
+  height: 32px;
+  width: 100%;
+  text-align: right;
+  font-family: var(--font-mono);
+  font-weight: 800;
+  font-size: 0.86rem;
+  padding: 2px 6px;
+  border: 1.5px solid var(--dark);
+  border-radius: 4px;
+}
+
+.copland-th-total, .copland-td-total {
+  width: 95px;
+  text-align: right;
+}
+.copland-td-total strong {
+  font-family: var(--font-mono);
+  font-size: 0.88rem;
+  font-weight: 900;
+  color: #0f172a;
+}
+
+.copland-th-del, .copland-td-del {
+  width: 38px;
+  text-align: center;
 }
 
 .copland-btn-del-row {
@@ -701,4 +789,50 @@
 .copland-footer-btn-primary:active {
   transform: translate(2px, 2px);
   box-shadow: 1px 1px 0px #041d33;
+}
+
+.copland-wired-compact-grid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 0.75rem;
+  align-items: flex-end;
+}
+
+.copland-btn-hero-wa {
+  flex: 1.4 1 auto;
+  background: #059669 !important;
+  border: 1.5px solid var(--dark) !important;
+  color: #ffffff !important;
+  border-radius: 4px !important;
+  box-shadow: 2px 2px 0px var(--dark) !important;
+  font-family: var(--font-mono) !important;
+  font-size: 0.85rem !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.5px !important;
+  padding: 0.65rem 1.1rem !important;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  text-transform: uppercase;
+  transition: transform 0.1s ease, box-shadow 0.1s ease !important;
+}
+
+.copland-btn-hero-wa:hover {
+  background: #047857 !important;
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0px var(--dark) !important;
+}
+
+.copland-btn-hero-wa:active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0px var(--dark) !important;
+}
+
+.copland-footer-secondary-row {
+  display: flex;
+  gap: 0.45rem;
+  align-items: center;
+  flex-wrap: wrap;
 }

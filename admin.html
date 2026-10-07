@@ -992,9 +992,8 @@
       <!-- HEADER MODAL COPLAND OS 21.0 -->
       <div class="copland-modal-header">
         <div class="copland-modal-header-badges">
-          <span class="badge-navi-cyan"><span class="pulse-dot-cyan"></span> COPLAND OS 21.0 // DIGITAL INVOICE TERMINAL</span>
-          <span class="badge-layer-lain">PROTOCOL: 1-PAGE CASUAL_INVOICE</span>
-          <span class="badge-pulse-live">● VECTOR_PRINT READY</span>
+          <span class="badge-navi-cyan"><span class="pulse-dot-cyan"></span> COPLAND OS 21.0 // FACTURA DIGITAL</span>
+          <span class="badge-pulse-live">● VENTA INDIVIDUAL</span>
         </div>
         <div class="copland-modal-header-tag">
           SEC_LEVEL: 01 // MOST_DISPATCH
@@ -1003,10 +1002,10 @@
 
       <div class="copland-modal-title-block">
         <h3 class="copland-modal-title">
-          <span class="copland-title-glyph">▰</span> EMISIÓN DE FACTURA ELECTRÓNICA INDIVIDUAL <span class="cyan-tag">[SINGLE_SALE_DISPATCH]</span>
+          <span class="copland-title-glyph">▰</span> EMISIÓN DE FACTURA ELECTRÓNICA <span class="cyan-tag">[SINGLE_SALE_DISPATCH]</span>
         </h3>
         <p class="copland-modal-subtitle">
-          Terminal de mostrador para venta individual. Emite factura única con folio oficial, cálculo multi-moneda (USD/C$ NIO), acumulación directa de Wired Points y descarga en formato PDF/HTML.
+          Emite factura con folio oficial, cálculo multi-moneda (USD/NIO), acumulación de Wired Points y envío inmediato.
         </p>
       </div>
 
@@ -1014,15 +1013,23 @@
       <div class="copland-card-module">
         <div class="copland-card-module-header">
           <div class="copland-module-title">
-            <span class="copland-mod-num">01</span> CONTROL DE EMISIÓN & MONEDA OFICIAL
+            <span class="copland-mod-num">01</span> CONTROL DE EMISIÓN &amp; MONEDA
           </div>
-          <span class="copland-mod-status">FOLIO OFICIAL // AUTO-ASSIGN</span>
+          <!-- Ficha compacta de Fecha y Hora generadas automáticamente -->
+          <div class="copland-datetime-pill" title="Fecha y hora del sistema auto-asignadas">
+            <span class="datetime-pill-item">📅 <span id="s-inv-date-preview">--/--/----</span></span>
+            <span class="datetime-pill-divider">·</span>
+            <span class="datetime-pill-item">⏰ <span id="s-inv-time-preview">--:--</span></span>
+          </div>
         </div>
-        <div class="copland-card-module-body">
-          <div class="copland-grid-4">
-            <!-- FOLIO -->
-            <div class="copland-field-group">
-              <label class="copland-field-label">Nº DE FOLIO FACTURA</label>
+        <div class="copland-card-module-body" style="padding: 0.6rem 0.75rem;">
+          <div class="copland-control-compact-row">
+            <!-- FOLIO COMPACTO -->
+            <div class="copland-field-group" style="flex: 1.2; min-width: 140px;">
+              <label class="copland-field-label" style="display: flex; justify-content: space-between;">
+                <span>Nº FOLIO FACTURA</span>
+                <span style="color: var(--gray-400); font-size: 0.58rem;">AUTO-ASSIGN</span>
+              </label>
               <div class="copland-folio-group">
                 <span class="copland-folio-prefix">#MD-</span>
                 <input type="text" id="s-inv-folio" class="copland-input-folio" placeholder="0001" maxlength="8">
@@ -1032,26 +1039,18 @@
               </div>
             </div>
 
-            <!-- FECHA -->
-            <div class="copland-field-group">
-              <label class="copland-field-label">FECHA DE EMISIÓN</label>
-              <input type="date" id="s-inv-date" class="form-input copland-input">
-            </div>
-
-            <!-- HORA -->
-            <div class="copland-field-group">
-              <label class="copland-field-label">HORA REGISTRADA</label>
-              <input type="text" id="s-inv-time" class="form-input copland-input" placeholder="10:30 a. m." style="text-align: center;">
-            </div>
-
-            <!-- MONEDA -->
-            <div class="copland-field-group">
-              <label class="copland-field-label">MONEDA OFICIAL</label>
-              <select id="s-inv-currency" class="form-select copland-select" onchange="updateSingleInvoiceCurrency()">
-                <option value="USD" selected>Dólares ($ USD) [Oficial]</option>
-                <option value="NIO">Córdobas (C$ NIO · Tasa 37.0)</option>
+            <!-- MONEDA COMPACTA (USD / NIO) -->
+            <div class="copland-field-group" style="flex: 0.9; min-width: 110px;">
+              <label class="copland-field-label">MONEDA</label>
+              <select id="s-inv-currency" class="form-select copland-select" onchange="updateSingleInvoiceCurrency()" style="font-weight: 800; height: 34px;">
+                <option value="USD" selected>💵 USD ($)</option>
+                <option value="NIO">🇳🇮 NIO (C$ 37.0)</option>
               </select>
             </div>
+
+            <!-- INPUTS FECHA Y HORA TÉCNICOS PARA PERSISTENCIA DEL FORMULARIO -->
+            <input type="date" id="s-inv-date" style="display: none;">
+            <input type="text" id="s-inv-time" style="display: none;">
           </div>
         </div>
       </div>
@@ -1060,28 +1059,28 @@
       <div class="copland-card-module">
         <div class="copland-card-module-header">
           <div class="copland-module-title">
-            <span class="copland-mod-num">02</span> RECEPTOR & CONDICIONES DE PAGO
+            <span class="copland-mod-num">02</span> RECEPTOR &amp; CONDICIONES DE PAGO
           </div>
-          <span class="copland-mod-status">IDENTIFICADOR WHATSAPP NICARAGUA</span>
+          <span class="copland-mod-status">WHATSAPP NICARAGUA</span>
         </div>
-        <div class="copland-card-module-body">
+        <div class="copland-card-module-body" style="padding: 0.6rem 0.75rem;">
           <div class="copland-grid-client">
             <div class="copland-field-group">
               <label class="copland-field-label">NOMBRE / RAZÓN SOCIAL DEL CLIENTE</label>
-              <input type="text" id="s-inv-client-name" class="form-input copland-input" placeholder="Ej: Juan Carlos Pérez / Consumidor Final" style="font-weight: 700;">
+              <input type="text" id="s-inv-client-name" class="form-input copland-input" placeholder="Ej: Juan Carlos Pérez / Consumidor Final" style="font-weight: 700; height: 34px;">
             </div>
 
             <div class="copland-field-group">
               <label class="copland-field-label">TELÉFONO / WHATSAPP</label>
-              <div class="phone-input-group" style="height: 38px;">
-                <span class="phone-prefix-addon" style="height: 38px; font-size: 0.8rem; padding: 0 0.6rem;">🇳🇮 +505</span>
-                <input type="text" id="s-inv-client-phone" class="form-input copland-input" placeholder="5843-8412" maxlength="9" style="height: 38px; font-family: var(--font-mono); font-weight: 700;">
+              <div class="phone-input-group" style="height: 34px;">
+                <span class="phone-prefix-addon" style="height: 34px; font-size: 0.78rem; padding: 0 0.5rem;">🇳🇮 +505</span>
+                <input type="text" id="s-inv-client-phone" class="form-input copland-input" placeholder="5843-8412" maxlength="9" style="height: 34px; font-family: var(--font-mono); font-weight: 700;">
               </div>
             </div>
 
             <div class="copland-field-group">
               <label class="copland-field-label">MÉTODO DE LIQUIDACIÓN</label>
-              <select id="s-inv-payment-method" class="form-select copland-select" style="height: 38px; font-weight: 700;">
+              <select id="s-inv-payment-method" class="form-select copland-select" style="height: 34px; font-weight: 700;">
                 <option value="Efectivo" selected>💵 Efectivo (Caja)</option>
                 <option value="Transferencia BAC">🏛️ Transferencia BAC</option>
                 <option value="Transferencia LAFISE">🏛️ Transferencia LAFISE</option>
@@ -1098,15 +1097,15 @@
       <div class="copland-card-module">
         <div class="copland-card-module-header">
           <div class="copland-module-title">
-            <span class="copland-mod-num">03</span> DETALLE DE PRODUCTOS & VALORACIÓN
+            <span class="copland-mod-num">03</span> DETALLE DE PRODUCTOS &amp; VALORACIÓN
           </div>
           <div class="copland-module-actions">
-            <select id="s-inv-catalog-preset-select" class="copland-select-sm" onchange="addCatalogProductToSingleInvoice(this.value); this.value='';">
-              <option value="">⚡ + Cargar desde Catálogo...</option>
-            </select>
             <button type="button" class="copland-btn-add-row" onclick="addSingleInvoiceItemRow()">
               + AGREGAR FILA
             </button>
+            <select id="s-inv-catalog-preset-select" class="copland-select-sm" onchange="addCatalogProductToSingleInvoice(this.value); this.value='';">
+              <option value="">📦 + Desde Catálogo...</option>
+            </select>
           </div>
         </div>
 
@@ -1116,11 +1115,11 @@
             <table class="copland-items-table">
               <thead>
                 <tr>
-                  <th style="width: 70px; text-align: center;">CANT</th>
-                  <th style="text-align: left;">DESCRIPCIÓN DEL ARTÍCULO / ESPECIFICACIONES</th>
-                  <th style="width: 140px; text-align: right;">PRECIO UNIT. (<span class="s-inv-curr-label">$</span>)</th>
-                  <th style="width: 140px; text-align: right;">TOTAL (<span class="s-inv-curr-label">$</span>)</th>
-                  <th style="width: 45px; text-align: center;">✕</th>
+                  <th class="copland-th-cant" style="text-align: center;">CANT</th>
+                  <th class="copland-th-desc" style="text-align: left;">DESCRIPCIÓN DEL ARTÍCULO</th>
+                  <th class="copland-th-price" style="text-align: right;">PRECIO (<span class="s-inv-curr-label">$</span>)</th>
+                  <th class="copland-th-total" style="text-align: right;">TOTAL (<span class="s-inv-curr-label">$</span>)</th>
+                  <th class="copland-th-del" style="text-align: center;">✕</th>
                 </tr>
               </thead>
               <tbody id="s-inv-items-table-body">
@@ -1166,35 +1165,33 @@
           <div class="copland-module-title">
             <label for="s-inv-enable-points" style="display: inline-flex; align-items: center; gap: 7px; margin-bottom: 0; cursor: pointer; color: #e0e7ff;">
               <input type="checkbox" id="s-inv-enable-points" checked onchange="toggleSingleInvoicePointsFields(this.checked)" class="copland-checkbox">
-              <span class="copland-mod-num" style="background:#4338ca; color:#ffffff;">04</span> PROTOCOLO DE PUNTOS THE WIRED CLUB
+              <span class="copland-mod-num" style="background:#4338ca; color:#ffffff;">04</span> PROTOCOLO PUNTOS WIRED CLUB
             </label>
           </div>
-          <span class="copland-mod-status" style="color: #a5b4fc;">QR DINÁMICO & PIN AUTO-RECLAMO</span>
+          <span class="copland-mod-status" style="color: #a5b4fc;">QR &amp; PIN AUTO-RECLAMO</span>
         </div>
 
-        <div id="s-inv-points-fields" class="copland-card-module-body" style="background: #fafbff;">
-          <div class="copland-wired-grid">
-            <!-- PUNTOS -->
+        <div id="s-inv-points-fields" class="copland-card-module-body" style="background: #fafbff; padding: 0.6rem 0.75rem;">
+          <div class="copland-wired-compact-grid">
+            <!-- PUNTOS Y BOTONES AUTO/CALC -->
             <div class="copland-field-group">
               <label class="copland-field-label">PUNTOS A OTORGAR</label>
-              <div class="copland-wp-box">
-                <input type="number" id="s-inv-points-val" class="copland-wp-input" placeholder="0" min="0" step="5">
-                <span class="copland-wp-badge">WP</span>
+              <div style="display: flex; gap: 5px; align-items: center;">
+                <div class="copland-wp-box" style="flex: 1; min-width: 90px;">
+                  <input type="number" id="s-inv-points-val" class="copland-wp-input" placeholder="0" min="0" step="5">
+                  <span class="copland-wp-badge">WP</span>
+                </div>
+                <button type="button" class="copland-btn-calc-wp" onclick="autoCalculateSingleInvoicePoints()" title="Cálculo directo (1 USD = 10 WP)">
+                  ⚡ AUTO
+                </button>
+                <button type="button" class="copland-btn-calc-modal" onclick="openSalePointsCalculatorModal('digital_invoice')" title="Calculadora Avanzada">
+                  🧮 CALC
+                </button>
               </div>
             </div>
 
-            <!-- BOTÓN AUTO-CALCULAR Y CALCULADORA WP -->
-            <div class="copland-field-group" style="display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap;">
-              <button type="button" class="copland-btn-calc-wp" onclick="autoCalculateSingleInvoicePoints()" title="Cálculo directo (1 USD = 10 WP)">
-                ⚡ AUTO (1 USD = 10 WP)
-              </button>
-              <button type="button" class="copland-btn-calc-modal" onclick="openSalePointsCalculatorModal('digital_invoice')" title="Abrir Calculadora Avanzada de WP y Márgenes de Ganancia">
-                🧮 CALCULADORA DE WP
-              </button>
-            </div>
-
             <!-- PIN DE SEGURIDAD -->
-            <div class="copland-field-group" style="margin-left: auto;">
+            <div class="copland-field-group">
               <label class="copland-field-label">PIN DE SEGURIDAD (4 DÍGITOS)</label>
               <div class="copland-pin-box">
                 <input type="text" id="s-inv-pin-val" class="copland-pin-input" placeholder="4891" maxlength="6">
@@ -1203,36 +1200,36 @@
                 </button>
               </div>
             </div>
+          </div>
 
-            <!-- SELECTOR DE DISEÑO LAIN EXCLUSIVO FACTURA DIGITAL -->
-            <div class="copland-field-group" style="grid-column: 1 / -1; margin-top: 10px; border-top: 1px dashed #c7d2fe; padding-top: 10px;">
-              <label class="copland-field-label" style="display:flex; justify-content:space-between; align-items:center;">
-                <span>🎴 DISEÑO EXCLUSIVO DE CONTRAPORTADA DIGITAL (SERIAL EXPERIMENTS LAIN)</span>
-                <span style="font-size:10px; color:#6366f1; font-weight:700;">20 DISEÑOS EXCLUSIVOS PÁGINA COMPLETA</span>
-              </label>
-              <select id="s-inv-lain-design" class="form-input copland-input" style="font-family:'JetBrains Mono', monospace; font-size:12px; font-weight:700; background:#f8fafc; color:#1e1b4b; cursor:pointer;">
-                <option value="0">01. KALEIDOSCOPE // OPTICAL MATRIX (Refracción de Prisma Óptico)</option>
-                <option value="1">02. COOLING PIPELINE // LIQUID NITROGEN BUS (Refrigeración Criogénica)</option>
-                <option value="2">03. NEURAL JACK // DIRECT SYNAPTIC INTERFACE (Interfaz Bio-Cerebral)</option>
-                <option value="3">04. SUB-ETHER BROADCAST // ULTRA-LOW FREQUENCY (Ondas Subterráneas ULF)</option>
-                <option value="4">05. TACHIBANA MAINFRAME // RACK-MOUNTED TOWER (Servidor Central)</option>
-                <option value="5">06. SLEEPLESS CITY // TOKYO NOCTURNE SCAN (Topografía Nocturna)</option>
-                <option value="6">07. DIODE ARRAY // SILICON JUNCTION GATE (Compuertas Lógicas)</option>
-                <option value="7">08. WIRED GHOST // CONSCIOUSNESS FRAGMENT (Espectro Digital)</option>
-                <option value="8">09. OSCILLOSCOPE TRACE // WAVEFORM SYNTHESIZER (Traza de Rayo Catódico)</option>
-                <option value="9">10. CIPHER SUITE // AES-256 ZERO KNOWLEDGE (Cubo Criptográfico)</option>
-                <option value="10">11. SUBMERGED CABLES // PACIFIC DEEP-SEA TRANSIT (Fibra Submarina)</option>
-                <option value="11">12. ELECTROSTATIC SHIELD // FARADAY CAGE (Jaula de Faraday)</option>
-                <option value="12">13. KERNEL COMPILER // LOW-LEVEL ASSEMBLY DUMP (Desensamblador)</option>
-                <option value="13">14. PHOSPHOR DISPLAY // VECTOR GRAPHICS TERMINAL (Monitor Vectorial)</option>
-                <option value="14">15. QUANTUM POLARIZER // PHOTON ENTANGLEMENT ARRAY (Entrelazamiento)</option>
-                <option value="15">16. RELAY SWITCH // ELECTROMECHANICAL COMMUTATOR (Conmutador Telefónico)</option>
-                <option value="16">17. SECTOR SCAN // DOPPLER INTERFERENCE DETECTOR (Radar de Barrido)</option>
-                <option value="17">18. CORE MEMORY // MAGNETIC FERRITE RING MATRIX (Memoria de Ferrita)</option>
-                <option value="18">19. SPECTRUM ANALYZER // FAST FOURIER TRANSFORM (Análisis FFT)</option>
-                <option value="19">20. SINGULARITY // ZERO GRAVITY WIRED LINK (Lazo Infinito)</option>
-              </select>
-            </div>
+          <!-- SELECTOR DE DISEÑO LAIN EXCLUSIVO -->
+          <div class="copland-field-group" style="margin-top: 8px; border-top: 1px dashed #c7d2fe; padding-top: 6px;">
+            <label class="copland-field-label" style="display:flex; justify-content:space-between; align-items:center;">
+              <span>🎴 DISEÑO CONTRAPORTADA LAIN</span>
+              <span style="font-size:10px; color:#6366f1; font-weight:700;">20 DISEÑOS EXCLUSIVOS</span>
+            </label>
+            <select id="s-inv-lain-design" class="form-input copland-input" style="font-family:'JetBrains Mono', monospace; font-size:12px; font-weight:700; background:#ffffff; color:#1e1b4b; cursor:pointer; height: 32px;">
+              <option value="0">01. KALEIDOSCOPE // OPTICAL MATRIX</option>
+              <option value="1">02. COOLING PIPELINE // LIQUID NITROGEN BUS</option>
+              <option value="2">03. NEURAL JACK // DIRECT SYNAPTIC INTERFACE</option>
+              <option value="3">04. SUB-ETHER BROADCAST // ULTRA-LOW FREQUENCY</option>
+              <option value="4">05. TACHIBANA MAINFRAME // RACK-MOUNTED TOWER</option>
+              <option value="5">06. SLEEPLESS CITY // TOKYO NOCTURNE SCAN</option>
+              <option value="6">07. DIODE ARRAY // SILICON JUNCTION GATE</option>
+              <option value="7">08. WIRED GHOST // CONSCIOUSNESS FRAGMENT</option>
+              <option value="8">09. OSCILLOSCOPE TRACE // WAVEFORM SYNTHESIZER</option>
+              <option value="9">10. CIPHER SUITE // AES-256 ZERO KNOWLEDGE</option>
+              <option value="10">11. SUBMERGED CABLES // PACIFIC DEEP-SEA TRANSIT</option>
+              <option value="11">12. ELECTROSTATIC SHIELD // FARADAY CAGE</option>
+              <option value="12">13. KERNEL COMPILER // LOW-LEVEL ASSEMBLY DUMP</option>
+              <option value="13">14. PHOSPHOR DISPLAY // VECTOR GRAPHICS TERMINAL</option>
+              <option value="14">15. QUANTUM POLARIZER // PHOTON ENTANGLEMENT ARRAY</option>
+              <option value="15">16. RELAY SWITCH // ELECTROMECHANICAL COMMUTATOR</option>
+              <option value="16">17. SECTOR SCAN // DOPPLER INTERFERENCE DETECTOR</option>
+              <option value="17">18. CORE MEMORY // MAGNETIC FERRITE RING MATRIX</option>
+              <option value="18">19. SPECTRUM ANALYZER // FAST FOURIER TRANSFORM</option>
+              <option value="19">20. SINGULARITY // ZERO GRAVITY WIRED LINK</option>
+            </select>
           </div>
         </div>
       </div>
@@ -1241,19 +1238,19 @@
       <div class="copland-card-module">
         <div class="copland-card-module-header">
           <div class="copland-module-title">
-            <span class="copland-mod-num">05</span> GARANTÍA COMERCIAL & OBSERVACIONES
+            <span class="copland-mod-num">05</span> GARANTÍA COMERCIAL &amp; OBSERVACIONES
           </div>
-          <span class="copland-mod-status">POLÍTICAS OFICIALES DE MOSTRADOR</span>
+          <span class="copland-mod-status">POLÍTICAS OFICIALES</span>
         </div>
-        <div class="copland-card-module-body">
+        <div class="copland-card-module-body" style="padding: 0.6rem 0.75rem;">
           <div class="copland-grid-2">
             <div class="copland-field-group">
               <label class="copland-field-label">PLAZO / CONDICIÓN DE GARANTÍA</label>
-              <input type="text" id="s-inv-warranty-text" class="form-input copland-input" value="30 DÍAS CALENDARIO (DEFECTOS DE FÁBRICA)" style="font-weight: 700; color: #1e293b;">
+              <input type="text" id="s-inv-warranty-text" class="form-input copland-input" value="30 DÍAS CALENDARIO (DEFECTOS DE FÁBRICA)" style="font-weight: 700; color: #1e293b; height: 32px;">
             </div>
             <div class="copland-field-group">
               <label class="copland-field-label">OBSERVACIONES / NOTAS AL REVERSO</label>
-              <input type="text" id="s-inv-notes-text" class="form-input copland-input" value="Venta casual de mostrador. Producto nuevo con empaque íntegro probado a satisfacción.">
+              <input type="text" id="s-inv-notes-text" class="form-input copland-input" value="Venta casual de mostrador. Producto nuevo con empaque íntegro probado a satisfacción." style="height: 32px;">
             </div>
           </div>
         </div>
@@ -1261,22 +1258,21 @@
 
       <!-- BOTONES DE ACCIÓN PRINCIPALES (BARRA DE CONTROL COPLAND OS) -->
       <div class="copland-modal-footer">
-        <button type="button" class="copland-footer-btn-cancel" onclick="closeModal('modal-single-digital-invoice')">
-          ✕ Cancelar
+        <!-- ACCIÓN PRINCIPAL DE MOSTRADOR: EMISIÓN DIRECTA A WHATSAPP -->
+        <button type="button" class="copland-footer-btn-primary copland-btn-hero-wa" onclick="submitSingleDigitalInvoice('whatsapp')" title="Guardar factura en BD y abrir chat de WhatsApp con el cliente">
+          <span style="font-size: 1.1rem; line-height: 1;">📲</span> EMITIR &amp; ENVIAR POR WHATSAPP
         </button>
 
-        <div class="copland-footer-btn-group">
-          <button type="button" class="copland-footer-btn copland-btn-preview" onclick="submitSingleDigitalInvoice('preview')" title="Ver cómo queda la factura sin tocar la BD ni descontar folios">
-            👁️ Solo Previsualizar (Sin Guardar)
+        <!-- ACCIONES SECUNDARIAS: IMPRIMIR, PREVISUALIZAR, CANCELAR -->
+        <div class="copland-footer-secondary-row">
+          <button type="button" class="copland-footer-btn copland-btn-print" onclick="submitSingleDigitalInvoice('print')" title="Guardar en BD y mandar a imprimir">
+            🖨️ IMPRIMIR
           </button>
-          <button type="button" class="copland-footer-btn copland-btn-whatsapp" onclick="submitSingleDigitalInvoice('whatsapp')" title="Guardar factura en la BD y abrir chat de WhatsApp con el cliente">
-            📲 Enviar WhatsApp & Guardar en BD
+          <button type="button" class="copland-footer-btn copland-btn-preview" onclick="submitSingleDigitalInvoice('preview')" title="Ver cómo queda sin guardar en BD">
+            👁️ PREVIA
           </button>
-          <button type="button" class="copland-footer-btn copland-btn-print" onclick="submitSingleDigitalInvoice('print')" title="Guardar factura en la BD y mandar a imprimir en navegador">
-            🖨️ Imprimir & Guardar en BD
-          </button>
-          <button type="button" class="copland-footer-btn-primary" onclick="submitSingleDigitalInvoice('download')" title="Guardar factura en la BD y descargar archivo HTML/PDF">
-            <span style="font-size:1rem;">⚡</span> Guardar en BD & Descargar
+          <button type="button" class="copland-footer-btn-cancel" onclick="closeModal('modal-single-digital-invoice')" title="Descartar y salir">
+            ✕ CANCELAR
           </button>
         </div>
       </div>
