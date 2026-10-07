@@ -138,7 +138,7 @@
 
 .paper-setup-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
   gap: 1.25rem;
   align-items: flex-start;
 }
@@ -1361,6 +1361,150 @@
   border: 1.5px solid var(--dark);
   border-radius: 6px;
   padding: 0.75rem 1rem;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+}
+
+.admin-filter-search-wrap {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex: 1 1 240px;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.admin-filter-controls {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  flex-wrap: wrap;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.admin-filter-group {
+  display: flex;
+  gap: 0.35rem;
+  align-items: center;
+  flex-wrap: wrap;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.admin-filter-group .btn-secondary {
+  white-space: nowrap;
+}
+
+.admin-sort-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* NORMALIZACIÓN DE BORDES Y ESTADO FOCUS EN SELECTORES DE ORDENAMIENTO (R1) */
+.admin-filter-bar select,
+.admin-filter-bar .form-input,
+.admin-sort-group select,
+.admin-sort-group .form-input,
+#sort-tokens-select,
+#sort-catalog-select,
+#sort-vouchers-select,
+#sort-users-select,
+#sandbox-tokens-sort,
+#sandbox-users-sort,
+#sandbox-vouchers-sort,
+#sandbox-catalog-sort,
+#lot-paper-size,
+#preview-paper-size,
+.paper-setup-card select {
+  background-color: #ffffff;
+  border: 1.5px solid var(--gray-300);
+  color: var(--dark);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  border-radius: 4px;
+  cursor: pointer;
+  outline: none;
+  box-shadow: 1px 1px 0px rgba(0, 0, 0, 0.05);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+
+.admin-filter-bar select:hover,
+.admin-filter-bar .form-input:hover,
+.admin-sort-group select:hover,
+.admin-sort-group .form-input:hover,
+#sort-tokens-select:hover,
+#sort-catalog-select:hover,
+#sort-vouchers-select:hover,
+#sort-users-select:hover,
+#sandbox-tokens-sort:hover,
+#sandbox-users-sort:hover,
+#sandbox-vouchers-sort:hover,
+#sandbox-catalog-sort:hover,
+#lot-paper-size:hover,
+#preview-paper-size:hover,
+.paper-setup-card select:hover {
+  border-color: #4f46e5;
+  background-color: #f8fafc;
+}
+
+.admin-filter-bar select:focus,
+.admin-filter-bar select:focus-visible,
+.admin-filter-bar .form-input:focus,
+.admin-filter-bar .form-input:focus-visible,
+.admin-sort-group select:focus,
+.admin-sort-group select:focus-visible,
+.admin-sort-group .form-input:focus,
+.admin-sort-group .form-input:focus-visible,
+#sort-tokens-select:focus,
+#sort-tokens-select:focus-visible,
+#sort-catalog-select:focus,
+#sort-catalog-select:focus-visible,
+#sort-vouchers-select:focus,
+#sort-vouchers-select:focus-visible,
+#sort-users-select:focus,
+#sort-users-select:focus-visible,
+#sandbox-tokens-sort:focus,
+#sandbox-tokens-sort:focus-visible,
+#sandbox-users-sort:focus,
+#sandbox-users-sort:focus-visible,
+#sandbox-vouchers-sort:focus,
+#sandbox-vouchers-sort:focus-visible,
+#sandbox-catalog-sort:focus,
+#sandbox-catalog-sort:focus-visible,
+#lot-paper-size:focus,
+#lot-paper-size:focus-visible,
+#preview-paper-size:focus,
+#preview-paper-size:focus-visible,
+.paper-setup-card select:focus,
+.paper-setup-card select:focus-visible {
+  border-color: #4f46e5 !important;
+  box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2) !important;
+  outline: none !important;
+  background-color: #ffffff !important;
+}
+
+/* GRUPO DE FILTROS DE SERIES LAIN (R2) */
+.lain-series-filter-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  background: #f1f5f9;
+  padding: 3px;
+  border-radius: 6px;
+  border: 1px solid #cbd5e1;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.lain-series-filter-group .copland-bar-btn {
+  white-space: nowrap;
+  flex: 0 0 auto;
 }
 
 .admin-search-input {

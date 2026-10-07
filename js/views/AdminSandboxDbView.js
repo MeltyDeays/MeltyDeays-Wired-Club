@@ -384,7 +384,7 @@ export function renderSandboxDbView() {
         ${isProd ? 'Ejecuta purgas específicas por colección en la base de datos oficial de producción.' : 'Ejecuta purgas específicas por módulo sin necesidad de resetear toda la base de datos de pruebas.'}
       </p>
 
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 0.85rem; margin-bottom: 1.25rem;">
+      <div class="sandbox-purge-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr)); gap: 0.85rem; margin-bottom: 1.25rem;">
         <!-- Purgar Socios -->
         <div style="border: 1px solid #cbd5e1; border-radius: 6px; padding: 1rem; background: #f8fafc; display: flex; flex-direction: column; justify-content: space-between; gap: 0.75rem;">
           <div>
@@ -522,7 +522,7 @@ export function renderSandboxDbView() {
 
       <!-- BARRA DE BÚSQUEDA Y FILTROS EN VIVO -->
       <div class="admin-filter-bar" style="margin-bottom: 1rem; display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center; justify-content: space-between;">
-        <div style="display: flex; gap: 0.5rem; align-items: center; flex: 1; min-width: 240px;">
+        <div class="admin-filter-search-wrap" style="display: flex; gap: 0.5rem; align-items: center; flex: 1; min-width: 0;">
           <input 
             type="text" 
             id="sandbox-draft-search" 
@@ -534,13 +534,15 @@ export function renderSandboxDbView() {
           ${draftSearchQuery ? `<button type="button" class="btn-secondary" style="padding: 5px 10px; font-size: 0.78rem;" onclick="filterSandboxDrafts('')">Limpiar</button>` : ''}
         </div>
         ${activeDraftTab === 'tokens' ? `
-          <div style="display: flex; gap: 0.35rem; align-items: center; flex-wrap: wrap;">
-            <span style="font-family: var(--font-mono); font-size: 0.72rem; font-weight: 700; color: var(--gray-500);">ESTADO:</span>
-            <button type="button" class="btn-secondary ${sandboxTokensStatus === 'ALL' ? 'active' : ''}" style="padding: 3px 8px; font-size: 0.72rem;" onclick="setSandboxDraftStatus('ALL')">Todas</button>
-            <button type="button" class="btn-secondary ${sandboxTokensStatus === 'PENDING' ? 'active' : ''}" style="padding: 3px 8px; font-size: 0.72rem;" onclick="setSandboxDraftStatus('PENDING')">⏳ Sin Asignar</button>
-            <button type="button" class="btn-secondary ${sandboxTokensStatus === 'ACTIVE' ? 'active' : ''}" style="padding: 3px 8px; font-size: 0.72rem;" onclick="setSandboxDraftStatus('ACTIVE')">● Sin Reclamar</button>
-            <button type="button" class="btn-secondary ${sandboxTokensStatus === 'CLAIMED' ? 'active' : ''}" style="padding: 3px 8px; font-size: 0.72rem;" onclick="setSandboxDraftStatus('CLAIMED')">✔ Reclamadas</button>
-            <div style="display: inline-flex; align-items: center; gap: 0.35rem; margin-left: 0.4rem;">
+          <div class="admin-filter-controls" style="display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap;">
+            <div class="admin-filter-group" style="display: flex; gap: 0.35rem; align-items: center; flex-wrap: wrap;">
+              <span style="font-family: var(--font-mono); font-size: 0.72rem; font-weight: 700; color: var(--gray-500);">ESTADO:</span>
+              <button type="button" class="btn-secondary ${sandboxTokensStatus === 'ALL' ? 'active' : ''}" style="padding: 3px 8px; font-size: 0.72rem;" onclick="setSandboxDraftStatus('ALL')">Todas</button>
+              <button type="button" class="btn-secondary ${sandboxTokensStatus === 'PENDING' ? 'active' : ''}" style="padding: 3px 8px; font-size: 0.72rem;" onclick="setSandboxDraftStatus('PENDING')">⏳ Sin Asignar</button>
+              <button type="button" class="btn-secondary ${sandboxTokensStatus === 'ACTIVE' ? 'active' : ''}" style="padding: 3px 8px; font-size: 0.72rem;" onclick="setSandboxDraftStatus('ACTIVE')">● Sin Reclamar</button>
+              <button type="button" class="btn-secondary ${sandboxTokensStatus === 'CLAIMED' ? 'active' : ''}" style="padding: 3px 8px; font-size: 0.72rem;" onclick="setSandboxDraftStatus('CLAIMED')">✔ Reclamadas</button>
+            </div>
+            <div class="admin-sort-group" style="display: flex; gap: 0.35rem; align-items: center;">
               <span style="font-family: var(--font-mono); font-size: 0.72rem; font-weight: 700; color: var(--gray-500);">ORDENAR:</span>
               <select id="sandbox-tokens-sort" class="form-input" style="padding: 2px 7px; font-size: 0.75rem; width: auto; font-family: var(--font-mono); height: 26px; line-height: 1;" onchange="setSandboxDraftSort(this.value)">
                 <option value="folio-asc" ${sandboxTokensSort === 'folio-asc' ? 'selected' : ''}>🔢 Folio 1 al 40 (Asc)</option>
@@ -553,14 +555,16 @@ export function renderSandboxDbView() {
             </div>
           </div>
         ` : (activeDraftTab === 'users' ? `
-          <div style="display: flex; gap: 0.35rem; align-items: center; flex-wrap: wrap;">
-            <span style="font-family: var(--font-mono); font-size: 0.72rem; font-weight: 700; color: var(--gray-500);">RANGO:</span>
-            <button type="button" class="btn-secondary ${sandboxUsersTier === 'ALL' ? 'active' : ''}" style="padding: 3px 8px; font-size: 0.72rem;" onclick="setSandboxDraftStatus('ALL')">Todos</button>
-            <button type="button" class="btn-secondary ${sandboxUsersTier === 'NAVI' ? 'active' : ''}" style="padding: 3px 8px; font-size: 0.72rem;" onclick="setSandboxDraftStatus('NAVI')">NAVI</button>
-            <button type="button" class="btn-secondary ${sandboxUsersTier === 'RUNNER' ? 'active' : ''}" style="padding: 3px 8px; font-size: 0.72rem;" onclick="setSandboxDraftStatus('RUNNER')">RUNNER</button>
-            <button type="button" class="btn-secondary ${sandboxUsersTier === 'ELITE' ? 'active' : ''}" style="padding: 3px 8px; font-size: 0.72rem;" onclick="setSandboxDraftStatus('ELITE')">ELITE</button>
-            <button type="button" class="btn-secondary ${sandboxUsersTier === 'DEUS' ? 'active' : ''}" style="padding: 3px 8px; font-size: 0.72rem;" onclick="setSandboxDraftStatus('DEUS')">DEUS</button>
-            <div style="display: inline-flex; align-items: center; gap: 0.35rem; margin-left: 0.4rem;">
+          <div class="admin-filter-controls" style="display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap;">
+            <div class="admin-filter-group" style="display: flex; gap: 0.35rem; align-items: center; flex-wrap: wrap;">
+              <span style="font-family: var(--font-mono); font-size: 0.72rem; font-weight: 700; color: var(--gray-500);">RANGO:</span>
+              <button type="button" class="btn-secondary ${sandboxUsersTier === 'ALL' ? 'active' : ''}" style="padding: 3px 8px; font-size: 0.72rem;" onclick="setSandboxDraftStatus('ALL')">Todos</button>
+              <button type="button" class="btn-secondary ${sandboxUsersTier === 'NAVI' ? 'active' : ''}" style="padding: 3px 8px; font-size: 0.72rem;" onclick="setSandboxDraftStatus('NAVI')">NAVI</button>
+              <button type="button" class="btn-secondary ${sandboxUsersTier === 'RUNNER' ? 'active' : ''}" style="padding: 3px 8px; font-size: 0.72rem;" onclick="setSandboxDraftStatus('RUNNER')">RUNNER</button>
+              <button type="button" class="btn-secondary ${sandboxUsersTier === 'ELITE' ? 'active' : ''}" style="padding: 3px 8px; font-size: 0.72rem;" onclick="setSandboxDraftStatus('ELITE')">ELITE</button>
+              <button type="button" class="btn-secondary ${sandboxUsersTier === 'DEUS' ? 'active' : ''}" style="padding: 3px 8px; font-size: 0.72rem;" onclick="setSandboxDraftStatus('DEUS')">DEUS</button>
+            </div>
+            <div class="admin-sort-group" style="display: flex; gap: 0.35rem; align-items: center;">
               <span style="font-family: var(--font-mono); font-size: 0.72rem; font-weight: 700; color: var(--gray-500);">ORDENAR:</span>
               <select id="sandbox-users-sort" class="form-input" style="padding: 2px 7px; font-size: 0.75rem; width: auto; font-family: var(--font-mono); height: 26px; line-height: 1;" onchange="setSandboxDraftSort(this.value)">
                 <option value="newest" ${sandboxUsersSort === 'newest' ? 'selected' : ''}>🕒 Más recientes</option>
@@ -573,12 +577,14 @@ export function renderSandboxDbView() {
             </div>
           </div>
         ` : (activeDraftTab === 'vouchers' ? `
-          <div style="display: flex; gap: 0.35rem; align-items: center; flex-wrap: wrap;">
-            <span style="font-family: var(--font-mono); font-size: 0.72rem; font-weight: 700; color: var(--gray-500);">ESTADO:</span>
-            <button type="button" class="btn-secondary ${sandboxVouchersStatus === 'ALL' ? 'active' : ''}" style="padding: 3px 8px; font-size: 0.72rem;" onclick="setSandboxDraftStatus('ALL')">Todos</button>
-            <button type="button" class="btn-secondary ${sandboxVouchersStatus === 'PENDING' ? 'active' : ''}" style="padding: 3px 8px; font-size: 0.72rem;" onclick="setSandboxDraftStatus('PENDING')">⏳ Pendientes</button>
-            <button type="button" class="btn-secondary ${sandboxVouchersStatus === 'DELIVERED' ? 'active' : ''}" style="padding: 3px 8px; font-size: 0.72rem;" onclick="setSandboxDraftStatus('DELIVERED')">✓ Despachados</button>
-            <div style="display: inline-flex; align-items: center; gap: 0.35rem; margin-left: 0.4rem;">
+          <div class="admin-filter-controls" style="display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap;">
+            <div class="admin-filter-group" style="display: flex; gap: 0.35rem; align-items: center; flex-wrap: wrap;">
+              <span style="font-family: var(--font-mono); font-size: 0.72rem; font-weight: 700; color: var(--gray-500);">ESTADO:</span>
+              <button type="button" class="btn-secondary ${sandboxVouchersStatus === 'ALL' ? 'active' : ''}" style="padding: 3px 8px; font-size: 0.72rem;" onclick="setSandboxDraftStatus('ALL')">Todos</button>
+              <button type="button" class="btn-secondary ${sandboxVouchersStatus === 'PENDING' ? 'active' : ''}" style="padding: 3px 8px; font-size: 0.72rem;" onclick="setSandboxDraftStatus('PENDING')">⏳ Pendientes</button>
+              <button type="button" class="btn-secondary ${sandboxVouchersStatus === 'DELIVERED' ? 'active' : ''}" style="padding: 3px 8px; font-size: 0.72rem;" onclick="setSandboxDraftStatus('DELIVERED')">✓ Despachados</button>
+            </div>
+            <div class="admin-sort-group" style="display: flex; gap: 0.35rem; align-items: center;">
               <span style="font-family: var(--font-mono); font-size: 0.72rem; font-weight: 700; color: var(--gray-500);">ORDENAR:</span>
               <select id="sandbox-vouchers-sort" class="form-input" style="padding: 2px 7px; font-size: 0.75rem; width: auto; font-family: var(--font-mono); height: 26px; line-height: 1;" onchange="setSandboxDraftSort(this.value)">
                 <option value="newest" ${sandboxVouchersSort === 'newest' ? 'selected' : ''}>🕒 Más reciente a más viejo</option>
@@ -590,12 +596,14 @@ export function renderSandboxDbView() {
             </div>
           </div>
         ` : `
-          <div style="display: flex; gap: 0.35rem; align-items: center; flex-wrap: wrap;">
-            <span style="font-family: var(--font-mono); font-size: 0.72rem; font-weight: 700; color: var(--gray-500);">TIPO:</span>
-            <button type="button" class="btn-secondary ${sandboxCatalogType === 'ALL' ? 'active' : ''}" style="padding: 3px 8px; font-size: 0.72rem;" onclick="setSandboxDraftStatus('ALL')">Todos</button>
-            <button type="button" class="btn-secondary ${sandboxCatalogType === 'FREE' ? 'active' : ''}" style="padding: 3px 8px; font-size: 0.72rem;" onclick="setSandboxDraftStatus('FREE')">🎁 100% Puntos</button>
-            <button type="button" class="btn-secondary ${sandboxCatalogType === 'PARTIAL' ? 'active' : ''}" style="padding: 3px 8px; font-size: 0.72rem;" onclick="setSandboxDraftStatus('PARTIAL')">🏷️ Venta Topada</button>
-            <div style="display: inline-flex; align-items: center; gap: 0.35rem; margin-left: 0.4rem;">
+          <div class="admin-filter-controls" style="display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap;">
+            <div class="admin-filter-group" style="display: flex; gap: 0.35rem; align-items: center; flex-wrap: wrap;">
+              <span style="font-family: var(--font-mono); font-size: 0.72rem; font-weight: 700; color: var(--gray-500);">TIPO:</span>
+              <button type="button" class="btn-secondary ${sandboxCatalogType === 'ALL' ? 'active' : ''}" style="padding: 3px 8px; font-size: 0.72rem;" onclick="setSandboxDraftStatus('ALL')">Todos</button>
+              <button type="button" class="btn-secondary ${sandboxCatalogType === 'FREE' ? 'active' : ''}" style="padding: 3px 8px; font-size: 0.72rem;" onclick="setSandboxDraftStatus('FREE')">🎁 100% Puntos</button>
+              <button type="button" class="btn-secondary ${sandboxCatalogType === 'PARTIAL' ? 'active' : ''}" style="padding: 3px 8px; font-size: 0.72rem;" onclick="setSandboxDraftStatus('PARTIAL')">🏷️ Venta Topada</button>
+            </div>
+            <div class="admin-sort-group" style="display: flex; gap: 0.35rem; align-items: center;">
               <span style="font-family: var(--font-mono); font-size: 0.72rem; font-weight: 700; color: var(--gray-500);">ORDENAR:</span>
               <select id="sandbox-catalog-sort" class="form-input" style="padding: 2px 7px; font-size: 0.75rem; width: auto; font-family: var(--font-mono); height: 26px; line-height: 1;" onchange="setSandboxDraftSort(this.value)">
                 <option value="cost-desc" ${sandboxCatalogSort === 'cost-desc' ? 'selected' : ''}>💰 Más caro a más barato (WP)</option>

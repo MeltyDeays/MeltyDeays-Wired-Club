@@ -529,15 +529,19 @@
 
         <!-- Barra de búsqueda y filtros -->
         <div class="admin-filter-bar">
-          <input type="text" id="search-users-input" class="admin-search-input" placeholder="🔍 Buscar por nombre, teléfono o código de socio..." oninput="filterUsers()">
-          <div style="display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap;">
-            <span style="font-family: var(--font-mono); font-size: 0.72rem; font-weight: 700; color: var(--gray-500);">FILTRAR RANGO:</span>
-            <button type="button" class="btn-secondary active" id="tier-btn-ALL" style="padding: 3px 8px; font-size: 0.72rem;" onclick="filterUsersByTier('ALL')">Todos</button>
-            <button type="button" class="btn-secondary" id="tier-btn-NAVI" style="padding: 3px 8px; font-size: 0.72rem;" onclick="filterUsersByTier('NAVI')">NAVI</button>
-            <button type="button" class="btn-secondary" id="tier-btn-RUNNER" style="padding: 3px 8px; font-size: 0.72rem;" onclick="filterUsersByTier('RUNNER')">RUNNER</button>
-            <button type="button" class="btn-secondary" id="tier-btn-ELITE" style="padding: 3px 8px; font-size: 0.72rem;" onclick="filterUsersByTier('ELITE')">ELITE</button>
-            <button type="button" class="btn-secondary" id="tier-btn-DEUS" style="padding: 3px 8px; font-size: 0.72rem;" onclick="filterUsersByTier('DEUS')">DEUS</button>
-            <div style="display: inline-flex; align-items: center; gap: 0.35rem; margin-left: 0.4rem;">
+          <div class="admin-filter-search-wrap" style="display: flex; gap: 0.5rem; align-items: center; flex: 1; min-width: 0;">
+            <input type="text" id="search-users-input" class="admin-search-input" placeholder="🔍 Buscar por nombre, teléfono o código de socio..." oninput="filterUsers()" style="margin: 0; width: 100%;">
+          </div>
+          <div class="admin-filter-controls" style="display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap;">
+            <div class="admin-filter-group" style="display: flex; gap: 0.35rem; align-items: center; flex-wrap: wrap;">
+              <span style="font-family: var(--font-mono); font-size: 0.72rem; font-weight: 700; color: var(--gray-500);">FILTRAR RANGO:</span>
+              <button type="button" class="btn-secondary active" id="tier-btn-ALL" style="padding: 3px 8px; font-size: 0.72rem;" onclick="filterUsersByTier('ALL')">Todos</button>
+              <button type="button" class="btn-secondary" id="tier-btn-NAVI" style="padding: 3px 8px; font-size: 0.72rem;" onclick="filterUsersByTier('NAVI')">NAVI</button>
+              <button type="button" class="btn-secondary" id="tier-btn-RUNNER" style="padding: 3px 8px; font-size: 0.72rem;" onclick="filterUsersByTier('RUNNER')">RUNNER</button>
+              <button type="button" class="btn-secondary" id="tier-btn-ELITE" style="padding: 3px 8px; font-size: 0.72rem;" onclick="filterUsersByTier('ELITE')">ELITE</button>
+              <button type="button" class="btn-secondary" id="tier-btn-DEUS" style="padding: 3px 8px; font-size: 0.72rem;" onclick="filterUsersByTier('DEUS')">DEUS</button>
+            </div>
+            <div class="admin-sort-group" style="display: inline-flex; align-items: center; gap: 0.35rem;">
               <span style="font-family: var(--font-mono); font-size: 0.72rem; font-weight: 700; color: var(--gray-500);">ORDENAR:</span>
               <select id="sort-users-select" class="form-input" style="padding: 2px 7px; font-size: 0.75rem; width: auto; font-family: var(--font-mono); height: 26px; line-height: 1;" onchange="sortUsersAdmin(this.value)">
                 <option value="newest">🕒 Más recientes</option>
@@ -583,18 +587,18 @@
 
       <!-- Barra de búsqueda y ordenamiento de catálogo -->
       <div class="admin-filter-bar" style="margin-bottom: 1rem; display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center; justify-content: space-between;">
-        <div style="display: flex; gap: 0.5rem; align-items: center; flex: 1; min-width: 240px;">
+        <div class="admin-filter-search-wrap" style="display: flex; gap: 0.5rem; align-items: center; flex: 1; min-width: 0;">
           <input type="text" id="search-catalog-input" class="admin-search-input" placeholder="🔍 Buscar por nombre, ID o descripción..." oninput="filterCatalogAdmin()" style="margin: 0; width: 100%;">
         </div>
-        <div style="display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap;">
-          <div style="display: flex; gap: 0.35rem; align-items: center;">
+        <div class="admin-filter-controls" style="display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap;">
+          <div class="admin-filter-group" style="display: flex; gap: 0.35rem; align-items: center; flex-wrap: wrap;">
             <span style="font-family: var(--font-mono); font-size: 0.72rem; font-weight: 700; color: var(--gray-500);">TIPO:</span>
             <button type="button" class="btn-secondary active" id="catalog-filter-ALL" style="padding: 3px 8px; font-size: 0.72rem;" onclick="filterCatalogByType('ALL')">Todos</button>
             <button type="button" class="btn-secondary" id="catalog-filter-FREE" style="padding: 3px 8px; font-size: 0.72rem;" onclick="filterCatalogByType('FREE')">🎁 100% Puntos</button>
             <button type="button" class="btn-secondary" id="catalog-filter-PARTIAL" style="padding: 3px 8px; font-size: 0.72rem;" onclick="filterCatalogByType('PARTIAL')">🏷️ Venta Topada</button>
             <button type="button" class="btn-secondary" id="catalog-filter-INCOMING" style="padding: 3px 8px; font-size: 0.72rem;" onclick="filterCatalogByType('INCOMING')">灰羽 En Camino</button>
           </div>
-          <div style="display: flex; gap: 0.35rem; align-items: center;">
+          <div class="admin-sort-group" style="display: flex; gap: 0.35rem; align-items: center;">
             <span style="font-family: var(--font-mono); font-size: 0.72rem; font-weight: 700; color: var(--gray-500);">ORDENAR:</span>
             <select id="sort-catalog-select" class="form-input" style="padding: 3px 8px; font-size: 0.75rem; width: auto; font-family: var(--font-mono); height: 28px; line-height: 1;" onchange="sortCatalogAdmin(this.value)">
               <option value="cost-desc">💰 Más caro a más barato (WP)</option>
@@ -697,7 +701,7 @@
       </div>
 
       <!-- FORMULARIO DE GENERACIÓN DE FACTURAS -->
-      <div class="form-grid" style="grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));">
+      <div class="form-grid" style="grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));">
         <div class="form-group">
           <label class="form-label">Número de Folio Inicial (Auto-incremental)</label>
           <input type="number" id="lot-start-folio" class="form-input" min="1" placeholder="Ej: 1" oninput="this.dataset.userEdited='true'">
@@ -767,7 +771,7 @@
             </span>
           </div>
           <div class="lain-template-btn-group" style="display:flex; gap:0.4rem; align-items:center; flex-wrap:wrap;">
-            <div style="display:flex; gap:0.25rem; background:#f1f5f9; padding:2px; border-radius:6px; border:1px solid #cbd5e1;">
+            <div class="lain-series-filter-group" style="display:flex; flex-wrap:wrap; gap:0.25rem; background:#f1f5f9; padding:2px; border-radius:6px; border:1px solid #cbd5e1; max-width:100%; box-sizing:border-box;">
               <button type="button" class="copland-bar-btn" id="btn-filter-all" style="padding:4px 8px; font-size:10px; background:#0f172a; color:#fff;" onclick="filterLainSeries('ALL')">TODAS (74)</button>
               <button type="button" class="copland-bar-btn" id="btn-filter-s1" style="padding:4px 8px; font-size:10px; background:#fff; color:#334155;" onclick="filterLainSeries('SERIE 1')">SERIE 1 (24)</button>
               <button type="button" class="copland-bar-btn" id="btn-filter-s2" style="padding:4px 8px; font-size:10px; background:#fff; color:#334155;" onclick="filterLainSeries('SERIE 2')">SERIE 2 (20)</button>
@@ -816,18 +820,18 @@
 
       <!-- TABLA DE TOKENS REGISTRADOS -->
       <div class="admin-filter-bar" style="margin-top: 1.25rem; margin-bottom: 0.75rem; display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center; justify-content: space-between;">
-        <div style="display: flex; gap: 0.5rem; align-items: center; flex: 1; min-width: 240px;">
+        <div class="admin-filter-search-wrap" style="display: flex; gap: 0.5rem; align-items: center; flex: 1; min-width: 0;">
           <input type="text" id="search-tokens-input" class="admin-search-input" placeholder="🔍 Buscar por folio (#MD-0001), token o PIN..." oninput="filterTokensAdmin()" style="margin: 0; width: 100%;">
         </div>
-        <div style="display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap;">
-          <div style="display: flex; gap: 0.35rem; align-items: center;">
+        <div class="admin-filter-controls" style="display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap;">
+          <div class="admin-filter-group" style="display: flex; gap: 0.35rem; align-items: center; flex-wrap: wrap;">
             <span style="font-family: var(--font-mono); font-size: 0.72rem; font-weight: 700; color: var(--gray-500);">ESTADO:</span>
             <button type="button" class="btn-secondary active" id="token-filter-ALL" style="padding: 3px 8px; font-size: 0.72rem;" onclick="filterTokensByStatus('ALL')">Todas</button>
             <button type="button" class="btn-secondary" id="token-filter-PENDING" style="padding: 3px 8px; font-size: 0.72rem;" onclick="filterTokensByStatus('PENDING')">⏳ Sin Asignar</button>
             <button type="button" class="btn-secondary" id="token-filter-ACTIVE" style="padding: 3px 8px; font-size: 0.72rem;" onclick="filterTokensByStatus('ACTIVE')">● Sin Reclamar</button>
             <button type="button" class="btn-secondary" id="token-filter-CLAIMED" style="padding: 3px 8px; font-size: 0.72rem;" onclick="filterTokensByStatus('CLAIMED')">✔ Reclamadas</button>
           </div>
-          <div style="display: flex; gap: 0.35rem; align-items: center;">
+          <div class="admin-sort-group" style="display: flex; gap: 0.35rem; align-items: center;">
             <span style="font-family: var(--font-mono); font-size: 0.72rem; font-weight: 700; color: var(--gray-500);">ORDENAR:</span>
             <select id="sort-tokens-select" class="form-input" style="padding: 3px 8px; font-size: 0.75rem; width: auto; font-family: var(--font-mono); height: 28px; line-height: 1;" onchange="sortTokensAdmin(this.value)">
               <option value="folio-asc">🔢 Folio 1 al 40 (Asc)</option>
@@ -877,17 +881,17 @@
 
         <!-- Barra de búsqueda y filtros de historial de vales -->
         <div class="admin-filter-bar" style="margin-bottom: 1rem; display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center; justify-content: space-between;">
-          <div style="display: flex; gap: 0.5rem; align-items: center; flex: 1; min-width: 260px;">
+          <div class="admin-filter-search-wrap" style="display: flex; gap: 0.5rem; align-items: center; flex: 1; min-width: 0;">
             <input type="text" id="search-vouchers-input" class="admin-search-input" placeholder="🔍 Buscar por código de canje (CANJE-XXXX), socio o artículo..." oninput="filterVouchersAdmin()" style="margin: 0; width: 100%;">
           </div>
-          <div style="display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap;">
-            <div style="display: flex; gap: 0.35rem; align-items: center;">
+          <div class="admin-filter-controls" style="display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap;">
+            <div class="admin-filter-group" style="display: flex; gap: 0.35rem; align-items: center; flex-wrap: wrap;">
               <span style="font-family: var(--font-mono); font-size: 0.72rem; font-weight: 700; color: var(--gray-500);">ESTADO:</span>
               <button type="button" class="btn-secondary active" id="voucher-filter-ALL" style="padding: 3px 8px; font-size: 0.72rem;" onclick="filterVouchersTable('ALL')">Todos</button>
               <button type="button" class="btn-secondary" id="voucher-filter-PENDING" style="padding: 3px 8px; font-size: 0.72rem;" onclick="filterVouchersTable('PENDING')">⏳ Pendientes</button>
               <button type="button" class="btn-secondary" id="voucher-filter-DELIVERED" style="padding: 3px 8px; font-size: 0.72rem;" onclick="filterVouchersTable('DELIVERED')">✓ Despachados</button>
             </div>
-            <div style="display: flex; gap: 0.35rem; align-items: center;">
+            <div class="admin-sort-group" style="display: flex; gap: 0.35rem; align-items: center;">
               <span style="font-family: var(--font-mono); font-size: 0.72rem; font-weight: 700; color: var(--gray-500);">ORDENAR:</span>
               <select id="sort-vouchers-select" class="form-input" style="padding: 3px 8px; font-size: 0.75rem; width: auto; font-family: var(--font-mono); height: 28px; line-height: 1;" onchange="sortVouchersAdmin(this.value)">
                 <option value="newest">🕒 Más reciente a más viejo</option>
