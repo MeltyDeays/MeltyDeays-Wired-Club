@@ -187,48 +187,53 @@
   .admin-mobile-logout-btn {
     display: inline-flex !important;
     align-items: center !important;
+    justify-content: center !important;
     gap: 4px !important;
-    height: 28px !important;
-    padding: 2px 8px !important;
+    height: 30px !important;
+    padding: 0 8px !important;
     font-family: var(--font-mono, monospace) !important;
     font-size: 0.7rem !important;
-    font-weight: 700 !important;
+    font-weight: 800 !important;
     color: var(--accent, #e11d48) !important;
-    background: #fff1f2 !important;
-    border: 1.3px solid #fecdd3 !important;
-    border-radius: 5px !important;
+    background: #ffffff !important;
+    border: 1.5px solid var(--dark, #0f172a) !important;
+    border-radius: 4px !important;
     cursor: pointer !important;
-    box-shadow: 1px 1px 0px rgba(225, 29, 72, 0.2) !important;
+    box-shadow: 2px 2px 0px var(--dark, #0f172a) !important;
     box-sizing: border-box !important;
-    transition: background 0.15s ease !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.4px !important;
+    transition: transform 0.1s ease, box-shadow 0.1s ease !important;
   }
 
   .admin-mobile-logout-btn:active {
-    background: #ffe4e6 !important;
+    transform: translate(1px, 1px) !important;
+    box-shadow: 1px 1px 0px var(--dark, #0f172a) !important;
+    background: #fff1f2 !important;
   }
 
-  /* BARRA DE ACCIONES INFERIOR MÓVIL (BOTTOM DOCK - ERGONOMÍA ZONA DEL PULGAR) */
+  /* BARRA DE ACCIONES INFERIOR MÓVIL (BOTTOM DOCK - COPLAND OS 21.0 CHASSIS) */
   .admin-bottom-dock {
     display: flex !important;
     position: fixed !important;
-    bottom: calc(12px + env(safe-area-inset-bottom, 0px)) !important;
+    bottom: calc(10px + env(safe-area-inset-bottom, 0px)) !important;
     left: 50% !important;
     transform: translateX(-50%) !important;
-    width: calc(100% - 24px) !important;
+    width: calc(100% - 20px) !important;
     max-width: 440px !important;
-    height: 52px !important;
+    height: 48px !important;
     z-index: 9999 !important;
-    background: rgba(15, 23, 42, 0.94) !important;
-    backdrop-filter: blur(12px) !important;
-    -webkit-backdrop-filter: blur(12px) !important;
-    border: 1.5px solid rgba(255, 255, 255, 0.18) !important;
-    border-radius: 14px !important;
-    padding: 5px 8px !important;
-    box-shadow: 0 10px 25px -4px rgba(15, 23, 42, 0.5), 0 4px 10px -2px rgba(15, 23, 42, 0.3) !important;
+    background: #ffffff !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    border: 2px solid var(--dark, #0f172a) !important;
+    border-radius: 4px !important;
+    padding: 4px 6px !important;
+    box-shadow: 3px 3px 0px var(--dark, #0f172a) !important;
     box-sizing: border-box !important;
     align-items: center !important;
     justify-content: space-between !important;
-    gap: 8px !important;
+    gap: 6px !important;
   }
 
   .admin-bottom-dock .dock-btn {
@@ -236,52 +241,61 @@
     align-items: center !important;
     justify-content: center !important;
     gap: 5px !important;
-    height: 40px !important;
-    border-radius: 9px !important;
-    font-family: 'JetBrains Mono', monospace !important;
-    font-size: 0.74rem !important;
+    height: 38px !important;
+    border-radius: 4px !important;
+    font-family: var(--font-mono, monospace) !important;
+    font-size: 0.72rem !important;
     font-weight: 800 !important;
     cursor: pointer !important;
     box-sizing: border-box !important;
     text-decoration: none !important;
-    transition: transform 0.12s ease, opacity 0.12s ease !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.3px !important;
+    border: 1.5px solid var(--dark, #0f172a) !important;
+    box-shadow: 2px 2px 0px var(--dark, #0f172a) !important;
+    transition: transform 0.1s ease, box-shadow 0.1s ease !important;
     white-space: nowrap !important;
   }
 
   .admin-bottom-dock .dock-btn:active {
-    transform: scale(0.96) !important;
+    transform: translate(1px, 1px) !important;
+    box-shadow: 0px 0px 0px var(--dark, #0f172a) !important;
   }
 
   .admin-bottom-dock .dock-btn-primary {
-    flex: 1.35 1 auto !important;
-    background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
+    flex: 1.25 1 auto !important;
+    background: #0284c7 !important;
     color: #ffffff !important;
-    border: 1.2px solid rgba(255, 255, 255, 0.3) !important;
-    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.4) !important;
-    padding: 0 10px !important;
+    border-color: var(--dark, #0f172a) !important;
+    box-shadow: 2px 2px 0px var(--dark, #0f172a) !important;
+    padding: 0 8px !important;
+  }
+
+  .admin-bottom-dock .dock-btn-primary:active {
+    background: #0369a1 !important;
   }
 
   .admin-bottom-dock .dock-btn-secondary {
     flex: 1 1 auto !important;
-    background: rgba(255, 255, 255, 0.1) !important;
-    color: #f1f5f9 !important;
-    border: 1.2px solid rgba(255, 255, 255, 0.15) !important;
-    padding: 0 8px !important;
+    background: #ffffff !important;
+    color: var(--dark, #0f172a) !important;
+    border-color: var(--dark, #0f172a) !important;
+    padding: 0 6px !important;
   }
 
   .admin-bottom-dock .dock-btn-secondary:hover {
-    background: rgba(255, 255, 255, 0.18) !important;
-    color: #ffffff !important;
+    background: var(--gray-100, #f1f5f9) !important;
+    color: var(--dark, #0f172a) !important;
   }
 
   .admin-bottom-dock .dock-icon {
-    font-size: 0.88rem !important;
+    font-size: 0.82rem !important;
     line-height: 1 !important;
   }
 
   .admin-bottom-dock .dock-text {
     line-height: 1 !important;
-    letter-spacing: -0.2px !important;
+    letter-spacing: 0.2px !important;
   }
 
   /* Amortiguación inferior para que el dock no tape elementos al hacer scroll */
@@ -1786,11 +1800,15 @@
   /* RESPONSIVIDAD CALCULADORA WP Y MÁRGENES */
   .sale-calc-inputs-grid {
     grid-template-columns: repeat(2, 1fr) !important;
-    gap: 0.5rem !important;
+    gap: 0.4rem !important;
+  }
+  .sale-calc-section2-grid {
+    grid-template-columns: 1fr 1.25fr !important;
+    gap: 0.4rem !important;
   }
   .sale-calc-presets-row {
     justify-content: flex-start !important;
-    margin-top: 0.4rem !important;
+    margin-top: 0.35rem !important;
   }
 
   /* MODAL ACTIONS RESPONSIVE Y BOTONES */
@@ -2431,7 +2449,12 @@
 
 @media (max-width: 420px) {
   .sale-calc-inputs-grid {
-    grid-template-columns: 1fr !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 4px !important;
+  }
+  .sale-calc-section2-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 4px !important;
   }
   .lain-template-btn-group > .copland-bar-btn {
     flex: 1 1 100% !important;
@@ -2449,7 +2472,6 @@
   .admin-header-actions button {
     flex: 1 1 100% !important;
   }
-}
 
   .admin-bottom-dock {
     width: calc(100% - 16px) !important;

@@ -88,10 +88,10 @@
       </button>
     </div>
 
-    <!-- Controles Móvil Header (≤ 640px): Botón discreto Salir en cabecera de 1 línea -->
+    <!-- Controles Móvil Header (≤ 640px): Botón Copland OS Salir en cabecera de 1 línea -->
     <div class="admin-mobile-header-actions">
-      <button type="button" class="admin-mobile-logout-btn" onclick="logoutAdmin()" title="Cerrar sesión de administrador">
-        <span>🔒</span> <span>Salir</span>
+      <button type="button" class="btn-secondary admin-mobile-logout-btn" onclick="logoutAdmin()" title="Cerrar sesión de administrador">
+        <span class="nav-icon">🔒</span> <span class="nav-label">SALIR</span>
       </button>
     </div>
   </header>
@@ -2931,160 +2931,160 @@
       </p>
 
       <!-- SECCIÓN 1: COSTO DE ADQUISICIÓN / LANDED COST DEL ARTÍCULO VENDIDO -->
-      <div style="background: #f1f5f9; border: 1.5px solid var(--dark); border-radius: 6px; padding: 0.95rem; margin-bottom: 0.85rem; box-shadow: 3px 3px 0px var(--dark);">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; border-bottom: 1px dashed #cbd5e1; padding-bottom: 0.35rem;">
-          <div style="font-family: var(--font-mono); font-size: 0.72rem; font-weight: 900; color: #1e293b;">
+      <div style="background: #f1f5f9; border: 1.5px solid var(--dark); border-radius: 4px; padding: 0.65rem 0.8rem; margin-bottom: 0.65rem; box-shadow: 2px 2px 0px var(--dark);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem; border-bottom: 1px dashed #cbd5e1; padding-bottom: 0.25rem;">
+          <div style="font-family: var(--font-mono); font-size: 0.7rem; font-weight: 900; color: #1e293b;">
             1. COSTOS DE ADQUISICIÓN (MIAMI → NICARAGUA)
           </div>
-          <span class="noc-pulse-chip" style="font-size: 0.65rem; padding: 1px 6px;">COSTOS DIRECTOS</span>
+          <span class="noc-pulse-chip" style="font-size: 0.6rem; padding: 1px 5px;">COSTOS DIRECTOS</span>
         </div>
 
         <div class="sale-calc-inputs-grid">
           <div class="form-group" style="margin-bottom: 0;">
-            <label class="form-label" style="height: 18px; line-height: 18px; font-size: 0.66rem; margin-bottom: 3px;">💵 PRECIO TIENDA ($)</label>
+            <label class="form-label" style="height: 14px; line-height: 14px; font-size: 0.6rem; margin-bottom: 2px; white-space: nowrap;">💵 PRECIO TIENDA ($)</label>
             <input type="number" id="sale-calc-cost-usd" class="form-input" placeholder="40.00" step="1" value="40.00" min="0"
-                   style="height: 38px; width: 100%; box-sizing: border-box; font-family: var(--font-mono); font-weight: 800; font-size: 0.9rem; text-align: center;"
+                   style="height: 30px; width: 100%; box-sizing: border-box; font-family: var(--font-mono); font-weight: 800; font-size: 0.85rem; text-align: center; padding: 2px 4px;"
                    oninput="recalculateSalePoints()">
           </div>
           <div class="form-group" style="margin-bottom: 0;">
-            <label class="form-label" style="height: 18px; line-height: 18px; font-size: 0.66rem; margin-bottom: 3px;">⚖️ PESO (LBS)</label>
+            <label class="form-label" style="height: 14px; line-height: 14px; font-size: 0.6rem; margin-bottom: 2px; white-space: nowrap;">⚖️ PESO (LBS)</label>
             <input type="number" id="sale-calc-weight-lbs" class="form-input" placeholder="2.0" step="0.1" value="2.0" min="0"
-                   style="height: 38px; width: 100%; box-sizing: border-box; font-family: var(--font-mono); font-weight: 800; font-size: 0.9rem; text-align: center;"
+                   style="height: 30px; width: 100%; box-sizing: border-box; font-family: var(--font-mono); font-weight: 800; font-size: 0.85rem; text-align: center; padding: 2px 4px;"
                    oninput="recalculateSalePoints()">
           </div>
           <div class="form-group" style="margin-bottom: 0;">
-            <label class="form-label" style="height: 18px; line-height: 18px; font-size: 0.66rem; margin-bottom: 3px;">✈️ FLETE ($/LB)</label>
+            <label class="form-label" style="height: 14px; line-height: 14px; font-size: 0.6rem; margin-bottom: 2px; white-space: nowrap;">✈️ FLETE ($/LB)</label>
             <input type="number" id="sale-calc-freight-rate" class="form-input" placeholder="3.00" step="0.25" value="3.00" min="0"
-                   style="height: 38px; width: 100%; box-sizing: border-box; font-family: var(--font-mono); font-weight: 800; font-size: 0.9rem; text-align: center;"
+                   style="height: 30px; width: 100%; box-sizing: border-box; font-family: var(--font-mono); font-weight: 800; font-size: 0.85rem; text-align: center; padding: 2px 4px;"
                    oninput="recalculateSalePoints()">
           </div>
           <div class="form-group" style="margin-bottom: 0;">
-            <label class="form-label" style="height: 18px; line-height: 18px; font-size: 0.66rem; margin-bottom: 3px;">📦 GASTOS EXTRAS ($)</label>
+            <label class="form-label" style="height: 14px; line-height: 14px; font-size: 0.6rem; margin-bottom: 2px; white-space: nowrap;">📦 GASTOS EXTRAS ($)</label>
             <input type="number" id="sale-calc-extra-usd" class="form-input" placeholder="0.00" step="1" value="0.00" min="0"
-                   style="height: 38px; width: 100%; box-sizing: border-box; font-family: var(--font-mono); font-weight: 800; font-size: 0.9rem; text-align: center;"
+                   style="height: 30px; width: 100%; box-sizing: border-box; font-family: var(--font-mono); font-weight: 800; font-size: 0.85rem; text-align: center; padding: 2px 4px;"
                    oninput="recalculateSalePoints()">
           </div>
         </div>
 
-        <div class="sale-calc-presets-row" style="display: flex; gap: 0.35rem; justify-content: flex-end; align-items: center; flex-wrap: wrap;">
-          <span style="font-family: var(--font-mono); font-size: 0.65rem; color: var(--gray-600); font-weight: 800;">PRESETS FLETE:</span>
-          <button type="button" class="btn-secondary" style="padding: 2px 6px; font-size: 0.65rem; font-weight: 800;" onclick="setSaleFreightPreset(2.50)">🚢 Marítimo $2.50</button>
-          <button type="button" class="btn-secondary active" id="btn-sale-freight-300" style="padding: 2px 6px; font-size: 0.65rem; font-weight: 800;" onclick="setSaleFreightPreset(3.00)">🚢 Marítimo $3.00</button>
-          <button type="button" class="btn-secondary" style="padding: 2px 6px; font-size: 0.65rem; font-weight: 800;" onclick="setSaleFreightPreset(5.50)">✈️ Aéreo $5.50</button>
+        <div class="sale-calc-presets-row" style="display: flex; gap: 0.3rem; justify-content: flex-end; align-items: center; flex-wrap: wrap; margin-top: 0.35rem;">
+          <span style="font-family: var(--font-mono); font-size: 0.62rem; color: var(--gray-600); font-weight: 800;">PRESETS FLETE:</span>
+          <button type="button" class="btn-secondary" style="padding: 2px 6px; font-size: 0.62rem; font-weight: 800;" onclick="setSaleFreightPreset(2.50)">🚢 Marítimo $2.50</button>
+          <button type="button" class="btn-secondary active" id="btn-sale-freight-300" style="padding: 2px 6px; font-size: 0.62rem; font-weight: 800;" onclick="setSaleFreightPreset(3.00)">🚢 Marítimo $3.00</button>
+          <button type="button" class="btn-secondary" style="padding: 2px 6px; font-size: 0.62rem; font-weight: 800;" onclick="setSaleFreightPreset(5.50)">✈️ Aéreo $5.50</button>
         </div>
       </div>
 
       <!-- SECCIÓN 2: PRECIO DE VENTA AL CLIENTE EN TIENDA -->
-      <div style="background: #ffffff; border: 1.5px solid var(--dark); border-radius: 6px; padding: 0.95rem; margin-bottom: 0.85rem; box-shadow: 3px 3px 0px var(--dark);">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; border-bottom: 1px dashed #cbd5e1; padding-bottom: 0.35rem;">
-          <div style="font-family: var(--font-mono); font-size: 0.72rem; font-weight: 900; color: #1e293b;">
+      <div style="background: #ffffff; border: 1.5px solid var(--dark); border-radius: 4px; padding: 0.65rem 0.8rem; margin-bottom: 0.65rem; box-shadow: 2px 2px 0px var(--dark);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem; border-bottom: 1px dashed #cbd5e1; padding-bottom: 0.25rem;">
+          <div style="font-family: var(--font-mono); font-size: 0.7rem; font-weight: 900; color: #1e293b;">
             2. PRECIO DE VENTA AL CLIENTE EN TIENDA
           </div>
-          <span style="font-family: var(--font-mono); font-size: 0.65rem; color: var(--gray-500); font-weight: 700;">PRECIO FINAL NICARAGUA</span>
+          <span style="font-family: var(--font-mono); font-size: 0.62rem; color: var(--gray-500); font-weight: 700;">PRECIO FINAL NICARAGUA</span>
         </div>
 
-        <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
-          <div style="flex: 1; min-width: 180px;">
-            <label class="form-label" style="font-size: 0.68rem; margin-bottom: 3px;">🏷️ PRECIO DE VENTA COBRADO ($ USD)</label>
+        <div class="sale-calc-section2-grid" style="display: grid; grid-template-columns: 1fr 1.25fr; gap: 8px; align-items: center;">
+          <div>
+            <label class="form-label" style="font-size: 0.62rem; margin-bottom: 2px; white-space: nowrap;">🏷️ PRECIO COBRADO ($ USD)</label>
             <input type="number" id="sale-calc-price-usd" class="form-input" placeholder="70.00" step="1" value="70.00" min="0"
-                   style="height: 42px; width: 100%; box-sizing: border-box; font-family: var(--font-mono); font-weight: 900; font-size: 1.25rem; text-align: center; color: #1e1b4b; background: #f8fafc;"
+                   style="height: 34px; width: 100%; box-sizing: border-box; font-family: var(--font-mono); font-weight: 900; font-size: 1.1rem; text-align: center; color: #1e1b4b; background: #f8fafc;"
                    oninput="recalculateSalePoints()">
           </div>
-          <div style="flex: 1.5; min-width: 240px; background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 4px; padding: 0.6rem 0.85rem; font-family: var(--font-mono); font-size: 0.75rem;">
-            <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
-              <span style="color: #065f46;">Costo Landed Total:</span>
-              <strong id="sale-calc-res-landed" style="color: #0f172a;">$46.00 USD</strong>
+          <div style="background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 4px; padding: 0.4rem 0.65rem; font-family: var(--font-mono); font-size: 0.7rem;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 1px;">
+              <span style="color: #065f46; font-size: 0.62rem;">Costo Landed:</span>
+              <strong id="sale-calc-res-landed" style="color: #0f172a; font-size: 0.72rem;">$46.00 USD</strong>
             </div>
-            <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
-              <span style="color: #065f46; font-weight: 800;">Ganancia Bruta:</span>
-              <strong id="sale-calc-res-profit" style="color: #059669; font-size: 0.95rem;">$24.00 USD</strong>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 1px;">
+              <span style="color: #065f46; font-weight: 800; font-size: 0.62rem;">Ganancia:</span>
+              <strong id="sale-calc-res-profit" style="color: #059669; font-size: 0.85rem;">$24.00 USD</strong>
             </div>
             <div style="display: flex; justify-content: space-between;">
-              <span style="color: #047857; font-size: 0.68rem;">Margen de Utilidad:</span>
-              <span id="sale-calc-res-margin" style="color: #047857; font-weight: 800; font-size: 0.68rem;">34.3%</span>
+              <span style="color: #047857; font-size: 0.62rem;">Margen:</span>
+              <span id="sale-calc-res-margin" style="color: #047857; font-weight: 800; font-size: 0.65rem;">34.3%</span>
             </div>
           </div>
         </div>
       </div>
 
       <!-- SECCIÓN 3: REGULADOR DEL % DE RETORNO EN PUNTOS -->
-      <div style="background: #f8fafc; border: 1.5px solid var(--dark); border-radius: 6px; padding: 0.95rem; margin-bottom: 1rem; box-shadow: 3px 3px 0px var(--dark);">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; border-bottom: 1px dashed #cbd5e1; padding-bottom: 0.35rem;">
-          <div style="font-family: var(--font-mono); font-size: 0.72rem; font-weight: 900; color: #1e293b;">
+      <div style="background: #f8fafc; border: 1.5px solid var(--dark); border-radius: 4px; padding: 0.65rem 0.8rem; margin-bottom: 0.75rem; box-shadow: 2px 2px 0px var(--dark);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem; border-bottom: 1px dashed #cbd5e1; padding-bottom: 0.25rem;">
+          <div style="font-family: var(--font-mono); font-size: 0.7rem; font-weight: 900; color: #1e293b;">
             3. REGULACIÓN DE RETORNO EN PUNTOS WP
           </div>
-          <span id="sale-calc-return-badge" style="font-family: var(--font-mono); font-size: 0.65rem; font-weight: 800; color: #059669; background: #ecfdf5; padding: 1px 6px; border-radius: 3px; border: 1px solid #a7f3d0;">
+          <span id="sale-calc-return-badge" style="font-family: var(--font-mono); font-size: 0.62rem; font-weight: 800; color: #059669; background: #ecfdf5; padding: 1px 5px; border-radius: 3px; border: 1px solid #a7f3d0;">
             50% DE GANANCIA REGRESADO EN PUNTOS
           </span>
         </div>
 
         <!-- SELECTOR DE BASE (SOBRE GANANCIA O SOBRE VENTA) -->
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-bottom: 0.65rem;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; margin-bottom: 0.5rem;">
           <button type="button" id="btn-sale-base-profit" onclick="setSaleReturnBase('profit')"
-                  style="display: flex; align-items: center; justify-content: center; gap: 6px; padding: 10px 8px; border-radius: 8px; border: 2px solid #059669; background: linear-gradient(135deg, #ecfdf5, #d1fae5); color: #065f46; font-family: var(--font-mono); font-size: 0.72rem; font-weight: 900; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 2px 8px rgba(5,150,105,0.15);">
+                  style="display: flex; align-items: center; justify-content: center; gap: 5px; padding: 6px 6px; border-radius: 4px; border: 1.5px solid #059669; background: #ecfdf5; color: #065f46; font-family: var(--font-mono); font-size: 0.68rem; font-weight: 900; cursor: pointer;">
             🎯 Sobre Ganancia Neta
           </button>
           <button type="button" id="btn-sale-base-revenue" onclick="setSaleReturnBase('revenue')"
-                  style="display: flex; align-items: center; justify-content: center; gap: 6px; padding: 10px 8px; border-radius: 8px; border: 2px solid #e2e8f0; background: #f8fafc; color: #64748b; font-family: var(--font-mono); font-size: 0.72rem; font-weight: 900; cursor: pointer; transition: all 0.2s ease;">
+                  style="display: flex; align-items: center; justify-content: center; gap: 5px; padding: 6px 6px; border-radius: 4px; border: 1.5px solid #cbd5e1; background: #ffffff; color: #64748b; font-family: var(--font-mono); font-size: 0.68rem; font-weight: 900; cursor: pointer;">
             🏷️ Sobre Venta Total
           </button>
         </div>
 
         <!-- SELECTOR DE PORCENTAJE DE RETORNO -->
-        <div style="display: flex; gap: 0.35rem; align-items: center; margin-bottom: 0.65rem; flex-wrap: wrap;">
+        <div style="display: flex; gap: 0.25rem; align-items: center; margin-bottom: 0.5rem; flex-wrap: wrap;">
           <button type="button" id="btn-sale-pct-5" onclick="setSaleReturnPct(5)"
-                  style="flex: 1; min-width: 44px; padding: 7px 4px; border-radius: 20px; border: 2px solid #e2e8f0; background: #f8fafc; color: #475569; font-family: var(--font-mono); font-size: 0.74rem; font-weight: 900; cursor: pointer; transition: all 0.2s ease; text-align: center;">
+                  style="flex: 1; min-width: 38px; padding: 4px 2px; border-radius: 4px; border: 1.2px solid #cbd5e1; background: #ffffff; color: #475569; font-family: var(--font-mono); font-size: 0.68rem; font-weight: 900; cursor: pointer; text-align: center;">
             5%
           </button>
           <button type="button" id="btn-sale-pct-10" onclick="setSaleReturnPct(10)"
-                  style="flex: 1; min-width: 44px; padding: 7px 4px; border-radius: 20px; border: 2px solid #e2e8f0; background: #f8fafc; color: #475569; font-family: var(--font-mono); font-size: 0.74rem; font-weight: 900; cursor: pointer; transition: all 0.2s ease; text-align: center;">
+                  style="flex: 1; min-width: 38px; padding: 4px 2px; border-radius: 4px; border: 1.2px solid #cbd5e1; background: #ffffff; color: #475569; font-family: var(--font-mono); font-size: 0.68rem; font-weight: 900; cursor: pointer; text-align: center;">
             10%
           </button>
           <button type="button" id="btn-sale-pct-20" onclick="setSaleReturnPct(20)"
-                  style="flex: 1; min-width: 44px; padding: 7px 4px; border-radius: 20px; border: 2px solid #e2e8f0; background: #f8fafc; color: #475569; font-family: var(--font-mono); font-size: 0.74rem; font-weight: 900; cursor: pointer; transition: all 0.2s ease; text-align: center;">
+                  style="flex: 1; min-width: 38px; padding: 4px 2px; border-radius: 4px; border: 1.2px solid #cbd5e1; background: #ffffff; color: #475569; font-family: var(--font-mono); font-size: 0.68rem; font-weight: 900; cursor: pointer; text-align: center;">
             20%
           </button>
           <button type="button" id="btn-sale-pct-30" onclick="setSaleReturnPct(30)"
-                  style="flex: 1; min-width: 44px; padding: 7px 4px; border-radius: 20px; border: 2px solid #e2e8f0; background: #f8fafc; color: #475569; font-family: var(--font-mono); font-size: 0.74rem; font-weight: 900; cursor: pointer; transition: all 0.2s ease; text-align: center;">
+                  style="flex: 1; min-width: 38px; padding: 4px 2px; border-radius: 4px; border: 1.2px solid #cbd5e1; background: #ffffff; color: #475569; font-family: var(--font-mono); font-size: 0.68rem; font-weight: 900; cursor: pointer; text-align: center;">
             30%
           </button>
           <button type="button" id="btn-sale-pct-40" onclick="setSaleReturnPct(40)"
-                  style="flex: 1; min-width: 44px; padding: 7px 4px; border-radius: 20px; border: 2px solid #e2e8f0; background: #f8fafc; color: #475569; font-family: var(--font-mono); font-size: 0.74rem; font-weight: 900; cursor: pointer; transition: all 0.2s ease; text-align: center;">
+                  style="flex: 1; min-width: 38px; padding: 4px 2px; border-radius: 4px; border: 1.2px solid #cbd5e1; background: #ffffff; color: #475569; font-family: var(--font-mono); font-size: 0.68rem; font-weight: 900; cursor: pointer; text-align: center;">
             40%
           </button>
           <button type="button" id="btn-sale-pct-50" onclick="setSaleReturnPct(50)"
-                  style="flex: 1; min-width: 44px; padding: 7px 4px; border-radius: 20px; border: 2px solid #059669; background: linear-gradient(135deg, #ecfdf5, #d1fae5); color: #065f46; font-family: var(--font-mono); font-size: 0.74rem; font-weight: 900; cursor: pointer; transition: all 0.2s ease; text-align: center; box-shadow: 0 2px 8px rgba(5,150,105,0.2);">
+                  style="flex: 1; min-width: 38px; padding: 4px 2px; border-radius: 4px; border: 1.5px solid #059669; background: #ecfdf5; color: #065f46; font-family: var(--font-mono); font-size: 0.68rem; font-weight: 900; cursor: pointer; text-align: center;">
             ⭐ 50%
           </button>
           <button type="button" id="btn-sale-pct-60" onclick="setSaleReturnPct(60)"
-                  style="flex: 1; min-width: 44px; padding: 7px 4px; border-radius: 20px; border: 2px solid #e2e8f0; background: #f8fafc; color: #475569; font-family: var(--font-mono); font-size: 0.74rem; font-weight: 900; cursor: pointer; transition: all 0.2s ease; text-align: center;">
+                  style="flex: 1; min-width: 38px; padding: 4px 2px; border-radius: 4px; border: 1.2px solid #cbd5e1; background: #ffffff; color: #475569; font-family: var(--font-mono); font-size: 0.68rem; font-weight: 900; cursor: pointer; text-align: center;">
             60%
           </button>
-          <div style="display: flex; align-items: center; gap: 3px; background: #f1f5f9; border-radius: 20px; padding: 2px 8px 2px 2px; border: 2px solid #cbd5e1;">
+          <div style="display: flex; align-items: center; gap: 2px; background: #ffffff; border-radius: 4px; padding: 1px 5px 1px 2px; border: 1.2px solid #cbd5e1;">
             <input type="number" id="sale-calc-return-pct" class="form-input" value="50" min="1" max="100" step="1"
-                   style="height: 28px; width: 44px; font-family: var(--font-mono); font-weight: 900; font-size: 0.8rem; text-align: center; padding: 2px; border: none; background: transparent; outline: none;"
+                   style="height: 24px; width: 36px; font-family: var(--font-mono); font-weight: 900; font-size: 0.78rem; text-align: center; padding: 1px; border: none; background: transparent; outline: none;"
                    oninput="recalculateSalePoints()">
-            <span style="font-family: var(--font-mono); font-size: 0.75rem; font-weight: 900; color: #475569;">%</span>
+            <span style="font-family: var(--font-mono); font-size: 0.7rem; font-weight: 900; color: #475569;">%</span>
           </div>
         </div>
 
         <!-- RESUMEN DE IMPACTO FINANCIERO -->
-        <div style="background: linear-gradient(135deg, #f0fdf4, #ecfdf5); border: 2px solid #a7f3d0; border-radius: 10px; padding: 0.85rem 1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
-          <div style="font-family: var(--font-mono); font-size: 0.75rem; flex: 1;">
-            <div style="color: var(--gray-700); margin-bottom: 3px;">
-              Valor devuelto en premios: <strong id="sale-calc-reward-val" style="color: #059669; font-weight: 900;">$12.00 USD</strong>
-              <span id="sale-calc-base-note" style="font-size: 0.68rem; color: var(--gray-500);">(50% de ganancia $24.00)</span>
+        <div style="background: #f0fdf4; border: 1.5px solid #a7f3d0; border-radius: 6px; padding: 0.6rem 0.8rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.4rem;">
+          <div style="font-family: var(--font-mono); font-size: 0.7rem; flex: 1;">
+            <div style="color: var(--gray-700); margin-bottom: 2px;">
+              Valor en premios: <strong id="sale-calc-reward-val" style="color: #059669; font-weight: 900;">$12.00 USD</strong>
+              <span id="sale-calc-base-note" style="font-size: 0.62rem; color: var(--gray-500);">(50% de ganancia $24.00)</span>
             </div>
-            <div style="color: #4338ca; font-size: 0.72rem; margin-bottom: 3px;">
-              Ganancia líquida retenida: <strong id="sale-calc-retained-profit" style="color: #1e1b4b; font-weight: 900;">$12.00 USD</strong>
+            <div style="color: #4338ca; font-size: 0.68rem; margin-bottom: 2px;">
+              Ganancia retenida: <strong id="sale-calc-retained-profit" style="color: #1e1b4b; font-weight: 900;">$12.00 USD</strong>
             </div>
-            <div style="color: #047857; font-size: 0.65rem; opacity: 0.85;">
+            <div style="color: #047857; font-size: 0.62rem; opacity: 0.85;">
               ⚡ 50 WP = $1 USD de premio en catálogo
             </div>
           </div>
-          <div style="text-align: center; background: #ffffff; border: 2px solid #059669; border-radius: 12px; padding: 0.6rem 1rem; min-width: 110px; box-shadow: 0 3px 12px rgba(5,150,105,0.15);">
-            <div style="font-family: var(--font-mono); font-size: 0.6rem; color: #059669; font-weight: 800; letter-spacing: 1px; margin-bottom: 2px;">PUNTOS FACTURA</div>
-            <div id="sale-calc-suggested-points" style="font-family: var(--font-mono); font-size: 1.55rem; font-weight: 900; color: #059669; line-height: 1;">600 WP</div>
+          <div style="text-align: center; background: #ffffff; border: 1.8px solid #059669; border-radius: 6px; padding: 0.4rem 0.8rem; min-width: 95px; box-shadow: 2px 2px 0px rgba(5,150,105,0.2);">
+            <div style="font-family: var(--font-mono); font-size: 0.58rem; color: #059669; font-weight: 800; letter-spacing: 0.5px; margin-bottom: 1px;">PUNTOS FACTURA</div>
+            <div id="sale-calc-suggested-points" style="font-family: var(--font-mono); font-size: 1.35rem; font-weight: 900; color: #059669; line-height: 1;">600 WP</div>
           </div>
         </div>
       </div>
@@ -3407,19 +3407,19 @@
     </div>
   </div>
 
-  <!-- BARRA DE ACCIONES INFERIOR MÓVIL (BOTTOM DOCK - THUMB ZONE) -->
+  <!-- BARRA DE ACCIONES INFERIOR MÓVIL (BOTTOM DOCK - THUMB ZONE COPLAND OS) -->
   <nav id="admin-bottom-dock" class="admin-bottom-dock" aria-label="Acciones rápidas de administrador">
     <button type="button" class="dock-btn dock-btn-primary" onclick="openSingleDigitalInvoiceModal()" title="Crear Factura Digital Individual">
       <span class="dock-icon">⚡</span>
-      <span class="dock-text">+ Factura</span>
+      <span class="dock-text">+ FACTURA</span>
     </button>
     <button type="button" class="dock-btn dock-btn-secondary" onclick="openSalePointsCalculatorModal('navbar')" title="Calculadora de Puntos Wired (WP)">
       <span class="dock-icon">🧮</span>
-      <span class="dock-text">Calc WP</span>
+      <span class="dock-text">CALC WP</span>
     </button>
     <a href="/" target="_blank" class="dock-btn dock-btn-secondary dock-link" style="text-decoration:none;" title="Ver Vista Cliente en pestaña externa">
       <span class="dock-icon">👁️</span>
-      <span class="dock-text">Cliente ↗</span>
+      <span class="dock-text">CLIENTE ↗</span>
     </a>
   </nav>
 
