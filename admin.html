@@ -34,7 +34,7 @@
 <body>
 
   <!-- NAVBAR ADMINISTRADOR OFICIAL (DISEÑO 4X1) -->
-  <header class="navbar">
+  <header class="navbar admin-navbar">
     <div class="brand-wrapper">
       <div class="brand-badge-icon">
         <svg viewBox="0 0 38 38" width="38" height="38" fill="none" xmlns="http://www.w3.org/2000/svg" class="wired-pole-svg">
@@ -72,19 +72,23 @@
       </div>
     </div>
 
-    <div class="nav-controls">
-      <button type="button" class="btn-secondary lain-nav-invoice-btn" onclick="openSingleDigitalInvoiceModal()">
-        ⚡ + Factura Digital
-      </button>
-      <button type="button" class="btn-secondary lain-nav-calc-btn" onclick="openSalePointsCalculatorModal('navbar')">
-        🧮 Calc WP
-      </button>
-      <a href="/" target="_blank" class="btn-secondary" style="font-size:0.75rem; padding:0.4rem 0.75rem; text-decoration:none;">
-        👁️ Ver Vista Cliente ↗
-      </a>
-      <button class="btn-secondary" onclick="logoutAdmin()" style="font-size:0.75rem; padding:0.4rem 0.75rem; color:var(--accent);">
-        🔒 Salir
-      </button>
+    <div class="nav-controls admin-nav-controls">
+      <div class="admin-nav-actions-secondary">
+        <a href="/" target="_blank" class="btn-secondary admin-nav-btn admin-nav-client-btn" style="text-decoration:none;" title="Ver Vista Cliente">
+          <span class="nav-icon">👁️</span> <span class="nav-label">Vista Cliente ↗</span>
+        </a>
+        <button type="button" class="btn-secondary admin-nav-btn admin-nav-logout-btn" onclick="logoutAdmin()" style="color:var(--accent);" title="Cerrar sesión de administrador">
+          <span class="nav-icon">🔒</span> <span class="nav-label">Salir</span>
+        </button>
+      </div>
+      <div class="admin-nav-actions-primary">
+        <button type="button" class="btn-secondary lain-nav-invoice-btn admin-nav-btn" onclick="openSingleDigitalInvoiceModal()" title="Crear Factura Digital Individual">
+          <span class="nav-icon">⚡</span> <span class="nav-label">+ Factura Digital</span>
+        </button>
+        <button type="button" class="btn-secondary lain-nav-calc-btn admin-nav-btn" onclick="openSalePointsCalculatorModal('navbar')" title="Calculadora de Puntos Wired (WP)">
+          <span class="nav-icon">🧮</span> <span class="nav-label">Calc WP</span>
+        </button>
+      </div>
     </div>
   </header>
 

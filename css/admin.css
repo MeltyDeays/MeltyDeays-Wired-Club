@@ -410,6 +410,78 @@
   display: block;
 }
 
+/* NAVBAR ADMINISTRADOR // HEADER MAESTRO COPLAND OS */
+.admin-navbar {
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.admin-nav-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.admin-nav-actions-primary,
+.admin-nav-actions-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.admin-nav-btn {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 800;
+  padding: 0.4rem 0.75rem;
+  height: 32px;
+  background: #ffffff;
+  border: 1.5px solid var(--dark);
+  color: var(--dark);
+  box-shadow: 2px 2px 0px var(--dark);
+  border-radius: 4px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  text-decoration: none;
+  white-space: nowrap;
+  letter-spacing: 0.3px;
+  transition: all 0.12s ease;
+  box-sizing: border-box;
+}
+
+.admin-nav-btn:hover {
+  background: #f8fafc;
+  box-shadow: 3px 3px 0px var(--dark);
+  transform: translate(-1px, -1px);
+}
+
+.admin-nav-btn:active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0px var(--dark);
+}
+
+.admin-nav-client-btn {
+  color: var(--dark);
+}
+
+.admin-nav-client-btn:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.admin-nav-logout-btn {
+  color: var(--accent) !important;
+}
+
+.admin-nav-logout-btn:hover {
+  background: #fff1f2 !important;
+  color: #be123c !important;
+}
+
 .lain-nav-calc-btn {
   font-family: var(--font-mono);
   font-size: 0.75rem;
