@@ -52,9 +52,12 @@ body {
   overflow-x: hidden;
 }
 
+html.modal-open,
 body.modal-open {
   overflow: hidden !important;
+  height: 100% !important;
   overscroll-behavior: contain !important;
+  overscroll-behavior-y: contain !important;
   touch-action: none !important;
 }
 

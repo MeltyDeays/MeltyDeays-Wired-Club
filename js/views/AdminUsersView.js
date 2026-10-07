@@ -370,6 +370,9 @@ export function openNewUserModal() {
 
   updateNewUserPreview();
   modal.style.display = "flex";
+  if (typeof window !== "undefined" && typeof window.syncModalScrollLock === "function") {
+    window.syncModalScrollLock();
+  }
   setTimeout(() => {
     if (nameInput) nameInput.focus();
   }, 100);

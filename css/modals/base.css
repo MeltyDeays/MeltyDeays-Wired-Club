@@ -14,6 +14,9 @@
   padding: 1rem 0.5rem;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain !important;
+  overscroll-behavior-y: contain !important;
+  touch-action: pan-y !important;
 }
 
 .modal-content {
@@ -29,6 +32,8 @@
   background-image: radial-gradient(var(--dot-color) 0.85px, transparent 0.85px);
   background-size: 8px 8px;
   margin: auto;
+  overscroll-behavior: contain !important;
+  overscroll-behavior-y: contain !important;
 }
 
 /* ESQUINAS TÉCNICAS Y MODALES ESTILO LAIN / COPLAND OS */

@@ -2835,4 +2835,81 @@
     gap: 6px;
   }
 }
+
+/* ==========================================================================
+   MODAL ALTA DE SOCIO WIRED (COPLAND OS POS ERGONOMICS)
+   ========================================================================== */
+.modal-new-user-card {
+  max-width: 520px;
+  background: #ffffff;
+  border: 2px solid var(--dark);
+  box-shadow: 6px 6px 0px var(--dark);
+  border-radius: 6px;
+  box-sizing: border-box;
+}
+
+/* Foco limpio en campos de modal nuevo socio (cero borde rojo de error) */
+#modal-new-user .form-input {
+  border: 1.5px solid var(--dark);
+  border-radius: 4px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  background: #ffffff;
+}
+
+#modal-new-user .form-input:focus {
+  border-color: #4f46e5 !important;
+  box-shadow: 2px 2px 0px #4f46e5 !important;
+  outline: none !important;
+}
+
+#modal-new-user .new-user-phone-group .form-input {
+  border-top-left-radius: 0 !important;
+  border-bottom-left-radius: 0 !important;
+}
+
+#modal-new-user .new-user-phone-group .form-input:focus {
+  border-left: 1.5px solid #4f46e5 !important;
+}
+
+.new-user-prefix {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-weight: 800;
+  color: var(--dark);
+  border-top-left-radius: 4px;
+  border-bottom-left-radius: 4px;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.new-user-pin-control .btn-secondary {
+  border-radius: 4px;
+  border: 1.5px solid var(--dark);
+  box-shadow: 1.5px 1.5px 0px var(--dark);
+  transition: all 0.12s ease;
+}
+
+.new-user-pin-control .btn-secondary:hover {
+  background: #f1f5f9;
+  transform: translate(-1px, -1px);
+  box-shadow: 2px 2px 0px var(--dark);
+}
+
+.new-user-quick-chips .quick-pt-btn {
+  border: 1.5px solid var(--dark);
+  border-radius: 3px;
+  box-shadow: 1px 1px 0px var(--dark);
+  font-family: var(--font-mono);
+  font-weight: 800;
+  background: #ffffff;
+  color: var(--dark);
+  transition: all 0.1s ease;
+}
+
+.new-user-quick-chips .quick-pt-btn:hover {
+  background: #e2e8f0;
+}
+
 

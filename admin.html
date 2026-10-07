@@ -2186,7 +2186,7 @@
 
   <!-- MODAL: REGISTRAR NUEVO SOCIO DESDE MOSTRADOR [ESTILO COPLAND OS 21.0] -->
   <div id="modal-new-user" class="modal-overlay" style="display: none;">
-    <div class="modal-content lain-card" style="max-width: 540px; text-align: left; padding: 1.6rem; position: relative; overflow: hidden;">
+    <div class="modal-content lain-card modal-new-user-card" style="max-width: 520px; text-align: left; padding: 1.25rem 1.35rem; position: relative; overflow: hidden;">
       <div class="dispatch-crt-scanline"></div>
       <div class="tech-corner top-left">+</div>
       <div class="tech-corner top-right">+</div>
@@ -2194,83 +2194,93 @@
       <div class="tech-corner bottom-right">+</div>
       <button class="modal-close-btn" onclick="closeModal('modal-new-user')" aria-label="Cerrar">&times;</button>
 
-      <div class="lain-modal-header">
-        <div style="display: flex; align-items: center; gap: 0.5rem;">
-          <span class="badge-navi" style="background:#0f172a; color:#38bdf8;">COPLAND OS 21.0 // CLIENT ENROLLMENT</span>
-          <span class="badge-layer">MOSTRADOR POS</span>
-        </div>
+      <div class="lain-modal-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1.5px solid var(--dark); padding-bottom: 0.4rem; margin-bottom: 0.65rem; padding-right: 36px;">
+        <span class="badge-navi" style="background:#0f172a; color:#38bdf8; font-size: 0.68rem; padding: 2px 7px;">⚡ CLIENT ENROLLMENT // V21</span>
+        <span class="badge-layer" style="font-size: 0.68rem; padding: 2px 6px;">MOSTRADOR POS</span>
       </div>
 
-      <h3 style="font-size: 1.25rem; font-weight: 900; color: var(--dark); margin: 0.4rem 0 0.35rem 0; font-family: var(--font-mono);">
-        ⚡ ALTA DE NUEVO SOCIO WIRED
+      <h3 style="font-size: 1.15rem; font-weight: 900; color: var(--dark); margin: 0 0 0.3rem 0; font-family: var(--font-mono); letter-spacing: 0.3px;">
+        ⚡ ALTA DE SOCIO WIRED
       </h3>
-      <div style="background: #f8fafc; border: 1px solid var(--gray-200); border-left: 3.5px solid var(--primary); padding: 0.55rem 0.85rem; border-radius: 4px; font-size: 0.78rem; color: var(--gray-700); margin-bottom: 1.15rem;">
-        💡 Registra al socio en mostrador asignando su <strong>WhatsApp (Identificador Único)</strong> y un PIN de 4 a 8 dígitos para acceso.
+      <div class="new-user-hint-banner" style="background: #f8fafc; border: 1px solid var(--gray-200); border-left: 3px solid var(--primary); padding: 0.35rem 0.65rem; border-radius: 4px; font-size: 0.72rem; color: var(--gray-700); margin-bottom: 0.75rem; display: flex; align-items: center; gap: 6px;">
+        <strong style="color: var(--dark); font-family: var(--font-mono);">💡 POS:</strong>
+        <span>Asigna WhatsApp de 8 dígitos como Identificador Único y PIN para su CyberPass.</span>
       </div>
 
-      <div class="form-grid">
-        <div class="form-group" style="grid-column: span 2;">
-          <label class="form-label">👤 NOMBRE COMPLETO DEL CLIENTE</label>
-          <input type="text" id="new-user-name" class="form-input" placeholder="Ej: Kenji Sato o Carlos Mendoza" autofocus
+      <div class="new-user-form-grid">
+        <!-- Fila Nombre Completo -->
+        <div class="form-group" style="margin-bottom: 0.6rem;">
+          <label class="form-label" style="font-size: 0.74rem; font-weight: 800; margin-bottom: 3px; display: block;">👤 NOMBRE COMPLETO DEL CLIENTE</label>
+          <input type="text" id="new-user-name" class="form-input new-user-clean-input" placeholder="Ej: Kenji Sato o Carlos Mendoza"
+                 style="height: 36px; padding: 0 0.75rem; font-size: 0.88rem; border: 1.5px solid var(--dark);"
                  oninput="updateNewUserPreview()">
         </div>
-        <div class="form-group" style="margin-bottom: 0;">
-          <label class="form-label" style="height: 18px; line-height: 18px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 4px; display: block;">📞 TELÉFONO / WHATSAPP</label>
-          <div class="phone-input-group" style="height: 42px;">
-            <span class="phone-prefix-addon" style="height: 42px; box-sizing: border-box; font-size: 0.82rem; padding: 0 0.6rem;">🇳🇮 +505</span>
-            <input type="tel" id="new-user-phone" class="form-input" placeholder="5843-8412" maxlength="9"
-                   style="height: 42px; box-sizing: border-box; font-family: var(--font-mono); font-weight: 800; font-size: 0.95rem; text-align: center;"
-                   oninput="updateNewUserPreview()">
+
+        <!-- Fila Dual: Teléfono + PIN en 2 Columnas Armónicas -->
+        <div class="new-user-phone-pin-row" style="display: grid; grid-template-columns: 1.1fr 0.95fr; gap: 0.6rem; margin-bottom: 0.6rem;">
+          <!-- Columna Teléfono -->
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" style="font-size: 0.74rem; font-weight: 800; margin-bottom: 3px; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">📞 WHATSAPP (8 DÍGITOS)</label>
+            <div class="phone-input-group new-user-phone-group" style="height: 36px; display: flex; width: 100%;">
+              <span class="phone-prefix-addon new-user-prefix" style="height: 36px; box-sizing: border-box; font-size: 0.76rem; padding: 0 0.5rem; background: #f1f5f9; border: 1.5px solid var(--dark); border-right: none;">🇳🇮 +505</span>
+              <input type="tel" id="new-user-phone" class="form-input" placeholder="5843-8412" maxlength="9"
+                     style="height: 36px; box-sizing: border-box; font-family: var(--font-mono); font-weight: 800; font-size: 0.88rem; text-align: center; border: 1.5px solid var(--dark);"
+                     oninput="updateNewUserPreview()">
+            </div>
+          </div>
+
+          <!-- Columna PIN -->
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" style="font-size: 0.74rem; font-weight: 800; margin-bottom: 3px; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">🔑 PIN (4-8 DÍG)</label>
+            <div class="new-user-pin-control" style="display: flex; gap: 3px; align-items: stretch; height: 36px; width: 100%; box-sizing: border-box;">
+              <input type="text" id="new-user-pin" class="form-input" placeholder="110805" maxlength="8" value="110805"
+                     style="flex: 1; min-width: 0; height: 36px; box-sizing: border-box; font-family: var(--font-mono); font-weight: 900; letter-spacing: 1.5px; text-align: center; font-size: 0.95rem; border: 1.5px solid var(--dark);"
+                     oninput="updateNewUserPreview()">
+              <button type="button" class="btn-secondary" style="height: 36px; width: 34px; min-width: 34px; padding: 0; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 0.82rem; border: 1.5px solid var(--dark);" onclick="toggleNewUserPinVisibility()" title="Ver/Ocultar PIN">👁️</button>
+              <button type="button" class="btn-secondary" style="height: 36px; width: 34px; min-width: 34px; padding: 0; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 0.82rem; border: 1.5px solid var(--dark);" onclick="generateNewUserRandomPin()" title="Generar PIN aleatorio">🎲</button>
+            </div>
           </div>
         </div>
-        <div class="form-group" style="margin-bottom: 0;">
-          <label class="form-label" style="height: 18px; line-height: 18px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 4px; display: block;">🔑 PIN ACCESO (4-8 DÍGITOS)</label>
-          <div style="display: flex; gap: 4px; align-items: stretch; height: 42px; width: 100%; box-sizing: border-box;">
-            <input type="text" id="new-user-pin" class="form-input" placeholder="110805" maxlength="8" value="110805"
-                   style="flex: 1; min-width: 0; height: 100%; box-sizing: border-box; font-family: var(--font-mono); font-weight: 900; letter-spacing: 2px; text-align: center; font-size: 1.05rem;"
-                   oninput="updateNewUserPreview()">
-            <button type="button" class="btn-secondary" style="height: 100%; width: 36px; padding: 0; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 0.85rem;" onclick="toggleNewUserPinVisibility()" title="Ver/Ocultar PIN">👁️</button>
-            <button type="button" class="btn-secondary" style="height: 100%; width: 36px; padding: 0; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 0.85rem;" onclick="generateNewUserRandomPin()" title="Generar PIN aleatorio">🎲</button>
-          </div>
-        </div>
-        <div class="form-group" style="grid-column: span 2;">
-          <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px;">
-            <label class="form-label" style="margin-bottom:0;">⚡ PUNTOS INICIALES / BONO DE COMPRA (OPCIONAL)</label>
-            <div style="display: flex; gap: 0.25rem;">
-              <button type="button" class="btn-secondary" style="padding: 1px 6px; font-size: 0.65rem;" onclick="setNewUserQuickPoints(0)">0</button>
-              <button type="button" class="btn-secondary" style="padding: 1px 6px; font-size: 0.65rem;" onclick="setNewUserQuickPoints(50)">+50</button>
-              <button type="button" class="btn-secondary" style="padding: 1px 6px; font-size: 0.65rem;" onclick="setNewUserQuickPoints(100)">+100</button>
-              <button type="button" class="btn-secondary" style="padding: 1px 6px; font-size: 0.65rem;" onclick="setNewUserQuickPoints(250)">+250</button>
-              <button type="button" class="btn-secondary" style="padding: 1px 6px; font-size: 0.65rem;" onclick="setNewUserQuickPoints(500)">+500</button>
+
+        <!-- Fila Puntos Iniciales / Bono -->
+        <div class="form-group" style="margin-bottom: 0.6rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px; flex-wrap: wrap; gap: 3px;">
+            <label class="form-label" style="font-size: 0.74rem; font-weight: 800; margin-bottom: 0;">⚡ SALDO INICIAL WP (OPCIONAL)</label>
+            <div class="new-user-quick-chips" style="display: flex; gap: 3px;">
+              <button type="button" class="btn-secondary quick-pt-btn" style="padding: 1px 6px; font-size: 0.65rem; height: 22px;" onclick="setNewUserQuickPoints(0)">0</button>
+              <button type="button" class="btn-secondary quick-pt-btn" style="padding: 1px 6px; font-size: 0.65rem; height: 22px;" onclick="setNewUserQuickPoints(50)">+50</button>
+              <button type="button" class="btn-secondary quick-pt-btn" style="padding: 1px 6px; font-size: 0.65rem; height: 22px;" onclick="setNewUserQuickPoints(100)">+100</button>
+              <button type="button" class="btn-secondary quick-pt-btn" style="padding: 1px 6px; font-size: 0.65rem; height: 22px;" onclick="setNewUserQuickPoints(250)">+250</button>
+              <button type="button" class="btn-secondary quick-pt-btn" style="padding: 1px 6px; font-size: 0.65rem; height: 22px;" onclick="setNewUserQuickPoints(500)">+500</button>
             </div>
           </div>
           <input type="number" id="new-user-points" class="form-input lain-number-input" value="0" min="0" placeholder="0"
-                 style="text-align: left; padding: 0.45rem 0.75rem; font-size: 1.1rem;"
+                 style="height: 36px; padding: 0 0.75rem; font-size: 0.95rem; border: 1.5px solid var(--dark);"
                  oninput="updateNewUserPreview()">
         </div>
       </div>
 
-      <!-- Tarjeta Preview CyberPass en tiempo real -->
-      <div style="background: #f8fafc; border: 1.5px dashed var(--dark); border-radius: 4px; padding: 0.75rem 0.95rem; margin-top: 1rem; font-family: var(--font-mono); font-size: 0.75rem;">
-        <div style="display: flex; justify-content: space-between; margin-bottom: 3px;">
-          <span style="color: var(--gray-500); font-weight: 800;">PREVIEW CYBERPASS V21:</span>
-          <span class="noc-pulse-chip" style="font-size: 0.65rem; padding: 1px 5px;"><span class="pulse-dot"></span> EN LÍNEA</span>
+      <!-- Tarjeta Preview CyberPass Compacta -->
+      <div class="new-user-preview-card" style="background: #f8fafc; border: 1.5px dashed var(--dark); border-radius: 4px; padding: 0.55rem 0.8rem; margin-top: 0.5rem; font-family: var(--font-mono); font-size: 0.73rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+          <span style="color: var(--gray-500); font-weight: 800; font-size: 0.68rem; letter-spacing: 0.5px;">PREVIEW CYBERPASS V21:</span>
+          <span class="noc-pulse-chip" style="font-size: 0.62rem; padding: 1px 5px;"><span class="pulse-dot"></span> EN LÍNEA</span>
         </div>
-        <div style="font-size: 0.95rem; font-weight: 900; color: var(--dark);" id="preview-new-user-name">Socio Sin Nombre</div>
-        <div style="display: flex; justify-content: space-between; color: var(--gray-600); margin-top: 3px;">
+        <div style="font-size: 0.88rem; font-weight: 900; color: var(--dark); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" id="preview-new-user-name">Socio Sin Nombre</div>
+        <div style="display: flex; justify-content: space-between; color: var(--gray-600); margin-top: 2px; font-size: 0.72rem;">
           <span id="preview-new-user-phone">📞 Tel: --------</span>
           <span id="preview-new-user-pin" style="color: var(--primary); font-weight: 800;">🔑 PIN: 110805</span>
         </div>
-        <div style="display: flex; justify-content: space-between; color: var(--primary); font-weight: 800; margin-top: 3px; border-top: 1px dashed #cbd5e1; padding-top: 3px;">
-          <span id="preview-new-user-uid" style="color: var(--gray-500); font-size: 0.7rem;">UID: CLIENT--------</span>
+        <div style="display: flex; justify-content: space-between; color: var(--primary); font-weight: 800; margin-top: 2px; border-top: 1px dashed #cbd5e1; padding-top: 2px; font-size: 0.72rem;">
+          <span id="preview-new-user-uid" style="color: var(--gray-500); font-size: 0.68rem;">UID: CLIENT--------</span>
           <span id="preview-new-user-points" style="color: #059669; font-weight: 900;">Saldo: 0 WP</span>
         </div>
       </div>
 
-      <div style="display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 1.25rem;">
-        <button class="btn-secondary" onclick="closeModal('modal-new-user')">CANCELAR</button>
-        <button class="btn-primary" onclick="saveNewUserAdmin()" style="padding: 0.6rem 1.35rem; font-size: 0.85rem;">
-          ⚡ EMITIR CYBERPASS Y REGISTRAR SOCIO
+      <div class="new-user-modal-actions" style="display: flex; gap: 0.65rem; justify-content: flex-end; margin-top: 0.95rem;">
+        <button class="btn-secondary" onclick="closeModal('modal-new-user')" style="height: 38px; padding: 0 1rem; font-size: 0.8rem; font-weight: 800;">CANCELAR</button>
+        <button class="btn-primary" onclick="saveNewUserAdmin()" style="height: 38px; padding: 0 1.25rem; font-size: 0.82rem; font-weight: 900; background: var(--dark); color: #fff;">
+          ⚡ EMITIR CYBERPASS Y REGISTRAR
         </button>
       </div>
     </div>

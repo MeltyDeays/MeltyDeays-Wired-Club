@@ -254,9 +254,37 @@ export function showToast(message, type = "info") {
   }, 3500);
 }
 
+export function syncModalScrollLock() {
+  if (typeof document === "undefined") return;
+  const overlays = document.querySelectorAll(".modal-overlay");
+  let hasOpenModal = false;
+  for (const el of overlays) {
+    if (el && el.style && el.style.display && el.style.display !== "none") {
+      hasOpenModal = true;
+      break;
+    }
+  }
+  if (hasOpenModal) {
+    if (document.documentElement && document.documentElement.classList) {
+      document.documentElement.classList.add("modal-open");
+    }
+    if (document.body && document.body.classList) {
+      document.body.classList.add("modal-open");
+    }
+  } else {
+    if (document.documentElement && document.documentElement.classList) {
+      document.documentElement.classList.remove("modal-open");
+    }
+    if (document.body && document.body.classList) {
+      document.body.classList.remove("modal-open");
+    }
+  }
+}
+
 export function closeModal(id) {
   const modal = document.getElementById(id);
   if (modal) modal.style.display = "none";
+  syncModalScrollLock();
 }
 
 export function switchAdminTab(tabName) {
@@ -1126,6 +1154,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Utilidades y Servicios Globales
   window.closeModal = closeModal;
+  window.syncModalScrollLock = syncModalScrollLock;
   window.InvoiceTemplateService = InvoiceTemplateService;
   window.FirestoreService = FirestoreService;
 
@@ -1160,6 +1189,17 @@ document.addEventListener("DOMContentLoaded", () => {
   attachPhoneMask(document.getElementById("new-user-phone"));
   attachPhoneMask(document.getElementById("s-inv-client-phone"));
 
+  // Observador universal para bloqueo hermético de scroll en modales (Cero fuga de scroll de fondo)
+  if (typeof MutationObserver !== "undefined") {
+    const modalScrollObserver = new MutationObserver(() => {
+      syncModalScrollLock();
+    });
+    document.querySelectorAll(".modal-overlay").forEach(overlay => {
+      modalScrollObserver.observe(overlay, { attributes: true, attributeFilter: ["style", "class"] });
+    });
+  }
+  syncModalScrollLock();
+
   // Detección automática si el admin escanea un QR físico o abre con ?scan= o ?claim=
   const params = new URLSearchParams(window.location.search);
   const autoScan = params.get("scan") || params.get("claim");
@@ -1186,6 +1226,7 @@ document.addEventListener("DOMContentLoaded", () => {
           m.style.display = "none";
         }
       });
+      syncModalScrollLock();
     }
   });
 

@@ -2732,6 +2732,71 @@
   }
 }
 
+/* REGISTRO DE NUEVO SOCIO RESPONSIVE (COPLAND OS) */
+@media (max-width: 480px) {
+  .modal-new-user-card {
+    padding: 0.9rem 0.8rem !important;
+    max-width: 96vw !important;
+    margin: 8px auto !important;
+  }
+  .modal-new-user-card .lain-modal-header {
+    padding-right: 32px !important;
+    margin-bottom: 0.5rem !important;
+  }
+  .new-user-hint-banner {
+    font-size: 0.68rem !important;
+    padding: 0.25rem 0.5rem !important;
+    margin-bottom: 0.6rem !important;
+  }
+  .new-user-phone-pin-row {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 6px !important;
+  }
+  .new-user-prefix {
+    font-size: 0.68rem !important;
+    padding: 0 4px !important;
+  }
+  #new-user-phone {
+    font-size: 0.8rem !important;
+    padding: 0 2px !important;
+  }
+  #new-user-pin {
+    font-size: 0.82rem !important;
+    letter-spacing: 0.8px !important;
+  }
+  .new-user-pin-control button {
+    width: 28px !important;
+    min-width: 28px !important;
+  }
+  .new-user-quick-chips {
+    flex-wrap: wrap !important;
+    justify-content: flex-end !important;
+    gap: 2px !important;
+  }
+  .new-user-quick-chips .quick-pt-btn {
+    padding: 1px 4px !important;
+    font-size: 0.62rem !important;
+    height: 20px !important;
+  }
+  .new-user-modal-actions {
+    display: grid !important;
+    grid-template-columns: 1fr 1.6fr !important;
+    gap: 6px !important;
+  }
+  .new-user-modal-actions button {
+    width: 100% !important;
+    justify-content: center !important;
+    text-align: center !important;
+  }
+}
+
+@media (max-width: 360px) {
+  .new-user-phone-pin-row {
+    grid-template-columns: 1fr !important;
+    gap: 6px !important;
+  }
+}
+
 
 
 
