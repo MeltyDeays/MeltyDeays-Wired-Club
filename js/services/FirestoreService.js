@@ -1670,7 +1670,7 @@ export class FirestoreService {
     return all.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
   }
 
-  static async answerProductComment(commentId, answerText, answeredBy = "MeltyDeays · Soporte Oficial", isOfficialReply = false) {
+  static async answerProductComment(commentId, answerText, answeredBy = "MeltyDeays · Soporte Oficial", isOfficialReply = false, asNewThreadMessage = false) {
     if (!commentId || !answerText) throw new Error("ID de comentario o texto de respuesta faltante");
 
     const snap = engine.getSnapshot();
@@ -1698,21 +1698,27 @@ export class FirestoreService {
       comment.status = "ANSWERED";
 
       const officialNode = {
-        id: "REP-OFFICIAL-" + commentId,
+        id: "REP-OFFICIAL-" + (asNewThreadMessage ? (Date.now() + "-" + Math.random().toString(36).substring(2, 6).toUpperCase()) : commentId),
         text: cleanText,
         author: "MeltyDeays · Soporte Oficial",
         isOfficial: true,
         createdAt: now
       };
 
-      const existingOfficialIdx = comment.replies.findIndex(r => r.isOfficial === true);
-      if (existingOfficialIdx >= 0) {
-        comment.replies[existingOfficialIdx] = officialNode;
+      if (asNewThreadMessage) {
+        // AGREGAR COMO MENSAJE NUEVO AL HILO DEJANDO LOS ANTERIORES INTACTOS
+        comment.replies.push(officialNode);
       } else {
-        comment.replies.unshift(officialNode);
+        // ACTUALIZAR O MODIFICAR LA RESPUESTA OFICIAL PRINCIPAL
+        const existingOfficialIdx = comment.replies.findIndex(r => r.isOfficial === true);
+        if (existingOfficialIdx >= 0) {
+          comment.replies[existingOfficialIdx] = officialNode;
+        } else {
+          comment.replies.unshift(officialNode);
+        }
       }
 
-      // Sincronizar top-level únicamente con la respuesta oficial
+      // Sincronizar top-level únicamente con la respuesta oficial más reciente
       comment.answerText = cleanText;
       comment.reply = cleanText;
       comment.answeredBy = "MeltyDeays · Soporte Oficial";

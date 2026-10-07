@@ -904,15 +904,23 @@ export async function renderAdminCommentsList() {
         qText = '¿Tienen entrega disponible en tienda física hoy mismo si aparto con mis puntos?';
       }
 
-      // Separar respuesta oficial de tienda vs respuestas comunitarias de clientes
-      const officialAnswerText = String(c.officialReply || (c.isOfficialReply ? (c.answerText || c.reply) : '') || '').trim();
-      const hasOfficialReply = Boolean(officialAnswerText);
-      const officialDateStr = (c.officialReplyAt || c.answeredAt || c.replyAt) 
-        ? new Date(c.officialReplyAt || c.answeredAt || c.replyAt).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) 
-        : '';
+      // Extraer y unificar todas las respuestas del hilo (oficiales y comunitarias)
+      let allReplies = Array.isArray(c.replies) ? [...c.replies] : [];
+      const legacyOfficial = String(c.officialReply || (c.isOfficialReply ? (c.answerText || c.reply) : '') || '').trim();
+      if (allReplies.length === 0 && legacyOfficial) {
+        allReplies.push({
+          id: 'REP-OFFICIAL-' + c.id,
+          text: legacyOfficial,
+          author: 'MeltyDeays · Soporte Oficial',
+          isOfficial: true,
+          createdAt: c.officialReplyAt || c.answeredAt || c.replyAt || c.createdAt
+        });
+      }
 
-      const repliesList = Array.isArray(c.replies) ? c.replies : [];
-      const communityReplies = repliesList.filter(r => !r.isOfficial && String(r.author || '').trim() !== 'MeltyDeays · Soporte Oficial');
+      // Detectar si ya existen respuestas oficiales
+      const officialReplies = allReplies.filter(r => r.isOfficial || String(r.author || '').includes('MeltyDeays') || String(r.author || '').includes('Soporte'));
+      const hasOfficialReply = officialReplies.length > 0;
+      const lastOfficialText = officialReplies.length > 0 ? (officialReplies[officialReplies.length - 1].text || '') : legacyOfficial;
 
       let authorName = String(c.userName || c.author || c.name || 'Socio').trim();
       if (!authorName || authorName === 'undefined' || authorName === 'null') {
@@ -951,16 +959,38 @@ export async function renderAdminCommentsList() {
             </div>
           </div>
 
-          <!-- Respuesta Oficial de la Tienda (MeltyDeays Soporte) -->
-          ${hasOfficialReply ? `
-            <div style="background: #ecfdf5; border-left: 3px solid #10b981; padding: 8px 10px; border-radius: 0 4px 4px 0; margin-bottom: 8px; border: 1px solid #a7f3d0; border-left-width: 3px;">
-              <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.70rem; color: #065f46; font-weight: 800; margin-bottom: 3px; flex-wrap: wrap; gap: 4px;">
-                <span>🛡️ MeltyDeays · Soporte Oficial</span>
-                <span style="font-family: var(--font-mono); font-size: 0.62rem; font-weight: normal; color: #047857;">${officialDateStr}</span>
-              </div>
-              <div style="font-size: 0.80rem; color: #064e3b; line-height: 1.35; word-break: break-word;">
-                ${officialAnswerText}
-              </div>
+          <!-- Hilo de Respuestas Oficiales y Comunitarias -->
+          ${allReplies.length > 0 ? `
+            <div class="admin-comment-thread" style="margin-bottom: 8px; display: flex; flex-direction: column; gap: 6px;">
+              ${allReplies.map((rep, idx) => {
+                const isOff = Boolean(rep.isOfficial || String(rep.author || '').includes('MeltyDeays') || String(rep.author || '').includes('Soporte'));
+                const repDate = rep.createdAt ? new Date(rep.createdAt).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
+                if (isOff) {
+                  return `
+                    <div style="background: #ecfdf5; border-left: 3px solid #10b981; padding: 8px 10px; border-radius: 0 4px 4px 0; border: 1px solid #a7f3d0; border-left-width: 3px;">
+                      <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.70rem; color: #065f46; font-weight: 800; margin-bottom: 3px; flex-wrap: wrap; gap: 4px;">
+                        <span>🛡️ MeltyDeays · Soporte Oficial ${officialReplies.length > 1 ? `<span style="font-size: 0.58rem; background: #d1fae5; color: #065f46; padding: 1px 4px; border-radius: 2px;">#${idx + 1}</span>` : ''}</span>
+                        <span style="font-family: var(--font-mono); font-size: 0.62rem; font-weight: normal; color: #047857;">${repDate}</span>
+                      </div>
+                      <div style="font-size: 0.80rem; color: #064e3b; line-height: 1.35; word-break: break-word;">
+                        ${rep.text}
+                      </div>
+                    </div>
+                  `;
+                } else {
+                  return `
+                    <div style="background: #ffffff; border-left: 3px solid #94a3b8; padding: 6px 9px; border-radius: 0 3px 3px 0; border: 1px solid #e2e8f0; border-left-width: 3px;">
+                      <div style="display: flex; justify-content: space-between; font-size: 0.68rem; color: #334155; font-weight: 700; margin-bottom: 2px;">
+                        <span>👤 ${rep.author || 'Socio'} (Cliente)</span>
+                        <span style="font-family: var(--font-mono); font-size: 0.60rem; color: #94a3b8;">${repDate}</span>
+                      </div>
+                      <div style="font-size: 0.75rem; color: #1e293b; line-height: 1.25; word-break: break-word;">
+                        ${rep.text}
+                      </div>
+                    </div>
+                  `;
+                }
+              }).join('')}
             </div>
           ` : `
             <div style="background: #fffbeb; border-left: 3px solid #f59e0b; padding: 6px 9px; border-radius: 0 4px 4px 0; margin-bottom: 8px; font-size: 0.70rem; color: #92400e; font-family: var(--font-mono);">
@@ -968,41 +998,42 @@ export async function renderAdminCommentsList() {
             </div>
           `}
 
-          <!-- Respuestas de otros socios/clientes en la conversación -->
-          ${communityReplies.length > 0 ? `
-            <div style="margin-bottom: 8px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px; padding: 6px 8px;">
-              <div style="font-size: 0.65rem; font-weight: 800; color: #64748b; margin-bottom: 5px; text-transform: uppercase; font-family: var(--font-mono);">
-                💬 Respuestas comunitarias (${communityReplies.length}):
-              </div>
-              <div style="display: flex; flex-direction: column; gap: 5px;">
-                ${communityReplies.map(cr => {
-                  const crDate = cr.createdAt ? new Date(cr.createdAt).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
-                  return `
-                    <div style="background: #ffffff; border-left: 3px solid #94a3b8; padding: 5px 8px; border-radius: 0 3px 3px 0; border: 1px solid #e2e8f0; border-left-width: 3px;">
-                      <div style="display: flex; justify-content: space-between; font-size: 0.68rem; color: #334155; font-weight: 700; margin-bottom: 2px;">
-                        <span>👤 ${cr.author || 'Socio'}</span>
-                        <span style="font-family: var(--font-mono); font-size: 0.60rem; color: #94a3b8;">${crDate}</span>
-                      </div>
-                      <div style="font-size: 0.75rem; color: #1e293b; line-height: 1.25; word-break: break-word;">
-                        ${cr.text}
-                      </div>
-                    </div>
-                  `;
-                }).join('')}
-              </div>
+          <!-- Botones de Acción (visibles por defecto cuando ya está respondida) -->
+          ${hasOfficialReply ? `
+            <div id="admin-reply-actions-${c.id}" style="display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap;">
+              <button type="button" class="btn-secondary" onclick="openAdminCommentForm('${c.id}', 'EDIT')" style="flex: 1 1 auto; height: 32px; font-size: 0.72rem; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; gap: 4px;">
+                ✏️ Modificar respuesta
+              </button>
+              <button type="button" class="btn-secondary" onclick="openAdminCommentForm('${c.id}', 'THREAD')" style="flex: 1 1 auto; height: 32px; font-size: 0.72rem; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; gap: 4px; color: #0284c7; border-color: #7dd3fc;">
+                💬 Responder como hilo nuevo
+              </button>
             </div>
           ` : ''}
 
-          <!-- Formulario para Administrador: Modificar o Publicar Respuesta Oficial -->
-          <div style="margin-top: 8px; border-top: 1px dashed #e2e8f0; padding-top: 8px;">
-            <label style="display: block; font-size: 0.70rem; font-weight: 800; color: #334155; margin-bottom: 4px; font-family: var(--font-mono);">
-              ${hasOfficialReply ? '✏️ MODIFICAR RESPUESTA OFICIAL:' : '💬 PUBLICAR RESPUESTA OFICIAL:'}
-            </label>
+          <!-- Formulario Plegable: Oculto por defecto si ya está respondida, visible si está pendiente -->
+          <div id="admin-reply-box-${c.id}" style="margin-top: 8px; border-top: 1px dashed #e2e8f0; padding-top: 8px; display: ${hasOfficialReply ? 'none' : 'block'};">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+              <label id="admin-reply-label-${c.id}" style="font-size: 0.70rem; font-weight: 800; color: #334155; font-family: var(--font-mono); margin: 0;">
+                ${hasOfficialReply ? '✏️ MODIFICAR RESPUESTA OFICIAL:' : '💬 PUBLICAR RESPUESTA OFICIAL:'}
+              </label>
+              ${hasOfficialReply ? `
+                <button type="button" class="btn-outline-sm" onclick="closeAdminCommentForm('${c.id}')" style="font-size: 0.65rem; padding: 2px 7px; height: 22px; color: #64748b; font-family: var(--font-mono);" title="Ocultar formulario">
+                  ✕ Cancelar
+                </button>
+              ` : ''}
+            </div>
             <div class="admin-reply-actions" style="display: flex; flex-direction: column; gap: 6px; width: 100%;">
-              <textarea id="admin-reply-input-${c.id}" class="form-input" style="width: 100%; box-sizing: border-box; min-height: 48px; font-size: 0.80rem; padding: 6px 8px; border-radius: 4px; border: 1.5px solid var(--dark);" placeholder="Escribe la respuesta oficial como MeltyDeays Soporte...">${officialAnswerText}</textarea>
-              <button type="button" class="btn-primary" style="width: 100%; height: 34px; font-size: 0.75rem; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 5px;" onclick="submitAdminCommentReply('${c.id}')">
-                <span>✓</span> <span>${hasOfficialReply ? 'ACTUALIZAR RESPUESTA' : 'PUBLICAR RESPUESTA'}</span>
-              </button>
+              <textarea id="admin-reply-input-${c.id}" class="form-input" style="width: 100%; box-sizing: border-box; min-height: 50px; font-size: 0.80rem; padding: 6px 8px; border-radius: 4px; border: 1.5px solid var(--dark);" placeholder="Escribe la respuesta oficial como MeltyDeays Soporte..." data-last-official="${encodeURIComponent(lastOfficialText)}">${hasOfficialReply ? '' : ''}</textarea>
+              <div style="display: flex; gap: 6px; width: 100%;">
+                ${hasOfficialReply ? `
+                  <button type="button" class="btn-secondary" onclick="closeAdminCommentForm('${c.id}')" style="flex: 1 1 35%; height: 34px; font-size: 0.75rem; font-weight: 800; display: flex; align-items: center; justify-content: center;">
+                    Cancelar
+                  </button>
+                ` : ''}
+                <button type="button" class="btn-primary" id="admin-reply-submit-${c.id}" data-mode="EDIT" style="flex: 1 1 ${hasOfficialReply ? '65%' : '100%'}; height: 34px; font-size: 0.75rem; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 5px;" onclick="submitAdminCommentReply('${c.id}')">
+                  <span>✓</span> <span id="admin-reply-btn-text-${c.id}">${hasOfficialReply ? 'ACTUALIZAR RESPUESTA' : 'PUBLICAR RESPUESTA'}</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -1019,6 +1050,44 @@ export async function renderAdminCommentsList() {
   }
 }
 
+export function openAdminCommentForm(commentId, mode = 'EDIT') {
+  const box = document.getElementById(`admin-reply-box-${commentId}`);
+  const actions = document.getElementById(`admin-reply-actions-${commentId}`);
+  const label = document.getElementById(`admin-reply-label-${commentId}`);
+  const input = document.getElementById(`admin-reply-input-${commentId}`);
+  const submitBtn = document.getElementById(`admin-reply-submit-${commentId}`);
+  const btnText = document.getElementById(`admin-reply-btn-text-${commentId}`);
+
+  if (!box || !input) return;
+
+  if (actions) actions.style.display = "none";
+  box.style.display = "block";
+
+  if (mode === 'THREAD') {
+    if (label) label.textContent = "💬 NUEVA RESPUESTA AL HILO (DEJA EL ANTERIOR INTACTO):";
+    input.value = "";
+    input.placeholder = "Escribe una nueva respuesta de seguimiento como MeltyDeays Soporte...";
+    if (submitBtn) submitBtn.setAttribute("data-mode", "THREAD");
+    if (btnText) btnText.textContent = "+ PUBLICAR AL HILO";
+  } else {
+    if (label) label.textContent = "✏️ MODIFICAR RESPUESTA OFICIAL:";
+    const lastOfficial = decodeURIComponent(input.getAttribute("data-last-official") || "");
+    input.value = lastOfficial;
+    input.placeholder = "Modifica la respuesta oficial de la tienda...";
+    if (submitBtn) submitBtn.setAttribute("data-mode", "EDIT");
+    if (btnText) btnText.textContent = "ACTUALIZAR RESPUESTA";
+  }
+
+  input.focus();
+}
+
+export function closeAdminCommentForm(commentId) {
+  const box = document.getElementById(`admin-reply-box-${commentId}`);
+  const actions = document.getElementById(`admin-reply-actions-${commentId}`);
+  if (box) box.style.display = "none";
+  if (actions) actions.style.display = "flex";
+}
+
 export async function submitAdminCommentReply(commentId) {
   const input = document.getElementById(`admin-reply-input-${commentId}`);
   if (!input || !input.value.trim()) {
@@ -1026,11 +1095,14 @@ export async function submitAdminCommentReply(commentId) {
     return;
   }
   const replyText = input.value.trim();
+  const submitBtn = document.getElementById(`admin-reply-submit-${commentId}`);
+  const mode = submitBtn ? submitBtn.getAttribute("data-mode") : "EDIT";
+  const isThread = (mode === "THREAD");
 
   try {
-    await FirestoreService.answerProductComment(commentId, replyText, "MeltyDeays · Soporte Oficial", true);
+    await FirestoreService.answerProductComment(commentId, replyText, "MeltyDeays · Soporte Oficial", true, isThread);
     input.value = "";
-    showToast("✓ Respuesta oficial enviada y agregada al hilo", "success");
+    showToast(isThread ? "✓ Nueva respuesta agregada al hilo oficial" : "✓ Respuesta oficial actualizada", "success");
     await renderAdminCommentsList();
   } catch (e) {
     showToast("Error al publicar respuesta: " + e.message, "error");
@@ -1255,6 +1327,8 @@ document.addEventListener("DOMContentLoaded", () => {
   // Gestión de Preguntas de la Comunidad (Q&A)
   window.renderAdminCommentsList = renderAdminCommentsList;
   window.filterAdminComments = filterAdminComments;
+  window.openAdminCommentForm = openAdminCommentForm;
+  window.closeAdminCommentForm = closeAdminCommentForm;
   window.submitAdminCommentReply = submitAdminCommentReply;
   window.deleteAdminComment = deleteAdminComment;
   window.updateAdminPendingCommentsBadge = updateAdminPendingCommentsBadge;

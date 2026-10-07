@@ -25,6 +25,7 @@ function assert(condition, message) {
 
 const adminHtml = fs.readFileSync(path.join(rootDir, "admin.html"), "utf8");
 const adminJs = fs.readFileSync(path.join(rootDir, "js/admin-app.js"), "utf8");
+const firestoreJs = fs.readFileSync(path.join(rootDir, "js/services/FirestoreService.js"), "utf8");
 const responsiveCss = fs.readFileSync(path.join(rootDir, "css/responsive.css"), "utf8");
 
 console.log("\n--- 1. Checking admin.html structure ---");
@@ -46,13 +47,24 @@ assert(adminHtml.includes('id="qna-count-answered"'), "Contains #qna-count-answe
 console.log("\n--- 2. Checking js/admin-app.js logic & exports ---");
 assert(adminJs.includes("export function filterAdminComments"), "Exports filterAdminComments");
 assert(adminJs.includes("window.filterAdminComments = filterAdminComments;"), "Binds filterAdminComments to window");
+assert(adminJs.includes("export function openAdminCommentForm"), "Exports openAdminCommentForm");
+assert(adminJs.includes("window.openAdminCommentForm = openAdminCommentForm;"), "Binds openAdminCommentForm to window");
+assert(adminJs.includes("export function closeAdminCommentForm"), "Exports closeAdminCommentForm");
+assert(adminJs.includes("window.closeAdminCommentForm = closeAdminCommentForm;"), "Binds closeAdminCommentForm to window");
 assert(adminJs.includes('data-status="${hasOfficialReply ? \'ANSWERED\' : \'PENDING\'}"'), "Injects data-status attribute in comment card");
 assert(adminJs.includes("countAllEl.textContent = comments.length;"), "Updates qna-count-all counter");
 assert(adminJs.includes("countPendingEl.textContent = pendingList.length;"), "Updates qna-count-pending counter");
 assert(adminJs.includes("countAnsweredEl.textContent = answeredList.length;"), "Updates qna-count-answered counter");
 assert(adminJs.includes("filterAdminComments(currentQnaFilter);"), "Applies active filter after comments render");
 
-console.log("\n--- 3. Checking css/responsive.css mobile rules ---");
+console.log("\n--- 3. Checking Thread & Collapsible Form Features ---");
+assert(adminJs.includes("Modificar respuesta"), "Contains 'Modificar respuesta' action button");
+assert(adminJs.includes("Responder como hilo nuevo"), "Contains 'Responder como hilo nuevo' action button");
+assert(adminJs.includes("display: ${hasOfficialReply ? 'none' : 'block'}"), "Collapses reply form by default when already answered");
+assert(firestoreJs.includes("asNewThreadMessage = false"), "FirestoreService supports asNewThreadMessage parameter");
+assert(firestoreJs.includes("comment.replies.push(officialNode);"), "FirestoreService appends new official reply in thread");
+
+console.log("\n--- 4. Checking css/responsive.css mobile rules ---");
 assert(responsiveCss.includes("#sec-community"), "responsive.css targets #sec-community");
 assert(responsiveCss.includes("padding-bottom: 85px") || responsiveCss.includes("padding-bottom: 80px"), "Protects bottom dock with safe bottom padding");
 assert(responsiveCss.includes(".community-stats-grid"), "responsive.css targets .community-stats-grid");
