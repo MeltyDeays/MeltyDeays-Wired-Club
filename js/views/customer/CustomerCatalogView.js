@@ -870,6 +870,7 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
 
   const isPartial = item.rewardType === "PARTIAL_DISCOUNT" || (typeof item.isPartialDiscount === "function" && item.isPartialDiscount());
   const maxPct = Number(item.maxDiscountPct || item.max_discount_pct || item.maxDiscountPercent || (isPartial ? 5 : 0));
+  const isOut = !isIncoming && (item.stock <= 0 || item.status === "SOLD_OUT");
 
   const productImages = typeof item.getImages === "function"
     ? item.getImages()
@@ -888,7 +889,7 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
         <div class="specs-carousel-stage">
           ${hasMultiple ? `<span id="specs-carousel-counter" class="specs-carousel-counter">[ 0${currentSpecsImgIndex + 1} / 0${productImages.length} ]</span>` : ''}
           ${hasMultiple ? `<button type="button" class="specs-carousel-btn prev" onclick="specsModalPrevImage()" aria-label="Foto anterior">‹</button>` : ''}
-          <img id="specs-carousel-img" src="${mainHeroImg}" alt="${item.title}" onclick="openLightboxFromSpecs()" title="Clic para ver en pantalla completa" onerror="this.onerror=null; this.src=''; this.parentElement.style.background='#0d131f';">
+          <img id="specs-carousel-img" src="${mainHeroImg}" alt="${item.title}" onclick="openLightboxFromSpecs()" title="Clic para ver en pantalla completa" onerror="this.onerror=null; this.src=''; this.parentElement.style.background='#0d131f';" onload="const b=document.getElementById('modal-specs-body'); if(b && b.dataset.openedJustNow==='1'){ b.scrollTop=0; }">
           ${hasMultiple ? `<button type="button" class="specs-carousel-btn next" onclick="specsModalNextImage()" aria-label="Foto siguiente">›</button>` : ''}
           <button type="button" class="specs-carousel-expand-btn" onclick="openLightboxFromSpecs()" title="Ver en pantalla completa">
             <span>⛶</span> <span>AMPLIAR</span>
@@ -1101,6 +1102,13 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
             : `<span class="specs-badge-item points">⚡ ${item.pointsCost.toLocaleString()} WP</span>`
           )
         }
+        ${isOut
+          ? `<span class="specs-badge-item stock-out">❌ AGOTADO</span>`
+          : (isIncoming
+            ? `<span class="specs-badge-item stock-incoming">📦 ${item.stock === 1 ? '1 CUOTA DISP.' : item.stock + ' CUOTAS DISP.'}</span>`
+            : `<span class="specs-badge-item stock">📦 ${item.stock === 1 ? '1 DISPONIBLE' : item.stock + ' DISPONIBLES'}</span>`
+          )
+        }
       </div>
       <h3 class="specs-header-title">${item.title}</h3>
     </div>
@@ -1113,13 +1121,14 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
       </div>
     ` : ''}
 
-    <!-- DESPLEGABLE DE ESPECIFICACIONES TÉCNICAS (IDÉNTICO A PRODUCCIÓN) -->
+    ${parsed.specs.length > 0 ? `
+    <!-- DESPLEGABLE DE ESPECIFICACIONES TÉCNICAS (COLAPSADO POR DEFECTO) -->
     <div class="reward-specs-box" style="margin: 0.75rem 0 1rem 0;">
-      <button type="button" class="reward-specs-toggle-btn expanded" onclick="toggleModalProductSpecs('${item.id}')" id="modal-specs-btn-${item.id}">
-        <span class="btn-specs-label">✕ Ocultar especificaciones</span>
-        <span class="btn-specs-icon">▴</span>
+      <button type="button" class="reward-specs-toggle-btn" onclick="toggleModalProductSpecs('${item.id}')" id="modal-specs-btn-${item.id}">
+        <span class="btn-specs-label">📋 Ver especificaciones (${parsed.specs.length})</span>
+        <span class="btn-specs-icon">▾</span>
       </button>
-      <div class="reward-specs-dropdown" id="modal-specs-drop-${item.id}" style="display:block; max-height: 280px; overflow-y: auto;">
+      <div class="reward-specs-dropdown" id="modal-specs-drop-${item.id}" style="display:none; max-height: 280px; overflow-y: auto;">
         <div class="specs-dropdown-header">
           <span class="specs-dropdown-title">ESPECIFICACIONES (${parsed.specs.length})</span>
         </div>
@@ -1131,6 +1140,7 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
         </ul>
       </div>
     </div>
+    ` : ''}
 
     <!-- COMPROMISOS Y GARANTÍAS DE TIENDA -->
     <div class="temu-service-commitments">
@@ -1246,28 +1256,45 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
     fab.style.setProperty("display", "none", "important");
   }
 
-  // Garantizar autofijado de scroll en el inicio al abrir
-  body.scrollTop = 0;
-  modal.scrollTop = 0;
-  if (typeof body.scrollTo === "function") body.scrollTo(0, 0);
-  if (typeof modal.scrollTo === "function") modal.scrollTo(0, 0);
-  requestAnimationFrame(() => {
+  body.dataset.openedJustNow = "1";
+  setTimeout(() => {
+    const b = document.getElementById("modal-specs-body");
+    if (b) delete b.dataset.openedJustNow;
+  }, 350);
+
+  // Garantizar autofijado de scroll en el inicio absoluto al abrir
+  const resetSpecsScroll = () => {
     if (body) {
       body.scrollTop = 0;
-      if (typeof body.scrollTo === "function") body.scrollTo(0, 0);
+      if (typeof body.scrollTo === "function") {
+        body.scrollTo({ top: 0, left: 0, behavior: "instant" });
+      }
+      const firstChild = body.firstElementChild;
+      if (firstChild && typeof firstChild.scrollIntoView === "function") {
+        firstChild.scrollIntoView({ block: "start", inline: "nearest", behavior: "instant" });
+      }
     }
     if (modal) {
       modal.scrollTop = 0;
-      if (typeof modal.scrollTo === "function") modal.scrollTo(0, 0);
+      if (typeof modal.scrollTo === "function") {
+        modal.scrollTo({ top: 0, left: 0, behavior: "instant" });
+      }
     }
     const currentDialog = modal ? modal.querySelector(".modal-specs-dialog") : null;
     if (currentDialog) currentDialog.scrollTop = 0;
+  };
+
+  resetSpecsScroll();
+  requestAnimationFrame(() => {
+    resetSpecsScroll();
+    requestAnimationFrame(resetSpecsScroll);
   });
+  setTimeout(resetSpecsScroll, 40);
+  setTimeout(resetSpecsScroll, 120);
 
   if (isIncoming) {
     tickCatalogCountdowns();
   }
-
 
   // Cargar comentarios y suscribir en tiempo real reactivo
   if (typeof activeCommentsUnsubscribe === "function") {
@@ -1287,15 +1314,16 @@ export function closeProductSpecsModal() {
   }
   const modal = document.getElementById("modal-product-specs");
   if (modal) {
-    modal.style.display = "none";
-    modal.scrollTop = 0;
     const body = document.getElementById("modal-specs-body");
     if (body) {
       body.scrollTop = 0;
       if (typeof body.scrollTo === "function") body.scrollTo(0, 0);
+      body.innerHTML = "";
     }
     const dialog = modal.querySelector(".modal-specs-dialog");
     if (dialog) dialog.scrollTop = 0;
+    modal.scrollTop = 0;
+    modal.style.display = "none";
   }
 
   const lightboxModal = document.getElementById("modal-image-lightbox");
@@ -1326,7 +1354,7 @@ export function toggleModalProductSpecs(itemId) {
   } else {
     drop.style.display = "none";
     btn.classList.remove("expanded");
-    const count = drop.querySelectorAll("li").length;
+    const count = drop.querySelectorAll(".modal-spec-card").length || drop.querySelectorAll("li").length;
     const label = btn.querySelector(".btn-specs-label");
     const icon = btn.querySelector(".btn-specs-icon");
     if (label) label.textContent = `📋 Ver especificaciones (${count})`;
@@ -1529,17 +1557,17 @@ export function renderCatalog(catalog, user) {
 
     let modeBadge = "";
     if (isIncoming) {
-      modeBadge = `<div class="badge-tag badge-coming-soon" style="position: absolute; top: 8px; left: 8px; background: rgba(15, 23, 42, 0.95); color: #38bdf8; border: 1px solid #0284c7; font-family: var(--font-mono); font-size: 0.65rem; font-weight: 800; padding: 2px 6px; border-radius: 3px; z-index: 2; box-shadow: 0 0 8px rgba(56, 189, 248, 0.3);">🕊️ LLEGA EN // -${presaleDiscPct}%</div>`;
+      modeBadge = `<div class="badge-tag badge-coming-soon" style="position: absolute; top: 8px; left: 8px; z-index: 2; background: rgba(15, 23, 42, 0.95); color: #38bdf8; border: 1px solid #0284c7; font-family: var(--font-mono); font-size: 0.65rem; font-weight: 800; padding: 2px 6px; border-radius: 3px; box-shadow: 0 0 8px rgba(56, 189, 248, 0.3);">🕊️ LLEGA EN // -${presaleDiscPct}%</div>`;
     } else if (isPartial) {
       if (user && userPts >= maxCapPts) {
-        modeBadge = `<div class="badge-tag" style="position: absolute; top: 8px; left: 8px; background: rgba(15, 23, 42, 0.9); color: #fbbf24; border: 1px solid #d97706; font-family: var(--font-mono); font-size: 0.65rem; font-weight: 800; padding: 2px 6px; border-radius: 3px; z-index: 2;">🏷️ TOPE ${maxPct}% OFF</div>`;
+        modeBadge = `<div class="badge-tag" style="position: absolute; top: 8px; left: 8px; z-index: 2; background: rgba(15, 23, 42, 0.9); color: #fbbf24; border: 1px solid #d97706; font-family: var(--font-mono); font-size: 0.65rem; font-weight: 800; padding: 2px 6px; border-radius: 3px;">🏷️ TOPE ${maxPct}% OFF</div>`;
       } else if (user && userPts > 0) {
-        modeBadge = `<div class="badge-tag" style="position: absolute; top: 8px; left: 8px; background: rgba(15, 23, 42, 0.9); color: #fbbf24; border: 1px solid #d97706; font-family: var(--font-mono); font-size: 0.65rem; font-weight: 800; padding: 2px 6px; border-radius: 3px; z-index: 2;">🏷️ ${formattedAppliedPct}% OFF / MÁX ${maxPct}%</div>`;
+        modeBadge = `<div class="badge-tag" style="position: absolute; top: 8px; left: 8px; z-index: 2; background: rgba(15, 23, 42, 0.9); color: #fbbf24; border: 1px solid #d97706; font-family: var(--font-mono); font-size: 0.65rem; font-weight: 800; padding: 2px 6px; border-radius: 3px;">🏷️ ${formattedAppliedPct}% OFF / MÁX ${maxPct}%</div>`;
       } else {
-        modeBadge = `<div class="badge-tag" style="position: absolute; top: 8px; left: 8px; background: rgba(15, 23, 42, 0.9); color: #fbbf24; border: 1px solid #d97706; font-family: var(--font-mono); font-size: 0.65rem; font-weight: 800; padding: 2px 6px; border-radius: 3px; z-index: 2;">🏷️ HASTA ${maxPct}% OFF</div>`;
+        modeBadge = `<div class="badge-tag" style="position: absolute; top: 8px; left: 8px; z-index: 2; background: rgba(15, 23, 42, 0.9); color: #fbbf24; border: 1px solid #d97706; font-family: var(--font-mono); font-size: 0.65rem; font-weight: 800; padding: 2px 6px; border-radius: 3px;">🏷️ HASTA ${maxPct}% OFF</div>`;
       }
     } else {
-      modeBadge = `<div class="badge-tag" style="position: absolute; top: 8px; left: 8px; background: rgba(5, 150, 105, 0.9); color: #ffffff; border: 1px solid #059669; font-family: var(--font-mono); font-size: 0.65rem; font-weight: 800; padding: 2px 6px; border-radius: 3px; z-index: 2;">🎁 100% CANJEABLE</div>`;
+      modeBadge = `<div class="badge-tag" style="position: absolute; top: 8px; left: 8px; z-index: 2; background: rgba(5, 150, 105, 0.9); color: #ffffff; border: 1px solid #059669; font-family: var(--font-mono); font-size: 0.65rem; font-weight: 800; padding: 2px 6px; border-radius: 3px;">🎁 100% CANJEABLE</div>`;
     }
 
     let partialBreakdown = "";
@@ -1974,7 +2002,6 @@ export function renderCatalog(catalog, user) {
               </div>
             </div>
           ` : '')}
-          <div class="stock-tag ${isOut ? 'out' : (isIncoming ? 'incoming' : '')}">${isOut ? 'VENDIDO' : (isIncoming ? 'EN CAMINO · PREVENTA' : (item.stock === 1 ? '1 DISP. · ÚNICO' : item.stock + ' DISP.'))}</div>
         </div>
         <div class="reward-body">
           <div class="reward-title" title="${item.title}">${item.title}</div>
