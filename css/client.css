@@ -1573,8 +1573,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  min-width: 0;
-  flex: 1;
+  flex-shrink: 0;
 }
 
 .haibane-halo-dot {
@@ -1593,7 +1592,7 @@
   font-weight: 800;
   color: #78350f;
   letter-spacing: 0.5px;
-  white-space: nowrap;
+  white-space: nowrap !important;
 }
 
 .haibane-specs-date-tag {

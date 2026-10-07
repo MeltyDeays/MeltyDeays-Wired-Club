@@ -1116,9 +1116,9 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
           <div class="haibane-specs-relic-header">
             <div class="relic-header-left">
               <span class="haibane-halo-dot"></span>
-              <span class="relic-header-title">ARRIBO // COUNTDOWN</span>
+              <span class="relic-header-title">ARRIBO</span>
             </div>
-            <span class="haibane-specs-date-tag">LLEGADA: ${formatArrivalHint(item.estimatedArrival)}</span>
+            <span class="haibane-specs-date-tag">${formatArrivalHint(item.estimatedArrival)}</span>
           </div>
           <div class="haibane-specs-relic-grid">
             <div class="specs-relic-seg">
