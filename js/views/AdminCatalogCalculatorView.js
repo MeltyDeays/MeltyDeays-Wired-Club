@@ -113,19 +113,23 @@ function recalculateRewardPoints() {
   return { landedCost, freightCost, salesRequired: totalSalesRequired, suggestedPoints, pointsPerSale, salesCount };
 }
 
-function applyCalculatedPointsToProduct() {
+function applyCalculatedPointsToProduct(showToastNotification = false) {
   const { suggestedPoints, salesRequired, landedCost, salesCount, pointsPerSale } = recalculateRewardPoints();
   const costInput = document.getElementById("prod-cost");
   if (costInput) {
     costInput.value = suggestedPoints;
-    costInput.style.borderColor = "#059669";
-    costInput.style.boxShadow = "0 0 10px rgba(5, 150, 105, 0.35)";
-    setTimeout(() => {
-      costInput.style.borderColor = "";
-      costInput.style.boxShadow = "";
-    }, 1200);
+    if (showToastNotification) {
+      costInput.style.borderColor = "#059669";
+      costInput.style.boxShadow = "0 0 10px rgba(5, 150, 105, 0.35)";
+      setTimeout(() => {
+        costInput.style.borderColor = "";
+        costInput.style.boxShadow = "";
+      }, 1200);
+    }
   }
-  showToast(`⚡ Asignado: ${suggestedPoints.toLocaleString()} WP (${salesCount} compras de ${pointsPerSale} WP | Costo Landed: $${landedCost.toFixed(2)}).`, "success");
+  if (showToastNotification) {
+    showToast(`⚡ Asignado: ${suggestedPoints.toLocaleString()} WP (${salesCount} compras de ${pointsPerSale} WP | Costo Landed: $${landedCost.toFixed(2)}).`, "success");
+  }
 }
 
 function onManualPointsCostChange() {

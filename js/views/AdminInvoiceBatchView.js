@@ -121,12 +121,22 @@ export function openNewProductModal() {
   if (presalePriceHidden) presalePriceHidden.value = "0";
 
   modal.style.display = "flex";
+  modal.scrollTop = 0;
+  const modalContentEl = modal.querySelector(".modal-content");
+  if (modalContentEl) modalContentEl.scrollTop = 0;
+  requestAnimationFrame(() => {
+    modal.scrollTop = 0;
+    if (modalContentEl) modalContentEl.scrollTop = 0;
+  });
+
   if (typeof window !== "undefined" && typeof window.syncModalScrollLock === "function") {
     window.syncModalScrollLock();
   }
   setProductPublicationMode("FREE_REWARD");
   setTimeout(() => {
-    if (titleInput) titleInput.focus();
+    if (titleInput && typeof titleInput.focus === "function") {
+      titleInput.focus({ preventScroll: true });
+    }
   }, 100);
 }
 
@@ -203,11 +213,21 @@ export function openEditProductModal(productId) {
   renderProductImagesPreview();
 
   modal.style.display = "flex";
+  modal.scrollTop = 0;
+  const modalContentEl = modal.querySelector(".modal-content");
+  if (modalContentEl) modalContentEl.scrollTop = 0;
+  requestAnimationFrame(() => {
+    modal.scrollTop = 0;
+    if (modalContentEl) modalContentEl.scrollTop = 0;
+  });
+
   if (typeof window !== "undefined" && typeof window.syncModalScrollLock === "function") {
     window.syncModalScrollLock();
   }
   setTimeout(() => {
-    if (titleInput) titleInput.focus();
+    if (titleInput && typeof titleInput.focus === "function") {
+      titleInput.focus({ preventScroll: true });
+    }
   }, 100);
 }
 

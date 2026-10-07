@@ -1298,10 +1298,17 @@ document.addEventListener("DOMContentLoaded", () => {
         e.preventDefault();
         return;
       }
-      const atTop = overlay.scrollTop <= 0 && e.deltaY < 0;
-      const atBottom = (overlay.scrollTop + overlay.clientHeight >= overlay.scrollHeight - 1) && e.deltaY > 0;
-      if (atTop || atBottom) {
-        e.preventDefault();
+      const scrollableChild = target && target.closest ? target.closest("textarea, select, .table-responsive, pre") : null;
+      if (scrollableChild) {
+        return;
+      }
+      const isScrollable = overlay.scrollHeight > (overlay.clientHeight + 4);
+      if (isScrollable) {
+        const atTop = overlay.scrollTop <= 0 && e.deltaY < 0;
+        const atBottom = (overlay.scrollTop + overlay.clientHeight >= overlay.scrollHeight - 2) && e.deltaY > 0;
+        if (atTop || atBottom) {
+          e.preventDefault();
+        }
       }
     }, { passive: false });
   }

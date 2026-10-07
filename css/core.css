@@ -58,7 +58,7 @@ body.modal-open {
   height: 100% !important;
   overscroll-behavior: contain !important;
   overscroll-behavior-y: contain !important;
-  touch-action: none !important;
+  touch-action: pan-y !important;
 }
 
 body.modal-open #dev-env-badge,
