@@ -2767,6 +2767,58 @@ vercel-live-feedback,
     width: 100% !important;
     justify-content: center !important;
   }
+
+  /* SECCIÓN 7: GESTIÓN DE PREGUNTAS Y COMENTARIOS (Q&A) MÓVIL */
+  #sec-community {
+    padding-bottom: 85px !important;
+  }
+  .community-header-bar {
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 0.4rem !important;
+  }
+  .community-stats-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 0.35rem !important;
+  }
+  .community-filter-bar {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    gap: 0.3rem !important;
+    width: 100% !important;
+  }
+  .community-filter-bar button {
+    flex: 1 1 0 !important;
+    min-width: 0 !important;
+    height: 30px !important;
+    font-size: 0.65rem !important;
+    padding: 2px 4px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    justify-content: center !important;
+    text-align: center !important;
+  }
+  .admin-comment-card {
+    padding: 10px 12px !important;
+    margin-bottom: 10px !important;
+  }
+  .admin-comment-card .admin-reply-actions {
+    flex-direction: column !important;
+    width: 100% !important;
+  }
+  .admin-comment-card textarea {
+    width: 100% !important;
+    min-height: 52px !important;
+    box-sizing: border-box !important;
+  }
+  .admin-comment-card .btn-primary {
+    width: 100% !important;
+    justify-content: center !important;
+    text-align: center !important;
+    height: 36px !important;
+  }
 }
 
 @media (max-width: 480px) {

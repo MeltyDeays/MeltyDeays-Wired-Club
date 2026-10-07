@@ -780,6 +780,56 @@ function renderTokensTable(tokens) {
 // ========================================================
 // GESTIÓN DE PREGUNTAS Y COMENTARIOS DE LA COMUNIDAD (Q&A)
 // ========================================================
+let currentQnaFilter = 'ALL';
+
+export function filterAdminComments(filterMode) {
+  if (filterMode) {
+    currentQnaFilter = filterMode;
+  }
+  const container = document.getElementById("admin-comments-container");
+  if (!container) return;
+
+  const btnAll = document.getElementById("btn-qna-filter-all");
+  const btnPending = document.getElementById("btn-qna-filter-pending");
+  const btnAnswered = document.getElementById("btn-qna-filter-answered");
+
+  if (btnAll) btnAll.classList.toggle("active", currentQnaFilter === 'ALL');
+  if (btnPending) btnPending.classList.toggle("active", currentQnaFilter === 'PENDING');
+  if (btnAnswered) btnAnswered.classList.toggle("active", currentQnaFilter === 'ANSWERED');
+
+  const cards = container.querySelectorAll(".admin-comment-card");
+  let visibleCount = 0;
+  cards.forEach(card => {
+    const status = card.getAttribute("data-status");
+    let show = false;
+    if (currentQnaFilter === 'ALL') {
+      show = true;
+    } else if (currentQnaFilter === 'PENDING') {
+      show = (status === 'PENDING');
+    } else if (currentQnaFilter === 'ANSWERED') {
+      show = (status === 'ANSWERED');
+    }
+    card.style.display = show ? "block" : "none";
+    if (show) visibleCount++;
+  });
+
+  let emptyMsg = container.querySelector(".qna-filter-empty-msg");
+  if (visibleCount === 0 && cards.length > 0) {
+    if (!emptyMsg) {
+      emptyMsg = document.createElement("div");
+      emptyMsg.className = "qna-filter-empty-msg";
+      emptyMsg.style.cssText = "text-align: center; padding: 2rem 1rem; background: #f8fafc; border: 1.5px dashed #cbd5e1; border-radius: 8px; font-family: var(--font-mono); font-size: 0.78rem; color: #64748b; margin-top: 8px;";
+      container.appendChild(emptyMsg);
+    }
+    emptyMsg.textContent = currentQnaFilter === 'PENDING'
+      ? "✓ ¡Excelente! No hay preguntas pendientes de respuesta oficial."
+      : "No hay preguntas respondidas en este filtro.";
+    emptyMsg.style.display = "block";
+  } else if (emptyMsg) {
+    emptyMsg.style.display = "none";
+  }
+}
+
 export async function updateAdminPendingCommentsBadge() {
   const badgeEl = document.getElementById("admin-pending-comments-badge");
   if (!badgeEl) return;
@@ -812,6 +862,10 @@ export async function renderAdminCommentsList() {
     const answeredEl = document.getElementById("stat-answered-comments");
     const badgeTotalEl = document.getElementById("admin-comments-total-badge");
 
+    const countAllEl = document.getElementById("qna-count-all");
+    const countPendingEl = document.getElementById("qna-count-pending");
+    const countAnsweredEl = document.getElementById("qna-count-answered");
+
     const pendingList = comments.filter(c => !c.answerText && !c.reply);
     const answeredList = comments.filter(c => Boolean(c.answerText || c.reply));
 
@@ -819,6 +873,10 @@ export async function renderAdminCommentsList() {
     if (pendingEl) pendingEl.textContent = pendingList.length;
     if (answeredEl) answeredEl.textContent = answeredList.length;
     if (badgeTotalEl) badgeTotalEl.textContent = `${comments.length} PREGUNTAS`;
+
+    if (countAllEl) countAllEl.textContent = comments.length;
+    if (countPendingEl) countPendingEl.textContent = pendingList.length;
+    if (countAnsweredEl) countAnsweredEl.textContent = answeredList.length;
 
     updateAdminPendingCommentsBadge();
 
@@ -862,70 +920,70 @@ export async function renderAdminCommentsList() {
       }
 
       return `
-        <div class="admin-comment-card ${hasOfficialReply ? 'answered' : 'pending'}" style="background: #ffffff; border: 1.5px solid ${hasOfficialReply ? '#cbd5e1' : '#fca5a5'}; border-radius: 8px; padding: 14px; margin-bottom: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.04);">
+        <div class="admin-comment-card ${hasOfficialReply ? 'answered' : 'pending'}" data-status="${hasOfficialReply ? 'ANSWERED' : 'PENDING'}" style="background: #ffffff; border: 2px solid ${hasOfficialReply ? 'var(--dark)' : '#dc2626'}; border-radius: 6px; padding: 12px; margin-bottom: 12px; box-shadow: 3px 3px 0px ${hasOfficialReply ? 'var(--dark)' : '#dc2626'}; position: relative;">
           <!-- Encabezado de la pregunta -->
-          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 8px; flex-wrap: wrap;">
-            <div style="display: flex; align-items: center; gap: 8px;">
-              ${prodImg ? `<img src="${prodImg}" style="width: 38px; height: 38px; border-radius: 4px; object-fit: cover; border: 1px solid #cbd5e1;">` : `<span style="font-size: 1.4rem;">📦</span>`}
-              <div>
-                <div style="font-size: 0.82rem; font-weight: 800; color: #0f172a;">${prodTitle}</div>
-                <div style="font-size: 0.65rem; color: #64748b; font-family: var(--font-mono);">ARTÍCULO: ${c.rewardId}</div>
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 8px; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1 1 auto;">
+              ${prodImg ? `<img src="${prodImg}" style="width: 36px; height: 36px; border-radius: 4px; object-fit: cover; border: 1.5px solid var(--dark); flex-shrink: 0;">` : `<span style="font-size: 1.3rem; flex-shrink: 0;">📦</span>`}
+              <div style="min-width: 0; overflow: hidden;">
+                <div style="font-size: 0.82rem; font-weight: 800; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${prodTitle}</div>
+                <div style="font-size: 0.62rem; color: #64748b; font-family: var(--font-mono); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">ARTÍCULO: ${c.rewardId}</div>
               </div>
             </div>
-            <div style="display: flex; align-items: center; gap: 6px;">
-              <span class="badge ${hasOfficialReply ? 'badge-success' : 'badge-danger'}" style="font-size: 0.68rem; font-weight: 800; padding: 3px 8px;">
-                ${hasOfficialReply ? '✓ RESPUESTA OFICIAL ACTIVA' : '⏳ PENDIENTE DE SOPORTE'}
+            <div style="display: flex; align-items: center; gap: 5px; flex-shrink: 0;">
+              <span class="badge ${hasOfficialReply ? 'badge-success' : 'badge-danger'}" style="font-size: 0.64rem; font-weight: 800; padding: 3px 7px; letter-spacing: -0.2px;">
+                ${hasOfficialReply ? '✓ RESPONDIDA' : '⏳ PENDIENTE'}
               </span>
-              <button type="button" class="btn-outline-sm" onclick="deleteAdminComment('${c.id}')" title="Eliminar pregunta" style="color: #ef4444; border-color: #fca5a5; padding: 2px 6px;">
+              <button type="button" class="btn-outline-sm" onclick="deleteAdminComment('${c.id}')" title="Eliminar pregunta" style="color: #ef4444; border-color: #fca5a5; padding: 2px 6px; height: 26px;">
                 🗑️
               </button>
             </div>
           </div>
 
           <!-- Datos del cliente y pregunta -->
-          <div style="background: #f8fafc; border-left: 3px solid #38bdf8; padding: 8px 12px; border-radius: 0 4px 4px 0; margin-bottom: 10px;">
-            <div style="display: flex; justify-content: space-between; font-size: 0.72rem; color: #475569; margin-bottom: 4px;">
-              <span><strong>👤 Pregunta de: ${authorName}</strong> ${c.userTier ? `<span style="font-size: 0.6rem; background: #e0f2fe; color: #0369a1; padding: 1px 4px; border-radius: 2px; font-weight: 800;">${c.userTier}</span>` : ''}</span>
-              <span style="font-family: var(--font-mono); font-size: 0.65rem; color: #94a3b8;">${dateStr}</span>
+          <div style="background: #f8fafc; border-left: 3px solid #38bdf8; padding: 8px 10px; border-radius: 0 4px 4px 0; margin-bottom: 8px; border: 1px solid #e2e8f0; border-left-width: 3px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.70rem; color: #475569; margin-bottom: 4px; flex-wrap: wrap; gap: 4px;">
+              <span><strong>👤 ${authorName}</strong> ${c.userTier ? `<span style="font-size: 0.58rem; background: #e0f2fe; color: #0369a1; padding: 1px 4px; border-radius: 2px; font-weight: 800;">${c.userTier}</span>` : ''}</span>
+              <span style="font-family: var(--font-mono); font-size: 0.62rem; color: #94a3b8;">${dateStr}</span>
             </div>
-            <div style="font-size: 0.85rem; font-weight: 600; color: #0f172a; line-height: 1.35;">
+            <div style="font-size: 0.82rem; font-weight: 600; color: #0f172a; line-height: 1.35; word-break: break-word;">
               "${qText}"
             </div>
           </div>
 
           <!-- Respuesta Oficial de la Tienda (MeltyDeays Soporte) -->
           ${hasOfficialReply ? `
-            <div style="background: #ecfdf5; border-left: 3px solid #10b981; padding: 8px 12px; border-radius: 0 4px 4px 0; margin-bottom: 10px;">
-              <div style="display: flex; justify-content: space-between; font-size: 0.72rem; color: #065f46; font-weight: 800; margin-bottom: 3px;">
-                <span>🛡️ MeltyDeays · Soporte Oficial (Respuesta oficial publicada)</span>
-                <span style="font-family: var(--font-mono); font-size: 0.65rem; font-weight: normal; color: #047857;">${officialDateStr}</span>
+            <div style="background: #ecfdf5; border-left: 3px solid #10b981; padding: 8px 10px; border-radius: 0 4px 4px 0; margin-bottom: 8px; border: 1px solid #a7f3d0; border-left-width: 3px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.70rem; color: #065f46; font-weight: 800; margin-bottom: 3px; flex-wrap: wrap; gap: 4px;">
+                <span>🛡️ MeltyDeays · Soporte Oficial</span>
+                <span style="font-family: var(--font-mono); font-size: 0.62rem; font-weight: normal; color: #047857;">${officialDateStr}</span>
               </div>
-              <div style="font-size: 0.82rem; color: #064e3b; line-height: 1.35;">
+              <div style="font-size: 0.80rem; color: #064e3b; line-height: 1.35; word-break: break-word;">
                 ${officialAnswerText}
               </div>
             </div>
           ` : `
-            <div style="background: #fffbeb; border-left: 3px solid #f59e0b; padding: 6px 10px; border-radius: 0 4px 4px 0; margin-bottom: 10px; font-size: 0.72rem; color: #92400e; font-style: italic;">
-              ⏳ Aún no has publicado una respuesta oficial de tienda para esta consulta.
+            <div style="background: #fffbeb; border-left: 3px solid #f59e0b; padding: 6px 9px; border-radius: 0 4px 4px 0; margin-bottom: 8px; font-size: 0.70rem; color: #92400e; font-family: var(--font-mono);">
+              ⏳ Pendiente de respuesta oficial de tienda
             </div>
           `}
 
           <!-- Respuestas de otros socios/clientes en la conversación -->
           ${communityReplies.length > 0 ? `
-            <div style="margin-bottom: 10px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px 10px;">
-              <div style="font-size: 0.68rem; font-weight: 800; color: #64748b; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.2px;">
-                💬 Respuestas de otros socios / clientes (${communityReplies.length}):
+            <div style="margin-bottom: 8px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px; padding: 6px 8px;">
+              <div style="font-size: 0.65rem; font-weight: 800; color: #64748b; margin-bottom: 5px; text-transform: uppercase; font-family: var(--font-mono);">
+                💬 Respuestas comunitarias (${communityReplies.length}):
               </div>
-              <div style="display: flex; flex-direction: column; gap: 6px;">
+              <div style="display: flex; flex-direction: column; gap: 5px;">
                 ${communityReplies.map(cr => {
                   const crDate = cr.createdAt ? new Date(cr.createdAt).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
                   return `
-                    <div style="background: #ffffff; border-left: 3px solid #64748b; padding: 6px 10px; border-radius: 0 4px 4px 0; border: 1px solid #e2e8f0; border-left-width: 3px;">
-                      <div style="display: flex; justify-content: space-between; font-size: 0.70rem; color: #334155; font-weight: 700; margin-bottom: 2px;">
-                        <span>👤 ${cr.author || 'Socio'} (Cliente)</span>
-                        <span style="font-family: var(--font-mono); font-size: 0.62rem; color: #94a3b8;">${crDate}</span>
+                    <div style="background: #ffffff; border-left: 3px solid #94a3b8; padding: 5px 8px; border-radius: 0 3px 3px 0; border: 1px solid #e2e8f0; border-left-width: 3px;">
+                      <div style="display: flex; justify-content: space-between; font-size: 0.68rem; color: #334155; font-weight: 700; margin-bottom: 2px;">
+                        <span>👤 ${cr.author || 'Socio'}</span>
+                        <span style="font-family: var(--font-mono); font-size: 0.60rem; color: #94a3b8;">${crDate}</span>
                       </div>
-                      <div style="font-size: 0.76rem; color: #1e293b; line-height: 1.3;">
+                      <div style="font-size: 0.75rem; color: #1e293b; line-height: 1.25; word-break: break-word;">
                         ${cr.text}
                       </div>
                     </div>
@@ -936,20 +994,22 @@ export async function renderAdminCommentsList() {
           ` : ''}
 
           <!-- Formulario para Administrador: Modificar o Publicar Respuesta Oficial -->
-          <div style="margin-top: 10px; border-top: 1px dashed #e2e8f0; padding-top: 10px;">
-            <label style="display: block; font-size: 0.72rem; font-weight: 800; color: #334155; margin-bottom: 4px;">
-              ${hasOfficialReply ? '✏️ Modificar respuesta oficial de tienda (MeltyDeays Soporte):' : '💬 Publicar respuesta oficial de tienda (MeltyDeays Soporte):'}
+          <div style="margin-top: 8px; border-top: 1px dashed #e2e8f0; padding-top: 8px;">
+            <label style="display: block; font-size: 0.70rem; font-weight: 800; color: #334155; margin-bottom: 4px; font-family: var(--font-mono);">
+              ${hasOfficialReply ? '✏️ MODIFICAR RESPUESTA OFICIAL:' : '💬 PUBLICAR RESPUESTA OFICIAL:'}
             </label>
-            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-              <textarea id="admin-reply-input-${c.id}" class="form-input" style="flex: 1; min-height: 48px; font-size: 0.8rem; padding: 6px 10px; border-radius: 4px;" placeholder="Escribe la respuesta oficial como MeltyDeays Soporte...">${officialAnswerText}</textarea>
-              <button type="button" class="btn-primary" style="align-self: flex-end; padding: 8px 14px; font-size: 0.78rem; font-weight: 800; display: flex; align-items: center; gap: 5px;" onclick="submitAdminCommentReply('${c.id}')">
-                <span>✓</span> <span>${hasOfficialReply ? 'Actualizar Respuesta Oficial' : 'Publicar Respuesta Oficial'}</span>
+            <div class="admin-reply-actions" style="display: flex; flex-direction: column; gap: 6px; width: 100%;">
+              <textarea id="admin-reply-input-${c.id}" class="form-input" style="width: 100%; box-sizing: border-box; min-height: 48px; font-size: 0.80rem; padding: 6px 8px; border-radius: 4px; border: 1.5px solid var(--dark);" placeholder="Escribe la respuesta oficial como MeltyDeays Soporte...">${officialAnswerText}</textarea>
+              <button type="button" class="btn-primary" style="width: 100%; height: 34px; font-size: 0.75rem; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 5px;" onclick="submitAdminCommentReply('${c.id}')">
+                <span>✓</span> <span>${hasOfficialReply ? 'ACTUALIZAR RESPUESTA' : 'PUBLICAR RESPUESTA'}</span>
               </button>
             </div>
           </div>
         </div>
       `;
     }).join("");
+
+    filterAdminComments(currentQnaFilter);
   } catch (err) {
     container.innerHTML = `
       <div style="text-align: center; padding: 2rem; color: #ef4444;">
@@ -1194,6 +1254,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Gestión de Preguntas de la Comunidad (Q&A)
   window.renderAdminCommentsList = renderAdminCommentsList;
+  window.filterAdminComments = filterAdminComments;
   window.submitAdminCommentReply = submitAdminCommentReply;
   window.deleteAdminComment = deleteAdminComment;
   window.updateAdminPendingCommentsBadge = updateAdminPendingCommentsBadge;
