@@ -199,6 +199,17 @@
 
     <!-- PESTAÑA 2: MIS VALES ACTIVOS DE CANJE -->
     <div id="tab-content-vouchers" style="display: none;">
+      <!-- SUBTABS DE NAVEGACIÓN: ACTIVOS VS ANTERIORES / HISTORIAL -->
+      <div class="voucher-subtabs-wrapper">
+        <div class="tab-controls voucher-subtabs">
+          <button id="voucher-subtab-btn-active" class="tab-btn active" onclick="switchVoucherSubTab('active')">
+            🎟️ Activos / Pendientes (<span id="voucher-subtab-active-count" class="tab-badge">0</span>)
+          </button>
+          <button id="voucher-subtab-btn-history" class="tab-btn" onclick="switchVoucherSubTab('history')">
+            📜 Anteriores / Historial (<span id="voucher-subtab-history-count" class="tab-badge" style="background: var(--gray-600);">0</span>)
+          </button>
+        </div>
+      </div>
       <div id="vouchers-container"></div>
     </div>
 

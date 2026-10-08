@@ -826,6 +826,37 @@
   display: inline-block;
 }
 
+/* SUBTABS DE VALES (ACTIVOS VS HISTORIAL) */
+.voucher-subtabs-wrapper {
+  margin-bottom: 1.5rem;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+.voucher-subtabs {
+  width: 100%;
+  max-width: 480px;
+  display: flex;
+  gap: 4px;
+}
+.voucher-subtabs .tab-btn {
+  flex: 1;
+  justify-content: center;
+  text-align: center;
+}
+@media (max-width: 640px) {
+  .voucher-subtabs-wrapper {
+    margin-bottom: 1rem;
+  }
+  .voucher-subtabs {
+    max-width: 100%;
+  }
+  .voucher-subtabs .tab-btn {
+    padding: 0.55rem 0.4rem;
+    font-size: 0.72rem;
+  }
+}
+
 /* CYBER EMPTY BOX */
 .cyber-empty-box {
   grid-column: 1 / -1;

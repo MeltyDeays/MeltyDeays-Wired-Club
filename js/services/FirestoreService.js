@@ -5,12 +5,41 @@ import { INITIAL_TOKENS } from "../data/initialTokens.js";
 
 const LOCAL_STORAGE_KEY = getStorageKey("wired_club_mvvm_db_v2");
 
+/**
+ * Sanitizador recursivo para Firestore: convierte undefined a null o cadenas seguras
+ * para evitar el error de SDK 'Unsupported field value: undefined'.
+ */
+export function sanitizeForFirestore(val) {
+  if (val === undefined) return null;
+  if (val === null) return null;
+  if (typeof val !== "object") return val;
+  if (val instanceof Date) return val.toISOString();
+  if (Array.isArray(val)) {
+    return val.map(item => sanitizeForFirestore(item));
+  }
+  const clean = {};
+  for (const [key, value] of Object.entries(val)) {
+    if (value === undefined) {
+      clean[key] = null;
+    } else if (value !== null && typeof value === "object") {
+      clean[key] = sanitizeForFirestore(value);
+    } else {
+      clean[key] = value;
+    }
+  }
+  return clean;
+}
+
 class StorageEngine {
   constructor() {
     this.init();
   }
 
   init() {
+    if (typeof localStorage === "undefined") {
+      this._mem = this.getBlank();
+      return;
+    }
     // Purgar agresivamente cualquier residuo de versiones anteriores para que NUNCA queden datos fantasma
     try {
       const keysToPurge = [];
@@ -52,6 +81,9 @@ class StorageEngine {
   }
 
   getSnapshot() {
+    if (typeof localStorage === "undefined") {
+      return this._mem || this.getBlank();
+    }
     try {
       return JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY)) || this.getBlank();
     } catch (e) {
@@ -64,6 +96,10 @@ class StorageEngine {
   }
 
   saveSnapshot(data) {
+    if (typeof localStorage === "undefined") {
+      this._mem = data;
+      return;
+    }
     try {
       localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(data));
     } catch (e) {}
@@ -174,6 +210,19 @@ export class FirestoreService {
     return (snap.rewards && snap.rewards[rewardId]) ? snap.rewards[rewardId] : null;
   }
 
+  static getAllRewards() {
+    const snap = engine.getSnapshot();
+    return Object.values(snap.rewards || {});
+  }
+
+  static getSnapshot() {
+    return engine.getSnapshot();
+  }
+
+  static saveSnapshot(snap) {
+    engine.saveSnapshot(snap);
+  }
+
   static async saveReward(reward) {
     const snap = engine.getSnapshot();
     if (!reward.id) {
@@ -185,7 +234,8 @@ export class FirestoreService {
 
     if (db) {
       try {
-        await db.collection(getCollectionName("rewards_catalog")).doc(reward.id).set(reward, { merge: true });
+        const sanitized = sanitizeForFirestore(reward);
+        await db.collection(getCollectionName("rewards_catalog")).doc(reward.id).set(sanitized, { merge: true });
       } catch (e) {
         console.warn("Firestore saveReward error:", e.message);
       }
@@ -292,7 +342,8 @@ export class FirestoreService {
 
     if (db) {
       try {
-        await db.collection(getCollectionName("users")).doc(user.uid).set(user, { merge: true });
+        const sanitized = sanitizeForFirestore(user);
+        await db.collection(getCollectionName("users")).doc(user.uid).set(sanitized, { merge: true });
       } catch (e) {
         console.warn("Firestore saveUser error:", e.message);
       }
@@ -431,7 +482,8 @@ export class FirestoreService {
 
     if (db) {
       try {
-        await db.collection(getCollectionName("qr_tokens")).doc(token.token_code).set(token, { merge: true });
+        const sanitized = sanitizeForFirestore(token);
+        await db.collection(getCollectionName("qr_tokens")).doc(token.token_code).set(sanitized, { merge: true });
       } catch (e) {
         console.warn("Firestore saveToken error:", e.message);
       }
@@ -452,7 +504,8 @@ export class FirestoreService {
         const batch = db.batch();
         tokens.forEach(tok => {
           const docRef = db.collection(getCollectionName("qr_tokens")).doc(tok.token_code);
-          batch.set(docRef, tok, { merge: true });
+          const sanitized = sanitizeForFirestore(tok);
+          batch.set(docRef, sanitized, { merge: true });
         });
         await batch.commit();
       } catch (e) {
@@ -489,10 +542,25 @@ export class FirestoreService {
       try {
         const snap = await db.collection(getCollectionName("redemptions")).get();
         const local = engine.getSnapshot();
-        // Overwrite completo — elimina vales fantasma
-        local.vouchers = {};
+        if (!local.vouchers) local.vouchers = {};
         snap.forEach(doc => {
-          local.vouchers[doc.id] = doc.data();
+          const data = doc.data();
+          const code = (data.voucherCode || data.voucher_code || doc.id || "").trim().toUpperCase();
+          if (code) {
+            const existing = local.vouchers[code];
+            // Blindaje anti-regresión: si ya está CANCELLED o DELIVERED en cliente y Firestore viene con status PENDING desfasado, preservar estado terminal
+            if (existing && (existing.status === "CANCELLED" || existing.cancelledAt) && data.status !== "CANCELLED") {
+              data.status = "CANCELLED";
+              data.cancelledAt = existing.cancelledAt;
+              data.cancelledBy = existing.cancelledBy;
+            }
+            if (existing && (existing.status === "DELIVERED" || existing.deliveredAt) && data.status !== "DELIVERED") {
+              data.status = "DELIVERED";
+              data.deliveredAt = existing.deliveredAt;
+              data.deliveredBy = existing.deliveredBy;
+            }
+            local.vouchers[code] = data;
+          }
         });
         engine.saveSnapshot(local);
         return Object.values(local.vouchers);
@@ -501,7 +569,7 @@ export class FirestoreService {
       }
     }
     const snap = engine.getSnapshot();
-    return Object.values(snap.vouchers);
+    return Object.values(snap.vouchers || {});
   }
 
   static async getVoucher(voucherCode) {
@@ -537,7 +605,8 @@ export class FirestoreService {
 
     if (db) {
       try {
-        await db.collection(getCollectionName("redemptions")).doc(code).set(voucher, { merge: true });
+        const sanitized = sanitizeForFirestore(voucher);
+        await db.collection(getCollectionName("redemptions")).doc(code).set(sanitized, { merge: true });
       } catch (e) {
         console.warn("Firestore saveVoucher error:", e.message);
       }
@@ -605,7 +674,7 @@ export class FirestoreService {
     const snap = engine.getSnapshot();
     const cleanUid = (userUid || "").trim();
     const cleanPhone = cleanUid.replace(/^CLIENT-/, "").replace(/^GUEST-/, "");
-    return Object.values(snap.vouchers || {}).filter(v => {
+    const rawList = Object.values(snap.vouchers || {}).filter(v => {
       const vUid = v.user_uid || v.userUid || v.userId || v.user_id || "";
       if (vUid === cleanUid) return true;
       if (cleanPhone && (vUid === `CLIENT-${cleanPhone}` || vUid === `GUEST-${cleanPhone}`)) return true;
@@ -619,6 +688,22 @@ export class FirestoreService {
       }
       return false;
     });
+
+    // Deduplicación canónica estricta por voucherCode
+    const map = new Map();
+    for (const item of rawList) {
+      const code = (item.voucherCode || item.voucher_code || "").trim().toUpperCase();
+      if (!code) continue;
+      if (!map.has(code)) {
+        map.set(code, item);
+      } else {
+        const existing = map.get(code);
+        if (item.status === "CANCELLED" || item.status === "DELIVERED" || item.status === "PAID") {
+          map.set(code, item);
+        }
+      }
+    }
+    return Array.from(map.values());
   }
 
   // Purga integral de facturas/tokens de prueba y reinicio limpio

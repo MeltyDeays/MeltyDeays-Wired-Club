@@ -152,8 +152,55 @@ export class CustomerViewModel {
     this.notify();
   }
 
+  async reconcileLedgerAndBalance(userUid) {
+    if (!userUid) return;
+    const snap = FirestoreService.getSnapshot();
+    const ledger = (snap.ledger && snap.ledger[userUid]) ? snap.ledger[userUid] : [];
+    if (!ledger.length) return;
+
+    // Detectar si hay múltiples REFUND_CANCEL para el mismo código de vale (exploit / retry desfasado)
+    const seenVoucherRefunds = new Set();
+    let excessRefundPoints = 0;
+    const cleanedLedger = [];
+
+    // Recorremos cronológicamente (de más antiguo a más reciente)
+    const chronological = [...ledger].reverse();
+    for (const entry of chronological) {
+      if (entry.type === "REFUND_CANCEL" && entry.ref_id) {
+        const cleanRef = String(entry.ref_id).trim().toUpperCase();
+        if (seenVoucherRefunds.has(cleanRef)) {
+          // Reembolso duplicado ilícito detectado: descontar puntos del excedente
+          excessRefundPoints += Number(entry.delta || 0);
+          continue;
+        }
+        seenVoucherRefunds.add(cleanRef);
+      }
+      cleanedLedger.push(entry);
+    }
+
+    if (excessRefundPoints > 0) {
+      cleanedLedger.reverse(); // Restaurar orden cronológico inverso
+      snap.ledger[userUid] = cleanedLedger;
+      const user = snap.users && snap.users[userUid];
+      if (user) {
+        const curPts = Number(user.wiredPoints !== undefined ? user.wiredPoints : (user.wired_points || 0));
+        const corrected = Math.max(0, curPts - excessRefundPoints);
+        user.wiredPoints = corrected;
+        user.wired_points = corrected;
+        if (this.currentUser && this.currentUser.uid === userUid) {
+          this.currentUser.wiredPoints = corrected;
+        }
+      }
+      FirestoreService.saveSnapshot(snap);
+      if (user) {
+        await FirestoreService.saveUser(user);
+      }
+    }
+  }
+
   async refreshUserData() {
     if (!this.currentUser) return;
+    await this.reconcileLedgerAndBalance(this.currentUser.uid);
     const u = await FirestoreService.getUser(this.currentUser.uid);
     if (u) this.currentUser = new UserModel(u);
     await FirestoreService.fetchVouchers();
@@ -1016,29 +1063,58 @@ export class CustomerViewModel {
 
     // Caso 2: Vale de combo completo (isFullComboVoucher())
     if (typeof voucher.isFullComboVoucher === "function" && voucher.isFullComboVoucher()) {
-      const rawCombo = voucher.rewardId ? await FirestoreService.getReward(voucher.rewardId) : null;
-      let combo = rawCombo ? new RewardModel(rawCombo) : null;
+      let combo = (this.catalog || []).find(r => r.id === voucher.rewardId || (voucher.rewardTitle && r.title === voucher.rewardTitle));
+      if (!combo && voucher.rewardId) {
+        const rawCombo = await FirestoreService.getReward(voucher.rewardId);
+        if (rawCombo) combo = new RewardModel(rawCombo);
+      }
       if (combo) {
-        combo.stock = 1;
+        combo.stock = Math.max(1, (combo.stock || 0) + 1);
         combo.status = "ACTIVE";
         combo.soldOutAt = null;
         combo.soldOutReason = "";
         combo.updatedAt = new Date().toISOString();
         await FirestoreService.saveReward(combo.toJSON());
+        const catIdx = (this.catalog || []).findIndex(r => r.id === combo.id);
+        if (catIdx !== -1) {
+          this.catalog[catIdx] = combo;
+        } else {
+          this.catalog.push(combo);
+        }
         return { reconstitutedCombo: true, createdStandalone: false };
       }
     }
 
     // Caso 3: Recompensa estándar normal (incrementStock)
-    const rawReward = voucher.rewardId ? await FirestoreService.getReward(voucher.rewardId) : null;
-    let reward = rawReward ? new RewardModel(rawReward) : null;
+    let reward = (this.catalog || []).find(r => r.id === voucher.rewardId || (voucher.rewardTitle && r.title === voucher.rewardTitle));
+    if (!reward && voucher.rewardId) {
+      const rawReward = await FirestoreService.getReward(voucher.rewardId);
+      if (rawReward) reward = new RewardModel(rawReward);
+    }
+    if (!reward) {
+      const allRewards = typeof FirestoreService.getAllRewards === "function" ? FirestoreService.getAllRewards() : [];
+      const match = allRewards.find(r => r.id === voucher.rewardId || (voucher.rewardTitle && r.title === voucher.rewardTitle));
+      if (match) reward = new RewardModel(match);
+    }
     if (reward) {
       if (typeof reward.incrementStock === "function") {
         reward.incrementStock();
       } else {
         reward.stock = (reward.stock || 0) + 1;
+        if (reward.stock > 0) {
+          reward.status = "ACTIVE";
+          reward.soldOutAt = null;
+          reward.soldOutReason = "";
+        }
       }
+      reward.updatedAt = new Date().toISOString();
       await FirestoreService.saveReward(reward.toJSON());
+      const catIdx = (this.catalog || []).findIndex(r => r.id === reward.id);
+      if (catIdx !== -1) {
+        this.catalog[catIdx] = reward;
+      } else {
+        this.catalog.push(reward);
+      }
     }
     return { reconstitutedCombo: false, createdStandalone: false };
   }
@@ -1092,8 +1168,43 @@ export class CustomerViewModel {
         throw new Error("Este vale ya caducó al superar el plazo de 3 días para concretar el pago.");
       }
 
+      // Verificación de integridad contable anti-burlas:
+      const existingLedger = FirestoreService.getLedger(this.currentUser.uid);
+      const isAlreadyRefundedInLedger = (existingLedger || []).some(entry =>
+        (entry.type === "REFUND_CANCEL" || entry.type === "CANCEL_PURCHASE") &&
+        (entry.ref_id === cleanCode || (entry.note && entry.note.includes(cleanCode)))
+      );
+      if (isAlreadyRefundedInLedger) {
+        voucher.markCancelled(this.currentUser.uid);
+        await FirestoreService.saveVoucher(voucher.toJSON());
+        throw new Error("Este vale ya fue cancelado y su reembolso ya fue procesado.");
+      }
+
       // Marcar sincrónicamente en memoria antes de cualquier await para bloquear llamadas concurrentes
       voucher.markCancelled(this.currentUser.uid);
+
+      // Sincronizar inmediatamente en this.vouchers y en el snapshot local
+      (this.vouchers || []).forEach(v => {
+        if ((v.voucherCode || "").trim().toUpperCase() === cleanCode) {
+          v.markCancelled(this.currentUser.uid);
+        }
+      });
+      const snap = FirestoreService.getSnapshot();
+      if (snap && snap.vouchers) {
+        if (snap.vouchers[cleanCode]) {
+          snap.vouchers[cleanCode].status = "CANCELLED";
+          snap.vouchers[cleanCode].cancelledAt = new Date().toISOString();
+          snap.vouchers[cleanCode].cancelledBy = this.currentUser.uid;
+        }
+        for (const [k, v] of Object.entries(snap.vouchers)) {
+          if ((v.voucherCode || v.voucher_code || "").trim().toUpperCase() === cleanCode) {
+            snap.vouchers[k].status = "CANCELLED";
+            snap.vouchers[k].cancelledAt = new Date().toISOString();
+            snap.vouchers[k].cancelledBy = this.currentUser.uid;
+          }
+        }
+        FirestoreService.saveSnapshot(snap);
+      }
 
       const pointsToRefund = voucher.pointsSpent || 0;
 

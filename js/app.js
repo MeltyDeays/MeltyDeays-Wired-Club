@@ -53,6 +53,7 @@ import {
   triggerCyberGlitchCelebration,
   // 3. Vales e Historial
   renderVouchers,
+  switchVoucherSubTab,
   renderLedger,
   showVoucherModal,
   closeVoucherModal,
@@ -445,6 +446,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   window.showVoucherModal = showVoucherModal;
   window.closeVoucherModal = closeVoucherModal;
+  window.switchVoucherSubTab = switchVoucherSubTab;
   window.promptCancelCurrentVoucher = promptCancelCurrentVoucher;
   window.promptCancelVoucher = promptCancelVoucher;
   window.closeCancelVoucherModal = closeCancelVoucherModal;

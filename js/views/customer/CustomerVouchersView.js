@@ -19,138 +19,231 @@ export function initCustomerVouchersView(deps) {
 
 let currentOpenVoucherCode = null;
 let pendingCancelVoucherCode = null;
+let currentVoucherSubTab = "active"; // "active" | "history"
+let cachedVouchers = [];
 
-export function renderVouchers(vouchers) {
+export function isVoucherHistory(v) {
+  if (!v) return false;
+  const isDelivered = v.status === "DELIVERED" ||
+    v.status === "REDEEMED" ||
+    (typeof v.isDelivered === "function" && v.isDelivered()) ||
+    Boolean(v.deliveredAt);
+  const isCancelled = v.status === "CANCELLED" ||
+    (typeof v.isCancelled === "function" && v.isCancelled()) ||
+    Boolean(v.cancelledAt);
+  const isPreOrder = v.rewardType === "PREORDER_RESERVATION" ||
+    v.status === "RESERVED_UPCOMING" ||
+    (typeof v.isPreOrder === "function" && v.isPreOrder()) ||
+    (typeof v.voucherCode === "string" && v.voucherCode.startsWith("RES-"));
+  const isCommercial = !isPreOrder && (typeof v.isCommercial === "function"
+    ? v.isCommercial()
+    : (v.rewardType === "PARTIAL_DISCOUNT" || (v.cashToPayUsd && v.cashToPayUsd > 0)));
+  const isPaid = typeof v.isPaidVoucher === "function"
+    ? v.isPaidVoucher()
+    : Boolean(v.isPaid || v.status === "PAID" || v.paidAt);
+  const isExpired = v.status === "EXPIRED" || (typeof v.isExpired === "function"
+    ? v.isExpired()
+    : (isCommercial && !isPaid && !isDelivered && !isCancelled && v.expiresAt && new Date() > new Date(v.expiresAt)));
+
+  return Boolean(isDelivered || isCancelled || isExpired);
+}
+
+export function switchVoucherSubTab(tab) {
+  currentVoucherSubTab = (tab === "history") ? "history" : "active";
+  renderVouchersList();
+}
+
+if (typeof window !== "undefined") {
+  window.switchVoucherSubTab = switchVoucherSubTab;
+}
+
+function updateSubTabControls(activeCount, historyCount) {
+  const btnActive = document.getElementById("voucher-subtab-btn-active");
+  const btnHistory = document.getElementById("voucher-subtab-btn-history");
+  const subActiveBadge = document.getElementById("voucher-subtab-active-count");
+  const subHistoryBadge = document.getElementById("voucher-subtab-history-count");
+
+  if (btnActive) btnActive.classList.toggle("active", currentVoucherSubTab === "active");
+  if (btnHistory) btnHistory.classList.toggle("active", currentVoucherSubTab === "history");
+
+  if (subActiveBadge) subActiveBadge.textContent = activeCount;
+  if (subHistoryBadge) subHistoryBadge.textContent = historyCount;
+}
+
+function renderVoucherCard(v) {
+  const isDelivered = v.status === "DELIVERED" || (typeof v.isDelivered === "function" && v.isDelivered()) || Boolean(v.deliveredAt);
+  const isCancelled = v.status === "CANCELLED" || (typeof v.isCancelled === "function" && v.isCancelled()) || Boolean(v.cancelledAt);
+  const isPreOrder = v.rewardType === "PREORDER_RESERVATION" || v.status === "RESERVED_UPCOMING" || (typeof v.isPreOrder === "function" && v.isPreOrder()) || (typeof v.voucherCode === "string" && v.voucherCode.startsWith("RES-"));
+  const isCommercial = !isPreOrder && (typeof v.isCommercial === "function" ? v.isCommercial() : (v.rewardType === "PARTIAL_DISCOUNT" || (v.cashToPayUsd && v.cashToPayUsd > 0)));
+  const isPaid = typeof v.isPaidVoucher === "function" ? v.isPaidVoucher() : Boolean(v.isPaid || v.status === "PAID" || v.paidAt);
+  const isExpired = v.status === "EXPIRED" || (typeof v.isExpired === "function" ? v.isExpired() : (isCommercial && !isPaid && !isDelivered && !isCancelled && v.expiresAt && new Date() > new Date(v.expiresAt)));
+  const cost = v.pointsSpent || v.pointsCost || 0;
+  const dateStr = v.createdAt ? new Date(v.createdAt).toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" }) : "-";
+
+  let badgeHtml = "";
+  if (isDelivered) {
+    badgeHtml = `<div class="voucher-badge delivered" style="background:#ecfdf5; color:#065f46; border:1px solid #a7f3d0; font-family:var(--font-mono); font-size:0.68rem; font-weight:800; padding:2px 7px; border-radius:3px;">✓ ENTREGADO</div>`;
+  } else if (isCancelled) {
+    badgeHtml = `<div class="voucher-badge cancelled" style="background:#fee2e2; color:#991b1b; border:1px solid #fca5a5; font-family:var(--font-mono); font-size:0.68rem; font-weight:800; padding:2px 7px; border-radius:3px;">❌ CANCELADO</div>`;
+  } else if (isPreOrder) {
+    badgeHtml = `<div class="voucher-badge preorder" style="background:#eff6ff; color:#1e40af; border:1px solid #bfdbfe; font-family:var(--font-mono); font-size:0.68rem; font-weight:800; padding:2px 7px; border-radius:3px;">🔮 RESERVA EN CAMINO (PREVENTA)</div>`;
+  } else if (isExpired) {
+    badgeHtml = `<div class="voucher-badge expired" style="background:#fef2f2; color:#b91c1c; border:1px solid #fecaca; font-family:var(--font-mono); font-size:0.68rem; font-weight:800; padding:2px 7px; border-radius:3px;">⚠️ CADUCADO (3D)</div>`;
+  } else if (isPaid) {
+    badgeHtml = `<div class="voucher-badge paid" style="background:#f0fdf4; color:#15803d; border:1px solid #86efac; font-family:var(--font-mono); font-size:0.68rem; font-weight:800; padding:2px 7px; border-radius:3px;">💵 PAGO CONFIRMADO</div>`;
+  } else if (isCommercial) {
+    badgeHtml = `<div class="voucher-badge pending-pay" style="background:#fffbeb; color:#92400e; border:1px solid #fcd34d; font-family:var(--font-mono); font-size:0.68rem; font-weight:800; padding:2px 7px; border-radius:3px;">⏱️ PENDIENTE DE PAGO</div>`;
+  } else {
+    badgeHtml = `<div class="voucher-badge pending" style="background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; font-family:var(--font-mono); font-size:0.68rem; font-weight:800; padding:2px 7px; border-radius:3px;">🎁 LISTO PARA RETIRAR</div>`;
+  }
+
+  let expInfo = "";
+  if (isPreOrder) {
+    const etaFormatted = v.estimatedArrival ? new Date(v.estimatedArrival).toLocaleDateString("es-NI", { day: "2-digit", month: "short", year: "numeric" }) : "Por confirmar";
+    expInfo = `<div style="font-family:var(--font-mono); font-size:0.68rem; color:#0284c7; font-weight:700; margin-top:3px;">⏱️ Llegada estimada: ${etaFormatted} · Sin caducidad previa</div>`;
+  } else if (isExpired) {
+    expInfo = cost > 0
+      ? `<div style="font-family:var(--font-mono); font-size:0.68rem; color:#dc2626; font-weight:800; margin-top:3px;">⚠️ Plazo de 3 días vencido · -10 WP penalización por irresponsabilidad</div>`
+      : `<div style="font-family:var(--font-mono); font-size:0.68rem; color:#dc2626; font-weight:800; margin-top:3px;">⚠️ Plazo de 3 días para pagar vencido · Stock devuelto a tienda</div>`;
+  } else if (!isDelivered && !isCancelled) {
+    if (!isCommercial) {
+      expInfo = `<div style="font-family:var(--font-mono); font-size:0.68rem; color:#059669; font-weight:700; margin-top:3px;">🎁 Canje 100% Puntos · Sin límite de tiempo para retiro</div>`;
+    } else if (isPaid) {
+      expInfo = `<div style="font-family:var(--font-mono); font-size:0.68rem; color:#15803d; font-weight:700; margin-top:3px;">✅ Pago confirmado (${formatPrice(v.cashToPayUsd)}) · Sin límite para retirar</div>`;
+    } else if (v.expiresAt) {
+      const msLeft = new Date(v.expiresAt) - new Date();
+      if (msLeft <= 0) {
+        expInfo = cost > 0
+          ? `<div style="font-family:var(--font-mono); font-size:0.68rem; color:#dc2626; font-weight:800; margin-top:3px;">⚠️ Plazo de 3 días vencido · -10 WP penalización por irresponsabilidad</div>`
+          : `<div style="font-family:var(--font-mono); font-size:0.68rem; color:#dc2626; font-weight:800; margin-top:3px;">⚠️ Plazo de 3 días para pagar vencido · Stock devuelto a tienda</div>`;
+      } else {
+        const hoursLeft = Math.floor(msLeft / (1000 * 60 * 60));
+        const daysLeft = Math.floor(hoursLeft / 24);
+        const remHours = hoursLeft % 24;
+        const timeStr = daysLeft > 0 ? `${daysLeft}d ${remHours}h` : `${hoursLeft}h`;
+        expInfo = `<div style="font-family:var(--font-mono); font-size:0.68rem; color:#b45309; font-weight:700; margin-top:3px;">⏱️ Plazo para pagar: ${timeStr} restantes (Máx 3 días)</div>`;
+      }
+    } else {
+      expInfo = `<div style="font-family:var(--font-mono); font-size:0.68rem; color:#059669; font-weight:700; margin-top:3px;">⏱️ Sin caducidad</div>`;
+    }
+  }
+
+  const canCancel = !isDelivered && !isCancelled && !isExpired && (!isCommercial || !isPaid);
+
+  return `
+    <div class="voucher-card" onclick="showVoucherModal('${v.voucherCode}')" style="cursor: pointer; transition: transform 0.15s ease; ${isCancelled || isExpired ? 'opacity: 0.85; background: #fffaf0;' : ''}" title="Clic para ver código QR">
+      <div class="voucher-header" style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:0.5rem;">
+        <div class="voucher-title" style="font-weight:900; font-size:1.05rem; color:var(--dark);">${v.rewardTitle || "Artículo"}</div>
+        ${badgeHtml}
+      </div>
+      <div class="voucher-code" style="font-family:var(--font-mono); font-size:1.35rem; font-weight:900; letter-spacing:2px; color:var(--dark); margin:0.35rem 0;">${v.voucherCode}</div>
+      ${isPreOrder ? `
+        <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:3px; padding:3px 6px; font-family:var(--font-mono); font-size:0.72rem; color:#1e40af; margin: 4px 0;">
+          🏷️ Descuento Preventa: -${formatPrice(v.discountUsd)} · <strong style="color:#0284c7;">Abonar al llegar: ${formatPrice(v.cashToPayUsd)}</strong>
+          ${(v.customerInfo && (v.customerInfo.fullName || v.customerInfo.cedula)) ? `
+            <div style="font-size:0.68rem; color:#475569; margin-top:2px;">👤 Titular: ${v.customerInfo.fullName || v.userName} ${v.customerInfo.cedula ? '· 🪪 ' + v.customerInfo.cedula : ''}</div>
+          ` : ''}
+        </div>
+      ` : ((v.cashToPayUsd && v.cashToPayUsd > 0) ? `
+        <div style="background:${isPaid ? '#ecfdf5' : '#fffbeb'}; border:1px solid ${isPaid ? '#a7f3d0' : '#fcd34d'}; border-radius:3px; padding:3px 6px; font-family:var(--font-mono); font-size:0.72rem; color:${isPaid ? '#065f46' : '#92400e'}; margin: 4px 0;">
+          ${isPaid
+            ? `✅ <strong>Abonado: ${formatPrice(v.cashToPayUsd)}</strong> (Pago confirmado)`
+            : ((v.discountUsd && v.discountUsd > 0)
+              ? `🏷️ Descuento: -${formatPrice(v.discountUsd)} · <strong style="color:#dc2626;">Abonar: ${formatPrice(v.cashToPayUsd)}</strong>`
+              : `🛒 Compra en tienda · <strong style="color:#dc2626;">Abonar: ${formatPrice(v.cashToPayUsd)}</strong>`)
+          }
+        </div>
+      ` : '')}
+      ${expInfo}
+      <div class="voucher-meta" style="display:flex; justify-content:space-between; align-items:center; font-family:var(--font-mono); font-size:0.75rem; color:var(--gray-600); border-top:1px dashed var(--gray-300); padding-top:0.6rem; margin-top:0.6rem;">
+        <div>Puntos: <strong style="color:var(--dark);">${cost > 0 ? cost.toLocaleString() + ' WP' : (isPreOrder ? '0 WP (Preventa directa)' : '0 WP (Sin desc.)')}</strong></div>
+        <div>${dateStr}</div>
+        <div style="display: flex; gap: 4px; align-items: center;">
+          ${canCancel ? `
+            <button class="btn-secondary" style="padding:2px 7px; font-size:0.7rem; color:#b91c1c; border-color:#fca5a5; background:#fff1f2;" onclick="event.stopPropagation(); promptCancelVoucher('${v.voucherCode}')" title="Cancelar este vale y devolver puntos">❌ Cancelar</button>
+          ` : ''}
+          <button class="btn-secondary" style="padding:2px 7px; font-size:0.7rem;" onclick="event.stopPropagation(); showVoucherModal('${v.voucherCode}')">👁️ Ver QR</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderVouchersList() {
   const container = document.getElementById("vouchers-container");
   const countBadge = document.getElementById("vouchers-count-badge");
   if (!container) return;
 
-  const pending = (vouchers || []).filter(v => v.status === "PENDING_DELIVERY" || !v.isDelivered?.());
-  if (countBadge) countBadge.textContent = pending.length;
+  const activeVouchers = (cachedVouchers || []).filter(v => !isVoucherHistory(v));
+  const historyVouchers = (cachedVouchers || []).filter(v => isVoucherHistory(v));
 
-  if (!vouchers || vouchers.length === 0) {
-    container.innerHTML = `
-      <div class="cyber-empty-box">
-        <div class="empty-icon-wrap" style="color: var(--accent); background: #fff1f2; border-color: #fecdd3;">
-          <svg viewBox="0 0 24 24" width="34" height="34" stroke="currentColor" stroke-width="1.8" fill="none">
-            <path d="M4 8V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2a2 2 0 0 0 0-4Z" />
-            <path d="M10 4v16M14 4v16" stroke-dasharray="2 2" />
-          </svg>
+  // Navbar badge: SOLO contabiliza vales activos y pendientes de retiro/pago
+  if (countBadge) countBadge.textContent = activeVouchers.length;
+
+  updateSubTabControls(activeVouchers.length, historyVouchers.length);
+
+  if (currentVoucherSubTab === "active") {
+    if (activeVouchers.length === 0) {
+      container.innerHTML = `
+        <div class="cyber-empty-box">
+          <div class="empty-icon-wrap" style="color: var(--accent); background: #fff1f2; border-color: #fecdd3;">
+            <svg viewBox="0 0 24 24" width="34" height="34" stroke="currentColor" stroke-width="1.8" fill="none">
+              <path d="M4 8V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2a2 2 0 0 0 0-4Z" />
+              <path d="M10 4v16M14 4v16" stroke-dasharray="2 2" />
+            </svg>
+          </div>
+          <div class="empty-tag">VALES // ACTIVOS VACÍO</div>
+          <h3 class="empty-title">No Tienes Vales Activos</h3>
+          <p class="empty-desc">
+            Tus vales activos para retirar en mostrador aparecerán aquí.
+            ${historyVouchers.length > 0 ? `Tienes <strong>${historyVouchers.length}</strong> vale(s) archivado(s) en tu historial.` : 'Cuando canjees un producto en el catálogo, aquí aparecerá tu vale digital con QR.'}
+          </p>
+          <div style="display: flex; gap: 0.5rem; justify-content: center; margin-top: 1rem; flex-wrap: wrap;">
+            <button class="btn-primary" onclick="switchTab('catalog')">🎁 Ir al Catálogo de Recompensas</button>
+            ${historyVouchers.length > 0 ? `<button class="btn-secondary" onclick="switchVoucherSubTab('history')">📜 Ver Historial (${historyVouchers.length})</button>` : ''}
+          </div>
         </div>
-        <div class="empty-tag">VALES // HISTORIAL VACÍO</div>
-        <h3 class="empty-title">No Tienes Vales Activos</h3>
-        <p class="empty-desc">
-          Cuando canjees un producto en el catálogo, aquí aparecerá tu vale digital con QR para retirar directamente en mostrador.
-        </p>
+      `;
+      return;
+    }
+
+    container.innerHTML = `
+      <div class="vouchers-grid">
+        ${activeVouchers.map(renderVoucherCard).join("")}
       </div>
     `;
-    return;
-  }
-
-  container.innerHTML = `
-    <div class="vouchers-grid">
-      ${vouchers.map(v => {
-    const isDelivered = v.status === "DELIVERED" || (typeof v.isDelivered === "function" && v.isDelivered()) || Boolean(v.deliveredAt);
-    const isCancelled = v.status === "CANCELLED" || (typeof v.isCancelled === "function" && v.isCancelled()) || Boolean(v.cancelledAt);
-    const isPreOrder = v.rewardType === "PREORDER_RESERVATION" || v.status === "RESERVED_UPCOMING" || (typeof v.isPreOrder === "function" && v.isPreOrder()) || (typeof v.voucherCode === "string" && v.voucherCode.startsWith("RES-"));
-    const isCommercial = !isPreOrder && (typeof v.isCommercial === "function" ? v.isCommercial() : (v.rewardType === "PARTIAL_DISCOUNT" || (v.cashToPayUsd && v.cashToPayUsd > 0)));
-    const isPaid = typeof v.isPaidVoucher === "function" ? v.isPaidVoucher() : Boolean(v.isPaid || v.status === "PAID" || v.paidAt);
-    const isExpired = v.status === "EXPIRED" || (typeof v.isExpired === "function" ? v.isExpired() : (isCommercial && !isPaid && !isDelivered && !isCancelled && v.expiresAt && new Date() > new Date(v.expiresAt)));
-    const cost = v.pointsSpent || v.pointsCost || 0;
-    const dateStr = v.createdAt ? new Date(v.createdAt).toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" }) : "-";
-
-    let badgeHtml = "";
-    if (isDelivered) {
-      badgeHtml = `<div class="voucher-badge delivered" style="background:#ecfdf5; color:#065f46; border:1px solid #a7f3d0; font-family:var(--font-mono); font-size:0.68rem; font-weight:800; padding:2px 7px; border-radius:3px;">✓ ENTREGADO</div>`;
-    } else if (isCancelled) {
-      badgeHtml = `<div class="voucher-badge cancelled" style="background:#fee2e2; color:#991b1b; border:1px solid #fca5a5; font-family:var(--font-mono); font-size:0.68rem; font-weight:800; padding:2px 7px; border-radius:3px;">❌ CANCELADO</div>`;
-    } else if (isPreOrder) {
-      badgeHtml = `<div class="voucher-badge preorder" style="background:#eff6ff; color:#1e40af; border:1px solid #bfdbfe; font-family:var(--font-mono); font-size:0.68rem; font-weight:800; padding:2px 7px; border-radius:3px;">🔮 RESERVA EN CAMINO (PREVENTA)</div>`;
-    } else if (isExpired) {
-      badgeHtml = `<div class="voucher-badge expired" style="background:#fef2f2; color:#b91c1c; border:1px solid #fecaca; font-family:var(--font-mono); font-size:0.68rem; font-weight:800; padding:2px 7px; border-radius:3px;">⚠️ CADUCADO (3D)</div>`;
-    } else if (isPaid) {
-      badgeHtml = `<div class="voucher-badge paid" style="background:#f0fdf4; color:#15803d; border:1px solid #86efac; font-family:var(--font-mono); font-size:0.68rem; font-weight:800; padding:2px 7px; border-radius:3px;">💵 PAGO CONFIRMADO</div>`;
-    } else if (isCommercial) {
-      badgeHtml = `<div class="voucher-badge pending-pay" style="background:#fffbeb; color:#92400e; border:1px solid #fcd34d; font-family:var(--font-mono); font-size:0.68rem; font-weight:800; padding:2px 7px; border-radius:3px;">⏱️ PENDIENTE DE PAGO</div>`;
-    } else {
-      badgeHtml = `<div class="voucher-badge pending" style="background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; font-family:var(--font-mono); font-size:0.68rem; font-weight:800; padding:2px 7px; border-radius:3px;">🎁 LISTO PARA RETIRAR</div>`;
-    }
-
-    let expInfo = "";
-    if (isPreOrder) {
-      const etaFormatted = v.estimatedArrival ? new Date(v.estimatedArrival).toLocaleDateString("es-NI", { day: "2-digit", month: "short", year: "numeric" }) : "Por confirmar";
-      expInfo = `<div style="font-family:var(--font-mono); font-size:0.68rem; color:#0284c7; font-weight:700; margin-top:3px;">⏱️ Llegada estimada: ${etaFormatted} · Sin caducidad previa</div>`;
-    } else if (isExpired) {
-      expInfo = cost > 0
-        ? `<div style="font-family:var(--font-mono); font-size:0.68rem; color:#dc2626; font-weight:800; margin-top:3px;">⚠️ Plazo de 3 días vencido · -10 WP penalización por irresponsabilidad</div>`
-        : `<div style="font-family:var(--font-mono); font-size:0.68rem; color:#dc2626; font-weight:800; margin-top:3px;">⚠️ Plazo de 3 días para pagar vencido · Stock devuelto a tienda</div>`;
-    } else if (!isDelivered && !isCancelled) {
-      if (!isCommercial) {
-        // Recompensa 100% gratis: Cero límite de tiempo
-        expInfo = `<div style="font-family:var(--font-mono); font-size:0.68rem; color:#059669; font-weight:700; margin-top:3px;">🎁 Canje 100% Puntos · Sin límite de tiempo para retiro</div>`;
-      } else if (isPaid) {
-        // Compra comercial ya pagada en efectivo: Cero límite de tiempo
-        expInfo = `<div style="font-family:var(--font-mono); font-size:0.68rem; color:#15803d; font-weight:700; margin-top:3px;">✅ Pago confirmado (${formatPrice(v.cashToPayUsd)}) · Sin límite para retirar</div>`;
-      } else if (v.expiresAt) {
-        const msLeft = new Date(v.expiresAt) - new Date();
-        if (msLeft <= 0) {
-          expInfo = cost > 0
-            ? `<div style="font-family:var(--font-mono); font-size:0.68rem; color:#dc2626; font-weight:800; margin-top:3px;">⚠️ Plazo de 3 días vencido · -10 WP penalización por irresponsabilidad</div>`
-            : `<div style="font-family:var(--font-mono); font-size:0.68rem; color:#dc2626; font-weight:800; margin-top:3px;">⚠️ Plazo de 3 días para pagar vencido · Stock devuelto a tienda</div>`;
-        } else {
-          const hoursLeft = Math.floor(msLeft / (1000 * 60 * 60));
-          const daysLeft = Math.floor(hoursLeft / 24);
-          const remHours = hoursLeft % 24;
-          const timeStr = daysLeft > 0 ? `${daysLeft}d ${remHours}h` : `${hoursLeft}h`;
-          expInfo = `<div style="font-family:var(--font-mono); font-size:0.68rem; color:#b45309; font-weight:700; margin-top:3px;">⏱️ Plazo para pagar: ${timeStr} restantes (Máx 3 días)</div>`;
-        }
-      } else {
-        expInfo = `<div style="font-family:var(--font-mono); font-size:0.68rem; color:#059669; font-weight:700; margin-top:3px;">⏱️ Sin caducidad</div>`;
-      }
-    }
-
-    const canCancel = !isDelivered && !isCancelled && !isExpired && (!isCommercial || !isPaid);
-
-    return `
-          <div class="voucher-card" onclick="showVoucherModal('${v.voucherCode}')" style="cursor: pointer; transition: transform 0.15s ease; ${isCancelled || isExpired ? 'opacity: 0.8; background: #fffaf0;' : ''}" title="Clic para ver código QR">
-            <div class="voucher-header" style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:0.5rem;">
-              <div class="voucher-title" style="font-weight:900; font-size:1.05rem; color:var(--dark);">${v.rewardTitle || "Artículo"}</div>
-              ${badgeHtml}
-            </div>
-            <div class="voucher-code" style="font-family:var(--font-mono); font-size:1.35rem; font-weight:900; letter-spacing:2px; color:var(--dark); margin:0.35rem 0;">${v.voucherCode}</div>
-            ${isPreOrder ? `
-              <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:3px; padding:3px 6px; font-family:var(--font-mono); font-size:0.72rem; color:#1e40af; margin: 4px 0;">
-                🏷️ Descuento Preventa: -${formatPrice(v.discountUsd)} · <strong style="color:#0284c7;">Abonar al llegar: ${formatPrice(v.cashToPayUsd)}</strong>
-                ${(v.customerInfo && (v.customerInfo.fullName || v.customerInfo.cedula)) ? `
-                  <div style="font-size:0.68rem; color:#475569; margin-top:2px;">👤 Titular: ${v.customerInfo.fullName || v.userName} ${v.customerInfo.cedula ? '· 🪪 ' + v.customerInfo.cedula : ''}</div>
-                ` : ''}
-              </div>
-            ` : ((v.cashToPayUsd && v.cashToPayUsd > 0) ? `
-              <div style="background:${isPaid ? '#ecfdf5' : '#fffbeb'}; border:1px solid ${isPaid ? '#a7f3d0' : '#fcd34d'}; border-radius:3px; padding:3px 6px; font-family:var(--font-mono); font-size:0.72rem; color:${isPaid ? '#065f46' : '#92400e'}; margin: 4px 0;">
-                ${isPaid
-          ? `✅ <strong>Abonado: ${formatPrice(v.cashToPayUsd)}</strong> (Pago confirmado)`
-          : ((v.discountUsd && v.discountUsd > 0)
-            ? `🏷️ Descuento: -${formatPrice(v.discountUsd)} · <strong style="color:#dc2626;">Abonar: ${formatPrice(v.cashToPayUsd)}</strong>`
-            : `🛒 Compra en tienda · <strong style="color:#dc2626;">Abonar: ${formatPrice(v.cashToPayUsd)}</strong>`)
-        }
-              </div>
-            ` : '')}
-            ${expInfo}
-            <div class="voucher-meta" style="display:flex; justify-content:space-between; align-items:center; font-family:var(--font-mono); font-size:0.75rem; color:var(--gray-600); border-top:1px dashed var(--gray-300); padding-top:0.6rem; margin-top:0.6rem;">
-              <div>Puntos: <strong style="color:var(--dark);">${cost > 0 ? cost.toLocaleString() + ' WP' : (isPreOrder ? '0 WP (Preventa directa)' : '0 WP (Sin desc.)')}</strong></div>
-              <div>${dateStr}</div>
-              <div style="display: flex; gap: 4px; align-items: center;">
-                ${canCancel ? `
-                  <button class="btn-secondary" style="padding:2px 7px; font-size:0.7rem; color:#b91c1c; border-color:#fca5a5; background:#fff1f2;" onclick="event.stopPropagation(); promptCancelVoucher('${v.voucherCode}')" title="Cancelar este vale y devolver puntos">❌ Cancelar</button>
-                ` : ''}
-                <button class="btn-secondary" style="padding:2px 7px; font-size:0.7rem;" onclick="event.stopPropagation(); showVoucherModal('${v.voucherCode}')">👁️ Ver QR</button>
-              </div>
-            </div>
+  } else {
+    if (historyVouchers.length === 0) {
+      container.innerHTML = `
+        <div class="cyber-empty-box">
+          <div class="empty-icon-wrap" style="color: var(--gray-600); background: #f1f5f9; border-color: #cbd5e1;">
+            <svg viewBox="0 0 24 24" width="34" height="34" stroke="currentColor" stroke-width="1.8" fill="none">
+              <circle cx="12" cy="12" r="10" />
+              <polyline points="12 6 12 12 16 14" />
+            </svg>
           </div>
-        `;
-  }).join("")}
-    </div>
-  `;
+          <div class="empty-tag">HISTORIAL // ARCHIVO VACÍO</div>
+          <h3 class="empty-title">Sin Vales Anteriores</h3>
+          <p class="empty-desc">
+            Aquí se archivarán los vales que hayan sido entregados en mostrador, cancelados por ti o vencidos tras 3 días.
+          </p>
+          <button class="btn-secondary" style="margin-top: 1rem;" onclick="switchVoucherSubTab('active')">🎟️ Volver a Vales Activos</button>
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = `
+      <div class="vouchers-grid">
+        ${historyVouchers.map(renderVoucherCard).join("")}
+      </div>
+    `;
+  }
+}
+
+export function renderVouchers(vouchers) {
+  cachedVouchers = Array.isArray(vouchers) ? vouchers : [];
+  renderVouchersList();
 }
 
 
@@ -200,7 +293,9 @@ export function renderLedger(ledger) {
 
 
 export function showVoucherModal(voucherCode) {
-  const voucher = vm.vouchers.find(v => v.voucherCode === voucherCode);
+  const cleanCode = (voucherCode || "").trim().toUpperCase();
+  const voucher = (vm && Array.isArray(vm.vouchers) && vm.vouchers.find(v => (v.voucherCode || "").trim().toUpperCase() === cleanCode)) ||
+    cachedVouchers.find(v => (v.voucherCode || "").trim().toUpperCase() === cleanCode);
   if (!voucher) return;
 
   currentOpenVoucherCode = voucher.voucherCode;
@@ -735,6 +830,17 @@ export async function executeCancelVoucher() {
     closeCancelVoucherModal();
     closeVoucherModal();
 
+    const targetCached = cachedVouchers.find(v => (v.voucherCode || "").trim().toUpperCase() === code);
+    if (targetCached) {
+      if (typeof targetCached.markCancelled === "function") {
+        targetCached.markCancelled(vm?.currentUser?.uid || "client");
+      } else {
+        targetCached.status = "CANCELLED";
+        targetCached.cancelledAt = new Date().toISOString();
+      }
+    }
+    renderVouchersList();
+
     if (res.pointsRefunded > 0) {
       showToast(`Vale ${code} cancelado. Se te han reembolsado ${res.pointsRefunded.toLocaleString()} WP.`, "success");
     } else {
@@ -743,6 +849,18 @@ export async function executeCancelVoucher() {
 
     if (vm && typeof vm.notify === 'function') vm.notify();
   } catch (err) {
+    const targetCached = cachedVouchers.find(v => (v.voucherCode || "").trim().toUpperCase() === code);
+    if (targetCached && err.message && err.message.includes("ya fue cancelado")) {
+      if (typeof targetCached.markCancelled === "function") {
+        targetCached.markCancelled(vm?.currentUser?.uid || "client");
+      } else {
+        targetCached.status = "CANCELLED";
+        targetCached.cancelledAt = new Date().toISOString();
+      }
+      renderVouchersList();
+      closeCancelVoucherModal();
+      closeVoucherModal();
+    }
     showToast(err.message || "Error al cancelar vale.", "error");
   } finally {
     if (btn) {
