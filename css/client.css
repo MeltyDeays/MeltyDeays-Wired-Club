@@ -488,6 +488,112 @@
   margin: 0.4rem 0;
 }
 
+/* ANIMACIÓN DE CANCELACIÓN Y ANULACIÓN DE VALE */
+.voucher-card.is-cancelling {
+  position: relative !important;
+  overflow: hidden !important;
+  pointer-events: none !important;
+  border-color: #ef4444 !important;
+  background: #fef2f2 !important;
+  box-shadow: 0 0 16px rgba(239, 68, 68, 0.35) !important;
+  transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+              opacity 0.45s ease,
+              max-height 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+              margin 0.45s ease,
+              padding 0.45s ease,
+              border-width 0.45s ease !important;
+}
+
+.voucher-card.is-cancelling-collapse {
+  opacity: 0 !important;
+  transform: scale(0.92) translateX(-28px) !important;
+  max-height: 0 !important;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  border-width: 0 !important;
+}
+
+.voucher-stamp-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(254, 242, 242, 0.94);
+  backdrop-filter: blur(2px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  padding: 1rem;
+  text-align: center;
+  animation: stampOverlayFadeIn 0.2s ease-out forwards;
+}
+
+.voucher-stamp-cancelled {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border: 3px dashed #dc2626;
+  background: #ffffff;
+  color: #dc2626;
+  padding: 8px 16px;
+  border-radius: 8px;
+  box-shadow: 4px 4px 0px #991b1b, 0 0 20px rgba(220, 38, 38, 0.25);
+  animation: stampSlamIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  transform-origin: center center;
+}
+
+.voucher-stamp-cancelled .stamp-icon {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.voucher-stamp-cancelled .stamp-text {
+  font-family: var(--font-mono);
+  font-size: 1.1rem;
+  font-weight: 900;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+
+.voucher-stamp-cancelled .stamp-sub {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #059669;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin-top: 2px;
+}
+
+@keyframes stampOverlayFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes stampSlamIn {
+  0% {
+    opacity: 0;
+    transform: scale(2.2) rotate(-16deg);
+    filter: blur(4px);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(0.95) rotate(-5deg);
+    filter: blur(0);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(-6deg);
+    filter: blur(0);
+  }
+}
+
 /* HISTORIAL LEDGER (TABLA TÉCNICA) */
 .ledger-list {
   background: #ffffff;
@@ -868,6 +974,7 @@
   background-image: radial-gradient(var(--dot-color) 0.85px, transparent 0.85px);
   background-size: 8px 8px;
   box-shadow: 2px 2px 0px rgba(0,0,0,0.05);
+  animation: emptyBoxPopIn 0.35s ease-out;
 }
 
 .empty-icon-wrap {
@@ -1235,6 +1342,8 @@
   box-shadow: var(--hard-shadow-sm);
   position: relative;
   transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  content-visibility: auto;
+  contain-intrinsic-size: 0 420px;
 }
 
 .reward-card:hover, .product-card:hover {
@@ -1322,6 +1431,8 @@
   pointer-events: none;
   z-index: 5;
   background: radial-gradient(circle at center, rgba(15, 23, 42, 0.35) 0%, rgba(15, 23, 42, 0.85) 100%);
+  contain: layout paint;
+  transform: translateZ(0);
 }
 
 .reward-sold-stamp {
@@ -1360,6 +1471,8 @@
   z-index: 5;
   overflow: hidden;
   background: radial-gradient(circle at 50% 25%, rgba(254, 240, 138, 0.2) 0%, rgba(251, 191, 36, 0.1) 45%, rgba(28, 25, 23, 0.78) 100%);
+  contain: layout paint;
+  transform: translateZ(0);
 }
 
 /* DESTELLOS Y RAYOS DE LUZ CELESTIAL DESCENDIENDO HACIA EL HALO */
@@ -1371,6 +1484,8 @@
   height: 60%;
   pointer-events: none;
   overflow: hidden;
+  contain: paint;
+  transform: translateZ(0);
 }
 
 .godray-beam {
@@ -1381,6 +1496,8 @@
   transform-origin: top center;
   pointer-events: none;
   animation: haibaneGodraysGlow 4s ease-in-out infinite alternate;
+  will-change: transform, opacity;
+  transform: translateZ(0);
 }
 
 .godray-beam-1 {
@@ -1393,7 +1510,7 @@
 
 .godray-beam-2 {
   left: calc(50% - 48px);
-  transform: rotate(-18deg);
+  transform: rotate(-18deg) translateZ(0);
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.45) 0%, rgba(254, 240, 138, 0.25) 50%, transparent 100%);
   clip-path: polygon(30% 0%, 70% 0%, 95% 100%, 5% 100%);
   filter: blur(4px);
@@ -1402,7 +1519,7 @@
 
 .godray-beam-3 {
   left: calc(50% + 4px);
-  transform: rotate(18deg);
+  transform: rotate(18deg) translateZ(0);
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.45) 0%, rgba(254, 240, 138, 0.25) 50%, transparent 100%);
   clip-path: polygon(30% 0%, 70% 0%, 95% 100%, 5% 100%);
   filter: blur(4px);
@@ -1410,9 +1527,9 @@
 }
 
 @keyframes haibaneGodraysGlow {
-  0% { opacity: 0.55; transform: scaleY(0.95); }
-  50% { opacity: 0.95; transform: scaleY(1.06); }
-  100% { opacity: 0.65; transform: scaleY(1); }
+  0% { opacity: 0.55; transform: scaleY(0.95) translateZ(0); }
+  50% { opacity: 0.95; transform: scaleY(1.06) translateZ(0); }
+  100% { opacity: 0.65; transform: scaleY(1) translateZ(0); }
 }
 
 /* CAMPO DE GLITTER Y ESTELA DE BRILLO */
@@ -1421,6 +1538,8 @@
   inset: 0;
   pointer-events: none;
   overflow: hidden;
+  contain: layout paint;
+  transform: translateZ(0);
 }
 
 .haibane-sparkle {
@@ -1431,6 +1550,9 @@
   line-height: 1;
   text-shadow: 0 0 6px rgba(254, 240, 138, 0.8), 0 0 10px rgba(251, 191, 36, 0.4);
   animation: haibaneSparkle 2.6s ease-in-out infinite;
+  will-change: transform, opacity;
+  contain: layout paint;
+  transform: translateZ(0);
 }
 
 .hs-1 { top: 14%; left: 18%; font-size: 0.85rem; color: #fef08a; animation-delay: 0s; }
@@ -1447,21 +1569,22 @@
   width: 50%;
   height: 200%;
   background: linear-gradient(90deg, transparent 0%, rgba(254, 240, 138, 0.15) 50%, rgba(255, 255, 255, 0.35) 60%, transparent 100%);
-  transform: rotate(35deg);
+  transform: rotate(35deg) translateZ(0);
   animation: haibaneShimmerSweep 5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
   pointer-events: none;
+  will-change: transform, opacity;
 }
 
 @keyframes haibaneSparkle {
-  0%, 100% { opacity: 0.25; transform: scale(0.65) rotate(0deg); }
-  50% { opacity: 1; transform: scale(1.25) rotate(45deg); filter: drop-shadow(0 0 8px #fef08a); }
+  0%, 100% { opacity: 0.25; transform: scale(0.65) rotate(0deg) translateZ(0); }
+  50% { opacity: 1; transform: scale(1.25) rotate(45deg) translateZ(0); }
 }
 
 @keyframes haibaneShimmerSweep {
-  0% { left: -60%; opacity: 0; }
+  0% { transform: translateX(0) rotate(35deg) translateZ(0); opacity: 0; }
   15% { opacity: 1; }
-  40% { left: 130%; opacity: 0; }
-  100% { left: 130%; opacity: 0; }
+  40% { transform: translateX(380px) rotate(35deg) translateZ(0); opacity: 0; }
+  100% { transform: translateX(380px) rotate(35deg) translateZ(0); opacity: 0; }
 }
 
 /* SELLO MONUMENTAL FLOTANTE / LEVITANDO */
@@ -1471,16 +1594,20 @@
   align-items: center;
   justify-content: center;
   pointer-events: none;
+  contain: layout paint;
+  transform: translateZ(0);
 }
 
 .reward-incoming-stamp.haibane-levitating {
   animation: haibaneFloat 3.8s ease-in-out infinite;
   filter: drop-shadow(0 10px 24px rgba(0, 0, 0, 0.85)) drop-shadow(0 0 16px rgba(251, 191, 36, 0.35));
+  will-change: transform;
+  transform: translateZ(0);
 }
 
 @keyframes haibaneFloat {
-  0%, 100% { transform: translateY(0px) rotate(1.5deg); }
-  50% { transform: translateY(-6px) rotate(-1deg); }
+  0%, 100% { transform: translateY(0px) rotate(1.5deg) translateZ(0); }
+  50% { transform: translateY(-6px) rotate(-1deg) translateZ(0); }
 }
 
 .incoming-seal-svg {
@@ -1489,11 +1616,12 @@
   overflow: visible;
   shape-rendering: geometricPrecision;
   text-rendering: geometricPrecision;
+  transform: translateZ(0);
 }
 
 /* CRONÓMETRO CONTRARRELOJ INTEGRADO EN EL RELICARIO SACRO HAIBANE */
 .haibane-relic-countdown {
-  background: rgba(253, 251, 247, 0.96);
+  background: rgba(253, 251, 247, 0.98);
   border: 1.5px solid #b45309;
   border-radius: 6px;
   box-shadow: 0 3px 10px rgba(120, 53, 15, 0.12), inset 0 0 8px rgba(254, 243, 199, 0.4);
@@ -1505,8 +1633,9 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  backdrop-filter: blur(4px);
   pointer-events: none;
+  contain: paint;
+  transform: translateZ(0);
 }
 
 .haibane-relic-digits {
@@ -1551,6 +1680,9 @@
   color: #b45309;
   font-weight: 900;
   font-size: 0.75rem;
+  display: inline-block;
+  will-change: opacity, transform;
+  transform: translateZ(0);
   animation: cdPulse 1.6s ease-in-out infinite;
 }
 
@@ -1740,13 +1872,14 @@
 
 .haibane-specs-pricing-row {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  flex-wrap: wrap;
+  gap: 0.45rem 0.85rem;
   margin: 0.55rem 0 0.5rem 0;
-  padding: 0.5rem 0.75rem;
-  background: rgba(254, 243, 199, 0.35);
-  border: 1px solid rgba(217, 119, 6, 0.2);
+  padding: 0.55rem 0.8rem;
+  background: rgba(254, 243, 199, 0.4);
+  border: 1px solid rgba(217, 119, 6, 0.25);
   border-radius: 6px;
 }
 
@@ -1755,7 +1888,7 @@
   flex-direction: column;
   gap: 2px;
   min-width: 0;
-  flex: 1;
+  flex: 1 1 auto;
 }
 
 .haibane-price-label {
@@ -1774,6 +1907,10 @@
   color: #1c1917;
   letter-spacing: -0.3px;
   line-height: 1.2;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 6px;
 }
 
 .haibane-specs-price-curr strong {
@@ -1794,6 +1931,7 @@
   display: flex;
   flex-direction: column;
   align-items: flex-end;
+  justify-content: center;
   gap: 2px;
   flex-shrink: 0;
   text-align: right;
@@ -1817,6 +1955,37 @@
   white-space: nowrap !important;
   font-weight: 800;
   line-height: 1.2;
+}
+
+@media (max-width: 640px) {
+  .haibane-specs-pricing-row {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.45rem !important;
+    padding: 0.6rem 0.75rem !important;
+  }
+  .haibane-price-main-block {
+    width: 100% !important;
+  }
+  .haibane-specs-price-curr {
+    font-size: 1.18rem !important;
+  }
+  .haibane-price-orig-block {
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding-top: 0.4rem !important;
+    border-top: 1px dashed rgba(217, 119, 6, 0.3) !important;
+    width: 100% !important;
+    text-align: left !important;
+  }
+  .haibane-orig-label {
+    font-size: 0.62rem !important;
+    letter-spacing: 0.4px !important;
+  }
+  .haibane-specs-price-orig {
+    font-size: 0.88rem !important;
+  }
 }
 
 .haibane-specs-savings-row {
@@ -2792,6 +2961,74 @@
     opacity: 0;
     transform: translateY(-38px) scale(1);
   }
+}
+
+.floating-points-refund {
+  position: absolute;
+  top: -12px;
+  right: -24px;
+  color: #059669;
+  font-family: var(--font-mono);
+  font-weight: 900;
+  font-size: 1.35rem;
+  letter-spacing: 1px;
+  text-shadow: 0 0 12px rgba(16, 185, 129, 0.5);
+  pointer-events: none;
+  z-index: 99;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: #ecfdf5;
+  border: 1.5px solid #10b981;
+  padding: 2px 8px;
+  border-radius: 4px;
+  box-shadow: 2px 2px 0px #047857;
+  animation: floatUpFadeRefund 1.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes floatUpFadeRefund {
+  0% {
+    opacity: 0;
+    transform: translateY(12px) scale(0.75);
+  }
+  20% {
+    opacity: 1;
+    transform: translateY(0) scale(1.15);
+  }
+  80% {
+    opacity: 1;
+    transform: translateY(-25px) scale(1.05);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-45px) scale(0.95);
+  }
+}
+
+.pulse-balance-refund {
+  animation: balanceRefundPulse 0.9s ease;
+}
+
+@keyframes balanceRefundPulse {
+  0% { color: inherit; transform: scale(1); }
+  30% { color: #059669; transform: scale(1.2); }
+  70% { color: #10b981; transform: scale(1.1); }
+  100% { color: inherit; transform: scale(1); }
+}
+
+.tab-badge.badge-pop {
+  animation: badgePopAnim 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes badgePopAnim {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.4); }
+  100% { transform: scale(1); }
+}
+
+@keyframes emptyBoxPopIn {
+  from { opacity: 0; transform: translateY(10px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 .cyber-spinner {

@@ -61,6 +61,7 @@ import {
   promptCancelVoucher,
   closeCancelVoucherModal,
   executeCancelVoucher,
+  animatePointsRefund,
   copyVoucherCode,
   // 4. Reclamo de Puntos y Escáner QR
   openClaimModal,
@@ -451,6 +452,7 @@ document.addEventListener("DOMContentLoaded", () => {
   window.promptCancelVoucher = promptCancelVoucher;
   window.closeCancelVoucherModal = closeCancelVoucherModal;
   window.executeCancelVoucher = executeCancelVoucher;
+  window.animatePointsRefund = animatePointsRefund;
   window.copyMemberCode = copyMemberCode;
   window.copyVoucherCode = copyVoucherCode;
   window.setAppCurrency = setAppCurrency;
@@ -487,17 +489,10 @@ document.addEventListener("DOMContentLoaded", () => {
   // Badge visual en entorno de pruebas (SANDBOX)
   injectEnvironmentBadge();
 
-  // Prevenir zoom accidental de página con gestos multitáctiles (pellizco con dos dedos)
-  document.addEventListener("gesturestart", (e) => e.preventDefault(), { passive: false });
-  document.addEventListener("gesturechange", (e) => e.preventDefault(), { passive: false });
-  document.addEventListener("gestureend", (e) => e.preventDefault(), { passive: false });
-  document.addEventListener("touchmove", (e) => {
-    if (e.touches && e.touches.length > 1) {
-      const target = e.target;
-      if (target && target.closest("#lightbox-viewport")) return;
-      e.preventDefault();
-    }
-  }, { passive: false });
+  // Prevenir gestos accidentales sin bloquear el hilo compositor del scroll nativo
+  document.addEventListener("gesturestart", (e) => e.preventDefault(), { passive: true });
+  document.addEventListener("gesturechange", (e) => e.preventDefault(), { passive: true });
+  document.addEventListener("gestureend", (e) => e.preventDefault(), { passive: true });
 });
 
 export {

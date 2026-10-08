@@ -131,7 +131,7 @@ function renderVoucherCard(v) {
   const canCancel = !isDelivered && !isCancelled && !isExpired && (!isCommercial || !isPaid);
 
   return `
-    <div class="voucher-card" onclick="showVoucherModal('${v.voucherCode}')" style="cursor: pointer; transition: transform 0.15s ease; ${isCancelled || isExpired ? 'opacity: 0.85; background: #fffaf0;' : ''}" title="Clic para ver código QR">
+    <div class="voucher-card" id="voucher-card-${v.voucherCode}" onclick="showVoucherModal('${v.voucherCode}')" style="cursor: pointer; transition: transform 0.15s ease; ${isCancelled || isExpired ? 'opacity: 0.85; background: #fffaf0;' : ''}" title="Clic para ver código QR">
       <div class="voucher-header" style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:0.5rem;">
         <div class="voucher-title" style="font-weight:900; font-size:1.05rem; color:var(--dark);">${v.rewardTitle || "Artículo"}</div>
         ${badgeHtml}
@@ -839,7 +839,41 @@ export async function executeCancelVoucher() {
         targetCached.cancelledAt = new Date().toISOString();
       }
     }
-    renderVouchersList();
+
+    const cardEl = (typeof document !== "undefined") ? document.getElementById("voucher-card-" + code) : null;
+    if (cardEl && typeof cardEl.appendChild === "function") {
+      cardEl.classList.add("is-cancelling");
+      const stampOverlay = document.createElement("div");
+      stampOverlay.className = "voucher-stamp-overlay";
+      stampOverlay.innerHTML = `
+        <div class="voucher-stamp-cancelled">
+          <span class="stamp-icon">❌</span>
+          <span class="stamp-text">VALE CANCELADO</span>
+          ${res.pointsRefunded > 0
+            ? `<span class="stamp-sub">+${res.pointsRefunded.toLocaleString()} WP REEMBOLSADOS 🪙</span>`
+            : `<span class="stamp-sub">RESERVA LIBERADA</span>`}
+        </div>
+      `;
+      cardEl.appendChild(stampOverlay);
+
+      if (res.pointsRefunded > 0) {
+        animatePointsRefund(res.pointsRefunded);
+      }
+
+      setTimeout(() => {
+        cardEl.classList.add("is-cancelling-collapse");
+        setTimeout(() => {
+          renderVouchersList();
+          triggerBadgePop();
+        }, 450);
+      }, 700);
+    } else {
+      if (res.pointsRefunded > 0) {
+        animatePointsRefund(res.pointsRefunded);
+      }
+      renderVouchersList();
+      triggerBadgePop();
+    }
 
     if (res.pointsRefunded > 0) {
       showToast(`Vale ${code} cancelado. Se te han reembolsado ${res.pointsRefunded.toLocaleString()} WP.`, "success");
@@ -867,7 +901,68 @@ export async function executeCancelVoucher() {
       btn.disabled = false;
       btn.textContent = origText;
     }
+    pendingCancelVoucherCode = null;
   }
+}
+
+export function animatePointsRefund(points) {
+  if (typeof document === "undefined" || !points || points <= 0) return;
+  const balanceEl = document.getElementById("client-balance-val");
+  if (!balanceEl) return;
+
+  const currentVal = parseInt(balanceEl.textContent.replace(/\D/g, ""), 10) || 0;
+  const targetVal = vm?.currentUser ? (vm.currentUser.wiredPoints || 0) : (currentVal + points);
+
+  // Crear badge flotante +XXX WP 🪙
+  const floatBadge = document.createElement("div");
+  floatBadge.className = "floating-points-refund";
+  floatBadge.innerHTML = `<span>+${points.toLocaleString()} WP</span> <span style="font-size: 1.1rem; line-height: 1;">🪙</span>`;
+  if (balanceEl.parentElement) {
+    balanceEl.parentElement.style.position = "relative";
+    balanceEl.parentElement.appendChild(floatBadge);
+    setTimeout(() => {
+      if (floatBadge.parentNode) floatBadge.remove();
+    }, 1600);
+  }
+
+  if (balanceEl.classList) {
+    balanceEl.classList.add("pulse-balance-refund");
+    setTimeout(() => {
+      if (balanceEl.classList) balanceEl.classList.remove("pulse-balance-refund");
+    }, 1000);
+  }
+
+  // Conteo numérico progresivo hacia arriba
+  const steps = 14;
+  const stepDuration = 32;
+  let currentStep = 0;
+  const delta = (targetVal - currentVal) / steps;
+
+  const timer = setInterval(() => {
+    currentStep++;
+    if (currentStep >= steps) {
+      clearInterval(timer);
+      balanceEl.textContent = targetVal.toLocaleString();
+    } else {
+      const interim = Math.round(currentVal + delta * currentStep);
+      balanceEl.textContent = interim.toLocaleString();
+    }
+  }, stepDuration);
+}
+
+function triggerBadgePop() {
+  if (typeof document === "undefined") return;
+  const badge = document.getElementById("voucher-subtab-active-count");
+  const navBadge = document.getElementById("vouchers-count-badge");
+  [badge, navBadge].forEach(el => {
+    if (el && el.classList) {
+      el.classList.remove("badge-pop");
+      if (typeof el.offsetWidth !== "undefined") {
+        void el.offsetWidth;
+      }
+      el.classList.add("badge-pop");
+    }
+  });
 }
 
 

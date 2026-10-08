@@ -74,8 +74,7 @@ html.modal-open .admin-bottom-dock {
 
 /* NAVBAR TÉCNICA ESTILO ENCABEZADO DE FACTURA */
 .navbar {
-  background: rgba(255, 255, 255, 0.96);
-  backdrop-filter: blur(8px);
+  background: rgba(255, 255, 255, 0.98);
   border-bottom: 2px solid var(--dark);
   padding: 0.75rem 1.5rem;
   display: flex;
@@ -87,6 +86,7 @@ html.modal-open .admin-bottom-dock {
   top: 0;
   z-index: 100;
   box-shadow: 0 2px 10px rgba(15, 23, 42, 0.06);
+  transform: translateZ(0);
 }
 
 .nav-controls {

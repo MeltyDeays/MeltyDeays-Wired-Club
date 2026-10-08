@@ -1002,7 +1002,7 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
         <div class="specs-carousel-stage">
           ${hasMultiple ? `<span id="specs-carousel-counter" class="specs-carousel-counter">[ 0${currentSpecsImgIndex + 1} / 0${productImages.length} ]</span>` : ''}
           ${hasMultiple ? `<button type="button" class="specs-carousel-btn prev" onclick="specsModalPrevImage()" aria-label="Foto anterior">‹</button>` : ''}
-          <img id="specs-carousel-img" src="${mainHeroImg}" alt="${item.title}" onclick="openLightboxFromSpecs()" title="Clic para ver en pantalla completa" onerror="this.onerror=null; this.src=''; this.parentElement.style.background='#0d131f';" onload="const b=document.getElementById('modal-specs-body'); if(b && b.dataset.openedJustNow==='1'){ b.scrollTop=0; }">
+          <img id="specs-carousel-img" src="${mainHeroImg}" alt="${item.title}" decoding="async" onclick="openLightboxFromSpecs()" title="Clic para ver en pantalla completa" onerror="this.onerror=null; this.src=''; this.parentElement.style.background='#0d131f';">
           ${hasMultiple ? `<button type="button" class="specs-carousel-btn next" onclick="specsModalNextImage()" aria-label="Foto siguiente">›</button>` : ''}
           <button type="button" class="specs-carousel-expand-btn" onclick="openLightboxFromSpecs()" title="Ver en pantalla completa">
             <span>⛶</span> <span>AMPLIAR</span>
@@ -1012,7 +1012,7 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
           <div class="specs-carousel-pagination">
             ${productImages.map((src, idx) => `
               <div class="specs-carousel-thumb ${idx === currentSpecsImgIndex ? 'active' : ''}" onclick="setSpecsModalImageIndex(${idx})" title="Frame ${idx + 1}">
-                <img src="${src}" alt="Miniatura ${idx + 1}">
+                <img src="${src}" alt="Miniatura ${idx + 1}" loading="lazy" decoding="async">
               </div>
             `).join("")}
           </div>
@@ -1213,7 +1213,7 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
                 <div class="combo-item-top-row">
                   <div class="combo-item-thumb-box">
                     ${cItem.imageUrl 
-                      ? `<img src="${cItem.imageUrl}" alt="${cItem.title || ''}" class="combo-item-thumb-img" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'combo-item-thumb-fallback\\'>📦</div>';">` 
+                      ? `<img src="${cItem.imageUrl}" alt="${cItem.title || ''}" class="combo-item-thumb-img" loading="lazy" decoding="async" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'combo-item-thumb-fallback\\'>📦</div>';">` 
                       : `<div class="combo-item-thumb-fallback">📦</div>`
                     }
                     <span class="combo-item-num-badge">#${idx + 1}</span>
@@ -1512,35 +1512,11 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
     if (b) delete b.dataset.openedJustNow;
   }, 350);
 
-  // Garantizar autofijado de scroll en el inicio absoluto al abrir
-  const resetSpecsScroll = () => {
-    if (body) {
-      body.scrollTop = 0;
-      if (typeof body.scrollTo === "function") {
-        body.scrollTo({ top: 0, left: 0, behavior: "instant" });
-      }
-      const firstChild = body.firstElementChild;
-      if (firstChild && typeof firstChild.scrollIntoView === "function") {
-        firstChild.scrollIntoView({ block: "start", inline: "nearest", behavior: "instant" });
-      }
-    }
-    if (modal) {
-      modal.scrollTop = 0;
-      if (typeof modal.scrollTo === "function") {
-        modal.scrollTo({ top: 0, left: 0, behavior: "instant" });
-      }
-    }
-    const currentDialog = modal ? modal.querySelector(".modal-specs-dialog") : null;
-    if (currentDialog) currentDialog.scrollTop = 0;
-  };
-
-  resetSpecsScroll();
-  requestAnimationFrame(() => {
-    resetSpecsScroll();
-    requestAnimationFrame(resetSpecsScroll);
-  });
-  setTimeout(resetSpecsScroll, 40);
-  setTimeout(resetSpecsScroll, 120);
+  // Garantizar scroll al inicio sin reflows forzados
+  if (body) body.scrollTop = 0;
+  if (modal) modal.scrollTop = 0;
+  const currentDialog = modal ? modal.querySelector(".modal-specs-dialog") : null;
+  if (currentDialog) currentDialog.scrollTop = 0;
 
   if (isIncoming) {
     tickCatalogCountdowns();
@@ -2097,7 +2073,7 @@ export function renderCatalog(catalog, user) {
               ${comboItems.map((cItem, idx) => `
                 ${idx > 0 ? '<div class="combo-split-divider"></div>' : ''}
                 <div class="combo-split-item" title="${cItem.title}">
-                  <img src="${cItem.imageUrl || ''}" alt="${cItem.title}" class="combo-split-img" onerror="this.onerror=null; this.src=''; this.parentElement.style.background='#0d131f';">
+                  <img src="${cItem.imageUrl || ''}" alt="${cItem.title}" class="combo-split-img" loading="lazy" decoding="async" onerror="this.onerror=null; this.src=''; this.parentElement.style.background='#0d131f';">
                   <div class="combo-split-item-label">${cItem.title}</div>
                 </div>
               `).join('')}
@@ -2119,7 +2095,7 @@ export function renderCatalog(catalog, user) {
             ` : ''}
             ${mainCover
               ? `
-                <img src="${mainCover}" alt="${item.title}" class="reward-img" onclick="event.stopPropagation(); openProductSpecsModal('${item.id}')" title="Clic para ver detalles y fotos" onerror="this.onerror=null; this.src=''; this.parentElement.style.background='#0d131f';">
+                <img src="${mainCover}" alt="${item.title}" class="reward-img" loading="lazy" decoding="async" onclick="event.stopPropagation(); openProductSpecsModal('${item.id}')" title="Clic para ver detalles y fotos" onerror="this.onerror=null; this.src=''; this.parentElement.style.background='#0d131f';">
                 ${!isOut ? `
                   <div class="reward-img-action-overlay" onclick="event.stopPropagation(); openProductSpecsModal('${item.id}')">
                     <div class="reward-img-expand-badge">
@@ -2407,7 +2383,7 @@ export function confirmRedeem(rewardId) {
           <div class="combo-opt-main">
             <input type="radio" name="combo-redeem-choice" id="radio-combo-full" value="FULL_COMBO" checked class="combo-opt-radio">
             <div class="combo-opt-thumb-wrap">
-              ${fullComboImg ? `<img src="${fullComboImg}" alt="${reward.title}" class="combo-opt-thumb-img" onerror="if(this.nextElementSibling) this.nextElementSibling.style.display='block'; this.style.display='none';"><span class="combo-opt-thumb-fallback" style="display:none;">✨</span>` : '<span class="combo-opt-thumb-fallback">✨</span>'}
+              ${fullComboImg ? `<img src="${fullComboImg}" alt="${reward.title}" class="combo-opt-thumb-img" loading="lazy" decoding="async" onerror="if(this.nextElementSibling) this.nextElementSibling.style.display='block'; this.style.display='none';"><span class="combo-opt-thumb-fallback" style="display:none;">✨</span>` : '<span class="combo-opt-thumb-fallback">✨</span>'}
             </div>
             <div class="combo-opt-info-col">
               <div class="combo-opt-title">✨ Combo Completo (${comboItems.length} productos)</div>
@@ -2431,7 +2407,7 @@ export function confirmRedeem(rewardId) {
               <div class="combo-opt-main">
                 <input type="radio" name="combo-redeem-choice" id="radio-combo-${cItem.id}" value="${cItem.id}" class="combo-opt-radio">
                 <div class="combo-opt-thumb-wrap">
-                  ${cItem.imageUrl ? `<img src="${cItem.imageUrl}" alt="${cItem.title}" class="combo-opt-thumb-img" onerror="if(this.nextElementSibling) this.nextElementSibling.style.display='block'; this.style.display='none';"><span class="combo-opt-thumb-fallback" style="display:none;">📦</span>` : '<span class="combo-opt-thumb-fallback">📦</span>'}
+                  ${cItem.imageUrl ? `<img src="${cItem.imageUrl}" alt="${cItem.title}" class="combo-opt-thumb-img" loading="lazy" decoding="async" onerror="if(this.nextElementSibling) this.nextElementSibling.style.display='block'; this.style.display='none';"><span class="combo-opt-thumb-fallback" style="display:none;">📦</span>` : '<span class="combo-opt-thumb-fallback">📦</span>'}
                 </div>
                 <div class="combo-opt-info-col">
                   <div class="combo-opt-title">📦 Solo ${cItem.title}</div>
@@ -2951,6 +2927,7 @@ export function triggerCyberGlitchCelebration() {
   function renderFrame() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     let alive = false;
+    ctx.font = "900 14px 'JetBrains Mono', monospace";
     particles.forEach(p => {
       p.x += p.vx;
       p.y += p.vy;
@@ -2958,12 +2935,9 @@ export function triggerCyberGlitchCelebration() {
       p.alpha -= p.decay;
       if (p.alpha > 0) {
         alive = true;
-        ctx.save();
         ctx.globalAlpha = p.alpha;
         ctx.fillStyle = p.color;
-        ctx.font = `900 ${p.size}px 'JetBrains Mono', monospace`;
         ctx.fillText(p.char, p.x, p.y);
-        ctx.restore();
       }
     });
 
