@@ -12,6 +12,14 @@ import {
 import { RewardModel } from "../models/RewardModel.js";
 import { isProduction, getEnvironmentInfo, getCollectionName } from "../config/env.js";
 import { processImageWithAiWhiteBg } from "../utils/ImageProcessor.js";
+import {
+  FB_IMG_JET_FAN,
+  FB_IMG_GAMESIR_X5,
+  FB_IMG_ANKER_POWERBANK,
+  FB_IMG_TPLINK_RE315,
+  FB_IMG_WINDCHASER_MANDO,
+  FB_IMG_ACER_PREDATOR
+} from "../data/FbRealImages.js";
 
 let vm = null;
 let showToast = () => {};
@@ -2491,7 +2499,7 @@ export const FB_USER_DEFAULT_LISTINGS = [
     priceNio: 800,
     priceUsd: 21.62,
     description: "Mini turbina portátil 2 en 1 (soplador turbo y aspiradora de mano). Motor sin escobillas de alta velocidad, batería recargable Type-C, incluye boquillas intercambiables y filtro lavable. Totalmente nuevo en caja.",
-    imageUrl: "https://images.unsplash.com/photo-1585338107529-13afc5f02586?w=800&auto=format&fit=crop&q=80"
+    imageUrl: FB_IMG_JET_FAN
   },
   {
     listingId: "1198273641889022",
@@ -2501,7 +2509,7 @@ export const FB_USER_DEFAULT_LISTINGS = [
     priceNio: 1350,
     priceUsd: 36.49,
     description: "Mando móvil GameSir X5 Lite con conexión directa Type-C de ultra baja latencia. Palancas y gatillos con efecto Hall anti-drift, agarre ergonómico texturizado, soporte para Xbox Cloud Gaming, GeForce NOW y emuladores. Nuevo en caja.",
-    imageUrl: "https://images.unsplash.com/photo-1600080972464-8e5f35f63d08?w=800&auto=format&fit=crop&q=80"
+    imageUrl: FB_IMG_GAMESIR_X5
   },
   {
     listingId: "1198273641889023",
@@ -2511,7 +2519,7 @@ export const FB_USER_DEFAULT_LISTINGS = [
     priceNio: 650,
     priceUsd: 17.57,
     description: "Soporte ergonómico para celular con batería integrada Anker de 6700 mAh y ventilador de refrigeración silencioso integrado. Carga rápida mientras juegas, ideal para sesiones largas de Free Fire, COD Mobile y PUBG.",
-    imageUrl: "https://images.unsplash.com/photo-1583863788434-e58a36330cf0?w=800&auto=format&fit=crop&q=80"
+    imageUrl: FB_IMG_ANKER_POWERBANK
   },
   {
     listingId: "1198273641889024",
@@ -2521,7 +2529,7 @@ export const FB_USER_DEFAULT_LISTINGS = [
     priceNio: 850,
     priceUsd: 22.97,
     description: "Extensor de rango Wi-Fi TP-Link AC1200 doble banda (300 Mbps en 2.4 GHz + 867 Mbps en 5 GHz). Tecnología OneMesh para cobertura total en el hogar sin cortes, indicador inteligente de señal e instalación plug & play.",
-    imageUrl: "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=800&auto=format&fit=crop&q=80"
+    imageUrl: FB_IMG_TPLINK_RE315
   },
   {
     listingId: "1198273641889025",
@@ -2531,7 +2539,7 @@ export const FB_USER_DEFAULT_LISTINGS = [
     priceNio: 750,
     priceUsd: 20.27,
     description: "Control inalámbrico multiplataforma compatible con PC, Switch, Android e iOS. Motores de doble vibración háptica, giroscopio de 6 ejes, botones traseros programables y conexión Bluetooth de alta estabilidad.",
-    imageUrl: "https://images.unsplash.com/photo-1592840496694-26d035b52b48?w=800&auto=format&fit=crop&q=80"
+    imageUrl: FB_IMG_WINDCHASER_MANDO
   },
   {
     listingId: "1198273641889026",
@@ -2541,7 +2549,7 @@ export const FB_USER_DEFAULT_LISTINGS = [
     priceNio: 40700,
     priceUsd: 1100,
     description: "Laptop gamer de alta gama compacta de 14.5 pulgadas. Procesador Intel Core Ultra 7 155H, gráfica NVIDIA GeForce RTX 4070 8GB GDDR6, pantalla 2.5K a 165Hz con cobertura 100% sRGB, 16GB RAM LPDDR5X y 1TB SSD NVMe Gen4.",
-    imageUrl: "https://images.unsplash.com/photo-1603302576837-37561b2e2302?w=800&auto=format&fit=crop&q=80"
+    imageUrl: FB_IMG_ACER_PREDATOR
   }
 ];
 

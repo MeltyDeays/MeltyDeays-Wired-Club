@@ -393,22 +393,31 @@ async function createNewProductInFirestore(fbListing, collectionName = "rewards"
   return { id: docId, title: fbListing.title, priceUsd };
 }
 
-// Actualizar precio de producto existente
-async function updateProductInFirestore(productId, newPriceUsd, fbListingId, collectionName = "rewards_catalog") {
-  const mask = [
+// Actualizar precio e imagen de producto existente
+async function updateProductInFirestore(productId, newPriceUsd, fbListingId, collectionName = "rewards_catalog", newImageUrl = null) {
+  const maskPaths = [
     "updateMask.fieldPaths=priceUsd",
     "updateMask.fieldPaths=facebookListingId",
     "updateMask.fieldPaths=syncSource",
     "updateMask.fieldPaths=lastSyncedAt"
-  ].join("&");
+  ];
 
-  const url = `${BASE_FIRESTORE_URL}/${collectionName}/${productId}?${mask}&key=${FIRESTORE_API_KEY}`;
   const fields = {
     priceUsd: { doubleValue: Number(newPriceUsd) },
     facebookListingId: { stringValue: String(fbListingId) },
     syncSource: { stringValue: "facebook_phone_sync" },
     lastSyncedAt: { timestampValue: new Date().toISOString() }
   };
+
+  if (newImageUrl && typeof newImageUrl === "string" && !newImageUrl.includes("unsplash.com")) {
+    maskPaths.push("updateMask.fieldPaths=imageUrl");
+    maskPaths.push("updateMask.fieldPaths=images");
+    fields.imageUrl = { stringValue: newImageUrl };
+    fields.images = { arrayValue: { values: [{ stringValue: newImageUrl }] } };
+  }
+
+  const mask = maskPaths.join("&");
+  const url = `${BASE_FIRESTORE_URL}/${collectionName}/${productId}?${mask}&key=${FIRESTORE_API_KEY}`;
 
   const res = await fetch(url, {
     method: "PATCH",
@@ -509,16 +518,21 @@ module.exports = async function handler(req, res) {
               reason: "Vendido en Facebook (activada caducidad visual de 12 horas)"
             });
           } 
-          // Si sigue activo y hubo cambio de precio
-          else if (!fbItem.isSold && fbItem.priceUsd > 0 && Math.abs(webProd.priceUsd - fbItem.priceUsd) >= 0.5) {
-            await updateProductInFirestore(webProd.id, fbItem.priceUsd, fbItem.listingId, collection);
-            report.updatedProducts.push({
-              productId: webProd.id,
-              title: webProd.title,
-              oldPrice: webProd.priceUsd,
-              newPrice: fbItem.priceUsd,
-              source: "facebook_mobile"
-            });
+          // Si sigue activo: verificar cambio de precio o imagen real
+          else if (!fbItem.isSold) {
+            const priceChanged = fbItem.priceUsd > 0 && Math.abs(webProd.priceUsd - fbItem.priceUsd) >= 0.5;
+            const hasNewRealImage = fbItem.imageUrl && fbItem.imageUrl !== webProd.imageUrl && !fbItem.imageUrl.includes("unsplash.com");
+            if (priceChanged || hasNewRealImage) {
+              await updateProductInFirestore(webProd.id, fbItem.priceUsd || webProd.priceUsd, fbItem.listingId, collection, hasNewRealImage ? fbItem.imageUrl : null);
+              report.updatedProducts.push({
+                productId: webProd.id,
+                title: webProd.title,
+                oldPrice: webProd.priceUsd,
+                newPrice: fbItem.priceUsd || webProd.priceUsd,
+                imageUpdated: Boolean(hasNewRealImage),
+                source: "facebook_mobile"
+              });
+            }
           }
         }
       } else if ((decision.isNewProduct || decision.isNew) && fbItem.priceUsd > 0 && !fbItem.isSold) {
