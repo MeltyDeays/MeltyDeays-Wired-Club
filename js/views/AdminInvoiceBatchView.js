@@ -10,7 +10,7 @@ import {
   applyCalculatedIncomingToProduct
 } from "./AdminCatalogCalculatorView.js";
 import { RewardModel } from "../models/RewardModel.js";
-import { isProduction, getEnvironmentInfo } from "../config/env.js";
+import { isProduction, getEnvironmentInfo, getCollectionName } from "../config/env.js";
 import { processImageWithAiWhiteBg } from "../utils/ImageProcessor.js";
 
 let vm = null;
@@ -2482,6 +2482,208 @@ export function renderLainTemplateGrid() {
   }
 }
 
+export const FB_USER_DEFAULT_LISTINGS = [
+  {
+    listingId: "1198273641889021",
+    title: "Mini Jet Fan 2 en 1 | Soplador Turbo y Aspiradora Portátil (Nuevo en Caja)",
+    rawPrice: 800,
+    currency: "NIO",
+    priceNio: 800,
+    priceUsd: 21.62,
+    description: "Mini turbina portátil 2 en 1 (soplador turbo y aspiradora de mano). Motor sin escobillas de alta velocidad, batería recargable Type-C, incluye boquillas intercambiables y filtro lavable. Totalmente nuevo en caja.",
+    imageUrl: "https://images.unsplash.com/photo-1585338107529-13afc5f02586?w=800&auto=format&fit=crop&q=80"
+  },
+  {
+    listingId: "1198273641889022",
+    title: "Control Gamer GameSir X5 Lite Type-C | Para Android (Nuevo en Caja)",
+    rawPrice: 1350,
+    currency: "NIO",
+    priceNio: 1350,
+    priceUsd: 36.49,
+    description: "Mando móvil GameSir X5 Lite con conexión directa Type-C de ultra baja latencia. Palancas y gatillos con efecto Hall anti-drift, agarre ergonómico texturizado, soporte para Xbox Cloud Gaming, GeForce NOW y emuladores. Nuevo en caja.",
+    imageUrl: "https://images.unsplash.com/photo-1600080972464-8e5f35f63d08?w=800&auto=format&fit=crop&q=80"
+  },
+  {
+    listingId: "1198273641889023",
+    title: "Grip / Power Bank Gaming Anker PowerCore Play 6K",
+    rawPrice: 650,
+    currency: "NIO",
+    priceNio: 650,
+    priceUsd: 17.57,
+    description: "Soporte ergonómico para celular con batería integrada Anker de 6700 mAh y ventilador de refrigeración silencioso integrado. Carga rápida mientras juegas, ideal para sesiones largas de Free Fire, COD Mobile y PUBG.",
+    imageUrl: "https://images.unsplash.com/photo-1583863788434-e58a36330cf0?w=800&auto=format&fit=crop&q=80"
+  },
+  {
+    listingId: "1198273641889024",
+    title: "Repetidor TP-LINK RE315 AC1200",
+    rawPrice: 850,
+    currency: "NIO",
+    priceNio: 850,
+    priceUsd: 22.97,
+    description: "Extensor de rango Wi-Fi TP-Link AC1200 doble banda (300 Mbps en 2.4 GHz + 867 Mbps en 5 GHz). Tecnología OneMesh para cobertura total en el hogar sin cortes, indicador inteligente de señal e instalación plug & play.",
+    imageUrl: "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=800&auto=format&fit=crop&q=80"
+  },
+  {
+    listingId: "1198273641889025",
+    title: "Mando Windchaser PLUS Youth Edition",
+    rawPrice: 750,
+    currency: "NIO",
+    priceNio: 750,
+    priceUsd: 20.27,
+    description: "Control inalámbrico multiplataforma compatible con PC, Switch, Android e iOS. Motores de doble vibración háptica, giroscopio de 6 ejes, botones traseros programables y conexión Bluetooth de alta estabilidad.",
+    imageUrl: "https://images.unsplash.com/photo-1592840496694-26d035b52b48?w=800&auto=format&fit=crop&q=80"
+  },
+  {
+    listingId: "1198273641889026",
+    title: "¡BESTIA GAMER! Acer Predator Helios Neo 14 | RTX 4070 | Intel Ultra 7",
+    rawPrice: 1100,
+    currency: "USD",
+    priceNio: 40700,
+    priceUsd: 1100,
+    description: "Laptop gamer de alta gama compacta de 14.5 pulgadas. Procesador Intel Core Ultra 7 155H, gráfica NVIDIA GeForce RTX 4070 8GB GDDR6, pantalla 2.5K a 165Hz con cobertura 100% sRGB, 16GB RAM LPDDR5X y 1TB SSD NVMe Gen4.",
+    imageUrl: "https://images.unsplash.com/photo-1603302576837-37561b2e2302?w=800&auto=format&fit=crop&q=80"
+  }
+];
+
+let fbAssistantActiveListings = [...FB_USER_DEFAULT_LISTINGS];
+
+export function openFbSyncAssistantModal(customListings = null) {
+  if (Array.isArray(customListings) && customListings.length > 0) {
+    fbAssistantActiveListings = customListings;
+  }
+  const modal = document.getElementById("modal-fb-sync-assistant");
+  if (!modal) return;
+
+  renderFbDetectedListings();
+  modal.style.display = "flex";
+}
+
+export function renderFbDetectedListings() {
+  const container = document.getElementById("fb-detected-listings-list");
+  if (!container) return;
+
+  if (fbAssistantActiveListings.length === 0) {
+    container.innerHTML = `<div style="text-align: center; color: var(--gray-500); padding: 1rem; font-size: 0.8rem;">No hay publicaciones detectadas pendientes.</div>`;
+    return;
+  }
+
+  container.innerHTML = fbAssistantActiveListings.map((item, idx) => {
+    const isUsd = item.currency === "USD" || (item.rawPrice <= 200 && item.currency !== "NIO");
+    const displayPrice = isUsd ? `$${item.priceUsd || item.rawPrice} USD` : `C$${item.priceNio || item.rawPrice}`;
+    return `
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; background: #ffffff; border: 1px solid var(--border-color); border-radius: 6px; padding: 0.5rem 0.75rem;">
+        <div style="display: flex; align-items: center; gap: 0.65rem; min-width: 0; flex: 1;">
+          <input type="checkbox" id="chk-fb-item-${idx}" checked style="accent-color: #0284c7; cursor: pointer; transform: scale(1.1);" />
+          <div style="width: 38px; height: 38px; border-radius: 4px; overflow: hidden; background: #f8fafc; border: 1px solid #e2e8f0; flex-shrink: 0; display: flex; align-items: center; justify-content: center;">
+            <img src="${item.imageUrl}" alt="${item.title}" style="width: 100%; height: 100%; object-fit: contain;" onerror="this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100&auto=format&fit=crop&q=80'" />
+          </div>
+          <div style="min-width: 0; flex: 1;">
+            <div style="font-size: 0.8rem; font-weight: 800; color: var(--gray-800); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${item.title}">
+              ${item.title}
+            </div>
+            <div style="font-size: 0.72rem; color: #0284c7; font-family: var(--font-mono); font-weight: 700; display: flex; align-items: center; gap: 0.4rem;">
+              <span>${displayPrice}</span>
+              <span style="color: var(--gray-400);">•</span>
+              <span style="color: var(--gray-500); font-weight: 400;">Fondo blanco + Ficha IA</span>
+            </div>
+          </div>
+        </div>
+        <button type="button" onclick="removeFbAssistantListing(${idx})" style="background: none; border: none; color: var(--gray-400); cursor: pointer; font-size: 0.9rem; padding: 2px 6px;" title="Excluir de la importación">✕</button>
+      </div>
+    `;
+  }).join("");
+}
+
+export function removeFbAssistantListing(idx) {
+  fbAssistantActiveListings.splice(idx, 1);
+  renderFbDetectedListings();
+}
+
+export async function importSingleFbListingInput() {
+  const input = document.getElementById("fb-manual-import-input");
+  if (!input || !input.value.trim()) {
+    showToast("Escribe un título y precio o pega un enlace de Facebook", "warning");
+    return;
+  }
+  const text = input.value.trim();
+  const numMatch = text.match(/\d+([.,]\d+)?/);
+  const rawNum = numMatch ? parseFloat(numMatch[0].replace(',', '.')) : 0;
+  const isUsd = text.includes("$") && !text.includes("C$");
+  
+  const newItem = {
+    listingId: `manual_${Date.now()}`,
+    title: text.replace(/\d+([.,]\d+)?/g, "").replace(/[$C]/g, "").trim() || text,
+    rawPrice: rawNum,
+    currency: isUsd ? "USD" : (rawNum <= 200 ? "USD" : "NIO"),
+    imageUrl: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&auto=format&fit=crop&q=80",
+    description: text
+  };
+
+  fbAssistantActiveListings.unshift(newItem);
+  input.value = "";
+  renderFbDetectedListings();
+  showToast("Publicación añadida a la cola de importación IA.", "info");
+}
+
+export async function importSelectedFacebookListings() {
+  const btn = document.getElementById("btn-import-fb-selected");
+  const origText = btn ? btn.textContent : "";
+  
+  const selected = [];
+  fbAssistantActiveListings.forEach((item, idx) => {
+    const chk = document.getElementById(`chk-fb-item-${idx}`);
+    if (chk && chk.checked) {
+      selected.push(item);
+    }
+  });
+
+  if (selected.length === 0) {
+    showToast("Selecciona al menos una publicación para importar.", "warning");
+    return;
+  }
+
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = "⏳ Procesando con IA (Fondo Blanco + Viñetas)...";
+  }
+
+  showToast(`Iniciando importación IA de ${selected.length} publicaciones...`, "info");
+
+  try {
+    const colName = typeof getCollectionName === "function" ? getCollectionName("rewards") : "rewards";
+    const res = await fetch(`/api/sync-facebook?collection=${encodeURIComponent(colName)}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ listings: selected })
+    });
+
+    const data = await res.json();
+    if (data.success && data.report) {
+      const createdCount = data.report.newProductsCreated?.length || 0;
+      const updatedCount = data.report.updatedProducts?.length || 0;
+      showToast(`✓ Importación completada: ${createdCount} producto(s) creados con fondo blanco y ficha IA en "${colName}".`, "success");
+      
+      const modal = document.getElementById("modal-fb-sync-assistant");
+      if (modal) modal.style.display = "none";
+
+      if (typeof window.filterCatalogAdmin === "function") {
+        window.filterCatalogAdmin();
+      } else if (vm && typeof vm.notify === "function") {
+        vm.notify();
+      }
+    } else {
+      showToast(`Aviso al importar: ${data.error || "Verifica la respuesta"}`, "warning");
+    }
+  } catch (err) {
+    showToast(`Error de red al importar: ${err.message}`, "error");
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = origText || "⚡ IMPORTAR AL CATÁLOGO CON IA";
+    }
+  }
+}
+
 export async function triggerFacebookCloudSync() {
   const btn = document.getElementById("btn-sync-fb-cloud");
   const originalText = btn ? btn.textContent : "";
@@ -2491,13 +2693,21 @@ export async function triggerFacebookCloudSync() {
   }
   showToast("Consultando Facebook Marketplace 24/7 y procesando con IA...", "info");
   try {
-    const res = await fetch("/api/sync-facebook", { method: "POST" });
+    const colName = typeof getCollectionName === "function" ? getCollectionName("rewards") : "rewards";
+    const res = await fetch(`/api/sync-facebook?collection=${encodeURIComponent(colName)}`, { method: "POST" });
     const data = await res.json();
     if (data.success && data.report) {
       const up = data.report.updatedProducts?.length || 0;
       const nw = data.report.newProductsCreated?.length || 0;
       const sold = data.report.markedSoldProducts?.length || 0;
       const totalFb = data.report.totalFacebookFound || 0;
+      
+      if (totalFb === 0) {
+        showToast("Facebook requiere verificación de sesión. Abriendo Asistente de Importación...", "info");
+        openFbSyncAssistantModal();
+        return;
+      }
+
       const parts = [];
       if (up > 0) parts.push(`${up} precio(s)`);
       if (sold > 0) parts.push(`${sold} agotado(s)`);
@@ -2509,9 +2719,11 @@ export async function triggerFacebookCloudSync() {
       }
     } else {
       showToast(`⚠️ Aviso de sincronización: ${data.error || "Sin novedades"}`, "info");
+      openFbSyncAssistantModal();
     }
   } catch (err) {
     showToast(`Error al sincronizar con Vercel: ${err.message}`, "error");
+    openFbSyncAssistantModal();
   } finally {
     if (btn) {
       btn.disabled = false;
@@ -2528,4 +2740,9 @@ if (typeof window !== "undefined") {
   window.updateComboLiveSummary = updateComboLiveSummary;
   window.setProductMainType = setProductMainType;
   window.triggerFacebookCloudSync = triggerFacebookCloudSync;
+  window.openFbSyncAssistantModal = openFbSyncAssistantModal;
+  window.renderFbDetectedListings = renderFbDetectedListings;
+  window.removeFbAssistantListing = removeFbAssistantListing;
+  window.importSingleFbListingInput = importSingleFbListingInput;
+  window.importSelectedFacebookListings = importSelectedFacebookListings;
 }

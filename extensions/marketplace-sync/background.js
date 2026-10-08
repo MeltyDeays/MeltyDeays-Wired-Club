@@ -50,4 +50,17 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       .catch(error => sendResponse({ success: false, error: error.message }));
     return true;
   }
+
+  if (request.action === "EXPORT_LISTINGS_TO_WEB") {
+    const { listings } = request;
+    fetch("https://meltydeays-wired-club.vercel.app/api/sync-facebook", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ listings })
+    })
+      .then(res => res.json())
+      .then(data => sendResponse({ success: data.success, data }))
+      .catch(error => sendResponse({ success: false, error: error.message }));
+    return true;
+  }
 });

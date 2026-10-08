@@ -272,7 +272,7 @@ Responde ÚNICAMENTE en JSON con la estructura:
     return { matched: true, productId: textMatch.id, isNew: false, confidence: 0.75 };
   }
 
-  return { matched: false, productId: null, isNew: true, confidence: 0.8 };
+  return { matched: false, productId: null, isNew: true, isNewProduct: true, confidence: 0.8 };
 }
 
 /**
@@ -479,6 +479,11 @@ module.exports = async function handler(req, res) {
     for (const fbItem of fbListings) {
       if (!fbItem.listingId) continue;
 
+      const norm = normalizePriceByThreshold(fbItem.rawPrice !== undefined ? fbItem.rawPrice : (fbItem.priceUsd || fbItem.priceNio || 0));
+      fbItem.priceUsd = norm.priceUsd;
+      fbItem.priceNio = norm.priceNio;
+      fbItem.currency = norm.currency;
+
       const decision = await matchListingWithWebProducts(fbItem, webProducts);
 
       if (decision.matched && decision.productId) {
@@ -505,7 +510,7 @@ module.exports = async function handler(req, res) {
             });
           }
         }
-      } else if (decision.isNewProduct && fbItem.priceUsd > 0 && !fbItem.isSold) {
+      } else if ((decision.isNewProduct || decision.isNew) && fbItem.priceUsd > 0 && !fbItem.isSold) {
         // Producto nuevo subido desde el celular a Facebook: crearlo en la web
         const created = await createNewProductInFirestore(fbItem, collection);
         report.newProductsCreated.push(created);

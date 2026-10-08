@@ -39,10 +39,13 @@ function injectHaibaneFloatingWidget() {
       Conectado a Wired Club.
     </div>
     <div style="display: flex; gap: 6px;">
-      <button id="haibane-btn-scan-now" style="flex: 1; background: #d97706; color: #ffffff; border: none; border-radius: 4px; padding: 5px 8px; font-weight: 700; cursor: pointer; font-size: 11px;">
+      <button id="haibane-btn-scan-now" style="flex: 1; background: #d97706; color: #ffffff; border: none; border-radius: 4px; padding: 5px 6px; font-weight: 700; cursor: pointer; font-size: 10.5px;">
         🔄 Auditar Precios
       </button>
-      <button id="haibane-btn-minimize" style="background: #334155; color: #cbd5e1; border: none; border-radius: 4px; padding: 5px 8px; cursor: pointer; font-size: 11px;">
+      <button id="haibane-btn-export-web" style="flex: 1; background: #0284c7; color: #ffffff; border: none; border-radius: 4px; padding: 5px 6px; font-weight: 700; cursor: pointer; font-size: 10.5px;" title="Exporta las publicaciones de esta pantalla hacia el catálogo web con recorte IA y fichas">
+        ⚡ Exportar
+      </button>
+      <button id="haibane-btn-minimize" style="background: #334155; color: #cbd5e1; border: none; border-radius: 4px; padding: 5px 6px; cursor: pointer; font-size: 11px;">
         ✕
       </button>
     </div>
@@ -52,6 +55,10 @@ function injectHaibaneFloatingWidget() {
 
   document.getElementById("haibane-btn-scan-now")?.addEventListener("click", () => {
     auditMarketplaceListings();
+  });
+
+  document.getElementById("haibane-btn-export-web")?.addEventListener("click", () => {
+    exportMarketplaceListingsToWeb();
   });
 
   document.getElementById("haibane-btn-minimize")?.addEventListener("click", () => {
@@ -195,6 +202,69 @@ function auditMarketplaceListings() {
         : `Todo sincronizado (${cachedWebProducts.length} productos).`;
     }
   }, 1200);
+}
+
+/**
+ * Extrae las publicaciones visibles en la pestaña y las envía hacia la API web
+ * para procesarlas con fondo blanco IA y crear o sincronizar en el catálogo.
+ */
+function exportMarketplaceListingsToWeb() {
+  const info = document.getElementById("haibane-sync-info");
+  if (info) info.textContent = "Extrayendo publicaciones en pantalla...";
+
+  const listingLinks = Array.from(document.querySelectorAll('a[href*="/marketplace/item/"]'));
+  const foundListings = [];
+  const seenIds = new Set();
+
+  listingLinks.forEach(link => {
+    const parent = link.closest('div[role="article"]') || link.parentElement;
+    if (!parent) return;
+
+    const href = link.getAttribute("href") || "";
+    const idMatch = href.match(/\/marketplace\/item\/(\d+)/);
+    const fbListingId = idMatch ? idMatch[1] : null;
+    if (!fbListingId || seenIds.has(fbListingId)) return;
+    seenIds.add(fbListingId);
+
+    const textContent = parent.innerText || "";
+    const lines = textContent.split("\n").map(l => l.trim()).filter(Boolean);
+    const imgEl = parent.querySelector("img");
+    const imageUrl = imgEl ? imgEl.src : "";
+
+    const priceLine = lines.find(l => l.includes("$") || l.includes("C$") || /^\d+(\.\d+)?$/.test(l));
+    const rawPrice = parsePriceFromText(priceLine) || 0;
+    const isUsd = (priceLine || "").includes("$") && !(priceLine || "").includes("C$");
+
+    const titleCandidates = lines.filter(l => l !== priceLine && !l.toLowerCase().includes("vendid") && !l.toLowerCase().includes("agotad") && l.length > 3);
+    const title = titleCandidates[0] || "Producto de Facebook Marketplace";
+
+    foundListings.push({
+      listingId: fbListingId,
+      title: title,
+      rawPrice: rawPrice,
+      currency: isUsd ? "USD" : (rawPrice <= 200 ? "USD" : "NIO"),
+      imageUrl: imageUrl,
+      description: textContent
+    });
+  });
+
+  if (foundListings.length === 0) {
+    if (info) info.textContent = "No se detectaron publicaciones en esta vista.";
+    return;
+  }
+
+  if (info) info.textContent = `Enviando ${foundListings.length} a la web con IA...`;
+
+  chrome.runtime.sendMessage({
+    action: "EXPORT_LISTINGS_TO_WEB",
+    listings: foundListings
+  }, (res) => {
+    if (res && res.success) {
+      if (info) info.textContent = `✓ ${foundListings.length} exportados con éxito a la web.`;
+    } else {
+      if (info) info.textContent = `Aviso: ${res?.error || "Revisa la consola"}`;
+    }
+  });
 }
 
 // Escuchar peticiones del background service worker
