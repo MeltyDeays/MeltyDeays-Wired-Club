@@ -2556,6 +2556,9 @@ export function openFbSyncAssistantModal(customListings = null) {
 
   renderFbDetectedListings();
   modal.style.display = "flex";
+  if (typeof window.syncModalScrollLock === "function") {
+    window.syncModalScrollLock();
+  }
 }
 
 export function renderFbDetectedListings() {
