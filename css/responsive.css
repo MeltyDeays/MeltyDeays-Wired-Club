@@ -3012,11 +3012,12 @@ vercel-live-feedback,
 }
 
 /* REGISTRO DE NUEVO SOCIO RESPONSIVE (COPLAND OS) */
-@media (max-width: 480px) {
+@media (max-width: 540px) {
   .modal-new-user-card {
-    padding: 0.9rem 0.8rem !important;
+    padding: 0.95rem 0.85rem !important;
     max-width: 96vw !important;
     margin: 8px auto !important;
+    box-sizing: border-box !important;
   }
   .modal-new-user-card .lain-modal-header {
     padding-right: 32px !important;
@@ -3024,55 +3025,112 @@ vercel-live-feedback,
   }
   .new-user-hint-banner {
     font-size: 0.68rem !important;
-    padding: 0.25rem 0.5rem !important;
+    padding: 0.3rem 0.55rem !important;
     margin-bottom: 0.6rem !important;
   }
   .new-user-phone-pin-row {
-    grid-template-columns: 1fr 1fr !important;
-    gap: 6px !important;
+    grid-template-columns: 1fr !important;
+    gap: 0.55rem !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .new-user-phone-pin-row > .form-group {
+    width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
   }
   .new-user-prefix {
-    font-size: 0.68rem !important;
-    padding: 0 4px !important;
+    font-size: 0.78rem !important;
+    padding: 0 8px !important;
+    height: 38px !important;
+    flex-shrink: 0 !important;
   }
   #new-user-phone {
-    font-size: 0.8rem !important;
-    padding: 0 2px !important;
+    font-size: 0.95rem !important;
+    height: 38px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
   }
   #new-user-pin {
-    font-size: 0.82rem !important;
-    letter-spacing: 0.8px !important;
+    font-size: 1rem !important;
+    letter-spacing: 2px !important;
+    height: 38px !important;
+    flex: 1 !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+  .new-user-pin-control {
+    display: flex !important;
+    gap: 4px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
   }
   .new-user-pin-control button {
-    width: 28px !important;
-    min-width: 28px !important;
+    width: 38px !important;
+    min-width: 38px !important;
+    height: 38px !important;
+    font-size: 0.92rem !important;
+    padding: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
+  }
+  .new-user-points-header {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 5px !important;
+    margin-bottom: 5px !important;
   }
   .new-user-quick-chips {
-    flex-wrap: wrap !important;
-    justify-content: flex-end !important;
-    gap: 2px !important;
+    display: grid !important;
+    grid-template-columns: repeat(5, 1fr) !important;
+    gap: 3px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
   }
   .new-user-quick-chips .quick-pt-btn {
-    padding: 1px 4px !important;
-    font-size: 0.62rem !important;
-    height: 20px !important;
-  }
-  .new-user-modal-actions {
-    display: grid !important;
-    grid-template-columns: 1fr 1.6fr !important;
-    gap: 6px !important;
-  }
-  .new-user-modal-actions button {
-    width: 100% !important;
+    padding: 0 !important;
+    font-size: 0.72rem !important;
+    font-weight: 800 !important;
+    height: 28px !important;
+    display: flex !important;
+    align-items: center !important;
     justify-content: center !important;
     text-align: center !important;
   }
-}
-
-@media (max-width: 360px) {
-  .new-user-phone-pin-row {
-    grid-template-columns: 1fr !important;
-    gap: 6px !important;
+  #new-user-points {
+    height: 38px !important;
+    font-size: 1.05rem !important;
+    font-weight: 900 !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .new-user-modal-actions {
+    display: grid !important;
+    grid-template-columns: 100px 1fr !important;
+    gap: 8px !important;
+    margin-top: 0.85rem !important;
+  }
+  .new-user-modal-actions button {
+    min-height: 42px !important;
+    height: auto !important;
+    padding: 6px 8px !important;
+    width: 100% !important;
+    justify-content: center !important;
+    text-align: center !important;
+    box-sizing: border-box !important;
+  }
+  .new-user-modal-actions .btn-secondary {
+    font-size: 0.82rem !important;
+    font-weight: 800 !important;
+  }
+  .new-user-modal-actions .btn-primary {
+    font-size: 0.82rem !important;
+    font-weight: 900 !important;
+    line-height: 1.25 !important;
   }
 }
 

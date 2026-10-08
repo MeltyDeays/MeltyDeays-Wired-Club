@@ -2848,6 +2848,21 @@
   box-sizing: border-box;
 }
 
+.new-user-phone-pin-row {
+  display: grid;
+  grid-template-columns: 1.1fr 0.95fr;
+  gap: 0.6rem;
+  margin-bottom: 0.6rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.new-user-phone-pin-row > .form-group {
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
 /* Foco limpio en campos de modal nuevo socio (cero borde rojo de error) */
 #modal-new-user .form-input {
   border: 1.5px solid var(--dark);
