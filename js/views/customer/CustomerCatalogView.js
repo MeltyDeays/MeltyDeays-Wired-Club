@@ -2366,6 +2366,7 @@ export function confirmRedeem(rewardId) {
     if (comboWrap) comboWrap.style.display = "block";
     if (comboBadge) comboBadge.textContent = `✦ COMBO ${comboItems.length} EN 1 ✦`;
     if (comboList) {
+      comboList.scrollTop = 0;
       const comboSavings = (typeof reward.getComboSavings === "function") ? reward.getComboSavings() : { sumUsd: 0, savingsUsd: 0, savingsPct: 0 };
       const fullComboImg = reward.imageUrl || comboItems[0]?.imageUrl;
 
@@ -2500,9 +2501,11 @@ export function confirmRedeem(rewardId) {
     modal.scrollTop = 0;
     const content = modal.querySelector(".modal-content");
     if (content) content.scrollTop = 0;
+    if (comboList) comboList.scrollTop = 0;
     requestAnimationFrame(() => {
       if (modal) modal.scrollTop = 0;
       if (content) content.scrollTop = 0;
+      if (comboList) comboList.scrollTop = 0;
     });
   }
 }
@@ -2746,6 +2749,11 @@ export function closeRedeemModal() {
   selectedPointsToApply = 0;
   const comboWrap = document.getElementById("confirm-combo-selector-wrap");
   if (comboWrap) comboWrap.style.display = "none";
+  const comboList = document.getElementById("confirm-combo-options-list");
+  if (comboList) {
+    comboList.scrollTop = 0;
+    comboList.innerHTML = "";
+  }
   const modal = document.getElementById("modal-confirm-redeem");
   if (modal) {
     modal.style.display = "none";

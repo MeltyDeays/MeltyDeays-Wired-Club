@@ -267,31 +267,73 @@
   }
 
   #confirm-combo-selector-wrap {
-    padding: 0.5rem 0.65rem !important;
-    margin-top: 0.4rem !important;
+    padding: 0.45rem 0.65rem !important;
+    margin-top: 0.35rem !important;
+    overflow: visible !important;
   }
 
   #confirm-combo-options-list {
-    max-height: 220px !important;
-    overflow-y: auto !important;
-    padding-right: 4px !important;
-    gap: 0.4rem !important;
-    scrollbar-width: thin !important;
-    scrollbar-color: #d97706 #fffbeb !important;
+    max-height: none !important;
+    overflow: visible !important;
+    padding-right: 0 !important;
+    gap: 0.35rem !important;
   }
 
-  #confirm-combo-options-list::-webkit-scrollbar {
-    width: 5px !important;
+  /* Compactación ergonómica de opciones de combo en desktop/laptop */
+  .confirm-combo-option-row {
+    padding: 6px 10px !important;
+    gap: 4px !important;
+    min-height: 38px !important;
+    border-radius: 5px !important;
+    box-sizing: border-box !important;
   }
 
-  #confirm-combo-options-list::-webkit-scrollbar-track {
-    background: #fffbeb !important;
+  .confirm-combo-option-row .combo-opt-main {
+    align-items: center !important;
+    gap: 8px !important;
+  }
+
+  .confirm-combo-option-row .combo-opt-radio {
+    margin-top: 0 !important;
+    width: 16px !important;
+    height: 16px !important;
+    flex-shrink: 0 !important;
+  }
+
+  .confirm-combo-option-row .combo-opt-thumb-wrap {
+    width: 34px !important;
+    height: 34px !important;
     border-radius: 4px !important;
+    flex-shrink: 0 !important;
   }
 
-  #confirm-combo-options-list::-webkit-scrollbar-thumb {
-    background: #d97706 !important;
-    border-radius: 4px !important;
+  .confirm-combo-option-row .combo-opt-title {
+    font-size: 0.78rem !important;
+    line-height: 1.2 !important;
+  }
+
+  .confirm-combo-option-row .combo-opt-desc {
+    font-size: 0.66rem !important;
+    line-height: 1.15 !important;
+  }
+
+  .confirm-combo-option-row .combo-opt-bottom-strip {
+    padding-top: 3px !important;
+    gap: 6px !important;
+  }
+
+  .confirm-combo-option-row .combo-opt-mode-tag {
+    font-size: 0.6rem !important;
+    padding: 1px 5px !important;
+  }
+
+  .confirm-combo-option-row .combo-opt-savings-tag {
+    font-size: 0.6rem !important;
+    padding: 1px 5px !important;
+  }
+
+  .confirm-combo-option-row .combo-opt-price-val {
+    font-size: 0.8rem !important;
   }
 
   #confirm-points-controls-wrap {
