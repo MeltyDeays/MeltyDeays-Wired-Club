@@ -1,0 +1,17 @@
+name: Sincronizador 24/7 Facebook Marketplace
+
+on:
+  schedule:
+    # Ejecución automática cada 30 minutos (24/7 en la nube, sin PC)
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+
+jobs:
+  sync-job:
+    name: Sync Marketplace Firestore
+    runs-on: ubuntu-latest
+    steps:
+      - name: Invocar Endpoint Serverless en Vercel
+        run: |
+          echo "Disparando ciclo de sincronizacion en la nube..."
+          curl -s -f -X GET "https://meltydeays-wired-club.vercel.app/api/sync-facebook" || curl -s -X GET "https://meltydeays-wired-club-git-develop-meltydeays-projects.vercel.app/api/sync-facebook" || echo "Aviso: Endpoint respondio"
