@@ -327,20 +327,20 @@
           </div>
 
           <!-- SELECTOR INTERACTIVO DE PUNTOS -->
-          <div id="confirm-points-controls-wrap" style="background: rgba(254, 243, 199, 0.6); border: 1px solid #fcd34d; border-radius: 4px; padding: 0.65rem 0.75rem;">
+          <div id="confirm-points-controls-wrap" style="background: rgba(254, 243, 199, 0.6); border: 1.5px solid #fcd34d; border-radius: 6px; padding: 0.65rem 0.85rem;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-              <span style="font-weight: 800; font-size: 0.7rem; color: #78350f;">PUNTOS A APLICAR:</span>
-              <span id="confirm-pts-applied-notice" style="font-weight: 900; color: #b45309; font-size: 0.75rem;">0 WP aplicados</span>
+              <span style="font-weight: 800; font-size: 0.72rem; color: #78350f;">⚡ APLICAR DESCUENTO CON PUNTOS:</span>
+              <span id="confirm-pts-applied-notice" style="font-weight: 900; color: #b45309; font-size: 0.75rem; background: #fef3c7; border: 1px solid #fcd34d; padding: 2px 7px; border-radius: 4px;">0 WP aplicados</span>
             </div>
-            <input type="range" id="confirm-points-slider" min="0" max="100" value="0" step="1" style="width: 100%; accent-color: #d97706; cursor: pointer; margin: 4px 0;" oninput="onPointsSliderChange(this.value)">
-            <div style="display: flex; gap: 6px; align-items: center; justify-content: space-between; margin-top: 4px;">
+            <input type="range" id="confirm-points-slider" min="0" max="100" value="0" step="1" style="width: 100%; accent-color: #d97706; cursor: pointer; margin: 6px 0;" oninput="onPointsSliderChange(this.value)">
+            <div style="display: flex; gap: 6px; align-items: center; justify-content: space-between; margin-top: 4px; flex-wrap: wrap;">
               <div style="display: flex; align-items: center; gap: 4px;">
-                <input type="number" id="confirm-points-num" style="width: 70px; padding: 2px 5px; font-family: var(--font-mono); font-weight: 800; font-size: 0.75rem; border: 1px solid #d97706; border-radius: 3px; color: #b45309; background: #fff;" oninput="onPointsNumChange(this.value)">
+                <input type="number" id="confirm-points-num" style="width: 70px; padding: 3px 6px; font-family: var(--font-mono); font-weight: 800; font-size: 0.75rem; border: 1.5px solid #d97706; border-radius: 4px; color: #b45309; background: #fff;" oninput="onPointsNumChange(this.value)">
                 <span style="font-size: 0.7rem; font-weight: 800; color: #b45309;">WP</span>
               </div>
               <div style="display: flex; gap: 6px;">
-                <button type="button" class="specs-calc-preset-btn max" onclick="setPointsPreset('max')">⚡ Max (<span id="confirm-points-max-badge">0 WP</span>)</button>
-                <button type="button" class="specs-calc-preset-btn min" onclick="setPointsPreset('zero')">🔄 0 WP (Sin desc.)</button>
+                <button type="button" class="specs-calc-preset-btn max" onclick="setPointsPreset('max')">⚡ Usar Máximo (<span id="confirm-points-max-badge">0 WP</span>)</button>
+                <button type="button" class="specs-calc-preset-btn min" onclick="setPointsPreset('zero')">✕ Sin Puntos (0 WP)</button>
               </div>
             </div>
           </div>
@@ -352,52 +352,61 @@
 
         <!-- COLUMNA DERECHA: DESGLOSE FINANCIERO, AUDITORÍA Y ACCIONES -->
         <div class="confirm-redeem-col-summary">
-          <!-- RESUMEN FINANCIERO -->
-          <div id="confirm-type-callout" style="display: none; background: #fffbeb; border: 1.5px solid #f59e0b; border-radius: 4px; padding: 0.75rem 0.85rem; font-family: var(--font-mono); font-size: 0.75rem; color: #78350f;">
-            <div class="confirm-callout-row" style="font-weight: 900; margin-bottom: 6px; display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 4px 8px; color: #b45309;">
-              <span style="display: inline-block; word-break: break-word;">🏷️ VENTA CON DESCUENTO (<span id="confirm-type-pct">5% OFF</span>)</span>
-              <span id="confirm-type-price" style="color: var(--dark); font-weight: 800; text-align: right; margin-left: auto; white-space: nowrap;">$0.00 USD</span>
-            </div>
-            <div class="confirm-callout-row" style="font-size: 0.72rem; color: #92400e; margin-bottom: 4px; display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 2px 8px;">
-              <span>Descuento según puntos:</span>
-              <strong id="confirm-type-pct-calc" class="confirm-callout-val" style="color: #059669;">0% de descuento / Máximo 5%</strong>
-            </div>
-            <div class="confirm-callout-row" style="font-size: 0.68rem; color: #78350f; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 2px 8px;">
-              <span>Tope máximo de tienda:</span>
-              <strong id="confirm-type-max-disc" class="confirm-callout-val" style="color: #b45309;">-$0.00 USD</strong>
+          <!-- RESUMEN FINANCIERO (TICKET CLARO DE COMPRA) -->
+          <div id="confirm-type-callout" class="confirm-receipt-box" style="display: none;">
+            <div class="confirm-receipt-header">
+              <span class="confirm-receipt-title">🧾 RESUMEN DE PAGO</span>
+              <span class="confirm-receipt-badge" id="confirm-type-pct">5% OFF</span>
             </div>
 
-            <div style="font-size: 0.78rem; line-height: 1.35; border-top: 1px dashed #fcd34d; padding-top: 6px;">
-              <div class="confirm-callout-row" style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 2px 8px;">
-                <span>Ahorro con tus puntos (<span id="confirm-calc-pct-label">0%</span>):</span>
-                <strong id="confirm-type-discount" class="confirm-callout-val" style="color: #059669;">-$0.00 USD</strong>
+            <div class="confirm-receipt-body">
+              <div class="confirm-callout-row receipt-row">
+                <span class="receipt-label">Precio regular:</span>
+                <strong id="confirm-type-price" class="receipt-val price-original">$0.00 USD</strong>
               </div>
-              <div class="confirm-callout-row" style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 4px 8px; margin-top: 4px;">
-                <strong style="color: #1e1b4b;">Efectivo a pagar en tienda:</strong>
-                <strong id="confirm-type-cash" class="confirm-callout-val" style="color: #dc2626; font-size: 0.92rem; text-align: right; margin-left: auto; white-space: nowrap;">$0.00 USD</strong>
+
+              <div class="confirm-callout-row receipt-row">
+                <span class="receipt-label">Descuento aplicado (<span id="confirm-calc-pct-label">0%</span>):</span>
+                <strong id="confirm-type-discount" class="receipt-val discount-val">-$0.00 USD</strong>
+              </div>
+
+              <div class="receipt-subdetail-row">
+                <span style="font-size: 0.65rem; color: #92400e; opacity: 0.85;">
+                  Tope máx. tienda: <strong id="confirm-type-max-disc" class="confirm-callout-val" style="color: #b45309;">-$0.00 USD</strong>
+                  <span id="confirm-type-pct-calc" class="confirm-callout-val" style="display: none;">0% de descuento / Máximo 5%</span>
+                </span>
+              </div>
+
+              <div class="confirm-callout-row receipt-total-row">
+                <div class="receipt-total-label-wrap">
+                  <span class="receipt-total-title">Pagas en mostrador:</span>
+                  <span class="receipt-total-sub">En efectivo o transferencia</span>
+                </div>
+                <strong id="confirm-type-cash" class="confirm-callout-val receipt-cash-total">$0.00 USD</strong>
               </div>
             </div>
-            <div style="font-size: 0.68rem; color: #92400e; margin-top: 6px; line-height: 1.25;">
-              * Presenta este vale en mostrador para validar el beneficio y cancelar la diferencia en efectivo.
+
+            <div class="receipt-footer-note">
+              * Muestra este vale digital en mostrador al retirar tu producto para validar el descuento.
             </div>
           </div>
 
-          <!-- AUDITORÍA DE BALANCE EN TIEMPO REAL -->
-          <div class="ledger-preview-box" style="border: 1.5px solid var(--dark); border-radius: 4px; overflow: hidden; font-family: var(--font-mono); font-size: 0.78rem;">
-            <div style="background: #0f172a; color: #ffffff; padding: 0.4rem 0.75rem; font-weight: 800; font-size: 0.7rem; letter-spacing: 0.5px;">
-              BALANCE PREVISTO // AUDITORÍA EN TIEMPO REAL
+          <!-- ESTADO DE PUNTOS TRAS LA COMPRA -->
+          <div class="ledger-preview-box" style="border: 1.5px solid var(--dark); border-radius: 6px; overflow: hidden; font-family: var(--font-mono); font-size: 0.78rem; box-shadow: 1px 1px 0px #cbd5e1;">
+            <div style="background: #0f172a; color: #ffffff; padding: 0.45rem 0.75rem; font-weight: 800; font-size: 0.7rem; letter-spacing: 0.5px; display: flex; align-items: center; gap: 5px;">
+              <span>🪙</span> ESTADO DE TUS PUNTOS TRAS LA COMPRA
             </div>
-            <div style="padding: 0.65rem 0.75rem; background: #ffffff; display: flex; justify-content: space-between; border-bottom: 1px dashed var(--gray-200);">
-              <span style="color: var(--gray-600);">Saldo Disponible Actual:</span>
-              <strong id="confirm-balance-current" style="color: var(--dark); font-weight: 800;">- WP</strong>
+            <div style="padding: 0.55rem 0.75rem; background: #ffffff; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed var(--gray-200);">
+              <span style="color: var(--gray-600); font-size: 0.74rem;">Tu saldo disponible:</span>
+              <strong id="confirm-balance-current" style="color: var(--dark); font-weight: 800; font-size: 0.8rem;">- WP</strong>
             </div>
-            <div style="padding: 0.65rem 0.75rem; background: #fff1f2; display: flex; justify-content: space-between; border-bottom: 1px dashed #fecdd3;">
-              <span style="color: #9f1239; font-weight: 700;">Deducción por Canje:</span>
-              <strong id="confirm-balance-deduct" style="color: #e11d48; font-weight: 900;">-0 WP</strong>
+            <div style="padding: 0.55rem 0.75rem; background: #fff1f2; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #fecdd3;">
+              <span style="color: #9f1239; font-weight: 700; font-size: 0.74rem;">Puntos a deducir:</span>
+              <strong id="confirm-balance-deduct" style="color: #e11d48; font-weight: 900; font-size: 0.8rem;">-0 WP</strong>
             </div>
-            <div style="padding: 0.65rem 0.75rem; background: #ecfdf5; display: flex; justify-content: space-between;">
-              <span style="color: #065f46; font-weight: 800;">Saldo Resultante:</span>
-              <strong id="confirm-balance-after" style="color: #059669; font-weight: 900;">- WP</strong>
+            <div style="padding: 0.55rem 0.75rem; background: #ecfdf5; display: flex; justify-content: space-between; align-items: center;">
+              <span style="color: #065f46; font-weight: 800; font-size: 0.74rem;">Te quedarán:</span>
+              <strong id="confirm-balance-after" style="color: #059669; font-weight: 900; font-size: 0.82rem;">- WP</strong>
             </div>
           </div>
 

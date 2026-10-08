@@ -2634,7 +2634,11 @@ export function updateConfirmCalculation() {
     const typeCash = document.getElementById("confirm-type-cash");
     const ptsAppliedNotice = document.getElementById("confirm-pts-applied-notice");
 
-    if (typePct) typePct.textContent = `${formattedPct}% OFF / MÁX ${targetMaxPct}%`;
+    if (typePct) {
+      typePct.textContent = (Number(formattedPct) === Number(targetMaxPct))
+        ? `${formattedPct}% OFF`
+        : `${formattedPct}% OFF (Máx. ${targetMaxPct}%)`;
+    }
     if (typePctCalc) typePctCalc.textContent = `${formattedPct}% de descuento / Máximo ${targetMaxPct}%`;
     if (calcPctLabel) calcPctLabel.textContent = `${formattedPct}%`;
     if (typeDisc) typeDisc.textContent = `-${formatPrice(discountUsd)}`;

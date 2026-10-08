@@ -54,16 +54,139 @@
   word-break: break-word;
 }
 
+/* ========================================================
+   2.1 RESUMEN FINANCIERO TIPO TICKET (#confirm-type-callout)
+   ======================================================== */
 #confirm-type-callout {
   box-sizing: border-box !important;
   width: 100% !important;
   max-width: 100% !important;
   overflow: hidden !important;
+  background: #ffffff !important;
+  border: 1.5px solid #d97706 !important;
+  border-radius: 6px !important;
+  box-shadow: 2px 2px 0px #b45309 !important;
+  font-family: var(--font-mono);
+}
+
+.confirm-receipt-header {
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+  border-bottom: 1px solid #fcd34d;
+  padding: 0.55rem 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.confirm-receipt-title {
+  font-weight: 900;
+  font-size: 0.76rem;
+  color: #78350f;
+  letter-spacing: 0.5px;
+}
+
+.confirm-receipt-badge {
+  background: #047857 !important;
+  color: #ffffff !important;
+  font-size: 0.68rem !important;
+  font-weight: 900 !important;
+  padding: 2px 8px !important;
+  border-radius: 4px !important;
+  letter-spacing: 0.3px;
+  box-shadow: 1px 1px 0px #065f46;
+  white-space: nowrap !important;
+}
+
+.confirm-receipt-body {
+  padding: 0.65rem 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  background: #ffffff;
+}
+
+.receipt-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 0.74rem;
+  gap: 8px;
+}
+
+.receipt-label {
+  color: #64748b;
+  font-weight: 600;
+}
+
+.receipt-val {
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  text-align: right;
+  white-space: nowrap !important;
+}
+
+.receipt-val.price-original {
+  color: #1e293b;
+}
+
+.receipt-val.discount-val {
+  color: #047857;
+  font-size: 0.82rem;
+}
+
+.receipt-subdetail-row {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  font-size: 0.65rem;
+  padding-bottom: 2px;
+}
+
+.receipt-total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1.5px dashed #d97706;
+  padding-top: 0.55rem;
+  margin-top: 0.15rem;
+  background: #fffbeb;
+  margin: 0.15rem -0.85rem -0.65rem -0.85rem;
+  padding: 0.6rem 0.85rem;
+}
+
+.receipt-total-label-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.receipt-total-title {
+  color: #78350f;
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+.receipt-total-sub {
+  color: #92400e;
+  font-size: 0.62rem;
+  font-weight: 500;
+}
+
+.receipt-footer-note {
+  font-size: 0.66rem;
+  color: #78350f;
+  background: #fef3c7;
+  border-top: 1px solid #fde68a;
+  padding: 0.45rem 0.85rem;
+  line-height: 1.25;
 }
 
 #confirm-type-cash {
   color: #dc2626 !important;
-  font-size: 0.96rem !important;
+  font-size: 1rem !important;
   font-weight: 900 !important;
   display: inline-flex !important;
   align-items: baseline !important;
