@@ -238,8 +238,8 @@
   .confirm-redeem-modal-container {
     max-width: 880px !important;
     width: 880px !important;
-    padding: 1.6rem 2rem !important;
-    max-height: 90vh !important;
+    padding: 1.25rem 1.65rem !important;
+    max-height: 88vh !important;
     overflow-y: auto !important;
   }
 
@@ -248,14 +248,85 @@
     grid-template-columns: 1.08fr 0.92fr !important;
     gap: 1.6rem !important;
     align-items: stretch !important;
-    margin-top: 0.35rem !important;
+    margin-top: 0.25rem !important;
   }
 
   .confirm-redeem-col-product,
   .confirm-redeem-col-summary {
     display: flex !important;
     flex-direction: column !important;
-    gap: 0.85rem !important;
+    gap: 0.65rem !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Compactación vertical para pantallas de laptop */
+  #confirm-reward-img-wrap {
+    width: 52px !important;
+    height: 52px !important;
+  }
+
+  #confirm-combo-selector-wrap {
+    padding: 0.5rem 0.65rem !important;
+    margin-top: 0.4rem !important;
+  }
+
+  #confirm-combo-options-list {
+    max-height: 220px !important;
+    overflow-y: auto !important;
+    padding-right: 4px !important;
+    gap: 0.4rem !important;
+    scrollbar-width: thin !important;
+    scrollbar-color: #d97706 #fffbeb !important;
+  }
+
+  #confirm-combo-options-list::-webkit-scrollbar {
+    width: 5px !important;
+  }
+
+  #confirm-combo-options-list::-webkit-scrollbar-track {
+    background: #fffbeb !important;
+    border-radius: 4px !important;
+  }
+
+  #confirm-combo-options-list::-webkit-scrollbar-thumb {
+    background: #d97706 !important;
+    border-radius: 4px !important;
+  }
+
+  #confirm-points-controls-wrap {
+    padding: 0.5rem 0.75rem !important;
+  }
+
+  #confirm-type-callout .confirm-receipt-header {
+    padding: 0.4rem 0.75rem !important;
+  }
+
+  #confirm-type-callout .confirm-receipt-body {
+    padding: 0.45rem 0.75rem !important;
+    gap: 0.3rem !important;
+  }
+
+  #confirm-type-callout .receipt-total-row {
+    padding: 0.45rem 0.75rem !important;
+    margin: 0.1rem -0.75rem -0.45rem -0.75rem !important;
+  }
+
+  #confirm-type-callout .receipt-footer-note {
+    padding: 0.35rem 0.75rem !important;
+  }
+
+  .ledger-preview-box > div:first-child {
+    padding: 0.35rem 0.65rem !important;
+  }
+
+  .ledger-preview-box > div:not(:first-child) {
+    padding: 0.4rem 0.65rem !important;
+  }
+
+  #confirm-warranty-notice {
+    padding: 0.4rem 0.65rem !important;
+    font-size: 0.68rem !important;
   }
 
   .confirm-redeem-actions {
@@ -263,20 +334,41 @@
     flex-direction: row !important;
     justify-content: flex-end !important;
     align-items: center !important;
-    gap: 0.75rem !important;
+    gap: 0.65rem !important;
     margin-top: auto !important;
-    padding-top: 0.75rem !important;
+    padding-top: 0.5rem !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
   }
 
   .confirm-redeem-actions button {
+    box-sizing: border-box !important;
+  }
+
+  .confirm-redeem-actions .btn-secondary {
+    flex: 0 0 auto !important;
     white-space: nowrap !important;
+    padding: 0.55rem 0.85rem !important;
+    font-size: 0.8rem !important;
+    font-weight: 800 !important;
+    height: 42px !important;
   }
 
   #btn-do-redeem {
-    min-height: 42px;
-    padding: 0.65rem 1.35rem !important;
-    font-size: 0.85rem !important;
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    min-height: 42px !important;
+    height: auto !important;
+    padding: 0.45rem 0.75rem !important;
+    font-size: 0.8rem !important;
     font-weight: 900 !important;
+    line-height: 1.22 !important;
+    text-align: center !important;
+    white-space: normal !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
   }
 }
 
