@@ -16,12 +16,16 @@ export class VoucherModel {
     this.rewardId = data.rewardId || data.reward_id || "";
     this.rewardTitle = data.rewardTitle || data.reward_title || "";
     this.rewardType = data.rewardType || data.reward_type || (isPreOrder ? "PREORDER_RESERVATION" : "FREE_REWARD");
-    this.imageUrl = data.imageUrl || data.image_url || data.rewardImageUrl || data.reward_image_url || "";
-    this.pointsSpent = isPreOrder ? 0 : Number(data.pointsSpent || data.points_spent || data.pointsCost || data.points_cost || 0);
+    const toNum = (val, def = 0) => {
+      const n = Number(val);
+      return Number.isFinite(n) ? n : def;
+    };
+    const rawSpent = data.pointsSpent !== undefined ? data.pointsSpent : (data.points_spent !== undefined ? data.points_spent : (data.pointsCost !== undefined ? data.pointsCost : (data.points_cost || 0)));
+    this.pointsSpent = isPreOrder ? 0 : Math.max(0, Math.floor(toNum(rawSpent, 0)));
     this.pointsCost = this.pointsSpent;
-    this.priceUsd = Number(data.priceUsd || data.price_usd || 0);
-    this.discountUsd = Number(data.discountUsd || data.discount_usd || 0);
-    this.cashToPayUsd = Number(data.cashToPayUsd || data.cash_to_pay_usd || 0);
+    this.priceUsd = Math.max(0, toNum(data.priceUsd !== undefined ? data.priceUsd : data.price_usd, 0));
+    this.discountUsd = Math.max(0, toNum(data.discountUsd !== undefined ? data.discountUsd : data.discount_usd, 0));
+    this.cashToPayUsd = Math.max(0, toNum(data.cashToPayUsd !== undefined ? data.cashToPayUsd : data.cash_to_pay_usd, 0));
     this.status = data.status || (isPreOrder ? "RESERVED_UPCOMING" : "PENDING_DELIVERY");
     this.createdAt = data.createdAt || data.created_at || new Date().toISOString();
 
@@ -41,13 +45,20 @@ export class VoucherModel {
     this.paidBy = data.paidBy || data.paid_by || null;
     this.penaltyPoints = Number(data.penaltyPoints || data.penalty_points || 0);
 
+    // Metadatos de Combos Flexibles Haibane
+    this.comboOrigin = data.comboOrigin || data.combo_origin || null;
+    this.comboItems = Array.isArray(data.comboItems)
+      ? data.comboItems
+      : (Array.isArray(data.combo_items) ? data.combo_items : null);
+    this.purchasedItem = data.purchasedItem || data.purchased_item || null;
+
     // Lógica estricta de expiración:
     // 1. Recompensas 100% gratis (cashToPayUsd === 0 y no es descuento): NUNCA expiran (expiresAt = null siempre)
     // 2. Compras comerciales ya pagadas (isPaid === true): NUNCA expiran (expiresAt = null)
     // 3. Reservas de preventa (PREORDER_RESERVATION / RESERVED_UPCOMING): NUNCA expiran antes del arribo (expiresAt = null)
-    // 4. Compras comerciales pendientes de pago (cashToPayUsd > 0 o PARTIAL_DISCOUNT, y !isPaid y !isPreOrder):
+    // 4. Compras comerciales pendientes de pago (cashToPayUsd > 0, y !isPaid y !isPreOrder):
     //    Plazo máximo e inamovible de 3 días (72 horas) desde la fecha de creación (createdAt).
-    const isCommercial = !isPreOrder && (this.rewardType === "PARTIAL_DISCOUNT" || this.cashToPayUsd > 0);
+    const isCommercial = !isPreOrder && Number(this.cashToPayUsd || 0) > 0;
     if (!isCommercial || this.isPaid || isPreOrder) {
       this.expiresAt = null;
     } else {
@@ -87,11 +98,23 @@ export class VoucherModel {
 
   isCommercial() {
     if (this.isPreOrder()) return false;
-    return this.rewardType === "PARTIAL_DISCOUNT" || this.cashToPayUsd > 0;
+    return Number(this.cashToPayUsd || 0) > 0;
   }
 
   isPartialDiscount() {
     return this.rewardType === "PARTIAL_DISCOUNT";
+  }
+
+  isComboVoucher() {
+    return Boolean(this.comboOrigin || (Array.isArray(this.comboItems) && this.comboItems.length > 0) || this.rewardType === "COMBO");
+  }
+
+  isFullComboVoucher() {
+    return (Array.isArray(this.comboItems) && this.comboItems.length > 0) || (this.rewardType === "COMBO" && !this.isSplitComboItemVoucher());
+  }
+
+  isSplitComboItemVoucher() {
+    return Boolean(this.comboOrigin && (this.purchasedItem || this.comboOrigin.purchasedItemId));
   }
 
   isExpired() {
@@ -186,7 +209,13 @@ export class VoucherModel {
       delivered_at: this.deliveredAt,
       delivered_by: this.deliveredBy,
       cancelled_at: this.cancelledAt,
-      cancelled_by: this.cancelledBy
+      cancelled_by: this.cancelledBy,
+      combo_origin: this.comboOrigin,
+      comboOrigin: this.comboOrigin,
+      combo_items: this.comboItems,
+      comboItems: this.comboItems,
+      purchased_item: this.purchasedItem,
+      purchasedItem: this.purchasedItem
     };
   }
 }

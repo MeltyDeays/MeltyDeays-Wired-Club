@@ -97,18 +97,29 @@ export class RewardModel {
     const rawType = data.rewardType || data.reward_type;
     const isIncomingData = Boolean(data.isIncoming || data.is_incoming || data.status === "INCOMING" || rawType === "INCOMING");
 
+    const parseNum = (val, fallback = 0) => {
+      const n = Number(val);
+      return Number.isFinite(n) && n >= 0 ? n : fallback;
+    };
+
     if (isIncomingData) {
       this.rewardType = "INCOMING";
-      this.priceUsd = Number(data.priceUsd || data.price_usd || 0);
+      this.priceUsd = parseNum(data.priceUsd !== undefined ? data.priceUsd : data.price_usd, 0);
       this.maxDiscountPct = 0;
       this.maxDiscountUsd = 0;
       this.cashToPayUsd = 0;
+    } else if (rawType === "COMBO") {
+      this.rewardType = "COMBO";
+      this.priceUsd = parseNum(data.priceUsd !== undefined ? data.priceUsd : data.price_usd, 0);
+      this.maxDiscountPct = parseNum(data.maxDiscountPct !== undefined ? data.maxDiscountPct : data.max_discount_pct, 0);
+      this.maxDiscountUsd = parseNum(data.maxDiscountUsd !== undefined ? data.maxDiscountUsd : data.max_discount_usd, 0);
+      this.cashToPayUsd = parseNum(data.cashToPayUsd !== undefined ? data.cashToPayUsd : data.cash_to_pay_usd, 0);
     } else if (rawType === "PARTIAL_DISCOUNT") {
       this.rewardType = "PARTIAL_DISCOUNT";
-      this.priceUsd = Number(data.priceUsd || data.price_usd || 0);
-      this.maxDiscountPct = Number(data.maxDiscountPct || data.max_discount_pct || 0);
-      this.maxDiscountUsd = Number(data.maxDiscountUsd || data.max_discount_usd || 0);
-      this.cashToPayUsd = Number(data.cashToPayUsd || data.cash_to_pay_usd || 0);
+      this.priceUsd = parseNum(data.priceUsd !== undefined ? data.priceUsd : data.price_usd, 0);
+      this.maxDiscountPct = parseNum(data.maxDiscountPct !== undefined ? data.maxDiscountPct : data.max_discount_pct, 0);
+      this.maxDiscountUsd = parseNum(data.maxDiscountUsd !== undefined ? data.maxDiscountUsd : data.max_discount_usd, 0);
+      this.cashToPayUsd = parseNum(data.cashToPayUsd !== undefined ? data.cashToPayUsd : data.cash_to_pay_usd, 0);
     } else {
       this.rewardType = "FREE_REWARD";
       this.priceUsd = 0;
@@ -116,6 +127,14 @@ export class RewardModel {
       this.maxDiscountUsd = 0;
       this.cashToPayUsd = 0;
     }
+
+    this.comboData = data.comboData || data.combo_data || null;
+    if (this.comboData && !Array.isArray(this.comboData.items)) {
+      if (this.comboData.itemA && this.comboData.itemB) {
+        this.comboData.items = [this.comboData.itemA, this.comboData.itemB];
+      }
+    }
+    this.dissolvedFromCombo = data.dissolvedFromCombo || data.dissolved_from_combo || null;
 
     this.pointsCost = Number(data.pointsCost !== undefined ? data.pointsCost : (data.points_cost !== undefined ? data.points_cost : 0));
     this.stock = Number(data.stock != null ? data.stock : 0);
@@ -171,10 +190,43 @@ export class RewardModel {
     if (Array.isArray(this.images) && this.images.length > 0) {
       return this.images;
     }
+    if (this.isCombo()) {
+      const comboImgs = this.getComboItems().map(it => it.imageUrl).filter(Boolean);
+      if (comboImgs.length > 0) return comboImgs;
+    }
     if (this.imageUrl) {
       return [this.imageUrl];
     }
     return [];
+  }
+
+  isCombo() {
+    return this.rewardType === "COMBO" && this.getComboItems().length >= 2;
+  }
+
+  getComboItems() {
+    if (this.rewardType !== "COMBO" || !this.comboData) return [];
+    if (Array.isArray(this.comboData.items) && this.comboData.items.length > 0) {
+      return this.comboData.items;
+    }
+    if (this.comboData.itemA && this.comboData.itemB) {
+      return [this.comboData.itemA, this.comboData.itemB];
+    }
+    return [];
+  }
+
+  getComboSavings() {
+    const items = this.getComboItems();
+    if (items.length < 2) return { sumUsd: 0, savingsUsd: 0, savingsPct: 0 };
+    const sumUsd = Number(items.reduce((acc, it) => {
+      const p = Number(it?.priceUsd);
+      return acc + (Number.isFinite(p) ? p : 0);
+    }, 0).toFixed(2));
+    const rawComboPrice = Number(this.priceUsd);
+    const comboPrice = Number.isFinite(rawComboPrice) ? rawComboPrice : 0;
+    const savingsUsd = Math.max(0, Number((sumUsd - comboPrice).toFixed(2)));
+    const savingsPct = sumUsd > 0 ? Math.round((savingsUsd / sumUsd) * 100) : 0;
+    return { sumUsd, savingsUsd, savingsPct };
   }
 
   getParsedDescription() {
@@ -315,6 +367,10 @@ export class RewardModel {
       image_url: this.imageUrl,
       imageUrl: this.imageUrl,
       images: this.images,
+      combo_data: this.comboData,
+      comboData: this.comboData,
+      dissolved_from_combo: this.dissolvedFromCombo,
+      dissolvedFromCombo: this.dissolvedFromCombo,
       description: this.description,
       category: this.category,
       updated_at: this.updatedAt,

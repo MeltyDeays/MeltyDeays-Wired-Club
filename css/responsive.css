@@ -1,12 +1,9 @@
 /* ========================================================= */
 /* ULTRA-RESPONSIVE ADAPTABILITY FOR ALL MOBILE SCREEN SIZES */
 /* (CLIENT PORTAL + ADMIN NOC TERMINAL)                     */
-/* Ocultar meta estilo Temu y componentes móviles por defecto en pantallas grandes */
+/* Ocultar meta estilo Temu y componentes exclusivos de pantalla táctil en pantallas grandes */
 .reward-temu-meta,
-.btn-mobile-hamburger,
 .fab-mobile-menu-btn,
-.drawer-mobile-profile,
-.drawer-profile-overlay,
 [data-vercel-toolbar],
 vercel-live-feedback,
 #vercel-live-feedback,

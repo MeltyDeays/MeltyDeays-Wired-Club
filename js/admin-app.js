@@ -155,6 +155,14 @@ import {
   openNewProductModal,
   openEditProductModal,
   saveProductAdmin,
+  addComboItemTab,
+  removeComboItemTab,
+  selectComboItemTab,
+  onActiveComboItemChange,
+  updateComboLiveSummary,
+  setProductMainType,
+  activateComboBuilder,
+  deactivateComboBuilder,
   removeProductAdmin,
   handleAdminMarkSold,
   openMarkProductSoldModal,
@@ -1231,7 +1239,15 @@ document.addEventListener("DOMContentLoaded", () => {
   window.setTicketPreset = setTicketPreset;
   window.applyCalculatedPointsToProduct = applyCalculatedPointsToProduct;
   window.onManualPointsCostChange = onManualPointsCostChange;
-  window.setProductPublicationMode = setProductPublicationMode;
+  const _baseSetProductPublicationMode = setProductPublicationMode;
+  window.setProductPublicationMode = function(mode) {
+    if (mode === "COMBO") {
+      activateComboBuilder();
+    } else {
+      deactivateComboBuilder();
+      _baseSetProductPublicationMode(mode);
+    }
+  };
   window.setProductDiscountPreset = setProductDiscountPreset;
   window.recalculateProductDiscount = recalculateProductDiscount;
   window.applyCalculatedDiscountToProduct = applyCalculatedDiscountToProduct;
@@ -1242,6 +1258,16 @@ document.addEventListener("DOMContentLoaded", () => {
   window.applyCalculatedIncomingToProduct = applyCalculatedIncomingToProduct;
   window.toggleProductCalculatorAccordion = toggleProductCalculatorAccordion;
   window.handleAdminReleaseIncoming = handleAdminReleaseIncoming;
+
+  // Combo Flexible y Haibane Builder (Hito 2)
+  window.addComboItemTab = addComboItemTab;
+  window.removeComboItemTab = removeComboItemTab;
+  window.selectComboItemTab = selectComboItemTab;
+  window.onActiveComboItemChange = onActiveComboItemChange;
+  window.updateComboLiveSummary = updateComboLiveSummary;
+  window.setProductMainType = setProductMainType;
+  window.activateComboBuilder = activateComboBuilder;
+  window.deactivateComboBuilder = deactivateComboBuilder;
 
   // Calculadora de Puntos por Venta (Factura 4x1)
   window.openSalePointsCalculatorModal = openSalePointsCalculatorModal;

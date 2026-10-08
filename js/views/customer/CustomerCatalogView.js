@@ -13,7 +13,15 @@ let showVoucherModal = (code) => {
   }
 };
 let formatPrice = (usd) => `$${Number(usd || 0).toFixed(2)} USD`;
-let formatDualPrice = (usd) => `$${Number(usd || 0).toFixed(2)} USD`;
+let formatDualPrice = (usd) => {
+  if (vm && typeof vm.formatDualMoney === "function") {
+    return vm.formatDualMoney(usd);
+  }
+  const num = Number(usd || 0);
+  const nioVal = (num * 37.0).toFixed(2);
+  return `$${num.toFixed(2)} USD <span style="font-size:0.85em; opacity:0.8;">(C$ ${nioVal} NIO)</span>`;
+};
+let selectedComboOption = "FULL_COMBO";
 let currentlyOpenSpecsId = null;
 let activeCommentsUnsubscribe = null;
 
@@ -623,7 +631,7 @@ export function openLightboxFromSpecs() {
 
 export function renderWiredCoinSvg() {
   return `
-    <svg class="reward-temu-coin-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg class="reward-temu-coin-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
       <circle cx="12" cy="12" r="10.5" fill="#f59e0b" stroke="#b45309" stroke-width="1.2"/>
       <circle cx="12" cy="12" r="8" fill="none" stroke="#fef08a" stroke-width="0.8" stroke-dasharray="2 1"/>
       <text x="12" y="15.5" text-anchor="middle" font-family="'Impact', 'Arial Black', sans-serif" font-size="10.5" font-weight="900" fill="#78350f">W</text>
@@ -933,7 +941,7 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
   // Restablecer scroll al inicio inmediatamente
   body.scrollTop = 0;
   modal.scrollTop = 0;
-  const dialog = modal.querySelector(".modal-specs-dialog");
+  const dialog = (modal.querySelector ? modal.querySelector(".modal-specs-dialog") : null) || document.querySelector(".modal-specs-dialog");
   if (dialog) dialog.scrollTop = 0;
   if (typeof body.scrollTo === "function") body.scrollTo(0, 0);
   if (typeof modal.scrollTo === "function") modal.scrollTo(0, 0);
@@ -941,34 +949,45 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
   const fab = document.getElementById("fab-mobile-menu");
   if (fab) fab.style.display = "none";
 
+  const isCombo = (typeof item.isCombo === "function" ? item.isCombo() : (item.rewardType === "COMBO"));
+  const comboItems = isCombo ? (typeof item.getComboItems === "function" ? item.getComboItems() : (item.comboData?.items || [])) : [];
+  const comboSavings = isCombo && typeof item.getComboSavings === "function" ? item.getComboSavings() : { sumUsd: item.priceUsd || 0, savingsUsd: 0, savingsPct: 0 };
+
   // Actualizar topbar limpia y balanceada (Volver // Kicker // Cerrar)
-  const topbar = modal.querySelector(".modal-specs-topbar");
+  const topbar = (modal.querySelector ? modal.querySelector(".modal-specs-topbar") : null) || document.querySelector(".modal-specs-topbar");
   if (topbar) {
     topbar.innerHTML = `
       <button type="button" class="specs-topbar-back-btn" onclick="closeProductSpecsModal()" title="Volver al catálogo">
         <span>←</span> <span>Volver</span>
       </button>
       <div class="modal-specs-kicker">
-        <span class="kicker-dot"></span>
-        <span>WIRED SHOP // DETALLE</span>
+        <span class="kicker-dot" style="${isCombo ? 'background:#d97706; box-shadow:0 0 6px #f59e0b;' : ''}"></span>
+        <span style="${isCombo ? 'color:#b45309;' : ''}">${isCombo ? `WIRED COMBO // ${comboItems.length} EN 1` : 'WIRED SHOP // DETALLE'}</span>
       </div>
       <button class="modal-close-btn" onclick="closeProductSpecsModal()" aria-label="Cerrar">&times;</button>
     `;
   }
 
   const parsed = parseProductDescription(item.description);
-  const isIncoming = (typeof item.isIncoming === "function" ? item.isIncoming() : (item.status === "INCOMING" || Boolean(item.isIncoming || item.is_incoming))) && !(typeof item.isIncomingExpired === "function" && item.isIncomingExpired());
+  const isIncoming = !isCombo && (typeof item.isIncoming === "function" ? item.isIncoming() : (item.status === "INCOMING" || Boolean(item.isIncoming || item.is_incoming))) && !(typeof item.isIncomingExpired === "function" && item.isIncomingExpired());
   const presalePrice = Number(item.presalePriceUsd ?? (item.priceUsd * (1 - (item.presaleDiscountPct || item.presaleDiscountValue || 0) / 100)));
   const presaleDiscUsd = Number(item.presaleDiscountUsd ?? Math.max(0, item.priceUsd - presalePrice));
   const presaleDiscPct = item.presaleDiscountType === "PERCENTAGE" ? Number(item.presaleDiscountValue || 0) : (item.priceUsd > 0 ? Math.round((presaleDiscUsd / item.priceUsd) * 100) : 0);
 
-  const isPartial = item.rewardType === "PARTIAL_DISCOUNT" || (typeof item.isPartialDiscount === "function" && item.isPartialDiscount());
+  const isPartial = isCombo || item.rewardType === "PARTIAL_DISCOUNT" || (typeof item.isPartialDiscount === "function" && item.isPartialDiscount());
   const maxPct = Number(item.maxDiscountPct || item.max_discount_pct || item.maxDiscountPercent || (isPartial ? 5 : 0));
   const isOut = !isIncoming && (item.stock <= 0 || item.status === "SOLD_OUT");
 
-  const productImages = typeof item.getImages === "function"
+  let productImages = typeof item.getImages === "function"
     ? item.getImages()
     : (Array.isArray(item.images) && item.images.length ? item.images : (item.imageUrl ? [item.imageUrl] : []));
+
+  if (isCombo && comboItems.length > 0) {
+    const comboItemImgs = comboItems.map(c => c.imageUrl).filter(Boolean);
+    if (productImages.length <= 1) {
+      productImages = [...new Set([...(item.imageUrl ? [item.imageUrl] : []), ...comboItemImgs])];
+    }
+  }
 
   if (currentSpecsImgIndex >= productImages.length) {
     currentSpecsImgIndex = 0;
@@ -1144,6 +1163,72 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
         </div>
       </div>
     `;
+  } else if (isCombo) {
+    saleBannerHtml = `
+      <div class="haibane-specs-banner haibane-combo-banner" id="combo-specs-banner-${item.id}" style="border: 1.5px solid #d97706; background: #fffbeb;">
+        <!-- Encabezado Sacro Combo Serie 3 -->
+        <div class="haibane-specs-header">
+          <div class="haibane-specs-title-row">
+            <span class="haibane-specs-kanji" style="color: #78350f;">✦ COMBO FLEXIBLE · SERIE 3 ✦</span>
+            <span class="haibane-specs-badge" style="background: #f59e0b; color: #78350f;">-${comboSavings.savingsPct}% AHORRO EN PAQUETE</span>
+          </div>
+          <div class="haibane-specs-subtitle" style="color: #92400e;">📦 PAQUETE INTEGRAL (${comboItems.length} PRODUCTOS)</div>
+        </div>
+
+        <!-- Fila de Precios del Combo -->
+        <div class="haibane-specs-pricing-row">
+          <div class="haibane-price-main-block">
+            <span class="haibane-price-label" style="color: #78350f;">PRECIO DEL COMBO</span>
+            <div class="haibane-specs-price-curr" style="color: #b45309;">${formatDualPrice(item.priceUsd)}</div>
+          </div>
+          <div class="haibane-price-orig-block">
+            <span class="haibane-orig-label">SUMA INDIVIDUAL</span>
+            <span class="haibane-specs-price-orig" style="text-decoration: line-through; color: #94a3b8;">${formatPrice(comboSavings.sumUsd)}</span>
+          </div>
+        </div>
+
+        <!-- Tarjeta de Ahorro y Desglose de Ítems del Combo -->
+        <div class="haibane-specs-savings-row" style="border-color: #d97706;">
+          <div class="savings-primary-line">
+            <span class="savings-gem" style="color: #d97706;">✧</span>
+            <span class="savings-label">Ahorro en combo:</span>
+            <span class="savings-highlight" style="color: #b45309;">-${formatDualPrice(comboSavings.savingsUsd)}</span>
+            <span class="savings-badge-pill" style="background: #fef3c7; color: #92400e; border: 1px solid #fcd34d;">(-${comboSavings.savingsPct}% OFF)</span>
+          </div>
+          <div class="savings-secondary-line">
+            <span class="savings-shield-icon">🛡️</span>
+            <span class="savings-note">Garantía comercial independiente para cada artículo</span>
+          </div>
+        </div>
+
+        <!-- Desglose de Productos Incluidos en el Combo -->
+        <div class="combo-included-items-wrap" style="margin-top: 0.65rem; border-top: 1.5px dashed #fcd34d; padding-top: 0.65rem;">
+          <div style="font-family: var(--font-mono); font-size: 0.72rem; font-weight: 800; color: #78350f; margin-bottom: 0.45rem; display: flex; align-items: center; justify-content: space-between;">
+            <span>✦ PRODUCTOS INCLUIDOS EN EL PAQUETE:</span>
+            <span style="font-size: 0.65rem; color: #92400e; font-weight: 700;">${comboItems.length} ÍTEMS</span>
+          </div>
+          <div class="combo-included-items-list" style="display: flex; flex-direction: column; gap: 0.45rem;">
+            ${comboItems.map((cItem, idx) => `
+              <div class="combo-included-item-card" style="display: flex; align-items: center; justify-content: space-between; gap: 8px; background: #ffffff; border: 1px solid #fed7aa; border-radius: 4px; padding: 6px 8px;">
+                <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
+                  ${cItem.imageUrl ? `<img src="${cItem.imageUrl}" alt="${cItem.title}" style="width: 34px; height: 34px; object-fit: cover; border-radius: 3px; border: 1px solid #e2e8f0; flex-shrink: 0;" onerror="this.style.display='none'">` : '<div style="width: 34px; height: 34px; background: #0f172a; border-radius: 3px; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; flex-shrink: 0;">📦</div>'}
+                  <div style="min-width: 0;">
+                    <div style="font-weight: 800; font-size: 0.75rem; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${idx + 1}. ${cItem.title}</div>
+                    <div style="font-size: 0.65rem; color: #64748b;">Comprado por separado: <strong style="color: #0284c7;">${formatPrice(cItem.priceUsd)}</strong></div>
+                  </div>
+                </div>
+                <div style="font-family: var(--font-mono); font-weight: 900; font-size: 0.75rem; color: #b45309; flex-shrink: 0; text-align: right;">
+                  ${formatDualPrice(cItem.priceUsd)}
+                </div>
+              </div>
+            `).join('')}
+          </div>
+          <div style="font-size: 0.68rem; color: #92400e; margin-top: 0.5rem; line-height: 1.3; font-style: italic;">
+            💡 <strong>Flexibilidad total:</strong> Al presionar "Adquirir", podrás elegir entre llevarte el combo completo con el descuento o comprar cualquiera de los artículos por separado al precio unitario indicado.
+          </div>
+        </div>
+      </div>
+    `;
   } else if (isPartial) {
     saleBannerHtml = `
       <div class="temu-sale-banner">
@@ -1155,7 +1240,7 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
           <span class="temu-sale-price-curr" id="specs-calc-cash-${item.id}">${formatDualPrice(cashToPayWithPts)}</span>
           <span class="temu-sale-price-orig">${formatPrice(item.priceUsd)}</span>
         </div>
-        <div style="font-size: 0.75rem; color: #78350f; font-family: var(--font-mono); font-weight: 700; display: flex; align-items: center; gap: 4px;">
+        <div class="specs-coin-row" style="font-size: 0.75rem; color: #78350f; font-family: var(--font-mono); font-weight: 700; display: flex; align-items: center; gap: 4px; line-height: 1.2;">
           ${renderWiredCoinSvg()}
           <span>Ahorro con puntos: <strong id="specs-calc-disc-${item.id}" style="color: #059669;">-${formatPrice(appliedDiscountUsd)} (-${formattedAppliedPct}%)</strong></span>
         </div>
@@ -1189,7 +1274,7 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
           <span class="temu-sale-price-curr" style="color: #059669;">¡GRATIS!</span>
           ${item.priceUsd ? `<span class="temu-sale-price-orig">${formatPrice(item.priceUsd)}</span>` : ''}
         </div>
-        <div style="font-size: 0.75rem; color: #065f46; font-family: var(--font-mono); font-weight: 700; display: flex; align-items: center; gap: 4px;">
+        <div class="specs-coin-row" style="font-size: 0.75rem; color: #065f46; font-family: var(--font-mono); font-weight: 700; display: flex; align-items: center; gap: 4px; line-height: 1.2;">
           ${renderWiredCoinSvg()}
           <span>Costo total en puntos: <strong>${item.pointsCost.toLocaleString()} WP</strong></span>
         </div>
@@ -1204,11 +1289,14 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
       <div class="specs-badges-bar">
         <span class="specs-badge-item" style="background: #0f172a; color: #38bdf8; border: 1px solid #334155;">⚡ WIRED CHOICE</span>
         ${productImages.length > 1 ? `<span class="specs-badge-item frames">[ 0${productImages.length} FRAMES ]</span>` : ''}
-        ${isIncoming
-          ? `<span class="specs-badge-item incoming" style="background: #fef3c7; color: #92400e; border: 1px solid #fcd34d;">🕊️ EXPEDICIÓN EN VUELO · PREVENTA</span>`
-          : (isPartial 
-            ? `<span class="specs-badge-item discount">🏷️ Hasta ${maxPct}% OFF</span>` 
-            : `<span class="specs-badge-item points">⚡ ${item.pointsCost.toLocaleString()} WP</span>`
+        ${isCombo
+          ? `<span class="specs-badge-item combo" style="background: #78350f; color: #fef08a; border: 1.5px solid #d97706;">✦ COMBO ${comboItems.length} EN 1 ✦</span>`
+          : (isIncoming
+            ? `<span class="specs-badge-item incoming" style="background: #fef3c7; color: #92400e; border: 1px solid #fcd34d;">🕊️ EXPEDICIÓN EN VUELO · PREVENTA</span>`
+            : (isPartial 
+              ? `<span class="specs-badge-item discount">🏷️ Hasta ${maxPct}% OFF</span>` 
+              : `<span class="specs-badge-item points">⚡ ${item.pointsCost.toLocaleString()} WP</span>`
+            )
           )
         }
         ${isOut
@@ -1320,6 +1408,13 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
           <span class="btn-reserve-icon">📅</span>
           <span class="btn-reserve-text-full">Reservar en Preventa (-${presaleDiscPct}%)</span>
           <span class="btn-reserve-text-short">Reservar (-${presaleDiscPct}%)</span>
+        </button>
+      `;
+    } else if (isCombo && !isOut) {
+      actionBtn = `
+        <button type="button" class="modal-specs-action-btn btn-combo-acquire" onclick="closeProductSpecsModal(); confirmRedeem('${item.id}');" style="min-height: 42px;">
+          <span style="font-size: 1rem;">⚡</span>
+          <span>ADQUIRIR COMBO O POR SEPARADO</span>
         </button>
       `;
     } else if (!isOut) {
@@ -1574,10 +1669,13 @@ export function renderCatalog(catalog, user) {
   }
 
   container.innerHTML = visibleCatalog.map(item => {
-    const isIncoming = (typeof item.isIncoming === "function" ? item.isIncoming() : (item.status === "INCOMING" || Boolean(item.isIncoming || item.is_incoming))) && !(typeof item.isIncomingExpired === "function" && item.isIncomingExpired());
+    const isCombo = (typeof item.isCombo === "function" ? item.isCombo() : (item.rewardType === "COMBO"));
+    const comboItems = isCombo ? (typeof item.getComboItems === "function" ? item.getComboItems() : (item.comboData?.items || [])) : [];
+    const comboSavings = isCombo && typeof item.getComboSavings === "function" ? item.getComboSavings() : { sumUsd: item.priceUsd || 0, savingsUsd: 0, savingsPct: 0 };
+    const isIncoming = !isCombo && (typeof item.isIncoming === "function" ? item.isIncoming() : (item.status === "INCOMING" || Boolean(item.isIncoming || item.is_incoming))) && !(typeof item.isIncomingExpired === "function" && item.isIncomingExpired());
     const isOut = !isIncoming && (item.stock <= 0 || item.status === "SOLD_OUT");
     const canAfford = user && user.wiredPoints >= item.pointsCost;
-    const isPartial = item.rewardType === "PARTIAL_DISCOUNT" || (typeof item.isPartialDiscount === "function" && item.isPartialDiscount());
+    const isPartial = isCombo || item.rewardType === "PARTIAL_DISCOUNT" || (typeof item.isPartialDiscount === "function" && item.isPartialDiscount());
     const userPts = user ? (user.wiredPoints || 0) : 0;
     const maxCapPts = item.pointsCost || 0;
     const maxPct = item.maxDiscountPct || 5;
@@ -1591,7 +1689,7 @@ export function renderCatalog(catalog, user) {
     let appliedDiscountUsd = 0;
     let cashToPayWithPts = item.priceUsd || 0;
 
-    if (isPartial) {
+    if (isPartial && !isCombo) {
       appliedPts = Math.min(userPts, maxCapPts);
       appliedPct = maxCapPts > 0 ? Number(((appliedPts / maxCapPts) * maxPct).toFixed(2)) : 0;
       const usdPerPoint = (maxCapPts > 0 && item.maxDiscountUsd > 0) ? (item.maxDiscountUsd / maxCapPts) : 0;
@@ -1609,6 +1707,10 @@ export function renderCatalog(catalog, user) {
       temuPriceMain = formatPrice(presalePrice);
       temuPriceOrig = formatPrice(item.priceUsd);
       temuCoinPillText = `🕊️ PREVENTA (-${presaleDiscPct}% DIRECTO)`;
+    } else if (isCombo) {
+      temuPriceMain = formatPrice(item.priceUsd);
+      temuPriceOrig = formatPrice(comboSavings.sumUsd);
+      temuCoinPillText = `✦ COMBO ${comboItems.length} EN 1 (-${comboSavings.savingsPct}%)`;
     } else if (isPartial) {
       if (user && appliedPts > 0) {
         temuPriceMain = formatPrice(cashToPayWithPts);
@@ -1657,6 +1759,15 @@ export function renderCatalog(catalog, user) {
       btnHtml = `<button class="btn-redeem out" disabled>❌ AGOTADO</button>`;
     } else if (!user) {
       btnHtml = `<button class="btn-redeem login-req" onclick="event.stopPropagation(); openAuthModal('login', 'Inicia sesión para canjear')">🔒 Iniciar Sesión</button>`;
+    } else if (isCombo) {
+      btnHtml = `
+        <button type="button" class="btn-redeem btn-combo-acquire active-canje" onclick="event.stopPropagation(); confirmRedeem('${item.id}')">
+          <div class="btn-redeem-content" style="display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%;">
+            <span class="btn-redeem-icon">⚡</span>
+            <span class="btn-redeem-text">ADQUIRIR COMBO O POR SEPARADO</span>
+          </div>
+        </button>
+      `;
     } else if (isPartial) {
       if (userPts > 0) {
         btnHtml = `<button class="btn-redeem active-canje" style="background: linear-gradient(135deg, #d97706, #b45309);" onclick="event.stopPropagation(); confirmRedeem('${item.id}')">🏷️ APLICAR DESCUENTO (${formattedAppliedPct}%)</button>`;
@@ -1671,7 +1782,9 @@ export function renderCatalog(catalog, user) {
     }
 
     let modeBadge = "";
-    if (isIncoming) {
+    if (isCombo) {
+      modeBadge = `<div class="badge-tag combo-badge" style="position: absolute; top: 8px; left: 8px; z-index: 4;">✦ COMBO ${comboItems.length} EN 1 ✦</div>`;
+    } else if (isIncoming) {
       modeBadge = `<div class="badge-tag badge-coming-soon" style="position: absolute; top: 8px; left: 8px; z-index: 2; background: rgba(15, 23, 42, 0.95); color: #38bdf8; border: 1px solid #0284c7; font-family: var(--font-mono); font-size: 0.65rem; font-weight: 800; padding: 2px 6px; border-radius: 3px; box-shadow: 0 0 8px rgba(56, 189, 248, 0.3);">🕊️ LLEGA EN // -${presaleDiscPct}%</div>`;
     } else if (isPartial) {
       if (user && userPts >= maxCapPts) {
@@ -1703,6 +1816,26 @@ export function renderCatalog(catalog, user) {
           </div>
           <div class="pricing-row footnote-row" style="color: #94a3b8; font-size: 0.65rem;">
             <span class="pricing-label" style="grid-column: span 2;">✨ Descuento directo de preventa. No requiere puntos Wired.</span>
+          </div>
+        </div>
+      `;
+    } else if (isCombo) {
+      partialBreakdown = `
+        <div class="reward-pricing-box combo-pricing-box" style="border: 1.5px solid #d97706; background: #fffbeb; padding: 0.5rem 0.65rem; border-radius: 4px; margin-top: 0.5rem;">
+          <div class="pricing-row" style="display: flex; justify-content: space-between; font-size: 0.72rem; color: #78350f;">
+            <span class="pricing-label">Suma individual:</span>
+            <span class="pricing-val" style="text-decoration: line-through; color: #94a3b8;">${formatPrice(comboSavings.sumUsd)}</span>
+          </div>
+          <div class="pricing-row discount-row" style="display: flex; justify-content: space-between; font-size: 0.72rem; color: #b45309; font-weight: 800;">
+            <span class="pricing-label">Ahorro en Combo:</span>
+            <span class="pricing-val green" style="color: #d97706;">-${formatPrice(comboSavings.savingsUsd)} (${comboSavings.savingsPct}% OFF)</span>
+          </div>
+          <div class="pricing-row total-row" style="display: flex; justify-content: space-between; font-size: 0.8rem; font-weight: 900; color: #78350f; border-top: 1px dashed #fcd34d; margin-top: 4px; padding-top: 4px;">
+            <span class="pricing-label">Precio del Combo:</span>
+            <span class="pricing-val total" style="color: #b45309;">${formatPrice(item.priceUsd)}</span>
+          </div>
+          <div class="pricing-row footnote-row" style="color: #92400e; font-size: 0.65rem; margin-top: 3px;">
+            <span class="pricing-label" style="grid-column: span 2;">✦ Adquiere el combo completo con descuento o compra cualquier producto por separado.</span>
           </div>
         </div>
       `;
@@ -1790,6 +1923,12 @@ export function renderCatalog(catalog, user) {
     if (isIncoming) {
       footerHtml = `
         <div class="reward-footer reward-footer-incoming">
+          ${btnHtml}
+        </div>
+      `;
+    } else if (isCombo) {
+      footerHtml = `
+        <div class="reward-footer reward-footer-combo">
           ${btnHtml}
         </div>
       `;
@@ -1907,29 +2046,49 @@ export function renderCatalog(catalog, user) {
     const escapedTitle = (item.title || "").replace(/'/g, "\\'");
 
     return `
-      <div class="reward-card ${isOut ? 'is-sold-out' : (isIncoming ? 'is-incoming-item' : '')}" onclick="openProductSpecsModal('${item.id}')">
-        <div class="reward-img-wrap" style="${!mainCover ? 'background: linear-gradient(135deg, #0d131f 0%, #17243b 100%); display:flex; align-items:center; justify-content:center;' : ''}">
+      <div class="reward-card ${isOut ? 'is-sold-out' : (isIncoming ? 'is-incoming-item' : (isCombo ? 'is-combo-item' : ''))}" onclick="openProductSpecsModal('${item.id}')">
+        <div class="reward-img-wrap" style="${!mainCover && !isCombo ? 'background: linear-gradient(135deg, #0d131f 0%, #17243b 100%); display:flex; align-items:center; justify-content:center;' : ''}">
           ${modeBadge}
-          ${hasMultipleImgs ? `
-            <div class="reward-multi-photos-badge" onclick="event.stopPropagation(); openProductSpecsModal('${item.id}')" title="Ver galería y ficha técnica (${itemImages.length} fotos)">
-              <span style="display:inline-block; width:5px; height:5px; border-radius:50%; background:#38bdf8; box-shadow: 0 0 6px #38bdf8;"></span>
-              <span>[ 0${itemImages.length} FRAMES ]</span>
-            </div>
-          ` : ''}
-          ${mainCover
-            ? `
-              <img src="${mainCover}" alt="${item.title}" class="reward-img" onclick="event.stopPropagation(); openProductSpecsModal('${item.id}')" title="Clic para ver detalles y fotos" onerror="this.onerror=null; this.src=''; this.parentElement.style.background='#0d131f';">
-              ${!isOut ? `
-                <div class="reward-img-action-overlay" onclick="event.stopPropagation(); openProductSpecsModal('${item.id}')">
-                  <div class="reward-img-expand-badge">
-                    <span style="font-size:0.85rem; line-height:1;">${isIncoming ? '🕊️' : '⚡'}</span>
-                    <span>${isIncoming ? 'VER DETALLES // PREVENTA' : 'VER DETALLES // WIRED_VIEW'}</span>
-                  </div>
+          ${isCombo ? `
+            <div class="combo-split-container">
+              ${comboItems.map((cItem, idx) => `
+                ${idx > 0 ? '<div class="combo-split-divider"></div>' : ''}
+                <div class="combo-split-item" title="${cItem.title}">
+                  <img src="${cItem.imageUrl || ''}" alt="${cItem.title}" class="combo-split-img" onerror="this.onerror=null; this.src=''; this.parentElement.style.background='#0d131f';">
+                  <div class="combo-split-item-label">${cItem.title}</div>
                 </div>
-              ` : ''}
-            `
-            : `<div style="text-align:center; padding:1rem;"><span style="font-size:2.2rem;">${isIncoming ? '🕊️' : (isPartial ? '🏷️' : '🎁')}</span><div style="font-family:var(--font-mono); font-size:0.68rem; color:#38bdf8; margin-top:4px;">${isIncoming ? 'PREORDER_ITEM' : (isPartial ? 'SALE_DISCOUNT' : 'TECH_REWARD')}</div></div>`
-          }
+              `).join('')}
+            </div>
+            ${!isOut ? `
+              <div class="reward-img-action-overlay" onclick="event.stopPropagation(); openProductSpecsModal('${item.id}')">
+                <div class="reward-img-expand-badge" style="border-color: #d97706; color: #fef08a; background: #0f172a;">
+                  <span style="font-size:0.85rem; line-height:1;">✨</span>
+                  <span>VER DETALLES // COMBO ${comboItems.length} EN 1</span>
+                </div>
+              </div>
+            ` : ''}
+          ` : `
+            ${hasMultipleImgs ? `
+              <div class="reward-multi-photos-badge" onclick="event.stopPropagation(); openProductSpecsModal('${item.id}')" title="Ver galería y ficha técnica (${itemImages.length} fotos)">
+                <span style="display:inline-block; width:5px; height:5px; border-radius:50%; background:#38bdf8; box-shadow: 0 0 6px #38bdf8;"></span>
+                <span>[ 0${itemImages.length} FRAMES ]</span>
+              </div>
+            ` : ''}
+            ${mainCover
+              ? `
+                <img src="${mainCover}" alt="${item.title}" class="reward-img" onclick="event.stopPropagation(); openProductSpecsModal('${item.id}')" title="Clic para ver detalles y fotos" onerror="this.onerror=null; this.src=''; this.parentElement.style.background='#0d131f';">
+                ${!isOut ? `
+                  <div class="reward-img-action-overlay" onclick="event.stopPropagation(); openProductSpecsModal('${item.id}')">
+                    <div class="reward-img-expand-badge">
+                      <span style="font-size:0.85rem; line-height:1;">${isIncoming ? '🕊️' : '⚡'}</span>
+                      <span>${isIncoming ? 'VER DETALLES // PREVENTA' : 'VER DETALLES // WIRED_VIEW'}</span>
+                    </div>
+                  </div>
+                ` : ''}
+              `
+              : `<div style="text-align:center; padding:1rem;"><span style="font-size:2.2rem;">${isIncoming ? '🕊️' : (isPartial ? '🏷️' : '🎁')}</span><div style="font-family:var(--font-mono); font-size:0.68rem; color:#38bdf8; margin-top:4px;">${isIncoming ? 'PREORDER_ITEM' : (isPartial ? 'SALE_DISCOUNT' : 'TECH_REWARD')}</div></div>`
+            }
+          `}
           ${isOut ? `
             <div class="reward-sold-stamp-container">
               <div class="reward-sold-stamp">
@@ -2142,7 +2301,8 @@ export function confirmRedeem(rewardId) {
   const reward = vm.catalog.find(r => r.id === rewardId);
   if (!reward) return;
 
-  const isPartial = reward.rewardType === "PARTIAL_DISCOUNT" || (typeof reward.isPartialDiscount === "function" && reward.isPartialDiscount());
+  const isCombo = (typeof reward.isCombo === "function" ? reward.isCombo() : (reward.rewardType === "COMBO"));
+  const isPartial = isCombo || reward.rewardType === "PARTIAL_DISCOUNT" || (typeof reward.isPartialDiscount === "function" && reward.isPartialDiscount());
 
   // Si es canje 100% gratuito en puntos, sí bloquea si no tiene saldo suficiente
   if (!isPartial && vm.currentUser.wiredPoints < reward.pointsCost) {
@@ -2152,6 +2312,7 @@ export function confirmRedeem(rewardId) {
 
   selectedRewardId = rewardId;
   currentRedeemReward = reward;
+  selectedComboOption = "FULL_COMBO";
 
   // Llenar datos de la recompensa
   const titleEl = document.getElementById("confirm-reward-title");
@@ -2167,16 +2328,65 @@ export function confirmRedeem(rewardId) {
     ptsEl.style.borderColor = isPartial ? "#fcd34d" : "#c7d2fe";
   }
 
+  const comboItems = isCombo ? (typeof reward.getComboItems === "function" ? reward.getComboItems() : (reward.comboData?.items || [])) : [];
+
   if (reward.imageUrl && imgEl) {
     imgEl.src = reward.imageUrl;
+    imgEl.style.display = "block";
+    if (fallbackEl) fallbackEl.style.display = "none";
+  } else if (isCombo && comboItems.length > 0 && comboItems[0].imageUrl && imgEl) {
+    imgEl.src = comboItems[0].imageUrl;
     imgEl.style.display = "block";
     if (fallbackEl) fallbackEl.style.display = "none";
   } else {
     if (imgEl) imgEl.style.display = "none";
     if (fallbackEl) {
-      fallbackEl.textContent = isPartial ? "🏷️" : "🎁";
+      fallbackEl.textContent = isCombo ? "✨" : (isPartial ? "🏷️" : "🎁");
       fallbackEl.style.display = "block";
     }
+  }
+
+  // Configurar bloque interactivo de opciones para combos flexibles
+  const comboWrap = document.getElementById("confirm-combo-selector-wrap");
+  const comboList = document.getElementById("confirm-combo-options-list");
+  const comboBadge = document.getElementById("confirm-combo-badge");
+
+  if (isCombo) {
+    if (comboWrap) comboWrap.style.display = "block";
+    if (comboBadge) comboBadge.textContent = `✦ COMBO ${comboItems.length} EN 1 ✦`;
+    if (comboList) {
+      comboList.innerHTML = `
+        <div class="confirm-combo-option-row active" id="combo-opt-full" onclick="selectComboRedeemOption('FULL_COMBO')">
+          <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
+            <input type="radio" name="combo-redeem-choice" id="radio-combo-full" value="FULL_COMBO" checked style="accent-color: #d97706; flex-shrink: 0;">
+            ${(reward.imageUrl || comboItems[0]?.imageUrl) ? `<img src="${reward.imageUrl || comboItems[0].imageUrl}" alt="${reward.title}" style="width: 32px; height: 32px; object-fit: cover; border-radius: 4px; border: 1px solid #d97706; flex-shrink: 0;" onerror="this.style.display='none'">` : ''}
+            <div style="min-width: 0;">
+              <div style="font-weight: 800; font-size: 0.78rem; color: #78350f; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">✨ Combo Completo (${comboItems.length} productos)</div>
+              <div style="font-size: 0.68rem; color: #92400e;">Incluye todos los artículos con precio promocional</div>
+            </div>
+          </div>
+          <strong style="color: #b45309; font-size: 0.85rem; flex-shrink: 0; margin-left: 8px;">${formatDualPrice(reward.priceUsd)}</strong>
+        </div>
+        ${comboItems.map((cItem) => {
+          const singlePrice = Number(cItem.residualPriceUsd !== undefined ? cItem.residualPriceUsd : (cItem.priceUsd || 0));
+          return `
+            <div class="confirm-combo-option-row" id="combo-opt-${cItem.id}" onclick="selectComboRedeemOption('${cItem.id}')">
+              <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
+                <input type="radio" name="combo-redeem-choice" id="radio-combo-${cItem.id}" value="${cItem.id}" style="accent-color: #d97706; flex-shrink: 0;">
+                ${cItem.imageUrl ? `<img src="${cItem.imageUrl}" alt="${cItem.title}" style="width: 32px; height: 32px; object-fit: cover; border-radius: 4px; border: 1px solid #cbd5e1; flex-shrink: 0;" onerror="this.style.display='none'">` : ''}
+                <div style="min-width: 0;">
+                  <div style="font-weight: 800; font-size: 0.78rem; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">📦 Solo ${cItem.title}</div>
+                  <div style="font-size: 0.68rem; color: #64748b;">Comprar por separado (Deshace el combo)</div>
+                </div>
+              </div>
+              <strong style="color: #0f172a; font-size: 0.85rem; flex-shrink: 0; margin-left: 8px;">${formatDualPrice(singlePrice)}</strong>
+            </div>
+          `;
+        }).join('')}
+      `;
+    }
+  } else {
+    if (comboWrap) comboWrap.style.display = "none";
   }
 
   // Previsualización y configuración de puntos a aplicar
@@ -2264,30 +2474,128 @@ export function confirmRedeem(rewardId) {
   }
 }
 
+export function selectComboRedeemOption(optionId) {
+  if (!currentRedeemReward) return;
+  const isCombo = (typeof currentRedeemReward.isCombo === "function" ? currentRedeemReward.isCombo() : (currentRedeemReward.rewardType === "COMBO"));
+  if (!isCombo) return;
+  selectedComboOption = optionId;
+
+  const reward = currentRedeemReward;
+  const comboItems = typeof reward.getComboItems === "function" ? reward.getComboItems() : (reward.comboData?.items || []);
+
+  const allRows = document.querySelectorAll(".confirm-combo-option-row");
+  allRows.forEach(r => r.classList.remove("active"));
+  const activeRow = document.getElementById(optionId === "FULL_COMBO" ? "combo-opt-full" : `combo-opt-${optionId}`);
+  if (activeRow) activeRow.classList.add("active");
+
+  const radio = document.querySelector(`input[name="combo-redeem-choice"][value="${optionId}"]`);
+  if (radio) radio.checked = true;
+
+  const titleEl = document.getElementById("confirm-reward-title");
+  const imgEl = document.getElementById("confirm-reward-img");
+  const ptsEl = document.getElementById("confirm-reward-points");
+
+  let targetPrice = reward.priceUsd || 0;
+  let targetMaxPct = reward.maxDiscountPct || 5;
+  let targetMaxCapPts = reward.pointsCost || 0;
+  let targetMaxDiscUsd = reward.maxDiscountUsd || 0;
+
+  if (optionId === "FULL_COMBO") {
+    if (titleEl) titleEl.textContent = reward.title;
+    if (imgEl && (reward.imageUrl || comboItems[0]?.imageUrl)) {
+      imgEl.src = reward.imageUrl || comboItems[0].imageUrl;
+      imgEl.style.display = "block";
+    }
+  } else {
+    const selItem = comboItems.find(it => String(it.id) === String(optionId));
+    if (selItem) {
+      if (titleEl) titleEl.textContent = `${selItem.title} (Individual)`;
+      if (imgEl && selItem.imageUrl) {
+        imgEl.src = selItem.imageUrl;
+        imgEl.style.display = "block";
+      }
+      targetPrice = Number(selItem.residualPriceUsd !== undefined ? selItem.residualPriceUsd : (selItem.priceUsd || 0));
+      targetMaxPct = Number(selItem.residualMaxDiscountPct || 0);
+      targetMaxDiscUsd = Number((targetPrice * (targetMaxPct / 100)).toFixed(2));
+      targetMaxCapPts = Math.round(targetMaxDiscUsd * 10);
+    }
+  }
+
+  const userPts = vm.currentUser ? (vm.currentUser.wiredPoints || 0) : 0;
+  const maxUsablePts = Math.min(userPts, targetMaxCapPts);
+  selectedPointsToApply = maxUsablePts;
+
+  if (ptsEl) {
+    ptsEl.textContent = targetMaxCapPts > 0 ? `Tope: ${targetMaxCapPts.toLocaleString()} WP` : `0 WP (Sin desc.)`;
+  }
+
+  const typePct = document.getElementById("confirm-type-pct");
+  const typePrice = document.getElementById("confirm-type-price");
+  const typeMaxDisc = document.getElementById("confirm-type-max-disc");
+  const slider = document.getElementById("confirm-points-slider");
+  const numInput = document.getElementById("confirm-points-num");
+  const maxBadge = document.getElementById("confirm-points-max-badge");
+
+  if (typePct) typePct.textContent = `${targetMaxPct}% OFF`;
+  if (typePrice) typePrice.innerHTML = formatDualPrice(targetPrice);
+  if (typeMaxDisc) typeMaxDisc.textContent = `-${formatPrice(targetMaxDiscUsd)} (${targetMaxCapPts.toLocaleString()} WP = ${targetMaxPct}% OFF)`;
+
+  if (slider) {
+    slider.max = String(maxUsablePts);
+    slider.value = String(selectedPointsToApply);
+    slider.disabled = (maxUsablePts === 0);
+  }
+  if (numInput) {
+    numInput.max = String(maxUsablePts);
+    numInput.value = String(selectedPointsToApply);
+    numInput.disabled = (maxUsablePts === 0);
+  }
+  if (maxBadge) {
+    maxBadge.textContent = `${maxUsablePts.toLocaleString()} WP`;
+  }
+
+  updateConfirmCalculation();
+}
+
 export function updateConfirmCalculation() {
   if (!currentRedeemReward) return;
   const reward = currentRedeemReward;
-  const isPartial = reward.rewardType === "PARTIAL_DISCOUNT" || (typeof reward.isPartialDiscount === "function" && reward.isPartialDiscount());
+  const isCombo = (typeof reward.isCombo === "function" ? reward.isCombo() : (reward.rewardType === "COMBO"));
+  const isPartial = isCombo || reward.rewardType === "PARTIAL_DISCOUNT" || (typeof reward.isPartialDiscount === "function" && reward.isPartialDiscount());
   const userPts = vm.currentUser ? (vm.currentUser.wiredPoints || 0) : 0;
+
+  let targetPrice = reward.priceUsd || 0;
+  let targetMaxPct = reward.maxDiscountPct || 5;
+  let targetMaxCapPts = reward.pointsCost || 0;
+  let targetMaxDiscUsd = reward.maxDiscountUsd || 0;
+
+  if (isCombo && selectedComboOption !== "FULL_COMBO") {
+    const comboItems = typeof reward.getComboItems === "function" ? reward.getComboItems() : (reward.comboData?.items || []);
+    const selItem = comboItems.find(it => String(it.id) === String(selectedComboOption));
+    if (selItem) {
+      targetPrice = Number(selItem.residualPriceUsd !== undefined ? selItem.residualPriceUsd : (selItem.priceUsd || 0));
+      targetMaxPct = Number(selItem.residualMaxDiscountPct || 0);
+      targetMaxDiscUsd = Number((targetPrice * (targetMaxPct / 100)).toFixed(2));
+      targetMaxCapPts = Math.round(targetMaxDiscUsd * 10);
+    }
+  }
 
   let deductPts = 0;
   let discountUsd = 0;
-  let cashToPayUsd = reward.priceUsd || 0;
+  let cashToPayUsd = targetPrice;
 
   if (isPartial) {
-    const maxCapPts = reward.pointsCost || 0;
-    const maxPct = reward.maxDiscountPct || 5;
-    const maxUsablePts = Math.min(userPts, maxCapPts);
+    const maxUsablePts = Math.min(userPts, targetMaxCapPts);
     deductPts = Math.max(0, Math.min(selectedPointsToApply, maxUsablePts));
 
-    const usdPerPoint = (maxCapPts > 0 && reward.maxDiscountUsd > 0)
-      ? (reward.maxDiscountUsd / maxCapPts)
+    const usdPerPoint = (targetMaxCapPts > 0 && targetMaxDiscUsd > 0)
+      ? (targetMaxDiscUsd / targetMaxCapPts)
       : 0;
 
-    discountUsd = Number(Math.min(reward.maxDiscountUsd || 0, deductPts * usdPerPoint).toFixed(2));
-    cashToPayUsd = Math.max(0, Number(((reward.priceUsd || 0) - discountUsd).toFixed(2)));
+    discountUsd = Number(Math.min(targetMaxDiscUsd, deductPts * usdPerPoint).toFixed(2));
+    cashToPayUsd = Math.max(0, Number((targetPrice - discountUsd).toFixed(2)));
 
-    const currentPct = maxCapPts > 0 ? Number(((deductPts / maxCapPts) * maxPct).toFixed(2)) : 0;
+    const currentPct = targetMaxCapPts > 0 ? Number(((deductPts / targetMaxCapPts) * targetMaxPct).toFixed(2)) : 0;
     const formattedPct = currentPct % 1 === 0 ? currentPct.toFixed(0) : currentPct.toFixed(1);
 
     const typePct = document.getElementById("confirm-type-pct");
@@ -2297,8 +2605,8 @@ export function updateConfirmCalculation() {
     const typeCash = document.getElementById("confirm-type-cash");
     const ptsAppliedNotice = document.getElementById("confirm-pts-applied-notice");
 
-    if (typePct) typePct.textContent = `${formattedPct}% OFF / MÁX ${maxPct}%`;
-    if (typePctCalc) typePctCalc.textContent = `${formattedPct}% de descuento / Máximo ${maxPct}%`;
+    if (typePct) typePct.textContent = `${formattedPct}% OFF / MÁX ${targetMaxPct}%`;
+    if (typePctCalc) typePctCalc.textContent = `${formattedPct}% de descuento / Máximo ${targetMaxPct}%`;
     if (calcPctLabel) calcPctLabel.textContent = `${formattedPct}%`;
     if (typeDisc) typeDisc.textContent = `-${formatPrice(discountUsd)}`;
     if (typeCash) typeCash.innerHTML = formatDualPrice(cashToPayUsd);
@@ -2342,7 +2650,19 @@ export function onPointsSliderChange(val) {
 export function onPointsNumChange(val) {
   let pts = parseInt(val, 10);
   if (isNaN(pts)) pts = 0;
-  const maxCapPts = currentRedeemReward ? (currentRedeemReward.pointsCost || 0) : 0;
+  let maxCapPts = currentRedeemReward ? (currentRedeemReward.pointsCost || 0) : 0;
+  if (currentRedeemReward) {
+    const isCombo = (typeof currentRedeemReward.isCombo === "function" ? currentRedeemReward.isCombo() : (currentRedeemReward.rewardType === "COMBO"));
+    if (isCombo && selectedComboOption !== "FULL_COMBO") {
+      const comboItems = typeof currentRedeemReward.getComboItems === "function" ? currentRedeemReward.getComboItems() : (currentRedeemReward.comboData?.items || []);
+      const selItem = comboItems.find(it => String(it.id) === String(selectedComboOption));
+      if (selItem) {
+        const itPrice = Number(selItem.residualPriceUsd !== undefined ? selItem.residualPriceUsd : (selItem.priceUsd || 0));
+        const itPct = Number(selItem.residualMaxDiscountPct || 0);
+        maxCapPts = Math.round(itPrice * (itPct / 100) * 10);
+      }
+    }
+  }
   const userPts = vm.currentUser ? (vm.currentUser.wiredPoints || 0) : 0;
   const maxUsablePts = Math.min(userPts, maxCapPts);
   pts = Math.max(0, Math.min(pts, maxUsablePts));
@@ -2354,7 +2674,19 @@ export function onPointsNumChange(val) {
 
 export function setPointsPreset(mode) {
   if (!currentRedeemReward) return;
-  const maxCapPts = currentRedeemReward.pointsCost || 0;
+  let maxCapPts = currentRedeemReward.pointsCost || 0;
+  if (currentRedeemReward) {
+    const isCombo = (typeof currentRedeemReward.isCombo === "function" ? currentRedeemReward.isCombo() : (currentRedeemReward.rewardType === "COMBO"));
+    if (isCombo && selectedComboOption !== "FULL_COMBO") {
+      const comboItems = typeof currentRedeemReward.getComboItems === "function" ? currentRedeemReward.getComboItems() : (currentRedeemReward.comboData?.items || []);
+      const selItem = comboItems.find(it => String(it.id) === String(selectedComboOption));
+      if (selItem) {
+        const itPrice = Number(selItem.residualPriceUsd !== undefined ? selItem.residualPriceUsd : (selItem.priceUsd || 0));
+        const itPct = Number(selItem.residualMaxDiscountPct || 0);
+        maxCapPts = Math.round(itPrice * (itPct / 100) * 10);
+      }
+    }
+  }
   const userPts = vm.currentUser ? (vm.currentUser.wiredPoints || 0) : 0;
   const maxUsablePts = Math.min(userPts, maxCapPts);
 
@@ -2373,7 +2705,10 @@ export function setPointsPreset(mode) {
 export function closeRedeemModal() {
   selectedRewardId = null;
   currentRedeemReward = null;
+  selectedComboOption = "FULL_COMBO";
   selectedPointsToApply = 0;
+  const comboWrap = document.getElementById("confirm-combo-selector-wrap");
+  if (comboWrap) comboWrap.style.display = "none";
   const modal = document.getElementById("modal-confirm-redeem");
   if (modal) {
     modal.style.display = "none";
@@ -2398,7 +2733,15 @@ export async function executeRedeem() {
     playCyberArpeggio();
 
     // 2. Ejecutar canje atómico
-    const res = await vm.redeemReward(selectedRewardId, selectedPointsToApply);
+    let res;
+    if (currentRedeemReward && (typeof currentRedeemReward.isCombo === "function" ? currentRedeemReward.isCombo() : (currentRedeemReward.rewardType === "COMBO"))) {
+      const redeemOpts = selectedComboOption === "FULL_COMBO"
+        ? { selectionMode: "FULL_COMBO" }
+        : { selectionMode: "SINGLE_ITEM", selectedItemId: selectedComboOption };
+      res = await vm.redeemReward(selectedRewardId, selectedPointsToApply, redeemOpts);
+    } else {
+      res = await vm.redeemReward(selectedRewardId, selectedPointsToApply);
+    }
     const voucher = res.voucher || res;
     const cost = res.cost !== undefined ? res.cost : (voucher ? voucher.pointsSpent : 0);
 

@@ -40,6 +40,12 @@ export const BANNER_PRESETS = [
   { id: "wired", label: "Glie Sky", url: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=900&q=80" }
 ];
 
+function handleDrawerKeyDown(e) {
+  if (e.key === "Escape") {
+    closeMobileProfileDrawer();
+  }
+}
+
 export function openMobileProfileDrawer() {
   const drawer = document.getElementById("drawer-mobile-profile");
   const overlay = document.getElementById("drawer-profile-overlay");
@@ -55,6 +61,7 @@ export function openMobileProfileDrawer() {
   drawer.classList.add("open");
   if (overlay) overlay.classList.add("open");
   document.body.style.overflow = "hidden";
+  document.addEventListener("keydown", handleDrawerKeyDown);
 }
 
 export function closeMobileProfileDrawer() {
@@ -63,17 +70,25 @@ export function closeMobileProfileDrawer() {
   const fab = document.getElementById("fab-mobile-menu");
   if (!drawer) return;
 
+  document.removeEventListener("keydown", handleDrawerKeyDown);
   cancelProfilePinUpdate(false);
   cancelProfileNameEditing();
   drawer.classList.remove("open");
   if (overlay) overlay.classList.remove("open");
   if (fab) {
     fab.classList.remove("is-hidden");
-    fab.style.removeProperty("display");
+    if (typeof fab.style.removeProperty === "function") {
+      fab.style.removeProperty("display");
+    } else {
+      fab.style.display = "";
+    }
   }
   document.body.classList.remove("drawer-open");
   document.body.style.overflow = "";
 }
+
+export const openClientProfileDrawer = openMobileProfileDrawer;
+export const closeClientProfileDrawer = closeMobileProfileDrawer;
 
 export function renderProfileDrawer() {
   const user = vm ? vm.currentUser : null;

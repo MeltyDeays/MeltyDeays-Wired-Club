@@ -89,10 +89,10 @@
       </button>
 
       <!-- Píldora de Socio Activo -->
-      <div id="nav-user-pill" style="display: none; align-items: center; gap: 0.5rem; background: #ffffff; border: 1.5px solid var(--dark); padding: 0.35rem 0.75rem; border-radius: 4px; cursor: pointer;" onclick="logoutClient()" title="Clic para cerrar sesión">
+      <div id="nav-user-pill" style="display: none; align-items: center; gap: 0.5rem; background: #ffffff; border: 1.5px solid var(--dark); padding: 0.35rem 0.75rem; border-radius: 4px; cursor: pointer;" onclick="openMobileProfileDrawer()" title="Abrir perfil y ajustes del socio">
         <div style="width: 8px; height: 8px; border-radius: 50%; background: #10b981;"></div>
         <strong id="nav-user-name" style="font-size: 0.78rem; color: var(--dark);">Socio</strong>
-        <span style="font-size: 0.7rem; color: var(--accent); margin-left: 2px;">[Salir]</span>
+        <span style="font-size: 0.7rem; color: var(--accent); margin-left: 2px; padding: 2px 4px; border-radius: 2px;" onclick="event.stopPropagation(); logoutClient();" title="Cerrar sesión">[Salir]</span>
       </div>
 
       <!-- Botón Escanear QR con Cámara (Móvil / Desktop) -->
@@ -315,6 +315,15 @@
               <h3 id="confirm-reward-title" style="font-size: 1.1rem; font-weight: 900; color: var(--dark); margin: 2px 0 4px 0; line-height: 1.2;">-</h3>
               <span class="badge-navi" id="confirm-reward-points" style="font-size: 0.75rem; background: #e0e7ff; color: #4338ca; border: 1px solid #c7d2fe;">0 WP</span>
             </div>
+          </div>
+
+          <!-- SELECTOR INTERACTIVO DE OPCIONES DE COMBO (N+1 VÍAS: COMBO COMPLETO O ÍTEMS POR SEPARADO) -->
+          <div id="confirm-combo-selector-wrap" class="confirm-combo-options" style="display: none; background: #fffbeb; border: 1.5px solid #d97706; border-radius: 6px; padding: 0.65rem 0.75rem; box-shadow: 2px 2px 0px #b45309; margin-top: 0.65rem;">
+            <div style="font-family: var(--font-mono); font-size: 0.72rem; font-weight: 800; color: #78350f; margin-bottom: 0.45rem; display: flex; align-items: center; justify-content: space-between;">
+              <span>✦ OPCIONES DISPONIBLES:</span>
+              <span id="confirm-combo-badge" class="badge-navi" style="background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; font-size: 0.62rem;">COMBO FLEXIBLE</span>
+            </div>
+            <div id="confirm-combo-options-list" style="display: flex; flex-direction: column; gap: 0.4rem;"></div>
           </div>
 
           <!-- SELECTOR INTERACTIVO DE PUNTOS -->

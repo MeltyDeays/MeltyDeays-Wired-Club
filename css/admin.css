@@ -2953,5 +2953,125 @@
   transform: translate(1px, 1px);
 }
 
+/* ========================================================
+   MODAL DE PRODUCTO: COMBOS FLEXIBLES & PESTAÑAS DINÁMICAS
+   ======================================================== */
+.combo-items-tabs,
+.combo-tabs-bar,
+#combo-items-tabs-bar,
+#combo-items-tab-bar {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  white-space: nowrap;
+  padding-bottom: 6px;
+  margin-bottom: 0.65rem;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
+
+.combo-items-tabs::-webkit-scrollbar,
+#combo-items-tabs-bar::-webkit-scrollbar,
+#combo-items-tab-bar::-webkit-scrollbar {
+  height: 4px;
+}
+
+.combo-items-tabs::-webkit-scrollbar-thumb,
+#combo-items-tabs-bar::-webkit-scrollbar-thumb,
+#combo-items-tab-bar::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.combo-tab-item {
+  display: inline-flex;
+  align-items: center;
+  background: #f8fafc;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 5px;
+  padding: 0 4px 0 8px;
+  gap: 4px;
+  min-height: 38px;
+  height: 38px;
+  box-sizing: border-box;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.combo-tab-item:hover {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+}
+
+.combo-tab-item.active {
+  background: #eff6ff;
+  border-color: #2563eb;
+  box-shadow: 2px 2px 0px #1d4ed8;
+}
+
+.combo-tab-btn {
+  background: transparent;
+  border: none;
+  font-family: var(--font-mono);
+  font-size: 0.73rem;
+  font-weight: 800;
+  color: #334155;
+  cursor: pointer;
+  padding: 0 4px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  outline: none;
+}
+
+.combo-tab-item.active .combo-tab-btn {
+  color: #1d4ed8;
+  font-weight: 900;
+}
+
+.combo-tab-del {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 0.75rem;
+  font-weight: 900;
+  cursor: pointer;
+  padding: 0 4px;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  height: 24px;
+  width: 20px;
+}
+
+.combo-tab-del:hover:not(:disabled) {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.combo-tab-del:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.combo-summary-panel,
+.combo-calc-summary,
+.combo-calc-sticky {
+  position: sticky;
+  bottom: 0;
+  z-index: 15;
+  background: #fffbeb;
+  border: 1.5px solid #d97706;
+  border-radius: 6px;
+  padding: 0.75rem 0.85rem;
+  box-shadow: 2px 2px 0px #b45309;
+}
+
+
 
 

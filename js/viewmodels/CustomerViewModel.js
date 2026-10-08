@@ -164,13 +164,21 @@ export class CustomerViewModel {
   }
 
   async processExpiredVouchers() {
-    if (!this.currentUser || !this.vouchers || this.vouchers.length === 0) return;
+    if (!this.currentUser) return 0;
+    // Sincronizar vales del usuario desde Firestore si no están cargados o para capturar actualizaciones
+    const userVouchers = FirestoreService.getUserVouchers(this.currentUser.uid).map(v => new VoucherModel(v));
+    if (userVouchers.length > 0) {
+      this.vouchers = userVouchers;
+    }
+    if (!this.vouchers || this.vouchers.length === 0) return 0;
     let userModified = false;
     let catalogModified = false;
+    let expiredCount = 0;
 
     for (const voucher of this.vouchers) {
       if (voucher.isCommercial() && !voucher.isPaidVoucher() && !voucher.isDelivered() && !voucher.isCancelled()) {
         if (voucher.isExpired() && voucher.status !== "EXPIRED") {
+          expiredCount++;
           // Ha vencido el plazo estricto de 3 días para concretar el pago
           const pointsSpent = Number(voucher.pointsSpent || 0);
           let penalty = 10;
@@ -211,21 +219,9 @@ export class CustomerViewModel {
             });
           }
 
-          // Restaurar stock del producto en catálogo (+1)
-          let reward = (this.catalog || []).find(r => r.id === voucher.rewardId);
-          if (!reward && voucher.rewardId) {
-            const rawReward = await FirestoreService.getReward(voucher.rewardId);
-            if (rawReward) reward = new RewardModel(rawReward);
-          }
-          if (reward) {
-            if (typeof reward.incrementStock === "function") {
-              reward.incrementStock();
-            } else {
-              reward.stock = (reward.stock || 0) + 1;
-            }
-            await FirestoreService.saveReward(reward.toJSON());
-            catalogModified = true;
-          }
+          // Restaurar stock o reconstituir combo en catálogo (+1 o reconstitución)
+          await this.restoreVoucherInventory(voucher);
+          catalogModified = true;
 
           // Marcar vale como EXPIRED
           voucher.markExpired(penalty);
@@ -240,6 +236,7 @@ export class CustomerViewModel {
     if (catalogModified) {
       await this.refreshCatalog();
     }
+    return expiredCount;
   }
 
   async login(phone, pin) {
@@ -413,15 +410,348 @@ export class CustomerViewModel {
     return { success: true, pointsAdded: token.pointsValue, newBalance: this.currentUser.wiredPoints };
   }
 
-  async redeemReward(rewardId, pointsToApply = null) {
+  async redeemReward(rewardId, pointsToApply = null, options = {}) {
     if (!this.currentUser) {
       throw new Error("Debes iniciar sesión para canjear recompensas.");
     }
 
-    const reward = this.catalog.find(r => r.id === rewardId);
+    let reward = (this.catalog || []).find(r => r.id === rewardId);
+    if (!reward && rewardId) {
+      const raw = await FirestoreService.getReward(rewardId);
+      if (raw) reward = new RewardModel(raw);
+    }
     if (!reward) throw new Error("Recompensa no encontrada.");
     if (!reward.isAvailable()) throw new Error("Producto temporalmente agotado.");
 
+    // Detectar si es Combo Flexible
+    if (reward.isCombo && reward.isCombo()) {
+      const comboItems = reward.getComboItems();
+      const selectionMode = options.selectionMode || (options.selectedItemId ? "SINGLE_ITEM" : "FULL_COMBO");
+      const selectedItemId = options.selectedItemId || null;
+
+      // ========================================================
+      // ESCENARIO A: Compra de Combo Completo (Full Combo)
+      // ========================================================
+      if (selectionMode === "FULL_COMBO" || !selectedItemId) {
+        const userPoints = Math.max(0, this.currentUser.wiredPoints || 0);
+        const maxCapPoints = reward.pointsCost || 0;
+        const maxUsable = Math.min(userPoints, maxCapPoints);
+
+        let pointsSpent = 0;
+        if (pointsToApply !== null && pointsToApply !== undefined) {
+          const rawPts = Number(pointsToApply);
+          pointsSpent = Number.isFinite(rawPts) ? Math.max(0, Math.min(rawPts, maxUsable)) : 0;
+        } else {
+          pointsSpent = maxUsable;
+        }
+
+        const usdPerPoint = (maxCapPoints > 0 && reward.maxDiscountUsd > 0)
+          ? (reward.maxDiscountUsd / maxCapPoints)
+          : 0;
+        const discountUsd = Number(Math.min(reward.maxDiscountUsd || 0, pointsSpent * usdPerPoint).toFixed(2));
+        const cashToPayUsd = Math.max(0, Number(((reward.priceUsd || 0) - discountUsd).toFixed(2)));
+
+        if (pointsSpent > 0) {
+          this.currentUser.deductPoints(pointsSpent);
+        }
+
+        // Agotar combo por completo (stock = 0, status = SOLD_OUT)
+        reward.stock = 0;
+        reward.status = "SOLD_OUT";
+        reward.soldOutAt = new Date().toISOString();
+        reward.soldOutReason = "COMBO_FULL_REDEEMED";
+        reward.updatedAt = new Date().toISOString();
+
+        const itemsSnapshot = comboItems.map(it => ({ ...it }));
+        const comboOrigin = {
+          comboId: reward.id,
+          originalTitle: reward.title,
+          originalPriceUsd: reward.priceUsd,
+          originalPointsCost: reward.pointsCost,
+          originalMaxDiscountPct: reward.maxDiscountPct,
+          itemCount: comboItems.length,
+          itemsSnapshot: itemsSnapshot,
+          originalItems: itemsSnapshot,
+          splitLevel: "FULL_COMBO",
+          timestamp: new Date().toISOString()
+        };
+
+        const voucher = new VoucherModel({
+          userUid: this.currentUser.uid,
+          userName: this.currentUser.displayName,
+          rewardId: reward.id,
+          rewardTitle: reward.title,
+          rewardType: "COMBO",
+          imageUrl: reward.imageUrl || (comboItems[0]?.imageUrl || ""),
+          pointsSpent: pointsSpent,
+          priceUsd: reward.priceUsd || 0,
+          discountUsd: discountUsd,
+          cashToPayUsd: cashToPayUsd,
+          comboItems: itemsSnapshot,
+          comboOrigin: comboOrigin,
+          expiresAt: (cashToPayUsd > 0)
+            ? new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString()
+            : null
+        });
+
+        await FirestoreService.saveUser(this.currentUser.toJSON());
+        await FirestoreService.saveReward(reward.toJSON());
+        await FirestoreService.saveVoucher(voucher.toJSON());
+
+        // Ledger
+        if (pointsSpent > 0) {
+          const noteText = `Vale Combo (-$${discountUsd.toFixed(2)} USD usando ${pointsSpent} WP) en ${reward.title} [Paga $${cashToPayUsd.toFixed(2)} USD en mostrador]`;
+          FirestoreService.addLedgerEntry(this.currentUser.uid, {
+            id: "TX-" + Date.now(),
+            type: "DEBIT_REWARD",
+            delta: -pointsSpent,
+            balance_after: this.currentUser.wiredPoints,
+            ref_id: voucher.voucherCode,
+            note: noteText,
+            created_at: new Date().toISOString()
+          });
+        } else {
+          FirestoreService.addLedgerEntry(this.currentUser.uid, {
+            id: "TX-" + Date.now(),
+            type: "PURCHASE_VOUCHER",
+            delta: 0,
+            balance_after: this.currentUser.wiredPoints,
+            ref_id: voucher.voucherCode,
+            note: `Vale de Compra Mostrador (Combo Completo) en ${reward.title} [Paga $${cashToPayUsd.toFixed(2)} USD en mostrador]`,
+            created_at: new Date().toISOString()
+          });
+        }
+
+        await this.refreshUserData();
+        await this.refreshCatalog();
+
+        voucher.voucher = voucher;
+        voucher.success = true;
+        voucher.newBalance = this.currentUser.wiredPoints;
+        voucher.cost = pointsSpent;
+        return voucher;
+      }
+
+      // ========================================================
+      // COMPRA INDIVIDUAL DE UN ÍTEM DEL COMBO (B o C)
+      // ========================================================
+      const selectedItem = comboItems.find(it => String(it.id) === String(selectedItemId));
+      if (!selectedItem) {
+        throw new Error("Artículo [" + selectedItemId + "] no encontrado en el combo.");
+      }
+
+      const itemPrice = Number(selectedItem.residualPriceUsd !== undefined ? selectedItem.residualPriceUsd : (selectedItem.priceUsd || 0));
+      const itemMaxDiscPct = Number(selectedItem.residualMaxDiscountPct || 0);
+      const itemMaxDiscUsd = Number((itemPrice * (itemMaxDiscPct / 100)).toFixed(2));
+      const itemPointsCap = Math.round(itemMaxDiscUsd * 10);
+      const userPoints = Math.max(0, this.currentUser.wiredPoints || 0);
+      const maxUsable = Math.min(userPoints, itemPointsCap);
+
+      let pointsSpent = 0;
+      if (pointsToApply !== null && pointsToApply !== undefined) {
+        const rawPts = Number(pointsToApply);
+        pointsSpent = Number.isFinite(rawPts) ? Math.max(0, Math.min(rawPts, maxUsable)) : 0;
+      } else {
+        pointsSpent = maxUsable;
+      }
+
+      const usdPerPoint = (itemPointsCap > 0 && itemMaxDiscUsd > 0)
+        ? (itemMaxDiscUsd / itemPointsCap)
+        : 0;
+      const discountUsd = Number(Math.min(itemMaxDiscUsd, pointsSpent * usdPerPoint).toFixed(2));
+      const cashToPayUsd = Math.max(0, Number((itemPrice - discountUsd).toFixed(2)));
+
+      if (pointsSpent > 0) {
+        this.currentUser.deductPoints(pointsSpent);
+      }
+
+      const remainingItems = comboItems.filter(it => String(it.id) !== String(selectedItemId));
+      const originalItemsSnapshot = comboItems.map(it => ({ ...it }));
+
+      let voucher = null;
+
+      if (comboItems.length > 2) {
+        // ========================================================
+        // ESCENARIO B: Cascada N > 2 -> N - 1
+        // ========================================================
+        const comboOrigin = {
+          comboId: reward.id,
+          originalTitle: reward.title,
+          originalPriceUsd: reward.priceUsd,
+          originalPointsCost: reward.pointsCost,
+          originalMaxDiscountPct: reward.maxDiscountPct,
+          itemCount: comboItems.length,
+          itemsSnapshot: originalItemsSnapshot,
+          originalItems: originalItemsSnapshot,
+          splitLevel: "N_TO_N_MINUS_1",
+          purchasedItemId: selectedItem.id,
+          remainingItems: remainingItems.map(it => ({ ...it })),
+          timestamp: new Date().toISOString()
+        };
+
+        voucher = new VoucherModel({
+          userUid: this.currentUser.uid,
+          userName: this.currentUser.displayName,
+          rewardId: reward.id,
+          rewardTitle: `${selectedItem.title} (de Combo: ${reward.title})`,
+          rewardType: "PARTIAL_DISCOUNT",
+          imageUrl: selectedItem.imageUrl || reward.imageUrl || "",
+          pointsSpent: pointsSpent,
+          priceUsd: itemPrice,
+          discountUsd: discountUsd,
+          cashToPayUsd: cashToPayUsd,
+          comboOrigin: comboOrigin,
+          purchasedItem: { ...selectedItem },
+          expiresAt: (cashToPayUsd > 0)
+            ? new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString()
+            : null
+        });
+
+        // Extraer ítem del combo y recalcular precio
+        reward.comboData = {
+          ...(reward.comboData || {}),
+          items: remainingItems
+        };
+        const originalSavings = reward.getComboSavings ? reward.getComboSavings() : { savingsPct: 20 };
+        const savingsPct = originalSavings.savingsPct > 0 ? originalSavings.savingsPct : 20;
+        const remSumUsd = Number(remainingItems.reduce((acc, it) => acc + Number(it.priceUsd || 0), 0).toFixed(2));
+        const newComboPrice = Number((remSumUsd * (1 - savingsPct / 100)).toFixed(2));
+
+        reward.priceUsd = newComboPrice;
+        reward.maxDiscountPct = reward.maxDiscountPct || savingsPct;
+        reward.maxDiscountUsd = Number((reward.priceUsd * (reward.maxDiscountPct / 100)).toFixed(2));
+        reward.pointsCost = Math.round(reward.maxDiscountUsd * 10);
+        reward.stock = 1;
+        reward.status = "ACTIVE";
+        reward.updatedAt = new Date().toISOString();
+
+        await FirestoreService.saveReward(reward.toJSON());
+      } else {
+        // ========================================================
+        // ESCENARIO C: Cascada N = 2 -> 1 Standalone
+        // ========================================================
+        const companionItem = remainingItems[0];
+        const standaloneRewardId = "REW-STANDALONE-" + companionItem.id + "-" + Math.random().toString(36).substring(2, 6).toUpperCase();
+
+        const comboOrigin = {
+          comboId: reward.id,
+          originalTitle: reward.title,
+          originalPriceUsd: reward.priceUsd,
+          originalPointsCost: reward.pointsCost,
+          originalMaxDiscountPct: reward.maxDiscountPct,
+          itemCount: 2,
+          itemsSnapshot: originalItemsSnapshot,
+          originalItems: originalItemsSnapshot,
+          splitLevel: "N_EQUALS_2_TO_STANDALONE",
+          purchasedItemId: selectedItem.id,
+          companionItemId: companionItem.id,
+          companionRewardIds: [standaloneRewardId],
+          standaloneRewardId: standaloneRewardId,
+          remainingItems: [{ ...companionItem }],
+          timestamp: new Date().toISOString()
+        };
+
+        voucher = new VoucherModel({
+          userUid: this.currentUser.uid,
+          userName: this.currentUser.displayName,
+          rewardId: reward.id,
+          rewardTitle: `${selectedItem.title} (de Combo: ${reward.title})`,
+          rewardType: "PARTIAL_DISCOUNT",
+          imageUrl: selectedItem.imageUrl || reward.imageUrl || "",
+          pointsSpent: pointsSpent,
+          priceUsd: itemPrice,
+          discountUsd: discountUsd,
+          cashToPayUsd: cashToPayUsd,
+          comboOrigin: comboOrigin,
+          purchasedItem: { ...selectedItem },
+          expiresAt: (cashToPayUsd > 0)
+            ? new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString()
+            : null
+        });
+
+        // 1. Desactivar / Agotar combo original
+        reward.stock = 0;
+        reward.status = "SOLD_OUT";
+        reward.soldOutAt = new Date().toISOString();
+        reward.soldOutReason = "DISSOLVED_TO_STANDALONE";
+        reward.updatedAt = new Date().toISOString();
+        await FirestoreService.saveReward(reward.toJSON());
+
+        // 2. Publicar artículo remanente como producto regular standalone
+        const compPriceUsd = Number(companionItem.residualPriceUsd !== undefined ? companionItem.residualPriceUsd : (companionItem.priceUsd || 0));
+        const compMaxDiscPct = Number(companionItem.residualMaxDiscountPct || 10);
+        const compMaxDiscUsd = Number((compPriceUsd * (compMaxDiscPct / 100)).toFixed(2));
+        const compPointsCost = Math.round(compMaxDiscUsd * 10);
+        const compCashToPayUsd = Number((compPriceUsd - compMaxDiscUsd).toFixed(2));
+
+        const standaloneReward = new RewardModel({
+          id: standaloneRewardId,
+          rewardId: standaloneRewardId,
+          title: companionItem.title,
+          rewardType: "PARTIAL_DISCOUNT",
+          priceUsd: compPriceUsd,
+          maxDiscountPct: compMaxDiscPct,
+          maxDiscountUsd: compMaxDiscUsd,
+          pointsCost: compPointsCost,
+          cashToPayUsd: compCashToPayUsd,
+          stock: 1,
+          initialStock: 1,
+          isUnique: true,
+          status: "ACTIVE",
+          imageUrl: companionItem.imageUrl || "",
+          images: companionItem.imageUrl ? [companionItem.imageUrl] : [],
+          description: companionItem.description || `Artículo individual remanente de combo ${reward.title}.`,
+          category: reward.category || "Gaming Hardware",
+          dissolvedFromCombo: {
+            comboId: reward.id,
+            dissolvedAt: new Date().toISOString(),
+            purchasedVoucherCode: voucher.voucherCode,
+            originalComboTitle: reward.title
+          }
+        });
+        await FirestoreService.saveReward(standaloneReward.toJSON());
+      }
+
+      await FirestoreService.saveUser(this.currentUser.toJSON());
+      await FirestoreService.saveVoucher(voucher.toJSON());
+
+      // Ledger
+      if (pointsSpent > 0) {
+        const noteText = `Vale Descuento (-$${discountUsd.toFixed(2)} USD usando ${pointsSpent} WP) en ${selectedItem.title} (Combo: ${reward.title}) [Paga $${cashToPayUsd.toFixed(2)} USD en mostrador]`;
+        FirestoreService.addLedgerEntry(this.currentUser.uid, {
+          id: "TX-" + Date.now(),
+          type: "DEBIT_REWARD",
+          delta: -pointsSpent,
+          balance_after: this.currentUser.wiredPoints,
+          ref_id: voucher.voucherCode,
+          note: noteText,
+          created_at: new Date().toISOString()
+        });
+      } else {
+        FirestoreService.addLedgerEntry(this.currentUser.uid, {
+          id: "TX-" + Date.now(),
+          type: "PURCHASE_VOUCHER",
+          delta: 0,
+          balance_after: this.currentUser.wiredPoints,
+          ref_id: voucher.voucherCode,
+          note: `Vale de Compra Mostrador en ${selectedItem.title} (Combo: ${reward.title}) [Paga $${cashToPayUsd.toFixed(2)} USD en mostrador]`,
+          created_at: new Date().toISOString()
+        });
+      }
+
+      await this.refreshUserData();
+      await this.refreshCatalog();
+
+      voucher.voucher = voucher;
+      voucher.success = true;
+      voucher.newBalance = this.currentUser.wiredPoints;
+      voucher.cost = pointsSpent;
+      return voucher;
+    }
+
+    // ========================================================
+    // FLUJO REGULAR (Productos Estándar: PARTIAL_DISCOUNT o FREE_REWARD)
+    // ========================================================
     const isPartial = reward.rewardType === "PARTIAL_DISCOUNT" || (typeof reward.isPartialDiscount === "function" && reward.isPartialDiscount());
 
     let pointsSpent = 0;
@@ -434,7 +764,8 @@ export class CustomerViewModel {
       const maxUsable = Math.min(userPoints, maxCapPoints);
 
       if (pointsToApply !== null && pointsToApply !== undefined) {
-        pointsSpent = Math.max(0, Math.min(Number(pointsToApply), maxUsable));
+        const rawPts = Number(pointsToApply);
+        pointsSpent = Number.isFinite(rawPts) ? Math.max(0, Math.min(rawPts, maxUsable)) : 0;
       } else {
         pointsSpent = maxUsable;
       }
@@ -471,7 +802,7 @@ export class CustomerViewModel {
       priceUsd: reward.priceUsd || 0,
       discountUsd: discountUsd,
       cashToPayUsd: cashToPayUsd,
-      expiresAt: (isPartial || cashToPayUsd > 0)
+      expiresAt: (cashToPayUsd > 0)
         ? new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString()
         : null
     });
@@ -521,77 +852,186 @@ export class CustomerViewModel {
     return voucher;
   }
 
-  async cancelVoucher(voucherCode) {
-    if (!this.currentUser) {
-      throw new Error("Debes iniciar sesión para gestionar tus vales.");
+  async restoreVoucherInventory(voucher) {
+    if (!voucher) return { reconstitutedCombo: false, createdStandalone: false };
+
+    // Caso 1: Vale con snapshot comboOrigin (compra individual desglosada)
+    if (typeof voucher.isSplitComboItemVoucher === "function" && voucher.isSplitComboItemVoucher()) {
+      const origin = voucher.comboOrigin;
+      if (!origin) return { reconstitutedCombo: false, createdStandalone: false };
+
+      // Subcaso A: Split N = 2 -> 1 Standalone
+      if (origin.splitLevel === "N_EQUALS_2_TO_STANDALONE" || origin.standaloneRewardId) {
+        const standaloneId = origin.standaloneRewardId;
+        const catalogComp = (this.catalog || []).find(r =>
+          r.id === standaloneId ||
+          (origin.companionItemId && r.id.includes(origin.companionItemId)) ||
+          (r.dissolvedFromCombo && r.dissolvedFromCombo.comboId === origin.comboId)
+        );
+        const rawComp = standaloneId ? await FirestoreService.getReward(standaloneId) : null;
+
+        // Si el compañero en catálogo o en Firestore está agotado o vendido
+        const isCompInCatalogAvailable = catalogComp
+          ? (typeof catalogComp.isAvailable === "function" ? catalogComp.isAvailable() : (catalogComp.stock > 0 && catalogComp.status === "ACTIVE"))
+          : true;
+        const isCompInDbAvailable = rawComp
+          ? (rawComp.stock > 0 && rawComp.status === "ACTIVE")
+          : true;
+
+        const isCompAvailable = Boolean(catalogComp || rawComp) && isCompInCatalogAvailable && isCompInDbAvailable;
+
+        if (isCompAvailable) {
+          // 1. Eliminar producto standalone del catálogo
+          await FirestoreService.deleteReward(standaloneId);
+          this.catalog = (this.catalog || []).filter(r => r.id !== standaloneId);
+
+          // 2. Restaurar combo original
+          const rawCombo = origin.comboId ? await FirestoreService.getReward(origin.comboId) : null;
+          let combo = rawCombo ? new RewardModel(rawCombo) : null;
+          if (combo) {
+            combo.stock = 1;
+            combo.status = "ACTIVE";
+            combo.soldOutAt = null;
+            combo.soldOutReason = "";
+            combo.comboData = {
+              ...(combo.comboData || {}),
+              items: origin.originalItems || origin.itemsSnapshot || combo.comboData?.items || []
+            };
+            if (origin.originalPriceUsd !== undefined) combo.priceUsd = origin.originalPriceUsd;
+            if (origin.originalPointsCost !== undefined) combo.pointsCost = origin.originalPointsCost;
+            if (origin.originalMaxDiscountPct !== undefined) combo.maxDiscountPct = origin.originalMaxDiscountPct;
+            combo.updatedAt = new Date().toISOString();
+            await FirestoreService.saveReward(combo.toJSON());
+            return { reconstitutedCombo: true, createdStandalone: false };
+          }
+        }
+
+        // Si el compañero ya fue vendido en memoria, persistir su estado de agotado
+        if (catalogComp && (catalogComp.stock === 0 || catalogComp.status === "SOLD_OUT")) {
+          await FirestoreService.saveReward(catalogComp.toJSON ? catalogComp.toJSON() : catalogComp);
+        }
+
+        // Si el compañero ya fue vendido: asegurar que el combo permanece SOLD_OUT y publicar devuelto como standalone
+        const rawCombo = origin.comboId ? await FirestoreService.getReward(origin.comboId) : null;
+        let combo = rawCombo ? new RewardModel(rawCombo) : null;
+        if (combo) {
+          combo.stock = 0;
+          combo.status = "SOLD_OUT";
+          combo.soldOutReason = "DISSOLVED_COMPANION_SOLD";
+          await FirestoreService.saveReward(combo.toJSON());
+        }
+
+        const returnedItem = voucher.purchasedItem || (origin.originalItems || []).find(it => it.id === origin.purchasedItemId);
+        const itemTitle = returnedItem?.title || voucher.rewardTitle;
+        const itemPrice = Number(returnedItem?.residualPriceUsd !== undefined ? returnedItem.residualPriceUsd : (voucher.priceUsd || 0));
+        const itemMaxDiscPct = Number(returnedItem?.residualMaxDiscountPct || 10);
+        const itemMaxDiscUsd = Number((itemPrice * (itemMaxDiscPct / 100)).toFixed(2));
+        const itemPointsCost = Math.round(itemMaxDiscUsd * 10);
+        const newStandaloneId = "REW-STANDALONE-" + (returnedItem?.id || origin.purchasedItemId || "ITEM") + "-" + Math.random().toString(36).substring(2, 6).toUpperCase();
+
+        const newReward = new RewardModel({
+          id: newStandaloneId,
+          rewardId: newStandaloneId,
+          title: itemTitle,
+          rewardType: "PARTIAL_DISCOUNT",
+          priceUsd: itemPrice,
+          maxDiscountPct: itemMaxDiscPct,
+          maxDiscountUsd: itemMaxDiscUsd,
+          pointsCost: itemPointsCost,
+          cashToPayUsd: Number((itemPrice - itemMaxDiscUsd).toFixed(2)),
+          stock: 1,
+          initialStock: 1,
+          isUnique: true,
+          status: "ACTIVE",
+          imageUrl: returnedItem?.imageUrl || voucher.imageUrl || "",
+          images: (returnedItem?.imageUrl || voucher.imageUrl) ? [returnedItem?.imageUrl || voucher.imageUrl] : [],
+          description: returnedItem?.description || `Artículo devuelto de combo [${origin.originalTitle || origin.comboId}].`,
+          category: "Gaming Hardware",
+          dissolvedFromCombo: {
+            comboId: origin.comboId,
+            reconstitutedAt: new Date().toISOString(),
+            voucherCode: voucher.voucherCode
+          }
+        });
+        await FirestoreService.saveReward(newReward.toJSON());
+        return { reconstitutedCombo: false, createdStandalone: true };
+      }
+
+      // Subcaso B: Split N > 2 -> N - 1
+      if (origin.splitLevel === "N_TO_N_MINUS_1") {
+        const rawCombo = origin.comboId ? await FirestoreService.getReward(origin.comboId) : null;
+        let combo = rawCombo ? new RewardModel(rawCombo) : null;
+
+        // Si el combo sigue activo
+        if (combo && combo.status === "ACTIVE") {
+          const currentItems = combo.getComboItems ? combo.getComboItems() : (combo.comboData?.items || []);
+          const returnedItem = voucher.purchasedItem || (origin.originalItems || []).find(it => it.id === origin.purchasedItemId);
+          if (returnedItem && !currentItems.some(it => String(it.id) === String(returnedItem.id))) {
+            const updatedItems = [...currentItems, returnedItem];
+            combo.comboData = { ...(combo.comboData || {}), items: updatedItems };
+            // Recalcular precio combo
+            const savings = combo.getComboSavings ? combo.getComboSavings() : { savingsPct: 20 };
+            const sumUsd = updatedItems.reduce((acc, it) => acc + Number(it.priceUsd || 0), 0);
+            const savingsPct = savings.savingsPct > 0 ? savings.savingsPct : 20;
+            combo.priceUsd = Number((sumUsd * (1 - savingsPct / 100)).toFixed(2));
+            combo.maxDiscountUsd = Number((combo.priceUsd * ((combo.maxDiscountPct || 20) / 100)).toFixed(2));
+            combo.pointsCost = Math.round(combo.maxDiscountUsd * 10);
+            combo.stock = 1;
+            combo.status = "ACTIVE";
+            combo.updatedAt = new Date().toISOString();
+            await FirestoreService.saveReward(combo.toJSON());
+            return { reconstitutedCombo: true, createdStandalone: false };
+          }
+        }
+
+        // Si el combo fue vendido o disuelto, publicar como standalone
+        const returnedItem = voucher.purchasedItem || (origin.originalItems || []).find(it => it.id === origin.purchasedItemId);
+        const itemPrice = Number(returnedItem?.residualPriceUsd !== undefined ? returnedItem.residualPriceUsd : (voucher.priceUsd || 0));
+        const itemMaxDiscPct = Number(returnedItem?.residualMaxDiscountPct || 10);
+        const itemMaxDiscUsd = Number((itemPrice * (itemMaxDiscPct / 100)).toFixed(2));
+        const newStandaloneId = "REW-STANDALONE-" + (returnedItem?.id || "ITEM") + "-" + Math.random().toString(36).substring(2, 6).toUpperCase();
+        const newReward = new RewardModel({
+          id: newStandaloneId,
+          rewardId: newStandaloneId,
+          title: returnedItem?.title || voucher.rewardTitle,
+          rewardType: "PARTIAL_DISCOUNT",
+          priceUsd: itemPrice,
+          maxDiscountPct: itemMaxDiscPct,
+          maxDiscountUsd: itemMaxDiscUsd,
+          pointsCost: Math.round(itemMaxDiscUsd * 10),
+          cashToPayUsd: Number((itemPrice - itemMaxDiscUsd).toFixed(2)),
+          stock: 1,
+          initialStock: 1,
+          isUnique: true,
+          status: "ACTIVE",
+          imageUrl: returnedItem?.imageUrl || voucher.imageUrl || "",
+          images: (returnedItem?.imageUrl || voucher.imageUrl) ? [returnedItem?.imageUrl || voucher.imageUrl] : [],
+          description: returnedItem?.description || `Artículo devuelto de combo.`,
+          category: "Gaming Hardware"
+        });
+        await FirestoreService.saveReward(newReward.toJSON());
+        return { reconstitutedCombo: false, createdStandalone: true };
+      }
     }
 
-    const cleanCode = (voucherCode || "").trim().toUpperCase();
-    let voucher = (this.vouchers || []).find(v => (v.voucherCode || "").trim().toUpperCase() === cleanCode);
-    if (!voucher) {
-      const raw = await FirestoreService.getVoucher(cleanCode);
-      if (raw) voucher = new VoucherModel(raw);
+    // Caso 2: Vale de combo completo (isFullComboVoucher())
+    if (typeof voucher.isFullComboVoucher === "function" && voucher.isFullComboVoucher()) {
+      const rawCombo = voucher.rewardId ? await FirestoreService.getReward(voucher.rewardId) : null;
+      let combo = rawCombo ? new RewardModel(rawCombo) : null;
+      if (combo) {
+        combo.stock = 1;
+        combo.status = "ACTIVE";
+        combo.soldOutAt = null;
+        combo.soldOutReason = "";
+        combo.updatedAt = new Date().toISOString();
+        await FirestoreService.saveReward(combo.toJSON());
+        return { reconstitutedCombo: true, createdStandalone: false };
+      }
     }
 
-    if (!voucher) {
-      throw new Error("El vale [" + cleanCode + "] no fue encontrado.");
-    }
-
-    const voucherUserUid = voucher.userUid || voucher.userId;
-    if (voucherUserUid && voucherUserUid !== this.currentUser.uid) {
-      throw new Error("No tienes autorización para cancelar este vale.");
-    }
-
-    if (voucher.isDelivered()) {
-      throw new Error("Este vale ya fue despachado y entregado. No puede ser cancelado.");
-    }
-
-    if (voucher.isPaidVoucher()) {
-      throw new Error("Este vale ya fue pagado en efectivo. Para coordinar reembolsos o cambios comunícate directamente con MeltyDeays.");
-    }
-
-    if (voucher.isCancelled()) {
-      throw new Error("Este vale ya fue cancelado previamente.");
-    }
-
-    if (voucher.isExpired()) {
-      throw new Error("Este vale ya caducó al superar el plazo de 3 días para concretar el pago.");
-    }
-
-    const pointsToRefund = voucher.pointsSpent || 0;
-
-    // 1. Reintegro de puntos si aplicó saldo
-    if (pointsToRefund > 0) {
-      this.currentUser.addPoints(pointsToRefund);
-      const refundEntry = {
-        id: "TX-" + Date.now(),
-        type: "REFUND_CANCEL",
-        delta: pointsToRefund,
-        balance_after: this.currentUser.wiredPoints,
-        ref_id: voucher.voucherCode,
-        note: `Reembolso por Cancelación de Vale [${voucher.voucherCode}]: +${pointsToRefund} WP devueltos por ${voucher.rewardTitle}`,
-        created_at: new Date().toISOString()
-      };
-      FirestoreService.addLedgerEntry(this.currentUser.uid, refundEntry);
-    } else {
-      const cancelEntry = {
-        id: "TX-" + Date.now(),
-        type: "CANCEL_PURCHASE",
-        delta: 0,
-        balance_after: this.currentUser.wiredPoints,
-        ref_id: voucher.voucherCode,
-        note: `Cancelación de Reserva de Compra [${voucher.voucherCode}] para ${voucher.rewardTitle}`,
-        created_at: new Date().toISOString()
-      };
-      FirestoreService.addLedgerEntry(this.currentUser.uid, cancelEntry);
-    }
-
-    // 2. Restaurar stock del artículo en catálogo
-    let reward = (this.catalog || []).find(r => r.id === voucher.rewardId);
-    if (!reward && voucher.rewardId) {
-      const rawReward = await FirestoreService.getReward(voucher.rewardId);
-      if (rawReward) reward = new RewardModel(rawReward);
-    }
+    // Caso 3: Recompensa estándar normal (incrementStock)
+    const rawReward = voucher.rewardId ? await FirestoreService.getReward(voucher.rewardId) : null;
+    let reward = rawReward ? new RewardModel(rawReward) : null;
     if (reward) {
       if (typeof reward.incrementStock === "function") {
         reward.incrementStock();
@@ -600,23 +1040,110 @@ export class CustomerViewModel {
       }
       await FirestoreService.saveReward(reward.toJSON());
     }
+    return { reconstitutedCombo: false, createdStandalone: false };
+  }
 
-    // 3. Marcar vale como cancelado
-    voucher.markCancelled(this.currentUser.uid);
-    await FirestoreService.saveVoucher(voucher.toJSON());
+  async cancelVoucher(voucherCode) {
+    if (!this.currentUser) {
+      throw new Error("Debes iniciar sesión para gestionar tus vales.");
+    }
 
-    // 4. Guardar usuario actualizado y refrescar datos
-    await FirestoreService.saveUser(this.currentUser.toJSON());
-    await this.refreshUserData();
-    await this.refreshCatalog();
+    const cleanCode = (voucherCode || "").trim().toUpperCase();
+    if (!cleanCode) {
+      throw new Error("Código de vale inválido o no proporcionado.");
+    }
+    if (!this._cancellingVouchers) {
+      this._cancellingVouchers = new Set();
+    }
+    if (this._cancellingVouchers.has(cleanCode)) {
+      throw new Error("La cancelación de este vale ya está en proceso.");
+    }
+    this._cancellingVouchers.add(cleanCode);
 
-    return {
-      success: true,
-      voucherCode: voucher.voucherCode,
-      rewardTitle: voucher.rewardTitle,
-      pointsRefunded: pointsToRefund,
-      newBalance: this.currentUser.wiredPoints
-    };
+    try {
+      let voucher = (this.vouchers || []).find(v => (v.voucherCode || "").trim().toUpperCase() === cleanCode);
+      if (!voucher) {
+        const raw = await FirestoreService.getVoucher(cleanCode);
+        if (raw) voucher = new VoucherModel(raw);
+      }
+
+      if (!voucher) {
+        throw new Error("El vale [" + cleanCode + "] no fue encontrado.");
+      }
+
+      const voucherUserUid = voucher.userUid || voucher.userId;
+      if (voucherUserUid && voucherUserUid !== this.currentUser.uid) {
+        throw new Error("No tienes autorización para cancelar este vale.");
+      }
+
+      if (voucher.isDelivered()) {
+        throw new Error("Este vale ya fue despachado y entregado. No puede ser cancelado.");
+      }
+
+      if (voucher.isPaidVoucher()) {
+        throw new Error("Este vale ya fue pagado en efectivo. Para coordinar reembolsos o cambios comunícate directamente con MeltyDeays.");
+      }
+
+      if (voucher.isCancelled()) {
+        throw new Error("Este vale ya fue cancelado previamente.");
+      }
+
+      if (voucher.isExpired()) {
+        throw new Error("Este vale ya caducó al superar el plazo de 3 días para concretar el pago.");
+      }
+
+      // Marcar sincrónicamente en memoria antes de cualquier await para bloquear llamadas concurrentes
+      voucher.markCancelled(this.currentUser.uid);
+
+      const pointsToRefund = voucher.pointsSpent || 0;
+
+      // 1. Reintegro de puntos si aplicó saldo
+      if (pointsToRefund > 0) {
+        this.currentUser.addPoints(pointsToRefund);
+        const refundEntry = {
+          id: "TX-" + Date.now(),
+          type: "REFUND_CANCEL",
+          delta: pointsToRefund,
+          balance_after: this.currentUser.wiredPoints,
+          ref_id: voucher.voucherCode,
+          note: `Reembolso por Cancelación de Vale [${voucher.voucherCode}]: +${pointsToRefund} WP devueltos por ${voucher.rewardTitle}`,
+          created_at: new Date().toISOString()
+        };
+        FirestoreService.addLedgerEntry(this.currentUser.uid, refundEntry);
+      } else {
+        const cancelEntry = {
+          id: "TX-" + Date.now(),
+          type: "CANCEL_PURCHASE",
+          delta: 0,
+          balance_after: this.currentUser.wiredPoints,
+          ref_id: voucher.voucherCode,
+          note: `Cancelación de Reserva de Compra [${voucher.voucherCode}] para ${voucher.rewardTitle}`,
+          created_at: new Date().toISOString()
+        };
+        FirestoreService.addLedgerEntry(this.currentUser.uid, cancelEntry);
+      }
+
+      // 2. Restaurar stock o reconstituir combo en catálogo
+      await this.restoreVoucherInventory(voucher);
+
+      // 3. Persistir vale cancelado
+      await FirestoreService.saveVoucher(voucher.toJSON());
+
+      // 4. Guardar usuario actualizado y refrescar datos
+      await FirestoreService.saveUser(this.currentUser.toJSON());
+      await this.refreshUserData();
+      await this.refreshCatalog();
+
+      return {
+        success: true,
+        voucherCode: voucher.voucherCode,
+        rewardTitle: voucher.rewardTitle,
+        pointsRefunded: pointsToRefund,
+        newBalance: this.currentUser.wiredPoints
+      };
+    } finally {
+      this._cancellingVouchers.delete(cleanCode);
+    }
   }
 
   async reservePreOrder(rewardId, customerData = {}) {

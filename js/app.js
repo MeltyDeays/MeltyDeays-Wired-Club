@@ -41,6 +41,7 @@ import {
   setLightboxImageIndex,
   toggleLightboxZoom,
   confirmRedeem,
+  selectComboRedeemOption,
   updateConfirmCalculation,
   onPointsSliderChange,
   onPointsNumChange,
@@ -368,6 +369,8 @@ document.addEventListener("DOMContentLoaded", () => {
   // Drawer de Perfil Móvil y Personalización
   window.openMobileProfileDrawer = openMobileProfileDrawer;
   window.closeMobileProfileDrawer = closeMobileProfileDrawer;
+  window.openClientProfileDrawer = openMobileProfileDrawer;
+  window.closeClientProfileDrawer = closeMobileProfileDrawer;
   window.saveProfileDisplayName = saveProfileDisplayName;
   window.enableProfileNameEditing = enableProfileNameEditing;
   window.cancelProfileNameEditing = cancelProfileNameEditing;
@@ -409,6 +412,7 @@ document.addEventListener("DOMContentLoaded", () => {
   window.submitAdminAssignFromScan = submitAdminAssignFromScan;
 
   window.confirmRedeem = confirmRedeem;
+  window.selectComboRedeemOption = selectComboRedeemOption;
   window.toggleRewardSpecs = toggleRewardSpecs;
   window.toggleModalProductSpecs = toggleModalProductSpecs;
   window.openProductSpecsModal = openProductSpecsModal;

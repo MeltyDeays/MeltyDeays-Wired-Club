@@ -328,7 +328,7 @@
   justify-content: center;
   transition: opacity 0.18s ease;
   cursor: pointer;
-  z-index: 3;
+  z-index: 5;
 }
 
 .reward-img-wrap:hover .reward-img-action-overlay {
@@ -407,7 +407,7 @@
 
 /* MODAL DE ESPECIFICACIONES (FICHA TÉCNICA // WIRED SPECS) */
 .modal-specs-dialog {
-  max-width: 580px !important;
+  max-width: 620px !important;
   max-height: 90vh !important;
   display: flex !important;
   flex-direction: column !important;
@@ -1282,6 +1282,18 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+.temu-sale-banner .reward-temu-coin-icon {
+  width: 14px;
+  height: 14px;
+  min-width: 14px;
+  min-height: 14px;
+  max-width: 14px;
+  max-height: 14px;
+  flex-shrink: 0;
+  display: inline-flex;
+  vertical-align: middle;
 }
 
 .temu-sale-header {

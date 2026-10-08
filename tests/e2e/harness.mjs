@@ -109,6 +109,11 @@ export class SimpleStyle {
     this._props[k] = val;
     this._updateAttr();
   }
+  removeProperty(prop) {
+    const k = prop.replace(/-([a-z])/g, (_, g) => g.toUpperCase());
+    delete this._props[k];
+    this._updateAttr();
+  }
   getPropertyValue(prop) {
     const k = prop.replace(/-([a-z])/g, (_, g) => g.toUpperCase());
     return this._props[k] || '';
@@ -404,8 +409,8 @@ function createMatcher(selector) {
     return el => el.id === id;
   }
   if (selector.startsWith('.')) {
-    const cls = selector.slice(1);
-    return el => el.classList.contains(cls);
+    const classes = selector.split('.').filter(Boolean);
+    return el => classes.every(c => el.classList.contains(c));
   }
   if (selector.includes('[') && selector.endsWith(']')) {
     const attrMatch = selector.match(/^([a-zA-Z0-9_-]*)\[([a-zA-Z0-9_-]+)(?:=([^\\]]+))?\]$/);
@@ -490,16 +495,48 @@ export class DOMDocument {
 
   parseFragment(html) {
     const nodes = [];
-    const tagRegex = /<([a-zA-Z0-9-]+)([^>]*)>([\s\S]*?)<\/\1>|<([a-zA-Z0-9-]+)([^>]*)\/?>/g;
+    const voidTags = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr']);
+    const openTagRegex = /<([a-zA-Z0-9-]+)([^>]*?)(\/?)>/g;
     let match;
-    while ((match = tagRegex.exec(html)) !== null) {
-      const tagName = match[1] || match[4];
-      const attrsStr = match[2] || match[5] || '';
-      const inner = match[3] || '';
+
+    while ((match = openTagRegex.exec(html)) !== null) {
+      const tagName = match[1];
+      const attrsStr = match[2] || '';
+      const isSelfClosing = match[3] === '/' || voidTags.has(tagName.toLowerCase());
       const el = this.createElement(tagName);
       parseAttributes(attrsStr, el);
-      if (inner) {
-        el.innerHTML = inner;
+
+      if (isSelfClosing) {
+        nodes.push(el);
+        continue;
+      }
+
+      const startIndex = openTagRegex.lastIndex;
+      let depth = 1;
+      const subTagRegex = new RegExp(`<(\\/?)(${tagName})([^>]*?)(\\/?)>`, 'gi');
+      subTagRegex.lastIndex = startIndex;
+      let subMatch;
+      let endIndex = html.length;
+
+      while ((subMatch = subTagRegex.exec(html)) !== null) {
+        const isClosing = subMatch[1] === '/';
+        const isSubSelfClosing = subMatch[4] === '/' || voidTags.has(subMatch[2].toLowerCase());
+
+        if (isClosing) {
+          depth--;
+          if (depth === 0) {
+            endIndex = subMatch.index;
+            openTagRegex.lastIndex = subTagRegex.lastIndex;
+            break;
+          }
+        } else if (!isSubSelfClosing) {
+          depth++;
+        }
+      }
+
+      const innerContent = html.slice(startIndex, endIndex);
+      if (innerContent) {
+        el.innerHTML = innerContent;
       }
       nodes.push(el);
     }

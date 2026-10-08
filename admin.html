@@ -1663,9 +1663,19 @@
         📦 + AGREGAR PRODUCTO AL CATÁLOGO
       </h3>
 
+      <!-- SELECTOR MAESTRO DE MODALIDAD (ESTÁNDAR VS COMBO FLEXIBLE) -->
+      <div class="prod-master-type-selector-wrap" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; margin-bottom: 0.5rem;">
+        <button type="button" id="btn-prod-type-standard" class="btn-secondary active" style="padding: 0.4rem 0.5rem; font-size: 0.74rem; font-weight: 800; border: 2px solid #059669; background: #ecfdf5; color: #065f46; border-radius: 4px; display: flex; align-items: center; justify-content: center; gap: 5px; min-height: 34px;" onclick="setProductMainType('STANDARD')">
+          <span>📦</span> <strong class="prod-mode-label">Estándar (1 Producto)</strong>
+        </button>
+        <button type="button" id="btn-prod-type-combo" class="btn-secondary" style="padding: 0.4rem 0.5rem; font-size: 0.74rem; font-weight: 800; border: 1.5px solid #cbd5e1; background: #f8fafc; color: #475569; border-radius: 4px; display: flex; align-items: center; justify-content: center; gap: 5px; min-height: 34px;" onclick="setProductMainType('COMBO')">
+          <span>✨</span> <strong class="prod-mode-label">Combo Flexible (N en 1)</strong>
+        </button>
+      </div>
+
       <!-- SELECTOR DE MODALIDAD DEL PRODUCTO (SEGMENTED BAR) -->
       <div class="prod-mode-selector-wrap" style="background: #ffffff; border: 1.5px solid var(--dark); border-radius: 5px; padding: 0.35rem; margin-bottom: 0.5rem; box-shadow: 2px 2px 0px var(--dark);">
-        <div class="prod-mode-grid" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.35rem;">
+        <div class="prod-mode-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(105px, 1fr)); gap: 0.35rem;">
           <button type="button" id="btn-prod-mode-free" class="btn-secondary active" style="padding: 0.35rem 0.25rem; font-size: 0.72rem; font-weight: 800; border-radius: 4px; display: flex; align-items: center; justify-content: center; gap: 4px; text-align: center; border: 2px solid #059669; background: #ecfdf5; color: #065f46; min-height: 32px;" onclick="setProductPublicationMode('FREE_REWARD')">
             <span class="prod-mode-icon" style="font-size: 0.95rem;">🎁</span>
             <strong class="prod-mode-label">CANJEABLE</strong>
@@ -1681,6 +1691,95 @@
             <strong class="prod-mode-label">EN CAMINO</strong>
             <span class="prod-mode-sub" style="display: none;">Preventa directa</span>
           </button>
+          <button type="button" id="btn-prod-mode-combo" class="btn-secondary" style="padding: 0.35rem 0.25rem; font-size: 0.72rem; font-weight: 800; border-radius: 4px; display: flex; align-items: center; justify-content: center; gap: 4px; text-align: center; border: 1.5px solid #cbd5e1; background: #f8fafc; color: #475569; min-height: 32px;" onclick="setProductPublicationMode('COMBO')">
+            <span class="prod-mode-icon" style="font-size: 0.95rem;">✨</span>
+            <strong class="prod-mode-label">COMBO FLEXIBLE</strong>
+            <span class="prod-mode-sub" style="display: none;">2 o más productos</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- SECCIÓN B: CREADOR DE COMBOS FLEXIBLES (N-PRODUCTOS CON PESTAÑAS DINÁMICAS) -->
+      <div id="sec-product-combo-builder" style="display: none; background: #ffffff; border: 1.5px solid var(--dark); border-radius: 6px; padding: 0.85rem; margin-bottom: 0.75rem; box-shadow: 2px 2px 0px var(--dark);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem; border-bottom: 1.5px dashed #cbd5e1; padding-bottom: 0.4rem;">
+          <div style="font-family: var(--font-mono); font-size: 0.76rem; font-weight: 900; color: #1e293b; display: flex; align-items: center; gap: 5px;">
+            <span>✨</span> ARTÍCULOS INTEGRANTES DEL COMBO
+          </div>
+          <button type="button" class="btn-secondary" id="btn-add-combo-tab" onclick="addComboItemTab()" style="font-size: 0.72rem; font-weight: 900; padding: 3px 8px; background: #ecfdf5; border-color: #059669; color: #065f46; display: flex; align-items: center; gap: 4px;">
+            <span>➕</span> Agregar Ítem
+          </button>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 0.55rem;">
+          <label class="form-label" style="font-size: 0.72rem; font-weight: 800; color: #1e293b; margin-bottom: 2px;">🏷️ TÍTULO DEL PAQUETE COMBO (OPCIONAL)</label>
+          <input type="text" id="combo-package-title" class="form-input" placeholder="Ej: Super Combo Gamer (Teclado + Mouse RGB)" oninput="updateComboLiveSummary()">
+        </div>
+
+        <!-- BARRA DE PESTAÑAS DINÁMICAS CON SCROLL HORIZONTAL FLUIDO TÁCTIL -->
+        <div id="combo-items-tabs-bar" class="combo-items-tabs combo-tabs-bar combo-items-tab-bar" style="display: flex; gap: 6px; overflow-x: auto; white-space: nowrap; padding-bottom: 6px; margin-bottom: 0.65rem; -webkit-overflow-scrolling: touch; touch-action: pan-x; scrollbar-width: none;"></div>
+
+        <!-- FORMULARIO REACTIVO DEL ÍTEM ACTIVO -->
+        <div id="combo-active-item-form" style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 5px; padding: 0.75rem; margin-bottom: 0.65rem;">
+          <div class="form-group" style="margin-bottom: 0.5rem;">
+            <label class="form-label" style="font-size: 0.72rem;">Nombre / Título del Artículo</label>
+            <input type="text" id="combo-item-title" class="form-input" placeholder="Ej: Teclado Mecánico 60% RGB" oninput="onActiveComboItemChange('title', this.value)">
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-bottom: 0.5rem;">
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label" style="font-size: 0.72rem;">💵 Precio Regular ($ USD)</label>
+              <input type="number" id="combo-item-price" class="form-input" placeholder="35.00" step="0.5" min="0" oninput="onActiveComboItemChange('priceUsd', this.value)">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label" style="font-size: 0.72rem;">🏷️ Precio Residual ($ USD)</label>
+              <input type="number" id="combo-item-residual-price" class="form-input" placeholder="30.00" step="0.5" min="0" title="Precio con el que queda publicado si el otro producto se vende" oninput="onActiveComboItemChange('residualPriceUsd', this.value)">
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-bottom: 0.5rem;">
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label" style="font-size: 0.72rem;">📉 Tope Residual con WP (% OFF)</label>
+              <input type="number" id="combo-item-residual-discount-pct" class="form-input" placeholder="15" min="0" max="80" oninput="onActiveComboItemChange('residualDiscountPct', this.value)">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label" style="font-size: 0.72rem;">🖼️ URL de Imagen / Foto</label>
+              <input type="text" id="combo-item-image" class="form-input" placeholder="https://..." oninput="onActiveComboItemChange('imageUrl', this.value)">
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" style="font-size: 0.72rem;">Descripción / Especificaciones</label>
+            <input type="text" id="combo-item-desc" class="form-input" placeholder="Especificaciones clave..." oninput="onActiveComboItemChange('description', this.value)">
+          </div>
+        </div>
+
+        <!-- PANEL STICKY DE RESUMEN Y CÁLCULO FINANCIERO DEL COMBO COMPLETO -->
+        <div id="combo-summary-panel" class="combo-summary-panel combo-calc-summary combo-calc-sticky" style="background: #fffbeb; border: 1.5px solid #d97706; border-radius: 6px; padding: 0.75rem 0.85rem; box-shadow: 2px 2px 0px #b45309;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem; font-family: var(--font-mono); font-size: 0.72rem; font-weight: 900; color: #92400e;">
+            <span>✦ RESUMEN DEL COMBO (<span id="combo-item-count-label">2</span> ARTÍCULOS)</span>
+            <span id="combo-savings-badge" class="badge-navi" style="background: #fef3c7; color: #92400e; border: 1px solid #fcd34d;">0% AHORRO</span>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; align-items: center; margin-bottom: 0.4rem;">
+            <div>
+              <div style="font-family: var(--font-mono); font-size: 0.65rem; color: #78350f; font-weight: 700;">SUMA INDIVIDUAL:</div>
+              <div id="combo-sum-usd" style="font-family: var(--font-mono); font-size: 1.05rem; font-weight: 900; color: #1e293b;">$0.00 USD</div>
+            </div>
+            <div>
+              <label class="form-label" style="font-size: 0.65rem; color: #78350f; margin-bottom: 2px;">⚡ PRECIO PROMOCIONAL COMBO ($ USD)</label>
+              <input type="number" id="combo-promo-price-usd" class="form-input" placeholder="50.00" step="0.5" min="0" style="border-color: #d97706; font-weight: 900; color: #b45309;" oninput="updateComboLiveSummary()">
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; align-items: center;">
+            <div style="font-family: var(--font-mono); font-size: 0.72rem; color: #065f46; font-weight: 800;">
+              Ahorro: <span id="combo-savings-usd">$0.00 USD (0% OFF)</span>
+            </div>
+            <div>
+              <label class="form-label" style="font-size: 0.65rem; color: #78350f; margin-bottom: 2px;">🏷️ TOPE DESCUENTO WP COMBO (% OFF)</label>
+              <input type="number" id="combo-max-discount-pct" class="form-input" placeholder="20" min="0" max="80" value="20" oninput="updateComboLiveSummary()">
+            </div>
+          </div>
         </div>
       </div>
 
