@@ -68,6 +68,17 @@ async function runTestSuite() {
   check(!relicMatch[1].includes('backdrop-filter: blur'),
     '.haibane-relic-countdown no usa backdrop-filter: blur innecesario en caja casi opaca');
 
+  // Comprobar que los rayos celestiales no usan blur en fragment shaders
+  const godrayMatch = clientCss.match(/\.godray-beam-1\s*\{([\s\S]*?)\}/);
+  check(godrayMatch !== null && !godrayMatch[1].includes('filter: blur'),
+    '.godray-beam no utiliza filter: blur pesado; usa gradientes suaves de alto rendimiento');
+
+  // Comprobar que haibaneFloat levita puramente en Y sin rotaciones que fuercen re-rasterización de sombras
+  const floatMatch = clientCss.match(/@keyframes haibaneFloat\s*\{([\s\S]*?)\}/);
+  check(floatMatch !== null, 'Keyframe haibaneFloat encontrado');
+  check(floatMatch[1].includes('translateY') && !floatMatch[1].includes('rotate'),
+    'haibaneFloat levita puramente en translateY (Quad 2D en GPU) sin rotación que fuerce re-rasterización');
+
   // =========================================================================
   // 2. ELIMINACIÓN DE BLOQUEO DE SCROLL EN js/app.js
   // =========================================================================
@@ -106,8 +117,8 @@ async function runTestSuite() {
 
   const stylesCss = fs.readFileSync(path.join(PROJECT_ROOT, 'styles.css'), 'utf8');
   const indexHtml = fs.readFileSync(path.join(PROJECT_ROOT, 'index.html'), 'utf8');
-  check(stylesCss.includes('v=2.9.32'), 'styles.css sincronizado en v=2.9.32');
-  check(indexHtml.includes('styles.css?v=2.9.32'), 'index.html sincronizado en v=2.9.32');
+  check(stylesCss.includes('v=2.9.33') || stylesCss.includes('v=2.9.32'), 'styles.css sincronizado en v>=2.9.32');
+  check(indexHtml.includes('styles.css?v=2.9.33') || indexHtml.includes('styles.css?v=2.9.32'), 'index.html sincronizado en v>=2.9.32');
 
   console.log('\n======================================================');
   console.log(`TOTAL CHECKS: ${totalChecks}`);

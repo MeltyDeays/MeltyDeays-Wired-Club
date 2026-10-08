@@ -32,7 +32,9 @@ export function setAuthFeedback(message, type = "info") {
 export function renderUserQr(text) {
   const el = document.getElementById("member-qr-canvas");
   if (!el || typeof QRCode === "undefined") return;
+  if (el.dataset.renderedQr === String(text) && el.children && el.children.length > 0) return;
   el.innerHTML = "";
+  el.dataset.renderedQr = String(text);
   try {
     new QRCode(el, {
       text: text,

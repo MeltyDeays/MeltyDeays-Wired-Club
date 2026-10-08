@@ -365,9 +365,27 @@ function render(model) {
   renderProfileDrawer();
 }
 
+let renderScheduled = false;
+let pendingRenderModel = null;
+
+function batchedRender(model) {
+  pendingRenderModel = model;
+  if (renderScheduled) return;
+  renderScheduled = true;
+  if (typeof requestAnimationFrame === "function") {
+    requestAnimationFrame(() => {
+      renderScheduled = false;
+      render(pendingRenderModel);
+    });
+  } else {
+    renderScheduled = false;
+    render(pendingRenderModel);
+  }
+}
+
 document.addEventListener("DOMContentLoaded", () => {
-  // Suscribirse a cambios en el ViewModel
-  vm.subscribe(render);
+  // Suscribirse a cambios en el ViewModel con renderizado unificado por frame
+  vm.subscribe(batchedRender);
 
   // Drawer de Perfil Móvil y Personalización
   window.openMobileProfileDrawer = openMobileProfileDrawer;

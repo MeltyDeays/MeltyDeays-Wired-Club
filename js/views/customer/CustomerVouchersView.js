@@ -957,10 +957,11 @@ function triggerBadgePop() {
   [badge, navBadge].forEach(el => {
     if (el && el.classList) {
       el.classList.remove("badge-pop");
-      if (typeof el.offsetWidth !== "undefined") {
-        void el.offsetWidth;
+      if (typeof requestAnimationFrame === "function") {
+        requestAnimationFrame(() => el.classList.add("badge-pop"));
+      } else {
+        el.classList.add("badge-pop");
       }
-      el.classList.add("badge-pop");
     }
   });
 }

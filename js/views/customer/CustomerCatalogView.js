@@ -2924,10 +2924,12 @@ export function triggerCyberGlitchCelebration() {
   }
 
   let animId;
+  const cw = canvas.width;
+  const ch = canvas.height;
+  ctx.font = "900 14px 'JetBrains Mono', monospace";
   function renderFrame() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.clearRect(0, 0, cw, ch);
     let alive = false;
-    ctx.font = "900 14px 'JetBrains Mono', monospace";
     particles.forEach(p => {
       p.x += p.vx;
       p.y += p.vy;
@@ -2945,7 +2947,7 @@ export function triggerCyberGlitchCelebration() {
       animId = requestAnimationFrame(renderFrame);
     } else {
       cancelAnimationFrame(animId);
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.clearRect(0, 0, cw, ch);
       canvas.remove();
     }
   }
