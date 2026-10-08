@@ -242,7 +242,7 @@ Responde ÚNICAMENTE en JSON con la estructura:
           "Authorization": `Bearer ${groqKey}`
         },
       body: JSON.stringify({
-        model: "llama-3.3-70b-versatile",
+        model: "openai/gpt-oss-120b",
         temperature: 0.1,
         response_format: { type: "json_object" },
         messages: [{ role: "user", content: prompt }]
@@ -275,6 +275,63 @@ Responde ÚNICAMENTE en JSON con la estructura:
   return { matched: false, productId: null, isNew: true, confidence: 0.8 };
 }
 
+/**
+ * Limpia y estructura la descripción para el catálogo web usando Groq IA.
+ * Genera una intro atractiva y extrae viñetas técnicas con formato '• Categoría: Detalle'.
+ * Elimina datos informales de Facebook (teléfonos, lugares de entrega, chat).
+ */
+async function cleanAndFormatDescriptionWithGroq(title, rawDescription) {
+  const groqKey = getRandomGroqKey();
+  if (groqKey) {
+    try {
+      const systemPrompt = `Eres el catalogador técnico oficial de "MeltyDeays · The Wired Club" (tienda especializada en periféricos, mandos y hardware gaming).
+Tu tarea es convertir títulos y publicaciones informales de Facebook Marketplace en descripciones técnicas formales, limpias y atractivas para el catálogo de la tienda web.
+
+ESTRUCTURA EXACTA OBLIGATORIA:
+1. Primera línea: Un resumen breve, profesional y atractivo del producto (ej: "Controlador bluetooth multiplataforma de grado competitivo con joysticks electromagnéticos anti-drift.").
+2. Siguientes líneas: Viñetas técnicas con especificaciones deducidas y limpias, con el formato exacto "• Categoría: Detalle técnico".
+
+REGLAS ESTRICTAS DE LIMPIEZA:
+- ELIMINAR completamente: números de teléfono, enlaces de WhatsApp, lugares de entrega ("metrocentro", "galerías", etc.), "inbox", "precio negociable", frases de chat informal o emojis.
+- Responde ÚNICAMENTE el texto formateado final, sin saludos ni introducciones.`;
+
+      const userPrompt = `Título: ${title}\nTexto o detalles de Facebook: ${rawDescription || title}`;
+
+      const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${groqKey}`
+        },
+        body: JSON.stringify({
+          model: "openai/gpt-oss-120b",
+          temperature: 0.2,
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userPrompt }
+          ]
+        })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const content = data.choices?.[0]?.message?.content?.trim();
+        if (content && content.length > 20) {
+          return content;
+        }
+      }
+    } catch (err) {
+      console.warn("Aviso: Falló estructuración de descripción con Groq:", err.message);
+    }
+  }
+
+  // Fallback estructurado acorde a los estándares de The Wired Club
+  return `${title} verificado para miembros The Wired Club.
+• Estado: Artículo original verificado físicamente en tienda
+• Garantía: Cobertura oficial MeltyDeays por 30 días
+• Entrega: Entrega física y prueba técnica en mostrador`;
+}
+
 // Crear producto nuevo en Firestore cuando se detecta subida desde celular
 async function createNewProductInFirestore(fbListing, collectionName = "rewards") {
   const norm = normalizePriceByThreshold(fbListing.rawPrice || fbListing.priceUsd);
@@ -291,9 +348,12 @@ async function createNewProductInFirestore(fbListing, collectionName = "rewards"
     finalImage = "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&auto=format&fit=crop&q=80";
   }
 
+  // Limpiar y estructurar descripción con IA (Intro breve + viñetas técnicas)
+  const structuredDescription = await cleanAndFormatDescriptionWithGroq(fbListing.title, fbListing.description || "");
+
   const fields = {
     title: { stringValue: fbListing.title },
-    description: { stringValue: `Artículo importado automáticamente desde Facebook Marketplace.\n• Moneda detectada: ${norm.currency}\n• Precio: $${priceUsd} USD (C$ ${priceNio} NIO)\n• Entrega inmediata.` },
+    description: { stringValue: structuredDescription },
     priceUsd: { doubleValue: priceUsd },
     priceNio: { integerValue: priceNio },
     imageUrl: { stringValue: finalImage },

@@ -12,7 +12,13 @@ export async function generateMarketplaceListing(productData) {
     const response = await fetch("/api/groq-copy", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(productData)
+      body: JSON.stringify({
+        action: "marketplace-listing",
+        title,
+        description,
+        priceUsd,
+        priceNio
+      })
     });
 
     if (response.ok) {
@@ -31,4 +37,38 @@ export async function generateMarketplaceListing(productData) {
     marketDescription: `${title}\n\n${description}\n\n💵 Precio: $${priceUsd} (C$ ${priceNio})\n📦 Entrega inmediata disponible.`,
     categorySuggestion: "Varios"
   };
+}
+
+/**
+ * Limpia y estructura una publicación informal de Facebook para el Catálogo Web (Intro breve + viñetas técnicas).
+ * @param {string} title Título del producto
+ * @param {string} rawDescription Descripción original de Facebook
+ * @returns {Promise<string>}
+ */
+export async function cleanCatalogDescription(title, rawDescription = "") {
+  try {
+    const response = await fetch("/api/groq-copy", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "clean-catalog-description",
+        title,
+        description: rawDescription
+      })
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      if (data && data.catalogDescription) {
+        return data.catalogDescription;
+      }
+    }
+  } catch (err) {
+    console.warn("Llamada a /api/groq-copy (clean) no disponible:", err.message);
+  }
+
+  return `${title} verificado para miembros The Wired Club.
+• Estado: Artículo original verificado físicamente en tienda
+• Garantía: Cobertura oficial MeltyDeays por 30 días
+• Entrega: Entrega física y prueba técnica en mostrador`;
 }
