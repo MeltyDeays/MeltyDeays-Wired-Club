@@ -1691,7 +1691,7 @@
             <strong class="prod-mode-label">EN CAMINO</strong>
             <span class="prod-mode-sub" style="display: none;">Preventa directa</span>
           </button>
-          <button type="button" id="btn-prod-mode-combo" class="btn-secondary" style="padding: 0.35rem 0.25rem; font-size: 0.72rem; font-weight: 800; border-radius: 4px; display: flex; align-items: center; justify-content: center; gap: 4px; text-align: center; border: 1.5px solid #cbd5e1; background: #f8fafc; color: #475569; min-height: 32px;" onclick="setProductPublicationMode('COMBO')">
+          <button type="button" id="btn-prod-mode-combo" class="btn-secondary" style="display: none; padding: 0.35rem 0.25rem; font-size: 0.72rem; font-weight: 800; border-radius: 4px; align-items: center; justify-content: center; gap: 4px; text-align: center; border: 1.5px solid #cbd5e1; background: #f8fafc; color: #475569; min-height: 32px;" onclick="setProductPublicationMode('COMBO')">
             <span class="prod-mode-icon" style="font-size: 0.95rem;">✨</span>
             <strong class="prod-mode-label">COMBO FLEXIBLE</strong>
             <span class="prod-mode-sub" style="display: none;">2 o más productos</span>
@@ -1710,75 +1710,100 @@
           </button>
         </div>
 
-        <div class="form-group" style="margin-bottom: 0.55rem;">
-          <label class="form-label" style="font-size: 0.72rem; font-weight: 800; color: #1e293b; margin-bottom: 2px;">🏷️ TÍTULO DEL PAQUETE COMBO (OPCIONAL)</label>
-          <input type="text" id="combo-package-title" class="form-input" placeholder="Ej: Super Combo Gamer (Teclado + Mouse RGB)" oninput="updateComboLiveSummary()">
+        <div class="form-group" style="margin-bottom: 0.65rem; width: 100%; box-sizing: border-box;">
+          <label class="form-label" style="font-size: 0.73rem; font-weight: 800; color: #1e293b; margin-bottom: 2px; display: flex; align-items: center; justify-content: space-between;">
+            <span>🏷️ TÍTULO DEL COMBO EN EL CATÁLOGO <strong style="color: #dc2626;">*</strong></span>
+            <span style="font-size: 0.62rem; color: #4338ca; font-weight: 700; font-family: var(--font-mono);">OBLIGATORIO</span>
+          </label>
+          <input type="text" id="combo-package-title" class="form-input" placeholder="Ej: Super Combo Gamer (Teclado Mecánico + Mouse RGB)" style="height: 36px; font-size: 0.85rem; font-weight: 700; width: 100%; box-sizing: border-box;" oninput="updateComboLiveSummary(); const pt = document.getElementById('prod-title'); if(pt) pt.value = this.value;">
+          <span style="font-size: 0.64rem; color: #64748b; font-family: var(--font-mono); margin-top: 2px; display: block;">
+            Nombre principal del paquete con el que aparecerá en la tienda y catálogo.
+          </span>
         </div>
 
         <!-- BARRA DE PESTAÑAS DINÁMICAS CON SCROLL HORIZONTAL FLUIDO TÁCTIL -->
         <div id="combo-items-tabs-bar" class="combo-items-tabs combo-tabs-bar combo-items-tab-bar" style="display: flex; gap: 6px; overflow-x: auto; white-space: nowrap; padding-bottom: 6px; margin-bottom: 0.65rem; -webkit-overflow-scrolling: touch; touch-action: pan-x; scrollbar-width: none;"></div>
 
         <!-- FORMULARIO REACTIVO DEL ÍTEM ACTIVO -->
-        <div id="combo-active-item-form" style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 5px; padding: 0.75rem; margin-bottom: 0.65rem;">
-          <div class="form-group" style="margin-bottom: 0.5rem;">
-            <label class="form-label" style="font-size: 0.72rem;">Nombre / Título del Artículo</label>
-            <input type="text" id="combo-item-title" class="form-input" placeholder="Ej: Teclado Mecánico 60% RGB" oninput="onActiveComboItemChange('title', this.value)">
+        <div id="combo-active-item-form" style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; padding: 0.8rem; margin-bottom: 0.65rem; width: 100%; box-sizing: border-box;">
+          <div class="form-group" style="margin-bottom: 0.5rem; width: 100%; box-sizing: border-box; min-width: 0;">
+            <label class="form-label" style="font-size: 0.72rem; font-weight: 800; color: #334155; margin-bottom: 3px; display: block;">
+              Nombre / Título de este Artículo <span style="color: #dc2626;">*</span>
+            </label>
+            <input type="text" id="combo-item-title" class="form-input" placeholder="Ej: Teclado Mecánico 60% RGB" style="height: 34px; font-size: 0.82rem; width: 100%; box-sizing: border-box; min-width: 0;" oninput="onActiveComboItemChange('title', this.value)">
           </div>
 
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-bottom: 0.5rem;">
-            <div class="form-group" style="margin-bottom: 0;">
-              <label class="form-label" style="font-size: 0.72rem;">💵 Precio Regular ($ USD)</label>
-              <input type="number" id="combo-item-price" class="form-input" placeholder="35.00" step="0.5" min="0" oninput="onActiveComboItemChange('priceUsd', this.value)">
+          <div class="combo-item-row-prices" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-bottom: 0.5rem; width: 100%; box-sizing: border-box;">
+            <div class="form-group" style="margin-bottom: 0; min-width: 0; width: 100%; box-sizing: border-box;">
+              <label class="form-label" style="font-size: 0.68rem; font-weight: 800; color: #1e293b; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;" title="Precio regular por separado ($ USD)">
+                💵 Precio Individual ($)
+              </label>
+              <input type="number" id="combo-item-price" class="form-input" placeholder="35.00" step="0.5" min="0" style="height: 34px; font-size: 0.85rem; font-family: var(--font-mono); font-weight: 800; text-align: center; width: 100%; box-sizing: border-box; min-width: 0;" oninput="onActiveComboItemChange('priceUsd', this.value)">
             </div>
-            <div class="form-group" style="margin-bottom: 0;">
-              <label class="form-label" style="font-size: 0.72rem;">🏷️ Precio Residual ($ USD)</label>
-              <input type="number" id="combo-item-residual-price" class="form-input" placeholder="30.00" step="0.5" min="0" title="Precio con el que queda publicado si el otro producto se vende" oninput="onActiveComboItemChange('residualPriceUsd', this.value)">
-            </div>
-          </div>
-
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-bottom: 0.5rem;">
-            <div class="form-group" style="margin-bottom: 0;">
-              <label class="form-label" style="font-size: 0.72rem;">📉 Tope Residual con WP (% OFF)</label>
-              <input type="number" id="combo-item-residual-discount-pct" class="form-input" placeholder="15" min="0" max="80" oninput="onActiveComboItemChange('residualDiscountPct', this.value)">
-            </div>
-            <div class="form-group" style="margin-bottom: 0;">
-              <label class="form-label" style="font-size: 0.72rem;">🖼️ URL de Imagen / Foto</label>
-              <input type="text" id="combo-item-image" class="form-input" placeholder="https://..." oninput="onActiveComboItemChange('imageUrl', this.value)">
+            <div class="form-group" style="margin-bottom: 0; min-width: 0; width: 100%; box-sizing: border-box;">
+              <label class="form-label" style="font-size: 0.68rem; font-weight: 800; color: #1e293b; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;" title="Precio si queda solo al venderse el otro producto">
+                🏷️ Si queda solo ($)
+              </label>
+              <input type="number" id="combo-item-residual-price" class="form-input" placeholder="30.00" step="0.5" min="0" title="Precio con el que queda publicado si el otro producto se vende" style="height: 34px; font-size: 0.85rem; font-family: var(--font-mono); font-weight: 800; text-align: center; width: 100%; box-sizing: border-box; min-width: 0;" oninput="onActiveComboItemChange('residualPriceUsd', this.value)">
             </div>
           </div>
 
-          <div class="form-group" style="margin-bottom: 0;">
-            <label class="form-label" style="font-size: 0.72rem;">Descripción / Especificaciones</label>
-            <input type="text" id="combo-item-desc" class="form-input" placeholder="Especificaciones clave..." oninput="onActiveComboItemChange('description', this.value)">
+          <div class="combo-item-row-opts" style="display: grid; grid-template-columns: 110px 1fr; gap: 0.5rem; margin-bottom: 0.5rem; width: 100%; box-sizing: border-box;">
+            <div class="form-group" style="margin-bottom: 0; min-width: 0; width: 100%; box-sizing: border-box;">
+              <label class="form-label" style="font-size: 0.68rem; font-weight: 800; color: #1e293b; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;" title="Tope de descuento con puntos (% OFF)">
+                🎯 Tope (% OFF)
+              </label>
+              <input type="number" id="combo-item-residual-discount-pct" class="form-input" placeholder="15" min="0" max="80" style="height: 34px; font-size: 0.85rem; font-family: var(--font-mono); font-weight: 800; text-align: center; width: 100%; box-sizing: border-box; min-width: 0;" oninput="onActiveComboItemChange('residualDiscountPct', this.value)">
+            </div>
+            <div class="form-group" style="margin-bottom: 0; min-width: 0; width: 100%; box-sizing: border-box;">
+              <label class="form-label" style="font-size: 0.68rem; font-weight: 800; color: #1e293b; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;" title="Enlace web directo a la imagen o foto del artículo">
+                🖼️ URL Foto del Artículo
+              </label>
+              <input type="text" id="combo-item-image" class="form-input" placeholder="https://..." style="height: 34px; font-size: 0.78rem; width: 100%; box-sizing: border-box; min-width: 0;" oninput="onActiveComboItemChange('imageUrl', this.value)">
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 0; width: 100%; box-sizing: border-box; min-width: 0;">
+            <label class="form-label" style="font-size: 0.68rem; font-weight: 800; color: #334155; margin-bottom: 2px; display: block;">
+              📝 Descripción / Especificaciones del Artículo
+            </label>
+            <input type="text" id="combo-item-desc" class="form-input" placeholder="Color, switches, medidas o detalles clave..." style="height: 34px; font-size: 0.78rem; width: 100%; box-sizing: border-box; min-width: 0;" oninput="onActiveComboItemChange('description', this.value)">
           </div>
         </div>
 
         <!-- PANEL STICKY DE RESUMEN Y CÁLCULO FINANCIERO DEL COMBO COMPLETO -->
-        <div id="combo-summary-panel" class="combo-summary-panel combo-calc-summary combo-calc-sticky" style="background: #fffbeb; border: 1.5px solid #d97706; border-radius: 6px; padding: 0.75rem 0.85rem; box-shadow: 2px 2px 0px #b45309;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem; font-family: var(--font-mono); font-size: 0.72rem; font-weight: 900; color: #92400e;">
+        <div id="combo-summary-panel" class="combo-summary-panel combo-calc-summary combo-calc-sticky" style="background: #fffbeb; border: 1.5px solid #d97706; border-radius: 6px; padding: 0.75rem 0.85rem; box-shadow: 2px 2px 0px #b45309; width: 100%; box-sizing: border-box;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.45rem; font-family: var(--font-mono); font-size: 0.72rem; font-weight: 900; color: #92400e;">
             <span>✦ RESUMEN DEL COMBO (<span id="combo-item-count-label">2</span> ARTÍCULOS)</span>
             <span id="combo-savings-badge" class="badge-navi" style="background: #fef3c7; color: #92400e; border: 1px solid #fcd34d;">0% AHORRO</span>
           </div>
 
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; align-items: center; margin-bottom: 0.4rem;">
-            <div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; align-items: center; margin-bottom: 0.45rem; width: 100%; box-sizing: border-box;">
+            <div style="min-width: 0; box-sizing: border-box;">
               <div style="font-family: var(--font-mono); font-size: 0.65rem; color: #78350f; font-weight: 700;">SUMA INDIVIDUAL:</div>
               <div id="combo-sum-usd" style="font-family: var(--font-mono); font-size: 1.05rem; font-weight: 900; color: #1e293b;">$0.00 USD</div>
             </div>
-            <div>
-              <label class="form-label" style="font-size: 0.65rem; color: #78350f; margin-bottom: 2px;">⚡ PRECIO PROMOCIONAL COMBO ($ USD)</label>
-              <input type="number" id="combo-promo-price-usd" class="form-input" placeholder="50.00" step="0.5" min="0" style="border-color: #d97706; font-weight: 900; color: #b45309;" oninput="updateComboLiveSummary()">
+            <div style="min-width: 0; box-sizing: border-box;">
+              <label class="form-label" style="font-size: 0.65rem; color: #78350f; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;">⚡ PRECIO PROMOCIONAL ($)</label>
+              <input type="number" id="combo-promo-price-usd" class="form-input" placeholder="50.00" step="0.5" min="0" style="border-color: #d97706; font-weight: 900; color: #b45309; height: 34px; font-size: 0.92rem; text-align: center; width: 100%; box-sizing: border-box; min-width: 0;" oninput="updateComboLiveSummary()">
             </div>
           </div>
 
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; align-items: center;">
-            <div style="font-family: var(--font-mono); font-size: 0.72rem; color: #065f46; font-weight: 800;">
-              Ahorro: <span id="combo-savings-usd">$0.00 USD (0% OFF)</span>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; align-items: center; width: 100%; box-sizing: border-box;">
+            <div style="min-width: 0; box-sizing: border-box;">
+              <div style="font-family: var(--font-mono); font-size: 0.68rem; color: #065f46; font-weight: 800;">
+                Ahorro: <span id="combo-savings-usd">$0.00 USD (0% OFF)</span>
+              </div>
             </div>
-            <div>
-              <label class="form-label" style="font-size: 0.65rem; color: #78350f; margin-bottom: 2px;">🏷️ TOPE DESCUENTO WP COMBO (% OFF)</label>
-              <input type="number" id="combo-max-discount-pct" class="form-input" placeholder="20" min="0" max="80" value="20" oninput="updateComboLiveSummary()">
+            <div style="min-width: 0; box-sizing: border-box;">
+              <label class="form-label" style="font-size: 0.65rem; color: #78350f; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;">🏷️ TOPE DCTO. WP (% OFF)</label>
+              <input type="number" id="combo-max-discount-pct" class="form-input" placeholder="20" min="0" max="80" value="20" style="height: 34px; font-size: 0.92rem; text-align: center; font-weight: 900; width: 100%; box-sizing: border-box; min-width: 0;" oninput="updateComboLiveSummary()">
             </div>
+          </div>
+
+          <div style="font-family: var(--font-mono); font-size: 0.66rem; color: #4338ca; margin-top: 5px; padding-top: 5px; border-top: 1px dashed #fcd34d; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 4px;">
+            <span>⚡ Costo con tope: <strong id="combo-summary-pts">400 WP</strong></span>
+            <span>💵 Efectivo en mostrador: <strong id="combo-summary-cash" style="color: #dc2626;">$32.00 USD</strong></span>
           </div>
         </div>
       </div>
@@ -2000,40 +2025,39 @@
               </div>
             </div>
 
-            <!-- PRESETS RÁPIDOS DE FECHA DE LLEGADA -->
-            <div class="prod-incoming-arrival-presets-row" style="display: flex; gap: 0.25rem; justify-content: flex-end; align-items: center; margin-bottom: 0.45rem; flex-wrap: wrap;">
-              <span style="font-family: var(--font-mono); font-size: 0.62rem; color: #7e22ce; font-weight: 800;">LLEGADA:</span>
-              <button type="button" class="btn-secondary" id="btn-incoming-arrival-3" style="padding: 1px 6px; font-size: 0.65rem; height: 24px;" onclick="setIncomingArrivalPreset(3)">+3 Días</button>
-              <button type="button" class="btn-secondary active" id="btn-incoming-arrival-7" style="padding: 1px 6px; font-size: 0.65rem; height: 24px;" onclick="setIncomingArrivalPreset(7)">+7 Días</button>
-              <button type="button" class="btn-secondary" id="btn-incoming-arrival-14" style="padding: 1px 6px; font-size: 0.65rem; height: 24px;" onclick="setIncomingArrivalPreset(14)">+14 Días</button>
-              <button type="button" class="btn-secondary" id="btn-incoming-arrival-30" style="padding: 1px 6px; font-size: 0.65rem; height: 24px;" onclick="setIncomingArrivalPreset(30)">+30 Días</button>
+            <!-- PRESETS RÁPIDOS DE FECHA DE LLEGADA (4 COLUMNAS SIMÉTRICAS) -->
+            <div class="prod-incoming-arrival-presets-row" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.35rem; margin-bottom: 0.55rem;">
+              <button type="button" class="btn-secondary" id="btn-incoming-arrival-3" style="padding: 2px 4px; font-size: 0.68rem; font-weight: 800; height: 26px; text-align: center;" onclick="setIncomingArrivalPreset(3)">+3 Días</button>
+              <button type="button" class="btn-secondary active" id="btn-incoming-arrival-7" style="padding: 2px 4px; font-size: 0.68rem; font-weight: 800; height: 26px; text-align: center;" onclick="setIncomingArrivalPreset(7)">⭐ +7 Días</button>
+              <button type="button" class="btn-secondary" id="btn-incoming-arrival-14" style="padding: 2px 4px; font-size: 0.68rem; font-weight: 800; height: 26px; text-align: center;" onclick="setIncomingArrivalPreset(14)">+14 Días</button>
+              <button type="button" class="btn-secondary" id="btn-incoming-arrival-30" style="padding: 2px 4px; font-size: 0.68rem; font-weight: 800; height: 26px; text-align: center;" onclick="setIncomingArrivalPreset(30)">+30 Días</button>
             </div>
 
-            <!-- FILA 2: REGULADOR DE DESCUENTO PREVENTA -->
-            <div style="background: #ffffff; border: 1.5px solid #d8b4fe; border-radius: 4px; padding: 0.5rem; margin-bottom: 0.45rem;">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+            <!-- FILA 2: REGULADOR DE DESCUENTO PREVENTA (SIMÉTRICO) -->
+            <div style="background: #ffffff; border: 1.5px solid #d8b4fe; border-radius: 4px; padding: 0.55rem; margin-bottom: 0.55rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
                 <label class="form-label" style="font-size: 0.68rem; font-weight: 900; margin-bottom: 0; color: #581c87;">
                   🏷️ DESCUENTO PREVENTA:
                 </label>
                 <div style="display: flex; gap: 3px;">
-                  <button type="button" class="btn-secondary active" id="btn-incoming-disc-type-pct" style="padding: 1px 5px; font-size: 0.62rem; font-weight: 800; height: 24px;" onclick="setIncomingDiscountType('PERCENTAGE')">% Pct</button>
-                  <button type="button" class="btn-secondary" id="btn-incoming-disc-type-usd" style="padding: 1px 5px; font-size: 0.62rem; font-weight: 800; height: 24px;" onclick="setIncomingDiscountType('FIXED_AMOUNT')">$ Fijo</button>
+                  <button type="button" class="btn-secondary active" id="btn-incoming-disc-type-pct" style="padding: 2px 7px; font-size: 0.65rem; font-weight: 800; height: 24px;" onclick="setIncomingDiscountType('PERCENTAGE')">% Pct</button>
+                  <button type="button" class="btn-secondary" id="btn-incoming-disc-type-usd" style="padding: 2px 7px; font-size: 0.65rem; font-weight: 800; height: 24px;" onclick="setIncomingDiscountType('FIXED_AMOUNT')">$ Fijo</button>
                 </div>
               </div>
 
-              <div style="display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap;">
+              <div style="display: flex; gap: 0.45rem; align-items: center; margin-bottom: 0.45rem;">
                 <input type="number" id="calc-incoming-discount-val" class="form-input" value="15" min="1" step="1"
                        style="height: 32px; width: 85px; font-family: var(--font-mono); font-weight: 900; font-size: 0.95rem; text-align: center; color: #7e22ce;"
                        oninput="recalculateIncomingPresale()">
-                <span id="incoming-discount-unit-label" style="font-family: var(--font-mono); font-weight: 900; color: #581c87; font-size: 0.85rem;">%</span>
+                <span id="incoming-discount-unit-label" style="font-family: var(--font-mono); font-weight: 900; color: #581c87; font-size: 0.88rem;">%</span>
+              </div>
 
-                <div style="display: flex; gap: 0.25rem; flex-wrap: wrap; margin-left: auto;">
-                  <button type="button" class="btn-secondary" id="btn-incoming-disc-5" style="padding: 1px 5px; font-size: 0.65rem; height: 24px;" onclick="setIncomingDiscountVal(5)">5%</button>
-                  <button type="button" class="btn-secondary" id="btn-incoming-disc-10" style="padding: 1px 5px; font-size: 0.65rem; height: 24px;" onclick="setIncomingDiscountVal(10)">10%</button>
-                  <button type="button" class="btn-secondary active" id="btn-incoming-disc-15" style="padding: 1px 5px; font-size: 0.65rem; height: 24px;" onclick="setIncomingDiscountVal(15)">15%</button>
-                  <button type="button" class="btn-secondary" id="btn-incoming-disc-20" style="padding: 1px 5px; font-size: 0.65rem; height: 24px;" onclick="setIncomingDiscountVal(20)">20%</button>
-                  <button type="button" class="btn-secondary" id="btn-incoming-disc-25" style="padding: 1px 5px; font-size: 0.65rem; height: 24px;" onclick="setIncomingDiscountVal(25)">25%</button>
-                </div>
+              <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.25rem;">
+                <button type="button" class="btn-secondary" id="btn-incoming-disc-5" style="padding: 2px; font-size: 0.68rem; font-weight: 800; height: 26px; text-align: center;" onclick="setIncomingDiscountVal(5)">5%</button>
+                <button type="button" class="btn-secondary" id="btn-incoming-disc-10" style="padding: 2px; font-size: 0.68rem; font-weight: 800; height: 26px; text-align: center;" onclick="setIncomingDiscountVal(10)">10%</button>
+                <button type="button" class="btn-secondary active" id="btn-incoming-disc-15" style="padding: 2px; font-size: 0.68rem; font-weight: 800; height: 26px; text-align: center;" onclick="setIncomingDiscountVal(15)">15%</button>
+                <button type="button" class="btn-secondary" id="btn-incoming-disc-20" style="padding: 2px; font-size: 0.68rem; font-weight: 800; height: 26px; text-align: center;" onclick="setIncomingDiscountVal(20)">20%</button>
+                <button type="button" class="btn-secondary" id="btn-incoming-disc-25" style="padding: 2px; font-size: 0.68rem; font-weight: 800; height: 26px; text-align: center;" onclick="setIncomingDiscountVal(25)">25%</button>
               </div>
             </div>
 
@@ -2079,19 +2103,19 @@
           🏷️ <strong>VENTA TOPADA:</strong> <span id="pill-summary-price">$40.00 USD</span> · Dcto <span id="pill-summary-pct">5%</span> (-<span id="pill-summary-disc">$2.00 USD</span> con <span id="pill-summary-wp">100 WP</span>) · <strong>Cobrar: <span id="pill-summary-cash" style="color: #dc2626;">$38.00 USD</span></strong>
         </div>
 
-        <div class="form-group" style="width: 100%; box-sizing: border-box; min-width: 0; margin-bottom: 0.15rem;">
-          <label class="form-label" style="line-height: 1.3; margin-bottom: 4px; font-size: 0.72rem; display: block;">👤 NOMBRE DEL PRODUCTO FÍSICO</label>
+        <div id="wrap-prod-title" class="form-group" style="width: 100%; box-sizing: border-box; min-width: 0; margin-bottom: 0.15rem;">
+          <label id="lbl-prod-title" class="form-label" style="line-height: 1.3; margin-bottom: 4px; font-size: 0.72rem; display: block;">👤 NOMBRE DEL PRODUCTO FÍSICO</label>
           <input type="text" id="prod-title" class="form-input" placeholder="Ej: Mando Inalámbrico GameSir Nova Lite / Mouse Gamer" style="height: 36px; font-size: 0.85rem; width: 100%; min-width: 0; box-sizing: border-box;">
         </div>
 
         <div class="prod-cost-stock-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.55rem; width: 100%; box-sizing: border-box; margin-top: 0.1rem; margin-bottom: 0.15rem;">
           <div class="form-group" style="margin-bottom: 0; width: 100%; min-width: 0; box-sizing: border-box;">
-            <label class="form-label" style="line-height: 1.3; margin-bottom: 4px; font-size: 0.68rem; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">⚡ COSTO (WP)</label>
+            <label id="lbl-prod-cost" class="form-label" style="line-height: 1.3; margin-bottom: 4px; font-size: 0.68rem; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">⚡ COSTO (WP)</label>
             <input type="number" id="prod-cost" class="form-input lain-number-input" placeholder="820"
                    style="height: 36px; font-size: 0.95rem; color: #4338ca; text-align: center; font-weight: 800; width: 100%; min-width: 0; box-sizing: border-box;">
           </div>
           <div class="form-group" style="margin-bottom: 0; width: 100%; min-width: 0; box-sizing: border-box;">
-            <label class="form-label" style="line-height: 1.3; margin-bottom: 4px; font-size: 0.68rem; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">📦 STOCK FÍSICO</label>
+            <label id="lbl-prod-stock" class="form-label" style="line-height: 1.3; margin-bottom: 4px; font-size: 0.68rem; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">📦 STOCK FÍSICO</label>
             <input type="number" id="prod-stock" class="form-input lain-number-input" placeholder="1" value="1" min="0" style="height: 36px; font-size: 0.95rem; text-align: center; font-weight: 800; width: 100%; min-width: 0; box-sizing: border-box;">
           </div>
         </div>

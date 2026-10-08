@@ -906,8 +906,8 @@ vercel-live-feedback,
     display: flex !important;
     flex-direction: column !important;
     gap: 6px !important;
-    max-height: 220px !important;
-    overflow-y: auto !important;
+    max-height: none !important;
+    overflow-y: visible !important;
   }
 
   .profile-notification-card {
@@ -2192,27 +2192,29 @@ vercel-live-feedback,
   }
   .prod-incoming-row1-grid {
     display: grid !important;
-    grid-template-columns: 1fr 1.3fr !important;
-    gap: 0.4rem !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 0.45rem !important;
     margin-bottom: 0.45rem !important;
   }
   .prod-incoming-row1-grid .form-input {
     height: 34px !important;
     font-size: 0.85rem !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
   }
   .prod-incoming-arrival-presets-row {
-    display: flex !important;
-    flex-wrap: wrap !important;
-    gap: 0.25rem !important;
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 0.3rem !important;
     width: 100% !important;
-    justify-content: flex-end !important;
     margin-top: 0.25rem !important;
     margin-bottom: 0.45rem !important;
   }
   .prod-incoming-arrival-presets-row button {
-    padding: 2px 6px !important;
+    padding: 3px 2px !important;
     font-size: 0.65rem !important;
-    height: 24px !important;
+    height: 26px !important;
+    text-align: center !important;
   }
 
   /* DATOS DEL ARTÍCULO: FILA DUAL COSTO WP + STOCK */

@@ -13,6 +13,7 @@ let openClientCameraScanner = () => {};
 let openClaimModal = () => {};
 let isPinFormOpen = false;
 let isEditingProfileName = false;
+let isNotificationsOpen = false;
 
 export function initCustomerProfileDrawer(deps) {
   if (deps) {
@@ -73,6 +74,7 @@ export function closeMobileProfileDrawer() {
   document.removeEventListener("keydown", handleDrawerKeyDown);
   cancelProfilePinUpdate(false);
   cancelProfileNameEditing();
+  isNotificationsOpen = false;
   drawer.classList.remove("open");
   if (overlay) overlay.classList.remove("open");
   if (fab) {
@@ -216,63 +218,72 @@ export function renderProfileDrawer() {
       <div class="profile-field-hint">Tu preferencia se guardará en tu cuenta y se mantendrá en todos tus dispositivos.</div>
     </div>
 
-    <!-- CENTRO DE NOTIFICACIONES -->
+    <!-- CENTRO DE NOTIFICACIONES COLAPSABLE -->
     <div class="drawer-section">
-      <div class="drawer-section-header">
-        <div class="drawer-section-title">
+      <div class="profile-security-header" onclick="toggleProfileNotifications()" style="cursor: pointer; user-select: none;">
+        <div class="drawer-section-title" style="margin: 0; display: flex; align-items: center; gap: 6px;">
           <span>🔔 NOTIFICACIONES</span>
           ${unreadCount > 0 ? `<span class="notifications-count-badge">${unreadCount} NUEVAS</span>` : ''}
         </div>
-        ${unreadCount > 0 ? `
-          <button type="button" class="btn-mark-all-read" onclick="markAllNotificationsRead()" title="Marcar todas como leídas">
-            Marcar leídas
-          </button>
-        ` : ''}
+        <button type="button" class="btn-toggle-pin-form ${isNotificationsOpen ? 'active' : ''}" id="btn-toggle-notifications" onclick="event.stopPropagation(); toggleProfileNotifications();">
+          <span id="notif-toggle-label">${isNotificationsOpen ? '✕ Ocultar' : `👁️ Ver (${userNotifications.length})`}</span>
+          <span id="notif-toggle-icon">${isNotificationsOpen ? '▴' : '▾'}</span>
+        </button>
       </div>
 
-      <!-- LISTA DE NOTIFICACIONES INTERACTIVAS -->
-      <div class="profile-notifications-list">
-        ${userNotifications.map(n => `
-          <div class="profile-notification-card ${n.read ? 'read' : 'unread'}" onclick="handleNotificationClick('${n.id}')" title="${n.read ? 'Notificación leída (Tocar para ver)' : 'Tocar para ir directamente al producto'}">
-            <div class="notif-icon-col">${n.icon}</div>
-            <div class="notif-body-col">
-              <div class="notif-title-row">
-                <span class="notif-title">${n.title}</span>
-                <div style="display: flex; align-items: center; gap: 4px;">
-                  ${!n.read ? '<span class="notif-unread-dot" title="No leída">●</span>' : ''}
-                  <span class="notif-time">${n.time}</span>
+      <div id="profile-notifications-body" style="display: ${isNotificationsOpen ? 'block' : 'none'}; margin-top: 0.65rem;">
+        ${unreadCount > 0 ? `
+          <div style="display: flex; justify-content: flex-end; margin-bottom: 0.45rem;">
+            <button type="button" class="btn-mark-all-read" onclick="markAllNotificationsRead()" title="Marcar todas como leídas">
+              ✓ Marcar todas leídas
+            </button>
+          </div>
+        ` : ''}
+
+        <!-- LISTA DE NOTIFICACIONES INTERACTIVAS (SIN SCROLL INTERNO / CERO BLOQUEO) -->
+        <div class="profile-notifications-list">
+          ${userNotifications.map(n => `
+            <div class="profile-notification-card ${n.read ? 'read' : 'unread'}" onclick="handleNotificationClick('${n.id}')" title="${n.read ? 'Notificación leída (Tocar para ver)' : 'Tocar para ir directamente al producto'}">
+              <div class="notif-icon-col">${n.icon}</div>
+              <div class="notif-body-col">
+                <div class="notif-title-row">
+                  <span class="notif-title">${n.title}</span>
+                  <div style="display: flex; align-items: center; gap: 4px;">
+                    ${!n.read ? '<span class="notif-unread-dot" title="No leída">●</span>' : ''}
+                    <span class="notif-time">${n.time}</span>
+                  </div>
+                </div>
+                <div class="notif-desc">${n.desc}</div>
+                <div class="notif-action-row">
+                  ${n.badgeText ? `<span class="notif-badge-pill">${n.badgeText}</span>` : ''}
+                  ${n.targetRewardId ? `<span class="notif-link-hint">Ver producto ➔</span>` : ''}
                 </div>
               </div>
-              <div class="notif-desc">${n.desc}</div>
-              <div class="notif-action-row">
-                ${n.badgeText ? `<span class="notif-badge-pill">${n.badgeText}</span>` : ''}
-                ${n.targetRewardId ? `<span class="notif-link-hint">Ver producto ➔</span>` : ''}
-              </div>
             </div>
-          </div>
-        `).join("")}
-      </div>
+          `).join("")}
+        </div>
 
-      <!-- NOTIFICACIONES WEB PUSH EN GOOGLE CHROME (MÓVIL / SISTEMA) -->
-      <div class="chrome-push-box ${isPushGranted ? 'granted' : 'pending'}" style="margin-top: 0.75rem;">
-        <div class="chrome-push-header">
-          <span class="chrome-push-icon">${isPushGranted ? '🟢' : '📲'}</span>
-          <span class="chrome-push-title">${isPushGranted ? 'Avisos en Google Chrome: ACTIVOS' : 'Avisos en Google Chrome (Móvil)'}</span>
+        <!-- NOTIFICACIONES WEB PUSH EN GOOGLE CHROME (MÓVIL / SISTEMA) -->
+        <div class="chrome-push-box ${isPushGranted ? 'granted' : 'pending'}" style="margin-top: 0.75rem;">
+          <div class="chrome-push-header">
+            <span class="chrome-push-icon">${isPushGranted ? '🟢' : '📲'}</span>
+            <span class="chrome-push-title">${isPushGranted ? 'Avisos en Google Chrome: ACTIVOS' : 'Avisos en Google Chrome (Móvil)'}</span>
+          </div>
+          <div class="chrome-push-desc">
+            ${isPushGranted 
+              ? 'Recibirás avisos en tu teléfono sobre nuevos artículos y descuentos en MeltyDeays aunque tengas otra aplicación abierta.'
+              : 'Activa los avisos de Chrome para enterarte inmediatamente cuando hayan nuevos productos o promociones especiales en tu teléfono.'}
+          </div>
+          ${isPushGranted ? `
+            <button type="button" class="btn-chrome-push-test" onclick="testChromePushNotification()">
+              🔔 Probar aviso en mi teléfono
+            </button>
+          ` : `
+            <button type="button" class="btn-chrome-push-enable" onclick="requestChromePushPermission()">
+              ⚡ Activar Avisos en Chrome
+            </button>
+          `}
         </div>
-        <div class="chrome-push-desc">
-          ${isPushGranted 
-            ? 'Recibirás avisos en tu teléfono sobre nuevos artículos y descuentos en MeltyDeays aunque tengas otra aplicación abierta.'
-            : 'Activa los avisos de Chrome para enterarte inmediatamente cuando hayan nuevos productos o promociones especiales en tu teléfono.'}
-        </div>
-        ${isPushGranted ? `
-          <button type="button" class="btn-chrome-push-test" onclick="testChromePushNotification()">
-            🔔 Probar aviso en mi teléfono
-          </button>
-        ` : `
-          <button type="button" class="btn-chrome-push-enable" onclick="requestChromePushPermission()">
-            ⚡ Activar Avisos en Chrome
-          </button>
-        `}
       </div>
     </div>
 
@@ -353,6 +364,31 @@ export function renderProfileDrawer() {
       </div>
     </div>
   `;
+}
+
+export function toggleProfileNotifications() {
+  isNotificationsOpen = !isNotificationsOpen;
+  const body = document.getElementById("profile-notifications-body");
+  const toggleBtn = document.getElementById("btn-toggle-notifications");
+  const label = document.getElementById("notif-toggle-label");
+  const icon = document.getElementById("notif-toggle-icon");
+
+  if (body) {
+    body.style.display = isNotificationsOpen ? "block" : "none";
+  }
+  if (toggleBtn) {
+    if (isNotificationsOpen) {
+      toggleBtn.classList.add("active");
+    } else {
+      toggleBtn.classList.remove("active");
+    }
+  }
+  if (label && icon) {
+    const user = vm ? vm.currentUser : null;
+    const notifs = getComputedUserNotifications(user);
+    label.textContent = isNotificationsOpen ? "✕ Ocultar" : `👁️ Ver (${notifs.length})`;
+    icon.textContent = isNotificationsOpen ? "▴" : "▾";
+  }
 }
 
 export function toggleProfilePinForm() {

@@ -178,12 +178,12 @@ export class CanonicalCountdownTimer {
 }
 
 export class CanonicalVoucherBuilder {
-  static buildPreOrderVoucher({ product, customer, presaleCalc, user = null }) {
+  static buildPreOrderVoucher({ product, customer, presaleCalc, user = null, voucherCode = null }) {
     const cleanPhone = (customer.phone || "").replace(/\D/g, "");
-    const voucherCode = "RES-" + Math.floor(1000 + Math.random() * 9000);
+    const finalCode = voucherCode || ("RES-" + Math.floor(1000 + Math.random() * 9000));
 
     return {
-      voucherCode,
+      voucherCode: finalCode,
       userUid: user ? (user.uid || user.phone) : ("GUEST-" + cleanPhone),
       userName: customer.fullName,
       userDisplayName: customer.fullName,
@@ -1382,7 +1382,8 @@ export async function runTier4Tests() {
           phone: `5843841${i % 10}`,
           email: `c${i}@test.com`
         },
-        presaleCalc: pricing
+        presaleCalc: pricing,
+        voucherCode: `RES-${1000 + i}`
       });
 
       voucherCodes.add(v.voucherCode);

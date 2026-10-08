@@ -579,6 +579,11 @@
   transform: translate(1px, 1px);
   box-shadow: 1px 1px 0px var(--dark);
 }
+.modal-specs-action-btn.btn-combo-acquire {
+  background: linear-gradient(135deg, #d97706 0%, #b45309 100%) !important;
+  color: #ffffff !important;
+  border-color: #78350f !important;
+}
 .modal-specs-action-btn.btn-reserve-incoming {
   background: linear-gradient(135deg, #b45309 0%, #d97706 100%);
   color: #ffffff;
@@ -601,13 +606,15 @@
   transform: none !important;
 }
 
-.btn-reserve-text-full {
+.btn-reserve-text-full,
+.btn-combo-text-full {
   display: inline;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.btn-reserve-text-short {
+.btn-reserve-text-short,
+.btn-combo-text-short {
   display: none;
   white-space: nowrap;
   overflow: hidden;
@@ -1767,10 +1774,12 @@
       font-size: 0.76rem !important;
       letter-spacing: 0.2px !important;
     }
-    .btn-reserve-text-full {
+    .btn-reserve-text-full,
+    .btn-combo-text-full {
       display: none !important;
     }
-    .btn-reserve-text-short {
+    .btn-reserve-text-short,
+    .btn-combo-text-short {
       display: inline !important;
     }
   }

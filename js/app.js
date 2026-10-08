@@ -86,6 +86,7 @@ import {
   handleBannerFileInput,
   executeProfilePinUpdate,
   toggleProfilePinForm,
+  toggleProfileNotifications,
   cancelProfilePinUpdate,
   enableProfileNameEditing,
   cancelProfileNameEditing,
@@ -383,6 +384,7 @@ document.addEventListener("DOMContentLoaded", () => {
   window.handleBannerFileInput = handleBannerFileInput;
   window.executeProfilePinUpdate = executeProfilePinUpdate;
   window.toggleProfilePinForm = toggleProfilePinForm;
+  window.toggleProfileNotifications = toggleProfileNotifications;
   window.cancelProfilePinUpdate = cancelProfilePinUpdate;
   window.handleNotificationClick = handleNotificationClick;
   window.markAllNotificationsRead = markAllNotificationsRead;

@@ -144,14 +144,28 @@ let activeProductDiscountPct = 5; // 5% por defecto
 let activeIncomingDiscountType = "PERCENTAGE"; // "PERCENTAGE" | "FIXED_AMOUNT"
 
 function setProductPublicationMode(mode) {
+  if (mode === "COMBO") {
+    if (typeof window.activateComboBuilder === "function") {
+      window.activateComboBuilder();
+    }
+    return;
+  }
+
   activeProductMode = mode;
   const isFree = mode === "FREE_REWARD";
   const isIncoming = mode === "INCOMING";
+
+  if (typeof window.deactivateComboBuilder === "function") {
+    window.deactivateComboBuilder();
+  }
 
   const badge = document.getElementById("prod-mode-badge");
   const btnFree = document.getElementById("btn-prod-mode-free");
   const btnDisc = document.getElementById("btn-prod-mode-discount");
   const btnIncoming = document.getElementById("btn-prod-mode-incoming");
+  const btnCombo = document.getElementById("btn-prod-mode-combo");
+  const btnTypeStandard = document.getElementById("btn-prod-type-standard");
+  const btnTypeCombo = document.getElementById("btn-prod-type-combo");
   const secFree = document.getElementById("sec-product-free-calc");
   const secDisc = document.getElementById("sec-product-discount-calc");
   const secIncoming = document.getElementById("sec-product-incoming-calc");
@@ -185,18 +199,41 @@ function setProductPublicationMode(mode) {
     btnFree.style.border = isFree ? "2px solid #059669" : "1.5px solid #cbd5e1";
     btnFree.style.background = isFree ? "#ecfdf5" : "#f8fafc";
     btnFree.style.color = isFree ? "#065f46" : "#475569";
+    btnFree.classList.toggle("active", isFree);
   }
 
   if (btnDisc) {
-    btnDisc.style.border = (!isFree && !isIncoming) ? "2px solid #d97706" : "1.5px solid #cbd5e1";
-    btnDisc.style.background = (!isFree && !isIncoming) ? "#fffbeb" : "#f8fafc";
-    btnDisc.style.color = (!isFree && !isIncoming) ? "#b45309" : "#475569";
+    const isDisc = (!isFree && !isIncoming);
+    btnDisc.style.border = isDisc ? "2px solid #d97706" : "1.5px solid #cbd5e1";
+    btnDisc.style.background = isDisc ? "#fffbeb" : "#f8fafc";
+    btnDisc.style.color = isDisc ? "#b45309" : "#475569";
+    btnDisc.classList.toggle("active", isDisc);
   }
 
   if (btnIncoming) {
     btnIncoming.style.border = isIncoming ? "2px solid #a855f7" : "1.5px solid #cbd5e1";
     btnIncoming.style.background = isIncoming ? "#faf5ff" : "#f8fafc";
     btnIncoming.style.color = isIncoming ? "#7e22ce" : "#475569";
+    btnIncoming.classList.toggle("active", isIncoming);
+  }
+
+  if (btnCombo) {
+    btnCombo.style.border = "1.5px solid #cbd5e1";
+    btnCombo.style.background = "#f8fafc";
+    btnCombo.style.color = "#475569";
+    btnCombo.classList.remove("active");
+  }
+  if (btnTypeStandard) {
+    btnTypeStandard.style.border = "2px solid #059669";
+    btnTypeStandard.style.background = "#ecfdf5";
+    btnTypeStandard.style.color = "#065f46";
+    btnTypeStandard.classList.add("active");
+  }
+  if (btnTypeCombo) {
+    btnTypeCombo.style.border = "1.5px solid #cbd5e1";
+    btnTypeCombo.style.background = "#f8fafc";
+    btnTypeCombo.style.color = "#475569";
+    btnTypeCombo.classList.remove("active");
   }
 
   if (secFree) secFree.style.display = isFree ? "block" : "none";
@@ -502,20 +539,15 @@ function applyCalculatedDiscountToProduct() {
   if (discUsdInput) discUsdInput.value = maxDiscountUsd;
   if (cashInput) cashInput.value = cashDue;
 
-  // Actualizar pill de resumen
+  // Actualizar pill de resumen con reconstrucción estructural limpia
   const summaryPill = document.getElementById("prod-commercial-summary-pill");
-  const pPrice = document.getElementById("pill-summary-price");
-  const pPct = document.getElementById("pill-summary-pct");
-  const pDisc = document.getElementById("pill-summary-disc");
-  const pWp = document.getElementById("pill-summary-wp");
-  const pCash = document.getElementById("pill-summary-cash");
-
-  if (summaryPill) summaryPill.style.display = "block";
-  if (pPrice) pPrice.textContent = `$${salePrice.toFixed(2)} USD`;
-  if (pPct) pPct.textContent = `${discountPct}%`;
-  if (pDisc) pDisc.textContent = `$${maxDiscountUsd.toFixed(2)} USD`;
-  if (pWp) pWp.textContent = `${requiredPoints.toLocaleString()} WP`;
-  if (pCash) pCash.textContent = `$${cashDue.toFixed(2)} USD`;
+  if (summaryPill) {
+    summaryPill.style.display = "block";
+    summaryPill.style.background = "#fef3c7";
+    summaryPill.style.borderColor = "#f59e0b";
+    summaryPill.style.color = "#92400e";
+    summaryPill.innerHTML = `🏷️ <strong>VENTA TOPADA:</strong> <span id="pill-summary-price">$${salePrice.toFixed(2)} USD</span> · Dcto <span id="pill-summary-pct">${discountPct}%</span> (-<span id="pill-summary-disc">$${maxDiscountUsd.toFixed(2)} USD</span> con <span id="pill-summary-wp">${requiredPoints.toLocaleString()} WP</span>) · <strong>Cobrar: <span id="pill-summary-cash" style="color: #dc2626;">$${cashDue.toFixed(2)} USD</span></strong>`;
+  }
 }
 
 function toggleProductCalculatorAccordion() {

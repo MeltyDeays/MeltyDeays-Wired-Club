@@ -92,7 +92,7 @@
   border-color: #78350f !important;
   color: #ffffff !important;
   font-weight: 900 !important;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
   min-height: 44px;
 }
 
@@ -100,6 +100,23 @@
   background: linear-gradient(135deg, #b45309, #78350f) !important;
   transform: translate(-1px, -1px);
   box-shadow: 2px 2px 0px #451a03 !important;
+}
+
+.btn-combo-text-full {
+  display: inline;
+}
+
+.btn-combo-text-short {
+  display: none;
+}
+
+@media (max-width: 520px) {
+  .btn-combo-text-full {
+    display: none !important;
+  }
+  .btn-combo-text-short {
+    display: inline !important;
+  }
 }
 
 /* ========================================================
@@ -3525,8 +3542,8 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
-  max-height: 220px;
-  overflow-y: auto;
+  max-height: none;
+  overflow: visible;
 }
 
 .profile-notification-card {

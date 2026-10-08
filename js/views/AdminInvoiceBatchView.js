@@ -102,6 +102,8 @@ export function activateComboBuilder(existingProduct = null) {
   const badge = document.getElementById("prod-mode-badge");
   const typeInput = document.getElementById("prod-reward-type");
   const isIncInput = document.getElementById("prod-is-incoming");
+  const accWrapper = document.querySelector(".prod-calc-collapsible-wrapper");
+  const modeSelectorWrap = document.querySelector(".prod-mode-selector-wrap");
   const summaryPill = document.getElementById("prod-commercial-summary-pill");
 
   if (typeInput) typeInput.value = "COMBO";
@@ -113,6 +115,15 @@ export function activateComboBuilder(existingProduct = null) {
   if (secIncoming) secIncoming.style.display = "none";
   if (accBody) accBody.style.display = "none";
   if (accBtn) accBtn.style.display = "none";
+  if (accWrapper) accWrapper.style.display = "none";
+  if (modeSelectorWrap) modeSelectorWrap.style.display = "none";
+
+  const wrapTitle = document.getElementById("wrap-prod-title");
+  if (wrapTitle) wrapTitle.style.display = "none";
+  const lblStock = document.getElementById("lbl-prod-stock");
+  if (lblStock) lblStock.textContent = "📦 STOCK DEL COMBO";
+  const lblCost = document.getElementById("lbl-prod-cost");
+  if (lblCost) lblCost.innerHTML = '⚡ COSTO (WP) <span style="font-size: 0.60rem; color: #059669; font-weight: 700;">(CALCULADO)</span>';
 
   if (badge) {
     badge.textContent = "MODO: ✨ COMBO FLEXIBLE (N EN 1)";
@@ -191,6 +202,10 @@ export function activateComboBuilder(existingProduct = null) {
     if (pkgTitleInput) {
       pkgTitleInput.value = existingProduct.title || "";
     }
+    const prodTitleInput = document.getElementById("prod-title");
+    if (prodTitleInput && existingProduct.title) {
+      prodTitleInput.value = existingProduct.title;
+    }
   }
 
   activeComboItemIndex = 0;
@@ -204,8 +219,20 @@ export function activateComboBuilder(existingProduct = null) {
 export function deactivateComboBuilder() {
   const secCombo = document.getElementById("sec-product-combo-builder");
   const accBtn = document.getElementById("btn-toggle-prod-calc");
+  const accWrapper = document.querySelector(".prod-calc-collapsible-wrapper");
+  const modeSelectorWrap = document.querySelector(".prod-mode-selector-wrap");
+
   if (secCombo) secCombo.style.display = "none";
   if (accBtn) accBtn.style.display = "";
+  if (accWrapper) accWrapper.style.display = "";
+  if (modeSelectorWrap) modeSelectorWrap.style.display = "";
+
+  const wrapTitle = document.getElementById("wrap-prod-title");
+  if (wrapTitle) wrapTitle.style.display = "";
+  const lblStock = document.getElementById("lbl-prod-stock");
+  if (lblStock) lblStock.textContent = "📦 STOCK FÍSICO";
+  const lblCost = document.getElementById("lbl-prod-cost");
+  if (lblCost) lblCost.textContent = "⚡ COSTO (WP)";
 
   const btnCombo = document.getElementById("btn-prod-mode-combo");
   const btnTypeStandard = document.getElementById("btn-prod-type-standard");
@@ -454,7 +481,20 @@ export function updateComboLiveSummary() {
       prodCostInput.value = pointsCost;
       prodCostInput.placeholder = `${pointsCost} WP`;
     }
+
+    // Sincronizar título del paquete combo hacia prod-title
+    const comboPkgTitleInput = document.getElementById("combo-package-title");
+    const prodTitleInput = document.getElementById("prod-title");
+    if (comboPkgTitleInput && prodTitleInput && comboPkgTitleInput.value) {
+      prodTitleInput.value = comboPkgTitleInput.value;
+    }
   }
+
+  // Actualizar resumen visual de puntos y cobro en tarjeta de combo
+  const ptsEl = document.getElementById("combo-summary-pts");
+  if (ptsEl) ptsEl.textContent = `${pointsCost} WP`;
+  const cashEl = document.getElementById("combo-summary-cash");
+  if (cashEl) cashEl.textContent = `$${cashToPayUsd.toFixed(2)} USD`;
 }
 
 export function openNewProductModal() {
@@ -1006,9 +1046,15 @@ export async function saveProductAdmin() {
     if (pointsCost % 10 !== 0) pointsCost = Math.round(pointsCost / 10) * 10;
     if (pointsCost < 10) pointsCost = 10;
 
-    let comboTitle = (document.getElementById("combo-package-title")?.value || title || "").trim();
+    const pkgTitleInput = document.getElementById("combo-package-title");
+    let comboTitle = (pkgTitleInput?.value || title || "").trim();
     if (!comboTitle) {
-      comboTitle = "Combo: " + currentComboItems.map(it => it.title.trim()).join(" + ");
+      showToast("⚠️ El título del combo en el catálogo es obligatorio.", "error");
+      if (pkgTitleInput) {
+        pkgTitleInput.focus({ preventScroll: true });
+        pkgTitleInput.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+      return;
     }
 
     const itemImages = currentComboItems.map(it => it.imageUrl).filter(Boolean);

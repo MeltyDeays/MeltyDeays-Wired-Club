@@ -1420,8 +1420,9 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
     } else if (isCombo && !isOut) {
       actionBtn = `
         <button type="button" class="modal-specs-action-btn btn-combo-acquire" onclick="closeProductSpecsModal(); confirmRedeem('${item.id}');" style="min-height: 42px;">
-          <span style="font-size: 1rem;">⚡</span>
-          <span>ADQUIRIR COMBO O POR SEPARADO</span>
+          <span class="btn-combo-icon" style="font-size: 1rem; flex-shrink: 0;">⚡</span>
+          <span class="btn-combo-text-full">ADQUIRIR COMBO O POR SEPARADO</span>
+          <span class="btn-combo-text-short">ADQUIRIR COMBO / ÍTEM</span>
         </button>
       `;
     } else if (!isOut) {
@@ -1771,7 +1772,10 @@ export function renderCatalog(catalog, user) {
         <button type="button" class="btn-redeem btn-combo-acquire active-canje" onclick="event.stopPropagation(); confirmRedeem('${item.id}')">
           <div class="btn-redeem-content" style="display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%;">
             <span class="btn-redeem-icon">⚡</span>
-            <span class="btn-redeem-text">ADQUIRIR COMBO O POR SEPARADO</span>
+            <span class="btn-redeem-text">
+              <span class="btn-combo-text-full">ADQUIRIR COMBO O POR SEPARADO</span>
+              <span class="btn-combo-text-short">ADQUIRIR COMBO / ÍTEM</span>
+            </span>
           </div>
         </button>
       `;

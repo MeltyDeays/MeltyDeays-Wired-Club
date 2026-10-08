@@ -3062,9 +3062,8 @@
 .combo-summary-panel,
 .combo-calc-summary,
 .combo-calc-sticky {
-  position: sticky;
-  bottom: 0;
-  z-index: 15;
+  position: static !important;
+  margin-top: 0.85rem;
   background: #fffbeb;
   border: 1.5px solid #d97706;
   border-radius: 6px;
@@ -3072,6 +3071,65 @@
   box-shadow: 2px 2px 0px #b45309;
 }
 
+/* ========================================================
+   ESTILOS BASE: PREVENTA EN CAMINO & COMBOS ERGONÓMICOS
+   ======================================================== */
+.prod-incoming-row1-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.35fr;
+  gap: 0.55rem;
+  margin-bottom: 0.5rem;
+}
 
+.prod-incoming-arrival-presets-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.35rem;
+  margin-bottom: 0.55rem;
+}
 
+.prod-incoming-arrival-presets-row button {
+  padding: 2px 4px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  height: 26px;
+  text-align: center;
+}
+
+#sec-product-combo-builder {
+  margin-bottom: 0.85rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+#combo-active-item-form {
+  margin-bottom: 0.75rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+#combo-active-item-form .form-group {
+  width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+#combo-active-item-form .form-input {
+  width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+.combo-item-row-prices,
+.combo-item-row-opts {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+@media (max-width: 480px) {
+  .combo-item-row-opts {
+    grid-template-columns: 95px 1fr !important;
+    gap: 0.4rem !important;
+  }
+}
 
