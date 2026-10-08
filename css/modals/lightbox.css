@@ -605,16 +605,33 @@
   box-shadow: 1px 1px 0px var(--dark);
   transform: none !important;
 }
+.modal-specs-action-btn.btn-redeem-locked {
+  background: #f1f5f9 !important;
+  color: #64748b !important;
+  border-color: #94a3b8 !important;
+  box-shadow: 2px 2px 0px #94a3b8 !important;
+  cursor: pointer;
+  letter-spacing: 0px;
+}
+.modal-specs-action-btn.btn-redeem-locked:hover {
+  background: #e2e8f0 !important;
+  color: #334155 !important;
+  transform: none !important;
+  box-shadow: 2px 2px 0px #94a3b8 !important;
+  filter: none !important;
+}
 
 .btn-reserve-text-full,
-.btn-combo-text-full {
+.btn-combo-text-full,
+.btn-locked-text-full {
   display: inline;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .btn-reserve-text-short,
-.btn-combo-text-short {
+.btn-combo-text-short,
+.btn-locked-text-short {
   display: none;
   white-space: nowrap;
   overflow: hidden;
@@ -1775,11 +1792,13 @@
       letter-spacing: 0.2px !important;
     }
     .btn-reserve-text-full,
-    .btn-combo-text-full {
+    .btn-combo-text-full,
+    .btn-locked-text-full {
       display: none !important;
     }
     .btn-reserve-text-short,
-    .btn-combo-text-short {
+    .btn-combo-text-short,
+    .btn-locked-text-short {
       display: inline !important;
     }
   }

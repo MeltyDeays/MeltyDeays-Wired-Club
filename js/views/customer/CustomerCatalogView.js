@@ -1271,6 +1271,7 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
       </div>
     `;
   } else {
+    const canAffordFreeBanner = user && userPts >= item.pointsCost;
     saleBannerHtml = `
       <div class="temu-sale-banner" style="background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border-color: #34d399;">
         <div class="temu-sale-header" style="color: #065f46;">
@@ -1285,6 +1286,17 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
           ${renderWiredCoinSvg()}
           <span>Costo total en puntos: <strong>${item.pointsCost.toLocaleString()} WP</strong></span>
         </div>
+        ${!user ? `
+          <div class="specs-locked-notice" style="margin-top: 6px; font-size: 0.72rem; font-family: var(--font-mono); color: #1e3a8a; background: #dbeafe; border: 1px dashed #93c5fd; padding: 4px 8px; border-radius: 4px; font-weight: 700; display: flex; align-items: center; gap: 5px;">
+            <span style="flex-shrink: 0;">🔒</span>
+            <span>Inicia sesión para canjear con tus puntos acumulados (Requiere <strong>${item.pointsCost.toLocaleString()} WP</strong>).</span>
+          </div>
+        ` : (!canAffordFreeBanner ? `
+          <div class="specs-locked-notice" style="margin-top: 6px; font-size: 0.72rem; font-family: var(--font-mono); color: #991b1b; background: #fee2e2; border: 1px dashed #fca5a5; padding: 4px 8px; border-radius: 4px; font-weight: 700; display: flex; align-items: center; gap: 5px;">
+            <span style="flex-shrink: 0;">🔒</span>
+            <span>Saldo insuficiente (Tienes ${userPts.toLocaleString()} WP). Te faltan <strong>${(item.pointsCost - userPts).toLocaleString()} WP</strong> para este canje.</span>
+          </div>
+        ` : '')}
       </div>
     `;
   }
@@ -1434,12 +1446,32 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
           </button>
         `;
       } else {
-        actionBtn = `
-          <button type="button" class="modal-specs-action-btn btn-redeem-blue" onclick="closeProductSpecsModal(); confirmRedeem('${item.id}');">
-            ${zapSvg}
-            <span>Canjear Ahora</span>
-          </button>
-        `;
+        const canAffordFree = user && userPts >= item.pointsCost;
+        if (!user) {
+          actionBtn = `
+            <button type="button" class="modal-specs-action-btn btn-redeem-locked" onclick="closeProductSpecsModal(); openAuthModal('login', 'Inicia sesión para canjear');" title="Inicia sesión para canjear este producto">
+              <span class="btn-lock-icon" style="font-size: 1rem; flex-shrink: 0;">🔒</span>
+              <span class="btn-locked-text-full">Inicia Sesión (${item.pointsCost.toLocaleString()} WP)</span>
+              <span class="btn-locked-text-short">Inicia Sesión</span>
+            </button>
+          `;
+        } else if (!canAffordFree) {
+          const missing = item.pointsCost - userPts;
+          actionBtn = `
+            <button type="button" class="modal-specs-action-btn btn-redeem-locked" onclick="showToast('Puntos insuficientes: Te faltan ${missing.toLocaleString()} WP para canjear este producto (Tienes ${userPts.toLocaleString()} de ${item.pointsCost.toLocaleString()} WP).', 'info');" title="Puntos insuficientes. Requiere ${item.pointsCost.toLocaleString()} WP (Tienes ${userPts.toLocaleString()} WP)">
+              <span class="btn-lock-icon" style="font-size: 1rem; flex-shrink: 0;">🔒</span>
+              <span class="btn-locked-text-full">Faltan ${missing.toLocaleString()} WP (Requiere ${item.pointsCost.toLocaleString()} WP)</span>
+              <span class="btn-locked-text-short">Faltan ${missing.toLocaleString()} WP</span>
+            </button>
+          `;
+        } else {
+          actionBtn = `
+            <button type="button" class="modal-specs-action-btn btn-redeem-blue" onclick="closeProductSpecsModal(); confirmRedeem('${item.id}');">
+              ${zapSvg}
+              <span>Canjear Ahora</span>
+            </button>
+          `;
+        }
       }
     } else {
       actionBtn = `<button type="button" class="modal-specs-action-btn btn-redeem-disabled" disabled>❌ Agotado</button>`;
@@ -1786,7 +1818,7 @@ export function renderCatalog(catalog, user) {
         btnHtml = `<button class="btn-redeem active-canje" style="background: linear-gradient(135deg, #0284c7, #0369a1);" onclick="event.stopPropagation(); confirmRedeem('${item.id}')">🛒 COMPRAR EN TIENDA</button>`;
       }
     } else if (!canAfford) {
-      const missing = item.pointsCost - user.wiredPoints;
+      const missing = item.pointsCost - userPts;
       btnHtml = `<button class="btn-redeem locked" onclick="event.stopPropagation(); showToast('Te faltan ${missing.toLocaleString()} WP para este producto', 'info')">🔒 Faltan ${missing.toLocaleString()} WP</button>`;
     } else {
       btnHtml = `<button class="btn-redeem active-canje" onclick="event.stopPropagation(); confirmRedeem('${item.id}')">⚡ CANJEAR AHORA</button>`;
