@@ -1822,19 +1822,19 @@ export function renderCatalog(catalog, user) {
     } else if (isCombo) {
       partialBreakdown = `
         <div class="reward-pricing-box combo-pricing-box" style="border: 1.5px solid #d97706; background: #fffbeb; padding: 0.5rem 0.65rem; border-radius: 4px; margin-top: 0.5rem;">
-          <div class="pricing-row" style="display: flex; justify-content: space-between; font-size: 0.72rem; color: #78350f;">
+          <div class="pricing-row" style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 2px 6px; font-size: 0.72rem; color: #78350f;">
             <span class="pricing-label">Suma individual:</span>
-            <span class="pricing-val" style="text-decoration: line-through; color: #94a3b8;">${formatPrice(comboSavings.sumUsd)}</span>
+            <span class="pricing-val" style="text-decoration: line-through; color: #94a3b8; font-variant-numeric: tabular-nums;">${formatPrice(comboSavings.sumUsd)}</span>
           </div>
-          <div class="pricing-row discount-row" style="display: flex; justify-content: space-between; font-size: 0.72rem; color: #b45309; font-weight: 800;">
+          <div class="pricing-row discount-row" style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 2px 6px; font-size: 0.72rem; color: #b45309; font-weight: 800;">
             <span class="pricing-label">Ahorro en Combo:</span>
-            <span class="pricing-val green" style="color: #d97706;">-${formatPrice(comboSavings.savingsUsd)} (${comboSavings.savingsPct}% OFF)</span>
+            <span class="pricing-val green" style="color: #d97706; font-variant-numeric: tabular-nums;">-${formatPrice(comboSavings.savingsUsd)} (${comboSavings.savingsPct}% OFF)</span>
           </div>
-          <div class="pricing-row total-row" style="display: flex; justify-content: space-between; font-size: 0.8rem; font-weight: 900; color: #78350f; border-top: 1px dashed #fcd34d; margin-top: 4px; padding-top: 4px;">
+          <div class="pricing-row total-row" style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 2px 6px; font-size: 0.8rem; font-weight: 900; color: #78350f; border-top: 1px dashed #fcd34d; margin-top: 4px; padding-top: 4px;">
             <span class="pricing-label">Precio del Combo:</span>
-            <span class="pricing-val total" style="color: #b45309;">${formatPrice(item.priceUsd)}</span>
+            <span class="pricing-val total" style="color: #b45309; font-variant-numeric: tabular-nums;">${formatPrice(item.priceUsd)}</span>
           </div>
-          <div class="pricing-row footnote-row" style="color: #92400e; font-size: 0.65rem; margin-top: 3px;">
+          <div class="pricing-row footnote-row" style="color: #92400e; font-size: 0.65rem; margin-top: 3px; line-height: 1.3;">
             <span class="pricing-label" style="grid-column: span 2;">✦ Adquiere el combo completo con descuento o compra cualquier producto por separado.</span>
           </div>
         </div>
