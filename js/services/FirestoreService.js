@@ -115,7 +115,8 @@ export class FirestoreService {
           const list = Object.values(local.rewards);
           const needsEnrich = list.length > 0 && (
             list.some(r => r.id && r.id.startsWith("REW-DEMO") && (!r.description || !r.description.includes("\n"))) ||
-            (list.some(r => r.id && r.id.startsWith("REW-DEMO")) && !list.some(r => r.id && r.id.startsWith("REW-DEMO-INCOMING")))
+            (list.some(r => r.id && r.id.startsWith("REW-DEMO")) && !list.some(r => r.id && r.id.startsWith("REW-DEMO-INCOMING"))) ||
+            (list.some(r => r.id && r.id.startsWith("REW-DEMO")) && !list.some(r => r.id && (r.id.startsWith("REW-DEMO-COMBO") || r.id.startsWith("REW-COMBO"))))
           );
           if (needsEnrich) {
             await this.seedDevData();
@@ -133,7 +134,8 @@ export class FirestoreService {
       const list = Object.values(snap.rewards || {});
       const needsEnrich = list.length > 0 && (
         list.some(r => r.id && r.id.startsWith("REW-DEMO") && (!r.description || !r.description.includes("\n"))) ||
-        (list.some(r => r.id && r.id.startsWith("REW-DEMO")) && !list.some(r => r.id && r.id.startsWith("REW-DEMO-INCOMING")))
+        (list.some(r => r.id && r.id.startsWith("REW-DEMO")) && !list.some(r => r.id && r.id.startsWith("REW-DEMO-INCOMING"))) ||
+        (list.some(r => r.id && r.id.startsWith("REW-DEMO")) && !list.some(r => r.id && (r.id.startsWith("REW-DEMO-COMBO") || r.id.startsWith("REW-COMBO"))))
       );
       if (needsEnrich) {
         await this.seedDevData();
@@ -1348,6 +1350,110 @@ export class FirestoreService {
           "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?auto=format&fit=crop&w=800&q=80",
           "https://images.unsplash.com/photo-1583778176476-4a8b02a64c01?auto=format&fit=crop&w=800&q=80"
         ]
+      },
+      {
+        id: "REW-DEMO-COMBO-01",
+        title: "Combo Setup Gamer: Mouse PixArt RGB + Teclado Mecánico 65%",
+        description: `Combo de periféricos esenciales para setup competitivo con precio especial con descuento por paquete.
+• Mouse: PixArt PMW3327 12,000 DPI, sensor óptico y cable paracord ultra-ligero
+• Teclado: Formato 65% compacto Hot-Swap, switches Gateron Pro Yellow y montaje Gasket
+• Descuento por Paquete: Llévate ambos periféricos por $65.00 (ahorras $18.00 vs $83.00 individual)
+• Flexibilidad: Puedes adquirir el combo completo o llevarte cualquiera de los dos por separado`,
+        pointsCost: 350,
+        priceUsd: 65.0,
+        cashToPayUsd: 40.0,
+        maxDiscountUsd: 25.0,
+        maxDiscountPct: 38,
+        stock: 3,
+        status: "ACTIVE",
+        rewardType: "COMBO",
+        imageUrl: "https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?auto=format&fit=crop&w=800&q=80",
+        images: [
+          "https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?auto=format&fit=crop&w=800&q=80",
+          "https://images.unsplash.com/photo-1587829741301-dc798b83add3?auto=format&fit=crop&w=800&q=80"
+        ],
+        comboData: {
+          items: [
+            {
+              id: "COMBO-ITEM-01A",
+              title: "Mouse Gamer Óptico RGB 12000 DPI",
+              priceUsd: 35.0,
+              pointsCost: 200,
+              maxDiscountUsd: 15.0,
+              maxDiscountPct: 43,
+              imageUrl: "https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?auto=format&fit=crop&w=800&q=80",
+              description: "Sensor óptico PixArt PMW3327, 1000Hz polling rate y switches Omron."
+            },
+            {
+              id: "COMBO-ITEM-01B",
+              title: "Teclado Mecánico 65% Hot-Swap RGB",
+              priceUsd: 48.0,
+              pointsCost: 250,
+              maxDiscountUsd: 20.0,
+              maxDiscountPct: 42,
+              imageUrl: "https://images.unsplash.com/photo-1587829741301-dc798b83add3?auto=format&fit=crop&w=800&q=80",
+              description: "Switches lineales Gateron Pro Yellow, chasis amortiguado gasket y cable USB-C desmontable."
+            }
+          ]
+        }
+      },
+      {
+        id: "REW-DEMO-COMBO-02",
+        title: "Super Combo Haibane Pro: Mando Hall Effect + Headset 7.1 + Mousepad Melty XL",
+        description: `Trilogía gamer completa con mando inalámbrico anti-drift, audio inmersivo 7.1 y mousepad extendido.
+• Mando: GameSir Nova Lite Hall Effect (Zero Drift garantizado de por vida)
+• Headset: Sonido posicional 7.1 envolvente, micrófono de estudio y almohadillas transpirables
+• Mousepad: Superficie XL de alta densidad 900x400 mm impermeable
+• Descuento por Paquete: Llévate los 3 productos por $74.00 (ahorras $21.00 vs $95.00 individual)
+• Opciones de Compra: Adquiere el combo 3 en 1 o cualquiera de los artículos individuales`,
+        pointsCost: 400,
+        priceUsd: 74.0,
+        cashToPayUsd: 44.0,
+        maxDiscountUsd: 30.0,
+        maxDiscountPct: 40,
+        stock: 2,
+        status: "ACTIVE",
+        rewardType: "COMBO",
+        imageUrl: "https://images.unsplash.com/photo-1600080972464-8e5f35f63d08?auto=format&fit=crop&w=800&q=80",
+        images: [
+          "https://images.unsplash.com/photo-1600080972464-8e5f35f63d08?auto=format&fit=crop&w=800&q=80",
+          "https://images.unsplash.com/photo-1546435770-a3e426bf472b?auto=format&fit=crop&w=800&q=80",
+          "https://images.unsplash.com/photo-1616440347437-b1c73416efc2?auto=format&fit=crop&w=800&q=80"
+        ],
+        comboData: {
+          items: [
+            {
+              id: "COMBO-ITEM-02A",
+              title: "Mando Inalámbrico GameSir Nova Lite Hall Effect",
+              priceUsd: 42.0,
+              pointsCost: 300,
+              maxDiscountUsd: 18.0,
+              maxDiscountPct: 43,
+              imageUrl: "https://images.unsplash.com/photo-1600080972464-8e5f35f63d08?auto=format&fit=crop&w=800&q=80",
+              description: "Joysticks magnéticos Hall Effect anti-drift, gatillos analógicos y conectividad Tri-Modo."
+            },
+            {
+              id: "COMBO-ITEM-02B",
+              title: "Headset Gamer 7.1 Surround Ultraligero",
+              priceUsd: 38.0,
+              pointsCost: 180,
+              maxDiscountUsd: 15.0,
+              maxDiscountPct: 39,
+              imageUrl: "https://images.unsplash.com/photo-1546435770-a3e426bf472b?auto=format&fit=crop&w=800&q=80",
+              description: "Sonido envolvente 7.1, altavoces de neodimio de 50 mm y micrófono desmontable con filtro pop."
+            },
+            {
+              id: "COMBO-ITEM-02C",
+              title: "Mouse Pad Melty Cyberpunk XL",
+              priceUsd: 15.0,
+              pointsCost: 120,
+              maxDiscountUsd: 8.0,
+              maxDiscountPct: 53,
+              imageUrl: "https://images.unsplash.com/photo-1616440347437-b1c73416efc2?auto=format&fit=crop&w=800&q=80",
+              description: "Formato XXL 900x400x4 mm, microfibra Speed/Control y costura perimetral overlock 360°."
+            }
+          ]
+        }
       }
     ];
 
@@ -1387,6 +1493,18 @@ export class FirestoreService {
         replyAuthor: "MeltyDeays · Soporte Oficial",
         replyAt: new Date(Date.now() - 3600000 * 7).toISOString(),
         status: "APPROVED"
+      },
+      {
+        id: "COMM-DEMO-04",
+        rewardId: "REW-DEMO-COMBO-01",
+        userName: "Kevin Blandón",
+        userTier: "ELITE",
+        comment: "¿Si canjeo solo el mouse en vez del combo completo, se mantiene el descuento con mis Wired Points?",
+        createdAt: new Date(Date.now() - 3600000 * 3).toISOString(),
+        reply: "¡Hola Kevin! ¡Totalmente! El sistema flexible te permite llevarte cualquiera de los periféricos por separado usando tus puntos de descuento o adquirir el combo completo.",
+        replyAuthor: "MeltyDeays · Soporte Oficial",
+        replyAt: new Date(Date.now() - 3600000 * 2).toISOString(),
+        status: "APPROVED"
       }
     ];
 
@@ -1415,7 +1533,8 @@ export class FirestoreService {
     const DEFAULT_OFFICIAL_REPLIES = {
       "COMM-DEMO-01": "¡Hola Gabriel! Es un cable paracord ultra-liviano con trenzado suave, prácticamente se siente inalámbrico sobre cualquier mousepad.",
       "COMM-DEMO-02": "¡Hola Sofía! Sí, al generar tu vale con puntos queda reservado inmediatamente a tu nombre para retiro en nuestro mostrador.",
-      "COMM-DEMO-03": "¡Hola Marcos! Incluye tanto el receptor USB inalámbrico de 2.4 GHz como soporte para Bluetooth 5.3 y cable desmontable."
+      "COMM-DEMO-03": "¡Hola Marcos! Incluye tanto el receptor USB inalámbrico de 2.4 GHz como soporte para Bluetooth 5.3 y cable desmontable.",
+      "COMM-DEMO-04": "¡Hola Kevin! ¡Totalmente! El sistema flexible te permite llevarte cualquiera de los periféricos por separado usando tus puntos de descuento o adquirir el combo completo."
     };
 
     if (!Array.isArray(c.replies)) {

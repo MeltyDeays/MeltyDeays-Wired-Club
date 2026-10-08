@@ -1375,8 +1375,8 @@ document.addEventListener("DOMContentLoaded", () => {
   // Suscripción reactiva en tiempo real a preguntas y comentarios de la comunidad
   if (FirestoreService && typeof FirestoreService.subscribeAllProductComments === "function") {
     FirestoreService.subscribeAllProductComments(() => {
-      const commTab = document.getElementById("admin-tab-community");
-      if (commTab && commTab.style.display !== "none") {
+      const commTab = document.getElementById("sec-community");
+      if ((commTab && commTab.style.display !== "none") || currentTab === "community") {
         renderAdminCommentsList();
       } else {
         updateAdminPendingCommentsBadge();
