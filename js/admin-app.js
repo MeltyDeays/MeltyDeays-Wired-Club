@@ -147,6 +147,8 @@ import {
   toggleAdminClaimSelectMode,
   handleInvoiceBtnClick,
   handleProductImageFile,
+  cleanProductImageWithAi,
+  triggerFacebookCloudSync,
   addProductImageUrl,
   removeProductImageAt,
   setProductMainImage,
@@ -1216,6 +1218,8 @@ document.addEventListener("DOMContentLoaded", () => {
   window.handleAdminDecrementStock = handleAdminDecrementStock;
   window.handleAdminRestock = handleAdminRestock;
   window.handleProductImageFile = handleProductImageFile;
+  window.cleanProductImageWithAi = cleanProductImageWithAi;
+  window.triggerFacebookCloudSync = triggerFacebookCloudSync;
   window.addProductImageUrl = addProductImageUrl;
   window.removeProductImageAt = removeProductImageAt;
   window.setProductMainImage = setProductMainImage;

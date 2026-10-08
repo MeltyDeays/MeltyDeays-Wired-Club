@@ -1199,6 +1199,30 @@
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
 }
 
+.admin-btn-ai-clean {
+  width: 100%;
+  background: #0284c7;
+  color: #ffffff;
+  border: 1px solid #38bdf8;
+  border-radius: 4px;
+  padding: 3px 6px;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  margin-top: 4px;
+}
+
+.admin-btn-ai-clean:hover {
+  background: #0369a1;
+  transform: translateY(-1px);
+}
+
 /* RESPONSIVE MOBILE */
 @media (max-width: 640px) {
   .image-lightbox-container {

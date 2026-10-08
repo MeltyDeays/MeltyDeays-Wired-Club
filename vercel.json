@@ -2,8 +2,18 @@
   "version": 2,
   "builds": [
     {
+      "src": "api/**/*.js",
+      "use": "@vercel/node"
+    },
+    {
       "src": "**/*",
       "use": "@vercel/static"
+    }
+  ],
+  "crons": [
+    {
+      "path": "/api/sync-facebook",
+      "schedule": "0 */4 * * *"
     }
   ],
   "headers": [
@@ -26,6 +36,10 @@
     }
   ],
   "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/api/$1"
+    },
     {
       "src": "/admin",
       "dest": "/admin.html"

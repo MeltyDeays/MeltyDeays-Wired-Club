@@ -1,0 +1,460 @@
+/* Vercel Serverless Function: Sincronizador 24/7 Facebook Marketplace <-> Web con IA (Groq) */
+
+const FB_PROFILE_ID = "100071051942718";
+const FB_PROFILE_URL = `https://www.facebook.com/marketplace/profile/${FB_PROFILE_ID}/`;
+const FIRESTORE_PROJECT_ID = "lain-wired-club";
+const FIRESTORE_API_KEY = "AIzaSyCzoNf4_dMiwcb_H9Ob_kQ-bvRCn97Pyig";
+const BASE_FIRESTORE_URL = `https://firestore.googleapis.com/v1/projects/${FIRESTORE_PROJECT_ID}/databases/(default)/documents`;
+
+const EXCHANGE_RATE_NIO = 37.0;
+const HF_TOKEN = process.env.HF_TOKEN || "";
+
+const GROQ_KEYS = (process.env.GROQ_API_KEYS || process.env.GROQ_API_KEY || "")
+  .split(",")
+  .map(k => k.trim())
+  .filter(Boolean);
+
+function getRandomGroqKey() {
+  if (!GROQ_KEYS.length) return "";
+  return GROQ_KEYS[Math.floor(Math.random() * GROQ_KEYS.length)];
+}
+
+/**
+ * Regla de moneda estricta del negocio:
+ * 0 a 200 => Dólares (USD)
+ * 201 en adelante => Córdobas (NIO)
+ */
+function normalizePriceByThreshold(rawValue) {
+  if (typeof rawValue === "string") {
+    rawValue = rawValue.replace(/[^0-9.]/g, "");
+  }
+  const val = parseFloat(rawValue) || 0;
+  if (val <= 0) return { priceUsd: 0, priceNio: 0, currency: "USD", raw: 0 };
+
+  if (val <= 200) {
+    const usd = Number(val.toFixed(2));
+    const nio = Math.round(usd * EXCHANGE_RATE_NIO);
+    return { priceUsd: usd, priceNio: nio, currency: "USD", raw: val };
+  } else {
+    const nio = Math.round(val);
+    const usd = Number((nio / EXCHANGE_RATE_NIO).toFixed(2));
+    return { priceUsd: usd, priceNio: nio, currency: "NIO", raw: val };
+  }
+}
+
+/**
+ * Remoción de fondo en la nube con IA (RMBG-1.4 de Hugging Face)
+ */
+async function removeBackgroundViaHf(imageUrl) {
+  if (!HF_TOKEN || !imageUrl || !imageUrl.startsWith("http")) return imageUrl;
+  try {
+    const imgRes = await fetch(imageUrl);
+    if (!imgRes.ok) return imageUrl;
+    const arrayBuffer = await imgRes.arrayBuffer();
+
+    const response = await fetch("https://router.huggingface.co/hf-inference/models/briaai/RMBG-1.4", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${HF_TOKEN}`,
+        "Content-Type": "application/octet-stream"
+      },
+      body: arrayBuffer
+    });
+
+    if (response.ok) {
+      const buffer = await response.arrayBuffer();
+      const base64 = Buffer.from(buffer).toString("base64");
+      return `data:image/png;base64,${base64}`;
+    }
+  } catch (err) {
+    console.warn("Aviso procesando imagen en HF RMBG:", err.message);
+  }
+  return imageUrl;
+}
+
+// Convertidor de primitivos Firestore REST
+function parseFirestoreValue(valObj) {
+  if (!valObj) return null;
+  if ("stringValue" in valObj) return valObj.stringValue;
+  if ("integerValue" in valObj) return parseInt(valObj.integerValue, 10);
+  if ("doubleValue" in valObj) return parseFloat(valObj.doubleValue);
+  if ("booleanValue" in valObj) return valObj.booleanValue;
+  if ("timestampValue" in valObj) return valObj.timestampValue;
+  if ("nullValue" in valObj) return null;
+  if ("arrayValue" in valObj) {
+    const values = valObj.arrayValue.values || [];
+    return values.map(parseFirestoreValue);
+  }
+  if ("mapValue" in valObj) {
+    const fields = valObj.mapValue.fields || {};
+    const res = {};
+    for (const [k, v] of Object.entries(fields)) {
+      res[k] = parseFirestoreValue(v);
+    }
+    return res;
+  }
+  return null;
+}
+
+// Obtener productos actuales de Firestore
+async function fetchCurrentWebProducts(collectionName = "rewards") {
+  const url = `${BASE_FIRESTORE_URL}/${collectionName}?key=${FIRESTORE_API_KEY}&pageSize=100`;
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return [];
+    const data = await res.json();
+    return (data.documents || []).map(doc => {
+      const docId = doc.name.split("/").pop();
+      const fields = doc.fields || {};
+      const parsed = { id: docId };
+      for (const [k, v] of Object.entries(fields)) {
+        parsed[k] = parseFirestoreValue(v);
+      }
+      return parsed;
+    });
+  } catch (err) {
+    console.error("Error al consultar Firestore en Vercel:", err);
+    return [];
+  }
+}
+
+// Extraer publicaciones del perfil público de Marketplace
+async function scrapeFacebookProfileListings() {
+  try {
+    const res = await fetch(FB_PROFILE_URL, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+        "Accept-Language": "es-ES,es;q=0.9,en;q=0.8",
+        "Sec-Fetch-Site": "none",
+        "Sec-Fetch-Mode": "navigate"
+      }
+    });
+
+    if (!res.ok) {
+      console.warn(`Respuesta Facebook profile HTTP ${res.status}`);
+      return [];
+    }
+
+    const html = await res.text();
+    const listings = [];
+
+    // Estrategia 1: Extraer objetos JSON embebidos de Relay/GraphQL en los script tags
+    const scriptMatches = html.match(/<script[^>]*>([\s\S]*?)<\/script>/gi) || [];
+    for (const scriptTag of scriptMatches) {
+      if (scriptTag.includes("marketplace_listing_title") || scriptTag.includes("formatted_price") || scriptTag.includes("listing_price")) {
+        try {
+          // Extraer patrones de ítems
+          const itemRegex = /"listing_id":"(\d+)"[^}]+?"marketplace_listing_title":"([^"]+)"[^}]+?"formatted_price":"([^"]+)"/g;
+          let match;
+          while ((match = itemRegex.exec(scriptTag)) !== null) {
+            const rawVal = parseFloat(match[3].replace(/[^0-9.]/g, "")) || 0;
+            const norm = normalizePriceByThreshold(rawVal);
+            const lowerPrice = (match[3] || "").toLowerCase();
+            const isSold = lowerPrice.includes("vendid") || lowerPrice.includes("agotad") || lowerPrice.includes("sold") || scriptTag.includes(`"listing_id":"${match[1]}","is_sold":true`) || scriptTag.includes(`"is_sold":true`);
+            listings.push({
+              listingId: match[1],
+              title: match[2],
+              rawPrice: rawVal,
+              priceUsd: norm.priceUsd,
+              priceNio: norm.priceNio,
+              currency: norm.currency,
+              isSold: isSold,
+              imageUrl: null
+            });
+          }
+        } catch (e) {
+          // Ignorar fragmentos no parseables
+        }
+      }
+    }
+
+    // Estrategia 2: Regex fallback sobre enlaces a marketplace items
+    if (listings.length === 0) {
+      const linkRegex = /href="\/marketplace\/item\/(\d+)\/"/g;
+      let m;
+      const seenIds = new Set();
+      while ((m = linkRegex.exec(html)) !== null) {
+        if (!seenIds.has(m[1])) {
+          seenIds.add(m[1]);
+          listings.push({
+            listingId: m[1],
+            title: `Publicación FB #${m[1]}`,
+            rawPrice: 0,
+            priceUsd: 0,
+            priceNio: 0,
+            currency: "USD",
+            isSold: false,
+            imageUrl: null
+          });
+        }
+      }
+    }
+
+    return listings;
+  } catch (err) {
+    console.error("Error al consultar perfil de Facebook en Vercel:", err);
+    return [];
+  }
+}
+
+// Matching inteligente con Groq IA (Llama 3.3)
+async function matchListingWithWebProducts(fbListing, webProducts) {
+  // 1. Verificación directa por ID previo
+  const directMatch = webProducts.find(p => p.facebookListingId === fbListing.listingId);
+  if (directMatch) {
+    return { matched: true, productId: directMatch.id, isNew: false, confidence: 1.0 };
+  }
+
+  // 2. Consulta semántica a Groq LLM con regla de precios explícita
+  const productsSummary = webProducts.map(p => `- ID: "${p.id}", Título: "${p.title}", Precio: $${p.priceUsd} USD (C$ ${p.priceNio || Math.round(p.priceUsd * EXCHANGE_RATE_NIO)} NIO)`).join("\n");
+  const prompt = `Tienes una publicación de Facebook Marketplace y una lista de productos en nuestro catálogo web.
+Determina si la publicación de Facebook corresponde a algún producto de la lista, o si se trata de un PRODUCTO NUEVO subido desde el teléfono.
+
+REGLAS CRÍTICAS DE MONEDA:
+- Cualquier precio en Facebook de 0 a 200 son DÓLARES (USD).
+- Cualquier precio en Facebook de 201 en adelante son CÓRDOBAS (NIO, tasa de cambio 1 USD = 37 NIO).
+Por ejemplo: Si Facebook muestra '1480', son 1480 Córdobas ($40 USD). Si en la web cuesta $40 USD, los precios COINCIDEN.
+
+Publicación Facebook:
+- Título: "${fbListing.title}"
+- Valor leído en FB: ${fbListing.rawPrice || fbListing.priceUsd} (${fbListing.currency || 'USD'})
+- Equivalente normalizado: $${fbListing.priceUsd} USD / C$ ${fbListing.priceNio} NIO
+
+Productos en Catálogo Web:
+${productsSummary}
+
+Responde ÚNICAMENTE en JSON con la estructura:
+{
+  "matched": true | false,
+  "productId": "id_del_producto_si_coincide" | null,
+  "confidence": 0.0 a 1.0,
+  "isNewProduct": true | false
+}`;
+
+  const groqKey = getRandomGroqKey();
+  if (groqKey) {
+    try {
+      const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${groqKey}`
+        },
+      body: JSON.stringify({
+        model: "llama-3.3-70b-versatile",
+        temperature: 0.1,
+        response_format: { type: "json_object" },
+        messages: [{ role: "user", content: prompt }]
+      })
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      const content = data.choices?.[0]?.message?.content;
+      if (content) {
+        return JSON.parse(content);
+      }
+    }
+  } catch (err) {
+    console.warn("Fallo en inferencia Groq para matching:", err.message);
+  }
+
+  // Fallback simple por similitud de texto
+  const normFb = fbListing.title.toLowerCase().replace(/[^a-z0-9]/g, "");
+  const textMatch = webProducts.find(p => {
+    const normWeb = (p.title || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+    return normFb.includes(normWeb) || normWeb.includes(normFb);
+  });
+
+  if (textMatch) {
+    return { matched: true, productId: textMatch.id, isNew: false, confidence: 0.75 };
+  }
+
+  return { matched: false, productId: null, isNew: true, confidence: 0.8 };
+}
+
+// Crear producto nuevo en Firestore cuando se detecta subida desde celular
+async function createNewProductInFirestore(fbListing, collectionName = "rewards") {
+  const norm = normalizePriceByThreshold(fbListing.rawPrice || fbListing.priceUsd);
+  const priceUsd = norm.priceUsd;
+  const priceNio = norm.priceNio;
+  const docId = `fb_${fbListing.listingId || Date.now()}`;
+
+  // Procesar imagen con IA (Hugging Face RMBG-1.4) para fondo blanco puro
+  let finalImage = fbListing.imageUrl;
+  if (finalImage && finalImage.startsWith("http")) {
+    finalImage = await removeBackgroundViaHf(finalImage);
+  }
+  if (!finalImage) {
+    finalImage = "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&auto=format&fit=crop&q=80";
+  }
+
+  const fields = {
+    title: { stringValue: fbListing.title },
+    description: { stringValue: `Artículo importado automáticamente desde Facebook Marketplace.\n• Moneda detectada: ${norm.currency}\n• Precio: $${priceUsd} USD (C$ ${priceNio} NIO)\n• Entrega inmediata.` },
+    priceUsd: { doubleValue: priceUsd },
+    priceNio: { integerValue: priceNio },
+    imageUrl: { stringValue: finalImage },
+    images: { arrayValue: { values: [{ stringValue: finalImage }] } },
+    stock: { integerValue: 1 },
+    rewardType: { stringValue: "REWARD" },
+    publicationMode: { stringValue: "FULL_DISCOUNT" },
+    facebookListingId: { stringValue: String(fbListing.listingId) },
+    syncSource: { stringValue: "facebook_mobile_auto_import" },
+    lastSyncedAt: { timestampValue: new Date().toISOString() },
+    createdAt: { timestampValue: new Date().toISOString() }
+  };
+
+  const url = `${BASE_FIRESTORE_URL}/${collectionName}?documentId=${docId}&key=${FIRESTORE_API_KEY}`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ fields })
+  });
+
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`Error creando producto en Firestore: ${errText}`);
+  }
+
+  return { id: docId, title: fbListing.title, priceUsd };
+}
+
+// Actualizar precio de producto existente
+async function updateProductInFirestore(productId, newPriceUsd, fbListingId, collectionName = "rewards") {
+  const mask = [
+    "updateMask.fieldPaths=priceUsd",
+    "updateMask.fieldPaths=facebookListingId",
+    "updateMask.fieldPaths=syncSource",
+    "updateMask.fieldPaths=lastSyncedAt"
+  ].join("&");
+
+  const url = `${BASE_FIRESTORE_URL}/${collectionName}/${productId}?${mask}&key=${FIRESTORE_API_KEY}`;
+  const fields = {
+    priceUsd: { doubleValue: Number(newPriceUsd) },
+    facebookListingId: { stringValue: String(fbListingId) },
+    syncSource: { stringValue: "facebook_phone_sync" },
+    lastSyncedAt: { timestampValue: new Date().toISOString() }
+  };
+
+  const res = await fetch(url, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ fields })
+  });
+
+  return res.ok;
+}
+
+// Marcar producto como VENDIDO / AGOTADO (activa regla nativa de 12 horas en el catálogo web)
+async function markProductSoldInFirestore(productId, collectionName = "rewards") {
+  const mask = [
+    "updateMask.fieldPaths=status",
+    "updateMask.fieldPaths=stock",
+    "updateMask.fieldPaths=soldOutAt",
+    "updateMask.fieldPaths=sold_out_at",
+    "updateMask.fieldPaths=soldOutReason",
+    "updateMask.fieldPaths=syncSource",
+    "updateMask.fieldPaths=lastSyncedAt"
+  ].join("&");
+
+  const now = new Date().toISOString();
+  const url = `${BASE_FIRESTORE_URL}/${collectionName}/${productId}?${mask}&key=${FIRESTORE_API_KEY}`;
+  const fields = {
+    status: { stringValue: "SOLD_OUT" },
+    stock: { integerValue: 0 },
+    soldOutAt: { timestampValue: now },
+    sold_out_at: { timestampValue: now },
+    soldOutReason: { stringValue: "Vendido en Facebook Marketplace" },
+    syncSource: { stringValue: "facebook_phone_sold" },
+    lastSyncedAt: { timestampValue: now }
+  };
+
+  const res = await fetch(url, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ fields })
+  });
+
+  return res.ok;
+}
+
+// Handler principal Vercel Serverless Function
+export default async function handler(req, res) {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
+  }
+
+  const startTime = Date.now();
+  console.log(`[Vercel Sync] Iniciando ciclo de sincronización para perfil ${FB_PROFILE_ID}...`);
+
+  try {
+    const collection = req.query.collection || "rewards";
+    const webProducts = await fetchCurrentWebProducts(collection);
+    
+    // Si la petición trae listings en el body (push directo de webhook o extensión), usarlos; sino scrape
+    let fbListings = [];
+    if (req.body && Array.isArray(req.body.listings)) {
+      fbListings = req.body.listings;
+    } else {
+      fbListings = await scrapeFacebookProfileListings();
+    }
+
+    const report = {
+      timestamp: new Date().toISOString(),
+      profileId: FB_PROFILE_ID,
+      totalWebProducts: webProducts.length,
+      totalFacebookFound: fbListings.length,
+      updatedProducts: [],
+      markedSoldProducts: [],
+      newProductsCreated: []
+    };
+
+    for (const fbItem of fbListings) {
+      if (!fbItem.listingId) continue;
+
+      const decision = await matchListingWithWebProducts(fbItem, webProducts);
+
+      if (decision.matched && decision.productId) {
+        const webProd = webProducts.find(p => p.id === decision.productId);
+        if (webProd) {
+          // Si fue marcado como vendido/agotado en Facebook desde el celular
+          if (fbItem.isSold && webProd.status !== "SOLD_OUT") {
+            await markProductSoldInFirestore(webProd.id, collection);
+            report.markedSoldProducts.push({
+              productId: webProd.id,
+              title: webProd.title,
+              reason: "Vendido en Facebook (activada caducidad visual de 12 horas)"
+            });
+          } 
+          // Si sigue activo y hubo cambio de precio
+          else if (!fbItem.isSold && fbItem.priceUsd > 0 && Math.abs(webProd.priceUsd - fbItem.priceUsd) >= 0.5) {
+            await updateProductInFirestore(webProd.id, fbItem.priceUsd, fbItem.listingId, collection);
+            report.updatedProducts.push({
+              productId: webProd.id,
+              title: webProd.title,
+              oldPrice: webProd.priceUsd,
+              newPrice: fbItem.priceUsd,
+              source: "facebook_mobile"
+            });
+          }
+        }
+      } else if (decision.isNewProduct && fbItem.priceUsd > 0 && !fbItem.isSold) {
+        // Producto nuevo subido desde el celular a Facebook: crearlo en la web
+        const created = await createNewProductInFirestore(fbItem, collection);
+        report.newProductsCreated.push(created);
+      }
+    }
+
+    report.executionTimeMs = Date.now() - startTime;
+    return res.status(200).json({ success: true, report });
+  } catch (error) {
+    console.error("[Vercel Sync] Error crítico:", error);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+}

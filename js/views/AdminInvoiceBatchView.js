@@ -11,6 +11,7 @@ import {
 } from "./AdminCatalogCalculatorView.js";
 import { RewardModel } from "../models/RewardModel.js";
 import { isProduction, getEnvironmentInfo } from "../config/env.js";
+import { processImageWithAiWhiteBg } from "../utils/ImageProcessor.js";
 
 let vm = null;
 let showToast = () => {};
@@ -822,7 +823,7 @@ export async function executePurgeAllDb() {
 
 let currentProductImages = [];
 
-export function handleProductImageFile(input) {
+export async function handleProductImageFile(input) {
   if (!input.files || input.files.length === 0) return;
   const files = Array.from(input.files).filter(f => f.type.startsWith("image/"));
 
@@ -831,49 +832,74 @@ export function handleProductImageFile(input) {
     return;
   }
 
-  showToast(`Optimizando ${files.length} imagen(es)...`, "info");
+  const aiToggle = document.getElementById("toggle-ai-white-bg");
+  const aiEnabled = aiToggle ? aiToggle.checked : true;
 
-  let processedCount = 0;
-  files.forEach(file => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const img = new Image();
-      img.onload = () => {
-        const maxDim = 800;
-        let width = img.width;
-        let height = img.height;
+  showToast(aiEnabled ? `Procesando ${files.length} foto(s) con IA (Fondo Blanco 1:1)...` : `Optimizando ${files.length} imagen(es)...`, "info");
 
-        if (width > maxDim || height > maxDim) {
-          if (width > height) {
-            height = Math.round((height * maxDim) / width);
-            width = maxDim;
-          } else {
-            width = Math.round((width * maxDim) / height);
-            height = maxDim;
-          }
-        }
-
-        const canvas = document.createElement("canvas");
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext("2d");
-        ctx.drawImage(img, 0, 0, width, height);
-
-        const base64Data = canvas.toDataURL("image/jpeg", 0.78);
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    try {
+      if (aiEnabled) {
+        const processedDataUrl = await processImageWithAiWhiteBg(file, {
+          onProgress: (msg) => showToast(`Foto ${i + 1}/${files.length}: ${msg}`, "info")
+        });
+        currentProductImages.push(processedDataUrl);
+      } else {
+        const base64Data = await new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => {
+              const maxDim = 800;
+              let width = img.width;
+              let height = img.height;
+              if (width > maxDim || height > maxDim) {
+                if (width > height) {
+                  height = Math.round((height * maxDim) / width);
+                  width = maxDim;
+                } else {
+                  width = Math.round((width * maxDim) / height);
+                  height = maxDim;
+                }
+              }
+              const canvas = document.createElement("canvas");
+              canvas.width = width;
+              canvas.height = height;
+              const ctx = canvas.getContext("2d");
+              ctx.drawImage(img, 0, 0, width, height);
+              resolve(canvas.toDataURL("image/jpeg", 0.78));
+            };
+            img.src = e.target.result;
+          };
+          reader.readAsDataURL(file);
+        });
         currentProductImages.push(base64Data);
-        processedCount++;
+      }
+    } catch (err) {
+      console.warn("Fallo procesando imagen:", err);
+    }
+  }
 
-        if (processedCount === files.length) {
-          renderProductImagesPreview();
-          showToast(`✓ ${files.length} imagen(es) optimizada(s) y agregada(s).`, "success");
-        }
-      };
-      img.src = e.target.result;
-    };
-    reader.readAsDataURL(file);
-  });
-
+  renderProductImagesPreview();
+  showToast(`✓ ${files.length} foto(s) agregada(s)${aiEnabled ? ' con Fondo Blanco 1:1' : ''}.`, "success");
   input.value = "";
+}
+
+export async function cleanProductImageWithAi(index) {
+  if (index < 0 || index >= currentProductImages.length) return;
+  const original = currentProductImages[index];
+  showToast("Iniciando procesamiento IA (Fondo Blanco 1:1)...", "info");
+  try {
+    const cleaned = await processImageWithAiWhiteBg(original, {
+      onProgress: (msg) => showToast(msg, "info")
+    });
+    currentProductImages[index] = cleaned;
+    renderProductImagesPreview();
+    showToast("✓ Fondo blanco 1:1 aplicado exitosamente.", "success");
+  } catch (err) {
+    showToast("⚠️ Fallo en procesamiento IA, se mantiene imagen actual.", "error");
+  }
 }
 
 export function addProductImageUrl() {
@@ -961,11 +987,12 @@ export function renderProductImagesPreview() {
         ${isMain ? '<span class="admin-img-badge-main">⭐ PORTADA</span>' : `<span class="admin-img-badge-order">#${idx + 1}</span>`}
         <button type="button" class="admin-btn-del-img" onclick="removeProductImageAt(${idx})" title="Eliminar imagen">✕</button>
         <img src="${imgSrc}" alt="Foto ${idx + 1}" onclick="if (typeof openImageLightbox === 'function') openImageLightbox(${JSON.stringify(currentProductImages).replace(/"/g, '&quot;')}, ${idx}, 'Vista Previa Admin')" onerror="this.onerror=null; this.src=''; this.parentElement.style.opacity=0.6;">
-        <div class="admin-img-actions">
+        <div class="admin-img-actions" style="flex-direction: column; gap: 3px; padding: 4px;">
           ${isMain 
             ? '<span class="admin-main-active-label">⭐ PORTADA ACTIVA</span>' 
-            : `<button type="button" class="admin-btn-set-main" onclick="setProductMainImage(${idx})" title="Convertir esta foto en la imagen de portada principal">⭐ Hacer Portada</button>`
+            : `<button type="button" class="admin-btn-set-main" onclick="setProductMainImage(${idx})" title="Convertir esta foto en la imagen de portada principal">⭐ Portada</button>`
           }
+          <button type="button" class="admin-btn-ai-clean" onclick="cleanProductImageWithAi(${idx})" title="Remover fondo con IA y centrar en fondo blanco puro 1:1">✨ Fondo Blanco 1:1</button>
         </div>
       </div>
     `;
@@ -2455,6 +2482,37 @@ export function renderLainTemplateGrid() {
   }
 }
 
+export async function triggerFacebookCloudSync() {
+  const btn = document.getElementById("btn-sync-fb-cloud");
+  const originalText = btn ? btn.textContent : "";
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = "⏳ Sincronizando con FB...";
+  }
+  showToast("Consultando Facebook Marketplace 24/7 y procesando con IA...", "info");
+  try {
+    const res = await fetch("/api/sync-facebook", { method: "POST" });
+    const data = await res.json();
+    if (data.success && data.report) {
+      const up = data.report.updatedProducts.length;
+      const nw = data.report.newProductsCreated.length;
+      showToast(`✓ Sincronización exitosa: ${up} actualizado(s), ${nw} creado(s) desde Facebook.`, "success");
+      if (typeof window.filterCatalogAdmin === "function") {
+        window.filterCatalogAdmin();
+      }
+    } else {
+      showToast(`⚠️ Aviso de sincronización: ${data.error || "Sin novedades"}`, "info");
+    }
+  } catch (err) {
+    showToast(`Error al sincronizar con Vercel: ${err.message}`, "error");
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = originalText || "🔄 Sincronizar con Facebook (24/7)";
+    }
+  }
+}
+
 if (typeof window !== "undefined") {
   window.addComboItemTab = addComboItemTab;
   window.removeComboItemTab = removeComboItemTab;
@@ -2462,4 +2520,5 @@ if (typeof window !== "undefined") {
   window.onActiveComboItemChange = onActiveComboItemChange;
   window.updateComboLiveSummary = updateComboLiveSummary;
   window.setProductMainType = setProductMainType;
+  window.triggerFacebookCloudSync = triggerFacebookCloudSync;
 }
