@@ -91,6 +91,24 @@
 }
 
 /* ========================================================
+   3. SELECTOR DE OPCIONES DE COMBO FLEXIBLE (#confirm-combo-selector-wrap)
+   ======================================================== */
+.confirm-combo-options {
+  box-sizing: border-box !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  border-radius: 8px !important;
+}
+
+#confirm-combo-options-list {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0.55rem !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+/* ========================================================
    4. DESKTOP PANORÁMICO (>=780px): 880px (2 COLUMNAS)
    ======================================================== */
 @media (min-width: 780px) {

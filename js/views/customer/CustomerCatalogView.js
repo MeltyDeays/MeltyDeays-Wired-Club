@@ -2362,31 +2362,53 @@ export function confirmRedeem(rewardId) {
     if (comboWrap) comboWrap.style.display = "block";
     if (comboBadge) comboBadge.textContent = `✦ COMBO ${comboItems.length} EN 1 ✦`;
     if (comboList) {
+      const comboSavings = (typeof reward.getComboSavings === "function") ? reward.getComboSavings() : { sumUsd: 0, savingsUsd: 0, savingsPct: 0 };
+      const fullComboImg = reward.imageUrl || comboItems[0]?.imageUrl;
+
       comboList.innerHTML = `
         <div class="confirm-combo-option-row active" id="combo-opt-full" onclick="selectComboRedeemOption('FULL_COMBO')">
-          <div style="display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1 1 auto;">
-            <input type="radio" name="combo-redeem-choice" id="radio-combo-full" value="FULL_COMBO" checked style="accent-color: #d97706; flex-shrink: 0;">
-            ${(reward.imageUrl || comboItems[0]?.imageUrl) ? `<img src="${reward.imageUrl || comboItems[0].imageUrl}" alt="${reward.title}" style="width: 36px; height: 36px; object-fit: cover; border-radius: 4px; border: 1.5px solid #d97706; flex-shrink: 0;" onerror="this.style.display='none'">` : ''}
-            <div style="min-width: 0; flex: 1 1 auto;">
-              <div style="font-weight: 800; font-size: 0.8rem; color: #78350f; line-height: 1.25; word-break: break-word;">✨ Combo Completo (${comboItems.length} productos)</div>
-              <div style="font-size: 0.68rem; color: #92400e;">Incluye todos los artículos con precio promocional</div>
+          <div class="combo-opt-main">
+            <input type="radio" name="combo-redeem-choice" id="radio-combo-full" value="FULL_COMBO" checked class="combo-opt-radio">
+            <div class="combo-opt-thumb-wrap">
+              ${fullComboImg ? `<img src="${fullComboImg}" alt="${reward.title}" class="combo-opt-thumb-img" onerror="if(this.nextElementSibling) this.nextElementSibling.style.display='block'; this.style.display='none';"><span class="combo-opt-thumb-fallback" style="display:none;">✨</span>` : '<span class="combo-opt-thumb-fallback">✨</span>'}
+            </div>
+            <div class="combo-opt-info-col">
+              <div class="combo-opt-title">✨ Combo Completo (${comboItems.length} productos)</div>
+              <div class="combo-opt-desc">Incluye todos los artículos con precio promocional en paquete</div>
             </div>
           </div>
-          <strong style="color: #b45309; font-size: 0.85rem; flex-shrink: 0; margin-left: auto; text-align: right; font-variant-numeric: tabular-nums;">${formatDualPrice(reward.priceUsd)}</strong>
+          <div class="combo-opt-bottom-strip">
+            <div class="combo-opt-tags-wrap">
+              <span class="combo-opt-mode-tag combo">✦ PAQUETE COMPLETO</span>
+              ${comboSavings.savingsUsd > 0 ? `<span class="combo-opt-savings-tag">⚡ Ahorras $${comboSavings.savingsUsd.toFixed(2)} (${comboSavings.savingsPct}% OFF)</span>` : ''}
+            </div>
+            <div class="combo-opt-price-box">
+              <strong class="combo-opt-price-val">${formatDualPrice(reward.priceUsd)}</strong>
+            </div>
+          </div>
         </div>
         ${comboItems.map((cItem) => {
           const singlePrice = Number(cItem.residualPriceUsd !== undefined ? cItem.residualPriceUsd : (cItem.priceUsd || 0));
           return `
             <div class="confirm-combo-option-row" id="combo-opt-${cItem.id}" onclick="selectComboRedeemOption('${cItem.id}')">
-              <div style="display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1 1 auto;">
-                <input type="radio" name="combo-redeem-choice" id="radio-combo-${cItem.id}" value="${cItem.id}" style="accent-color: #d97706; flex-shrink: 0;">
-                ${cItem.imageUrl ? `<img src="${cItem.imageUrl}" alt="${cItem.title}" style="width: 36px; height: 36px; object-fit: cover; border-radius: 4px; border: 1.5px solid #cbd5e1; flex-shrink: 0;" onerror="this.style.display='none'">` : ''}
-                <div style="min-width: 0; flex: 1 1 auto;">
-                  <div style="font-weight: 800; font-size: 0.8rem; color: #1e293b; line-height: 1.25; word-break: break-word;">📦 Solo ${cItem.title}</div>
-                  <div style="font-size: 0.68rem; color: #64748b;">Comprar por separado (Deshace el combo)</div>
+              <div class="combo-opt-main">
+                <input type="radio" name="combo-redeem-choice" id="radio-combo-${cItem.id}" value="${cItem.id}" class="combo-opt-radio">
+                <div class="combo-opt-thumb-wrap">
+                  ${cItem.imageUrl ? `<img src="${cItem.imageUrl}" alt="${cItem.title}" class="combo-opt-thumb-img" onerror="if(this.nextElementSibling) this.nextElementSibling.style.display='block'; this.style.display='none';"><span class="combo-opt-thumb-fallback" style="display:none;">📦</span>` : '<span class="combo-opt-thumb-fallback">📦</span>'}
+                </div>
+                <div class="combo-opt-info-col">
+                  <div class="combo-opt-title">📦 Solo ${cItem.title}</div>
+                  <div class="combo-opt-desc">Comprar por separado (Deshace el combo)</div>
                 </div>
               </div>
-              <strong style="color: #0f172a; font-size: 0.85rem; flex-shrink: 0; margin-left: auto; text-align: right; font-variant-numeric: tabular-nums;">${formatDualPrice(singlePrice)}</strong>
+              <div class="combo-opt-bottom-strip">
+                <div class="combo-opt-tags-wrap">
+                  <span class="combo-opt-mode-tag single">📦 POR SEPARADO</span>
+                </div>
+                <div class="combo-opt-price-box">
+                  <strong class="combo-opt-price-val">${formatDualPrice(singlePrice)}</strong>
+                </div>
+              </div>
             </div>
           `;
         }).join('')}
