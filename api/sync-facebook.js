@@ -351,16 +351,27 @@ async function createNewProductInFirestore(fbListing, collectionName = "rewards"
   // Limpiar y estructurar descripción con IA (Intro breve + viñetas técnicas)
   const structuredDescription = await cleanAndFormatDescriptionWithGroq(fbListing.title, fbListing.description || "");
 
+  const calculatedPoints = Math.max(10, Math.round(priceUsd * 20));
+  const maxDiscountPct = 15;
+  const maxDiscountUsd = Math.round(priceUsd * (maxDiscountPct / 100) * 100) / 100;
+  const cashToPayUsd = Math.round((priceUsd - maxDiscountUsd) * 100) / 100;
+
   const fields = {
     title: { stringValue: fbListing.title },
     description: { stringValue: structuredDescription },
     priceUsd: { doubleValue: priceUsd },
     priceNio: { integerValue: priceNio },
+    pointsCost: { integerValue: calculatedPoints },
+    points_cost: { integerValue: calculatedPoints },
     imageUrl: { stringValue: finalImage },
     images: { arrayValue: { values: [{ stringValue: finalImage }] } },
     stock: { integerValue: 1 },
-    rewardType: { stringValue: "REWARD" },
-    publicationMode: { stringValue: "FULL_DISCOUNT" },
+    rewardType: { stringValue: "PARTIAL_DISCOUNT" },
+    publicationMode: { stringValue: "PARTIAL_DISCOUNT" },
+    maxDiscountPct: { integerValue: maxDiscountPct },
+    maxDiscountUsd: { doubleValue: maxDiscountUsd },
+    cashToPayUsd: { doubleValue: cashToPayUsd },
+    status: { stringValue: "ACTIVE" },
     facebookListingId: { stringValue: String(fbListing.listingId) },
     syncSource: { stringValue: "facebook_mobile_auto_import" },
     lastSyncedAt: { timestampValue: new Date().toISOString() },
@@ -383,7 +394,7 @@ async function createNewProductInFirestore(fbListing, collectionName = "rewards"
 }
 
 // Actualizar precio de producto existente
-async function updateProductInFirestore(productId, newPriceUsd, fbListingId, collectionName = "rewards") {
+async function updateProductInFirestore(productId, newPriceUsd, fbListingId, collectionName = "rewards_catalog") {
   const mask = [
     "updateMask.fieldPaths=priceUsd",
     "updateMask.fieldPaths=facebookListingId",
@@ -409,7 +420,7 @@ async function updateProductInFirestore(productId, newPriceUsd, fbListingId, col
 }
 
 // Marcar producto como VENDIDO / AGOTADO (activa regla nativa de 12 horas en el catálogo web)
-async function markProductSoldInFirestore(productId, collectionName = "rewards") {
+async function markProductSoldInFirestore(productId, collectionName = "rewards_catalog") {
   const mask = [
     "updateMask.fieldPaths=status",
     "updateMask.fieldPaths=stock",
@@ -455,7 +466,7 @@ module.exports = async function handler(req, res) {
   console.log(`[Vercel Sync] Iniciando ciclo de sincronización para perfil ${FB_PROFILE_ID}...`);
 
   try {
-    const collection = req.query.collection || "rewards";
+    const collection = req.query.collection || "rewards_catalog";
     const webProducts = await fetchCurrentWebProducts(collection);
     
     // Si la petición trae listings en el body (push directo de webhook o extensión), usarlos; sino scrape

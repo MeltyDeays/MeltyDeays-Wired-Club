@@ -2653,7 +2653,7 @@ export async function importSelectedFacebookListings() {
   showToast(`Iniciando importación IA de ${selected.length} publicaciones...`, "info");
 
   try {
-    const colName = typeof getCollectionName === "function" ? getCollectionName("rewards") : "rewards";
+    const colName = typeof getCollectionName === "function" ? getCollectionName("rewards_catalog") : "rewards_catalog";
     const res = await fetch(`/api/sync-facebook?collection=${encodeURIComponent(colName)}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -2668,7 +2668,13 @@ export async function importSelectedFacebookListings() {
       
       const modal = document.getElementById("modal-fb-sync-assistant");
       if (modal) modal.style.display = "none";
+      if (typeof window.syncModalScrollLock === "function") {
+        window.syncModalScrollLock();
+      }
 
+      if (vm && typeof vm.refreshData === "function") {
+        await vm.refreshData();
+      }
       if (typeof window.filterCatalogAdmin === "function") {
         window.filterCatalogAdmin();
       } else if (vm && typeof vm.notify === "function") {
@@ -2696,7 +2702,7 @@ export async function triggerFacebookCloudSync() {
   }
   showToast("Consultando Facebook Marketplace 24/7 y procesando con IA...", "info");
   try {
-    const colName = typeof getCollectionName === "function" ? getCollectionName("rewards") : "rewards";
+    const colName = typeof getCollectionName === "function" ? getCollectionName("rewards_catalog") : "rewards_catalog";
     const res = await fetch(`/api/sync-facebook?collection=${encodeURIComponent(colName)}`, { method: "POST" });
     const data = await res.json();
     if (data.success && data.report) {
@@ -2717,6 +2723,10 @@ export async function triggerFacebookCloudSync() {
       if (nw > 0) parts.push(`${nw} nuevo(s)`);
       const detailStr = parts.length > 0 ? `: ${parts.join(', ')} sincronizado(s)` : ': Catálogo al día, sin cambios';
       showToast(`✓ Sincronización FB (${totalFb} analizados)${detailStr}.`, "success");
+      
+      if (vm && typeof vm.refreshData === "function") {
+        await vm.refreshData();
+      }
       if (typeof window.filterCatalogAdmin === "function") {
         window.filterCatalogAdmin();
       }
