@@ -259,6 +259,7 @@ Responde ÚNICAMENTE en JSON con la estructura:
   } catch (err) {
     console.warn("Fallo en inferencia Groq para matching:", err.message);
   }
+}
 
   // Fallback simple por similitud de texto
   const normFb = fbListing.title.toLowerCase().replace(/[^a-z0-9]/g, "");
@@ -381,7 +382,7 @@ async function markProductSoldInFirestore(productId, collectionName = "rewards")
 }
 
 // Handler principal Vercel Serverless Function
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
