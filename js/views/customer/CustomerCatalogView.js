@@ -1202,28 +1202,35 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
         </div>
 
         <!-- Desglose de Productos Incluidos en el Combo -->
-        <div class="combo-included-items-wrap" style="margin-top: 0.65rem; border-top: 1.5px dashed #fcd34d; padding-top: 0.65rem;">
-          <div style="font-family: var(--font-mono); font-size: 0.72rem; font-weight: 800; color: #78350f; margin-bottom: 0.45rem; display: flex; align-items: center; justify-content: space-between;">
+        <div class="combo-included-items-wrap">
+          <div class="combo-included-items-header">
             <span>✦ PRODUCTOS INCLUIDOS EN EL PAQUETE:</span>
-            <span style="font-size: 0.65rem; color: #92400e; font-weight: 700;">${comboItems.length} ÍTEMS</span>
+            <span class="combo-items-count-badge">${comboItems.length} ÍTEMS</span>
           </div>
-          <div class="combo-included-items-list" style="display: flex; flex-direction: column; gap: 0.45rem;">
+          <div class="combo-included-items-list">
             ${comboItems.map((cItem, idx) => `
-              <div class="combo-included-item-card" style="display: flex; align-items: center; justify-content: space-between; gap: 8px; background: #ffffff; border: 1px solid #fed7aa; border-radius: 4px; padding: 6px 8px;">
-                <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
-                  ${cItem.imageUrl ? `<img src="${cItem.imageUrl}" alt="${cItem.title}" style="width: 34px; height: 34px; object-fit: cover; border-radius: 3px; border: 1px solid #e2e8f0; flex-shrink: 0;" onerror="this.style.display='none'">` : '<div style="width: 34px; height: 34px; background: #0f172a; border-radius: 3px; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; flex-shrink: 0;">📦</div>'}
-                  <div style="min-width: 0;">
-                    <div style="font-weight: 800; font-size: 0.75rem; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${idx + 1}. ${cItem.title}</div>
-                    <div style="font-size: 0.65rem; color: #64748b;">Comprado por separado: <strong style="color: #0284c7;">${formatPrice(cItem.priceUsd)}</strong></div>
+              <div class="combo-included-item-card">
+                <div class="combo-item-top-row">
+                  <div class="combo-item-thumb-box">
+                    ${cItem.imageUrl 
+                      ? `<img src="${cItem.imageUrl}" alt="${cItem.title || ''}" class="combo-item-thumb-img" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'combo-item-thumb-fallback\\'>📦</div>';">` 
+                      : `<div class="combo-item-thumb-fallback">📦</div>`
+                    }
+                    <span class="combo-item-num-badge">#${idx + 1}</span>
+                  </div>
+                  <div class="combo-item-info-col">
+                    <div class="combo-item-title">${idx + 1}. ${cItem.title || 'Artículo del Combo'}</div>
+                    ${cItem.description ? `<div class="combo-item-desc">${cItem.description}</div>` : ''}
                   </div>
                 </div>
-                <div style="font-family: var(--font-mono); font-weight: 900; font-size: 0.75rem; color: #b45309; flex-shrink: 0; text-align: right;">
-                  ${formatDualPrice(cItem.priceUsd)}
+                <div class="combo-item-bottom-strip">
+                  <span class="combo-price-tag-label">🏷️ Comprado por separado:</span>
+                  <span class="combo-price-tag-val">${formatDualPrice(cItem.priceUsd)}</span>
                 </div>
               </div>
             `).join('')}
           </div>
-          <div style="font-size: 0.68rem; color: #92400e; margin-top: 0.5rem; line-height: 1.3; font-style: italic;">
+          <div class="combo-flexibility-callout">
             💡 <strong>Flexibilidad total:</strong> Al presionar "Adquirir", podrás elegir entre llevarte el combo completo con el descuento o comprar cualquiera de los artículos por separado al precio unitario indicado.
           </div>
         </div>
@@ -2357,29 +2364,29 @@ export function confirmRedeem(rewardId) {
     if (comboList) {
       comboList.innerHTML = `
         <div class="confirm-combo-option-row active" id="combo-opt-full" onclick="selectComboRedeemOption('FULL_COMBO')">
-          <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
+          <div style="display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1 1 auto;">
             <input type="radio" name="combo-redeem-choice" id="radio-combo-full" value="FULL_COMBO" checked style="accent-color: #d97706; flex-shrink: 0;">
-            ${(reward.imageUrl || comboItems[0]?.imageUrl) ? `<img src="${reward.imageUrl || comboItems[0].imageUrl}" alt="${reward.title}" style="width: 32px; height: 32px; object-fit: cover; border-radius: 4px; border: 1px solid #d97706; flex-shrink: 0;" onerror="this.style.display='none'">` : ''}
-            <div style="min-width: 0;">
-              <div style="font-weight: 800; font-size: 0.78rem; color: #78350f; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">✨ Combo Completo (${comboItems.length} productos)</div>
+            ${(reward.imageUrl || comboItems[0]?.imageUrl) ? `<img src="${reward.imageUrl || comboItems[0].imageUrl}" alt="${reward.title}" style="width: 36px; height: 36px; object-fit: cover; border-radius: 4px; border: 1.5px solid #d97706; flex-shrink: 0;" onerror="this.style.display='none'">` : ''}
+            <div style="min-width: 0; flex: 1 1 auto;">
+              <div style="font-weight: 800; font-size: 0.8rem; color: #78350f; line-height: 1.25; word-break: break-word;">✨ Combo Completo (${comboItems.length} productos)</div>
               <div style="font-size: 0.68rem; color: #92400e;">Incluye todos los artículos con precio promocional</div>
             </div>
           </div>
-          <strong style="color: #b45309; font-size: 0.85rem; flex-shrink: 0; margin-left: 8px;">${formatDualPrice(reward.priceUsd)}</strong>
+          <strong style="color: #b45309; font-size: 0.85rem; flex-shrink: 0; margin-left: auto; text-align: right; font-variant-numeric: tabular-nums;">${formatDualPrice(reward.priceUsd)}</strong>
         </div>
         ${comboItems.map((cItem) => {
           const singlePrice = Number(cItem.residualPriceUsd !== undefined ? cItem.residualPriceUsd : (cItem.priceUsd || 0));
           return `
             <div class="confirm-combo-option-row" id="combo-opt-${cItem.id}" onclick="selectComboRedeemOption('${cItem.id}')">
-              <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
+              <div style="display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1 1 auto;">
                 <input type="radio" name="combo-redeem-choice" id="radio-combo-${cItem.id}" value="${cItem.id}" style="accent-color: #d97706; flex-shrink: 0;">
-                ${cItem.imageUrl ? `<img src="${cItem.imageUrl}" alt="${cItem.title}" style="width: 32px; height: 32px; object-fit: cover; border-radius: 4px; border: 1px solid #cbd5e1; flex-shrink: 0;" onerror="this.style.display='none'">` : ''}
-                <div style="min-width: 0;">
-                  <div style="font-weight: 800; font-size: 0.78rem; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">📦 Solo ${cItem.title}</div>
+                ${cItem.imageUrl ? `<img src="${cItem.imageUrl}" alt="${cItem.title}" style="width: 36px; height: 36px; object-fit: cover; border-radius: 4px; border: 1.5px solid #cbd5e1; flex-shrink: 0;" onerror="this.style.display='none'">` : ''}
+                <div style="min-width: 0; flex: 1 1 auto;">
+                  <div style="font-weight: 800; font-size: 0.8rem; color: #1e293b; line-height: 1.25; word-break: break-word;">📦 Solo ${cItem.title}</div>
                   <div style="font-size: 0.68rem; color: #64748b;">Comprar por separado (Deshace el combo)</div>
                 </div>
               </div>
-              <strong style="color: #0f172a; font-size: 0.85rem; flex-shrink: 0; margin-left: 8px;">${formatDualPrice(singlePrice)}</strong>
+              <strong style="color: #0f172a; font-size: 0.85rem; flex-shrink: 0; margin-left: auto; text-align: right; font-variant-numeric: tabular-nums;">${formatDualPrice(singlePrice)}</strong>
             </div>
           `;
         }).join('')}
