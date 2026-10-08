@@ -2494,9 +2494,16 @@ export async function triggerFacebookCloudSync() {
     const res = await fetch("/api/sync-facebook", { method: "POST" });
     const data = await res.json();
     if (data.success && data.report) {
-      const up = data.report.updatedProducts.length;
-      const nw = data.report.newProductsCreated.length;
-      showToast(`✓ Sincronización exitosa: ${up} actualizado(s), ${nw} creado(s) desde Facebook.`, "success");
+      const up = data.report.updatedProducts?.length || 0;
+      const nw = data.report.newProductsCreated?.length || 0;
+      const sold = data.report.markedSoldProducts?.length || 0;
+      const totalFb = data.report.totalFacebookFound || 0;
+      const parts = [];
+      if (up > 0) parts.push(`${up} precio(s)`);
+      if (sold > 0) parts.push(`${sold} agotado(s)`);
+      if (nw > 0) parts.push(`${nw} nuevo(s)`);
+      const detailStr = parts.length > 0 ? `: ${parts.join(', ')} sincronizado(s)` : ': Catálogo al día, sin cambios';
+      showToast(`✓ Sincronización FB (${totalFb} analizados)${detailStr}.`, "success");
       if (typeof window.filterCatalogAdmin === "function") {
         window.filterCatalogAdmin();
       }
