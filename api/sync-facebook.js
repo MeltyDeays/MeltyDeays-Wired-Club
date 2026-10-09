@@ -19,6 +19,16 @@ function getRandomGroqKey() {
   return GROQ_KEYS[Math.floor(Math.random() * GROQ_KEYS.length)];
 }
 
+function isBrandVerifiable(title = "", description = "") {
+  const text = `${title} ${description}`.toLowerCase();
+  const KNOWN_BRANDS = [
+    "acer", "predator", "helios", "gamesir", "anker", "powercore",
+    "tp-link", "tplink", "asus", "lenovo", "dell", "hp", "apple",
+    "sony", "nintendo", "xbox", "logitech", "razer", "samsung", "xiaomi"
+  ];
+  return KNOWN_BRANDS.some(b => new RegExp(`\\b${b}\\b`, "i").test(text));
+}
+
 const HIGH_END_HARDWARE_REGEX = /(laptop|computadora|notebook|predator|helios|rtx\s*\d+|gtx\s*\d+|radeon|intel\s*(core\s*)?ultra|core\s*i[79]|ryzen\s*[79]|macbook|torre\s*gamer|pc\s*gamer)/i;
 
 /**
@@ -422,6 +432,9 @@ async function createNewProductInFirestore(fbListing, collectionName = "rewards"
   const cashToPayUsd = maxDiscountPct > 0 ? (Math.round((priceUsd - maxDiscountUsd) * 100) / 100) : priceUsd;
   const calculatedPoints = maxDiscountPct > 0 ? Math.max(10, Math.round(maxDiscountUsd * 50)) : 0;
 
+  const isBrand = fbListing.brandVerified !== undefined ? Boolean(fbListing.brandVerified) : isBrandVerifiable(fbListing.title, fbListing.description);
+  const hasSelectedMold = isBrand || Boolean(fbListing.hasSelectedMold || (finalImage && !finalImage.includes("unsplash.com")));
+
   const fields = {
     id: { stringValue: docId },
     reward_id: { stringValue: docId },
@@ -441,6 +454,8 @@ async function createNewProductInFirestore(fbListing, collectionName = "rewards"
     maxDiscountUsd: { doubleValue: maxDiscountUsd },
     cashToPayUsd: { doubleValue: cashToPayUsd },
     status: { stringValue: productStatus },
+    brandVerified: { booleanValue: isBrand },
+    hasSelectedMold: { booleanValue: hasSelectedMold },
     facebookListingId: { stringValue: String(fbListing.listingId) },
     syncSource: { stringValue: "facebook_mobile_auto_import" },
     lastSyncedAt: { timestampValue: new Date().toISOString() },

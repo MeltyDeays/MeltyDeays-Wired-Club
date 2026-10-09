@@ -2491,6 +2491,35 @@ export function renderLainTemplateGrid() {
   }
 }
 
+export function isBrandVerifiable(title = "", description = "") {
+  const text = `${title} ${description}`.toLowerCase();
+  const KNOWN_BRANDS = [
+    "acer", "predator", "helios", "gamesir", "anker", "powercore",
+    "tp-link", "tplink", "asus", "lenovo", "dell", "hp", "apple",
+    "sony", "nintendo", "xbox", "logitech", "razer", "samsung", "xiaomi"
+  ];
+  return KNOWN_BRANDS.some(b => new RegExp(`\\b${b}\\b`, "i").test(text));
+}
+
+export const FB_MOLD_PRESETS = {
+  jet_fan: [
+    { title: "Molde A · Chasis Blanco / Turbina Dual", imageUrl: "/assets/products/molds/jet_fan_mold_1.webp" },
+    { title: "Molde B · Estudio JetFan Boquilla Larga", imageUrl: "/assets/products/molds/jet_fan_mold_2.jpg" },
+    { title: "Molde C · Turbina Compacta Gris Grafito", imageUrl: "/assets/products/molds/jet_fan_mold_3.png" },
+    { title: "Molde D · Soplador Turbo con Gatillo Superior", imageUrl: "/assets/products/molds/jet_fan_mold_4.png" },
+    { title: "Molde E · Motor Brushless Industrial Negro", imageUrl: "/assets/products/molds/jet_fan_mold_5.png" },
+    { title: "Molde F · Versión Aspiradora con Filtro HEPA", imageUrl: "/assets/products/molds/jet_fan_mold_6.png" }
+  ],
+  windchaser: [
+    { title: "Molde A · Windchaser Youth Edition Blanco/Verde", imageUrl: "/assets/products/molds/windchaser_mold_1.webp" },
+    { title: "Molde B · Edición Gamer Palancas Hall Effect", imageUrl: "/assets/products/molds/windchaser_mold_2.jpg" },
+    { title: "Molde C · Chasis Transparente Iluminación RGB", imageUrl: "/assets/products/molds/windchaser_mold_3.jpg" },
+    { title: "Molde D · Mando Bluetooth Switch/PC Asimétrico", imageUrl: "/assets/products/molds/windchaser_mold_4.png" },
+    { title: "Molde E · Mando Ergonómico Agarre Texturizado", imageUrl: "/assets/products/molds/windchaser_mold_5.png" },
+    { title: "Molde F · Grip Móvil Switch Pro Estilo Pastel", imageUrl: "/assets/products/molds/windchaser_mold_6.png" }
+  ]
+};
+
 export const FB_USER_DEFAULT_LISTINGS = [
   {
     listingId: "1198273641889021",
@@ -2504,9 +2533,12 @@ export const FB_USER_DEFAULT_LISTINGS = [
     cashToPayUsd: 21.62,
     pointsCost: 0,
     status: "PENDING_APPROVAL",
+    brandVerified: false,
+    hasSelectedMold: false,
     rewardType: "PARTIAL_DISCOUNT",
     description: "Mini turbina portátil 2 en 1 (soplador turbo y aspiradora de mano). Motor sin escobillas de alta velocidad, batería recargable Type-C, incluye boquillas intercambiables y filtro lavable. Totalmente nuevo en caja.",
-    imageUrl: FB_IMG_JET_FAN
+    imageUrl: "",
+    moldCandidates: FB_MOLD_PRESETS.jet_fan
   },
   {
     listingId: "1198273641889022",
@@ -2520,6 +2552,7 @@ export const FB_USER_DEFAULT_LISTINGS = [
     cashToPayUsd: 36.49,
     pointsCost: 0,
     status: "PENDING_APPROVAL",
+    brandVerified: true,
     rewardType: "PARTIAL_DISCOUNT",
     description: "Mando móvil GameSir X5 Lite con conexión directa Type-C de ultra baja latencia. Palancas y gatillos con efecto Hall anti-drift, agarre ergonómico texturizado, soporte para Xbox Cloud Gaming, GeForce NOW y emuladores. Nuevo en caja.",
     imageUrl: FB_IMG_GAMESIR_X5
@@ -2536,6 +2569,7 @@ export const FB_USER_DEFAULT_LISTINGS = [
     cashToPayUsd: 17.57,
     pointsCost: 0,
     status: "PENDING_APPROVAL",
+    brandVerified: true,
     rewardType: "PARTIAL_DISCOUNT",
     description: "Soporte ergonómico para celular con batería integrada Anker de 6700 mAh y ventilador de refrigeración silencioso integrado. Carga rápida mientras juegas, ideal para sesiones largas de Free Fire, COD Mobile y PUBG.",
     imageUrl: FB_IMG_ANKER_POWERBANK
@@ -2552,6 +2586,7 @@ export const FB_USER_DEFAULT_LISTINGS = [
     cashToPayUsd: 22.97,
     pointsCost: 0,
     status: "PENDING_APPROVAL",
+    brandVerified: true,
     rewardType: "PARTIAL_DISCOUNT",
     description: "Extensor de rango Wi-Fi TP-Link AC1200 doble banda (300 Mbps en 2.4 GHz + 867 Mbps en 5 GHz). Tecnología OneMesh para cobertura total en el hogar sin cortes, indicador inteligente de señal e instalación plug & play.",
     imageUrl: FB_IMG_TPLINK_RE315
@@ -2568,9 +2603,12 @@ export const FB_USER_DEFAULT_LISTINGS = [
     cashToPayUsd: 20.27,
     pointsCost: 0,
     status: "PENDING_APPROVAL",
+    brandVerified: false,
+    hasSelectedMold: false,
     rewardType: "PARTIAL_DISCOUNT",
     description: "Control inalámbrico multiplataforma compatible con PC, Switch, Android e iOS. Motores de doble vibración háptica, giroscopio de 6 ejes, botones traseros programables y conexión Bluetooth de alta estabilidad.",
-    imageUrl: FB_IMG_WINDCHASER_MANDO
+    imageUrl: "",
+    moldCandidates: FB_MOLD_PRESETS.windchaser
   },
   {
     listingId: "1198273641889026",
@@ -2584,6 +2622,7 @@ export const FB_USER_DEFAULT_LISTINGS = [
     cashToPayUsd: 1100,
     pointsCost: 0,
     status: "PENDING_APPROVAL",
+    brandVerified: true,
     rewardType: "PARTIAL_DISCOUNT",
     description: "Laptop gamer de alta gama compacta de 14.5 pulgadas. Procesador Intel Core Ultra 7 155H, gráfica NVIDIA GeForce RTX 4070 8GB GDDR6, pantalla 2.5K a 165Hz con cobertura 100% sRGB, 16GB RAM LPDDR5X y 1TB SSD NVMe Gen4.",
     imageUrl: FB_IMG_ACER_PREDATOR
@@ -2927,6 +2966,63 @@ export function removeApprovalImage(index) {
   }
 }
 
+let currentProductMolds = [];
+let selectedMoldIndex = -1;
+
+export function selectMoldCandidate(index) {
+  if (index < 0 || index >= currentProductMolds.length) return;
+  selectedMoldIndex = index;
+  const candidate = currentProductMolds[index];
+  const imgUrl = (candidate && candidate.imageUrl) ? candidate.imageUrl : candidate;
+
+  // Actualizar interfaz de tarjetas de moldes
+  const moldCards = document.querySelectorAll(".mold-candidate-card");
+  moldCards.forEach((c, idx) => {
+    const badge = c.querySelector(".mold-badge");
+    if (idx === index) {
+      c.style.border = "3px solid #10b981";
+      c.style.background = "#ecfdf5";
+      c.style.boxShadow = "0 0 12px rgba(16, 185, 129, 0.4)";
+      if (badge) {
+        badge.textContent = "✓ MOLDE SELECCIONADO";
+        badge.style.background = "#059669";
+        badge.style.color = "#fff";
+      }
+    } else {
+      c.style.border = "1.5px solid #cbd5e1";
+      c.style.background = "#fff";
+      c.style.boxShadow = "none";
+      if (badge) {
+        badge.textContent = `Opción ${idx + 1}`;
+        badge.style.background = "#f1f5f9";
+        badge.style.color = "#64748b";
+      }
+    }
+  });
+
+  // Adoptar esta foto como la foto oficial del producto
+  pendingApprovalImages = [imgUrl];
+  renderApprovalImagesGrid();
+
+  const productId = document.getElementById("approval-product-id")?.value;
+  const p = (vm ? vm.catalog : []).find(x => (x.id === productId || x.reward_id === productId));
+  if (p) {
+    p.hasSelectedMold = true;
+    p.imageUrl = imgUrl;
+    p.images = [imgUrl];
+  }
+
+  const btnConfirm = document.getElementById("btn-confirm-approval");
+  if (btnConfirm) {
+    btnConfirm.disabled = false;
+    btnConfirm.style.opacity = "1";
+    btnConfirm.style.cursor = "pointer";
+    btnConfirm.title = "Publicar producto en catálogo activo";
+  }
+
+  showToast(`✓ Molde #${index + 1} seleccionado. Luz verde habilitada.`, "success");
+}
+
 export function openApprovalModal(productId) {
   const p = (vm ? vm.catalog : []).find(x => (x.id === productId || x.reward_id === productId));
   if (!p) {
@@ -2943,6 +3039,9 @@ export function openApprovalModal(productId) {
   const priceEl = document.getElementById("approval-product-price");
   const cashEl = document.getElementById("approval-product-cash");
   const pointsEl = document.getElementById("approval-product-points");
+  const badgeEl = document.getElementById("approval-status-badge");
+  const lensContainer = document.getElementById("approval-lens-molds-container");
+  const lensGrid = document.getElementById("approval-lens-molds-grid");
 
   if (idInput) idInput.value = p.id;
   if (idBadge) idBadge.textContent = p.id;
@@ -2959,17 +3058,84 @@ export function openApprovalModal(productId) {
     ? `${(p.pointsCost).toLocaleString()} WP (Tope ${p.maxDiscountPct || 0}% OFF)`
     : `0 WP (Precio plano / Sin descuento)`;
 
-  // Cargar imágenes existentes válidas
-  let existingImgs = [];
-  if (Array.isArray(p.images) && p.images.length > 0) {
-    existingImgs = p.images.filter(img => img && !img.includes("unsplash.com"));
-  } else if (p.imageUrl && !p.imageUrl.includes("unsplash.com")) {
-    existingImgs = [p.imageUrl];
+  const isBrand = Boolean(p.brandVerified || isBrandVerifiable(p.title, p.description));
+  selectedMoldIndex = -1;
+
+  if (isBrand) {
+    if (lensContainer) lensContainer.style.display = "none";
+    if (badgeEl) {
+      badgeEl.textContent = "🛡️ MARCA VERIFICADA // FOTO OFICIAL";
+      badgeEl.style.background = "#ecfdf5";
+      badgeEl.style.color = "#047857";
+      badgeEl.style.borderColor = "#6ee7b7";
+    }
+
+    let existingImgs = [];
+    if (Array.isArray(p.images) && p.images.length > 0) {
+      existingImgs = p.images.filter(img => img && !img.includes("unsplash.com"));
+    } else if (p.imageUrl && !p.imageUrl.includes("unsplash.com")) {
+      existingImgs = [p.imageUrl];
+    }
+    pendingApprovalImages = [...existingImgs];
+  } else {
+    // Producto Genérico / Chino: Exige selección obligatoria entre 6 moldes estilo Google Lens
+    if (lensContainer) lensContainer.style.display = "block";
+    if (badgeEl) {
+      badgeEl.textContent = "⚠️ GENÉRICO CHINO // SELECCIONAR MOLDE";
+      badgeEl.style.background = "#fffbeb";
+      badgeEl.style.color = "#b45309";
+      badgeEl.style.borderColor = "#fde68a";
+    }
+
+    // Obtener los 6 candidatos de moldes
+    let molds = [];
+    if (Array.isArray(p.moldCandidates) && p.moldCandidates.length >= 6) {
+      molds = p.moldCandidates;
+    } else {
+      const lowerT = `${p.title || ""} ${p.description || ""}`.toLowerCase();
+      if (lowerT.includes("jet fan") || lowerT.includes("soplador") || lowerT.includes("turbina") || lowerT.includes("turbo")) {
+        molds = FB_MOLD_PRESETS.jet_fan;
+      } else if (lowerT.includes("windchaser") || lowerT.includes("mando") || lowerT.includes("control") || lowerT.includes("gamepad")) {
+        molds = FB_MOLD_PRESETS.windchaser;
+      } else {
+        molds = FB_MOLD_PRESETS.jet_fan;
+      }
+    }
+    currentProductMolds = molds || [];
+
+    if (lensGrid && currentProductMolds.length > 0) {
+      lensGrid.innerHTML = currentProductMolds.slice(0, 6).map((m, idx) => {
+        const url = m.imageUrl || m;
+        const title = m.title || `Molde #${idx + 1}`;
+        const isSelected = p.hasSelectedMold && p.imageUrl === url;
+        return `
+          <div class="mold-candidate-card" onclick="selectMoldCandidate(${idx})" style="cursor: pointer; position: relative; border-radius: 8px; overflow: hidden; border: ${isSelected ? '3px solid #10b981' : '1.5px solid #cbd5e1'}; background: ${isSelected ? '#ecfdf5' : '#fff'}; padding: 6px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; transition: all 0.2s ease;">
+            <div style="width: 100%; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; overflow: hidden; background: #f8fafc; border-radius: 6px; margin-bottom: 6px;">
+              <img src="${url}" alt="${title}" loading="lazy" style="width: 100%; height: 100%; object-fit: contain;">
+            </div>
+            <div style="width: 100%; text-align: center;">
+              <span class="mold-badge" style="display: inline-block; font-size: 0.65rem; font-family: var(--font-mono); font-weight: 800; padding: 2px 6px; border-radius: 4px; background: ${isSelected ? '#059669' : '#f1f5f9'}; color: ${isSelected ? '#fff' : '#64748b'};">
+                ${isSelected ? '✓ MOLDE SELECCIONADO' : `Opción ${idx + 1}`}
+              </span>
+              <div style="font-size: 0.68rem; font-weight: 700; color: #1e293b; margin-top: 3px; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${title}">
+                ${title}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    if (p.hasSelectedMold && p.imageUrl && !p.imageUrl.includes("unsplash.com")) {
+      pendingApprovalImages = [p.imageUrl];
+    } else {
+      pendingApprovalImages = [];
+    }
   }
-  pendingApprovalImages = [...existingImgs];
+
   renderApprovalImagesGrid();
 
-  // Iniciar búsqueda automática de fotos de catálogo en internet
+  // Iniciar búsqueda complementaria de fotos de catálogo en internet
   const searchInput = document.getElementById("approval-search-query-input");
   if (searchInput) searchInput.value = p.title || "";
   searchSuggestedWebImages(p.title || "");
@@ -3174,6 +3340,13 @@ export async function approveAndPublishProduct(productId) {
     return;
   }
 
+  const isBrand = Boolean(p.brandVerified || isBrandVerifiable(p.title, p.description));
+  if (!isBrand && pendingApprovalImages.length === 0) {
+    showToast("⚠️ Producto genérico/chino: Debes seleccionar cuál de las 6 opciones coincide con el molde físico de tu producto antes de dar Luz Verde.", "warning");
+    openApprovalModal(productId);
+    return;
+  }
+
   if (pendingApprovalImages.length === 0) {
     showToast("Debes agregar al menos una foto real del producto antes de dar luz verde.", "warning");
     openApprovalModal(productId);
@@ -3203,11 +3376,12 @@ export async function approveAndPublishProduct(productId) {
     p.status = "ACTIVE";
     p.images = [...pendingApprovalImages];
     p.imageUrl = pendingApprovalImages[0] || "";
+    p.hasSelectedMold = true;
     p.updated_at = new Date().toISOString();
 
     const payload = typeof p.toJSON === "function" ? p.toJSON() : { ...p };
     await FirestoreService.saveReward(payload);
-    showToast(`✓ ¡Luz verde concedida! "${p.title}" ahora está activo en el catálogo con ${pendingApprovalImages.length} foto(s) real(es).`, "success");
+    showToast(`✓ ¡Luz verde concedida! "${p.title}" ahora está activo en el catálogo con ${pendingApprovalImages.length} foto(s) oficial(es)/real(es).`, "success");
 
     const modal = document.getElementById("modal-fb-approval");
     if (modal) modal.style.display = "none";
@@ -3228,6 +3402,47 @@ export async function approveAndPublishProduct(productId) {
       btn.disabled = false;
       btn.textContent = origText || "🟢 DAR LUZ VERDE / PUBLICAR EN CATÁLOGO";
     }
+  }
+}
+
+export async function approveAllBrandVerifiedProducts() {
+  const catalog = (vm && vm.catalog) ? vm.catalog : [];
+  const verifiedPending = catalog.filter(p => {
+    const isPending = p.status === "PENDING_APPROVAL" || p.status === "PENDING_IMAGE";
+    const isBrand = Boolean(p.brandVerified || isBrandVerifiable(p.title, p.description));
+    const hasImage = Boolean((p.imageUrl && !p.imageUrl.includes("unsplash.com")) || (Array.isArray(p.images) && p.images.length > 0));
+    return isPending && isBrand && hasImage;
+  });
+
+  if (verifiedPending.length === 0) {
+    showToast("No hay productos de marca verificada pendientes con fotografía oficial.", "info");
+    return;
+  }
+
+  showToast(`Aprobando en lote ${verifiedPending.length} producto(s) de marca verificada a precio plano...`, "info");
+
+  try {
+    for (const p of verifiedPending) {
+      p.status = "ACTIVE";
+      p.maxDiscountPct = 0;
+      p.pointsCost = 0;
+      p.maxDiscountUsd = 0;
+      p.cashToPayUsd = p.priceUsd;
+      p.updated_at = new Date().toISOString();
+      const payload = typeof p.toJSON === "function" ? p.toJSON() : { ...p };
+      await FirestoreService.saveReward(payload);
+    }
+
+    showToast(`✓ ¡Luz verde masiva concedida! ${verifiedPending.length} producto(s) de marca verificada ahora están activos en el catálogo.`, "success");
+
+    if (vm && typeof vm.refreshData === "function") {
+      await vm.refreshData();
+    }
+    if (typeof window.filterCatalogAdmin === "function") {
+      window.filterCatalogAdmin();
+    }
+  } catch (err) {
+    showToast(`Error al aprobar productos en lote: ${err.message}`, "error");
   }
 }
 
@@ -3252,4 +3467,7 @@ if (typeof window !== "undefined") {
   window.approveAndPublishProduct = approveAndPublishProduct;
   window.searchSuggestedWebImages = searchSuggestedWebImages;
   window.selectWebSuggestion = selectWebSuggestion;
+  window.selectMoldCandidate = selectMoldCandidate;
+  window.approveAllBrandVerifiedProducts = approveAllBrandVerifiedProducts;
+  window.isBrandVerifiable = isBrandVerifiable;
 }

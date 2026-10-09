@@ -1,12 +1,21 @@
 import assert from "node:assert";
 import { RewardModel } from "../js/models/RewardModel.js";
-import { FB_USER_DEFAULT_LISTINGS } from "../js/views/AdminInvoiceBatchView.js";
+import { FB_USER_DEFAULT_LISTINGS, isBrandVerifiable } from "../js/views/AdminInvoiceBatchView.js";
 
 console.log("\n=================================================");
 console.log("SUITE: VERIFICACIÓN PRODUCTOS PLANOS DE FACEBOOK Y APROBACIÓN");
 console.log("=================================================");
 
-// 1. Verificar listados por defecto de Facebook
+// 1. Probar clasificador isBrandVerifiable
+assert.strictEqual(isBrandVerifiable("Acer Predator Helios Neo 14"), true, "Acer debe ser marca verificable");
+assert.strictEqual(isBrandVerifiable("Control Gamer GameSir X5 Lite"), true, "GameSir debe ser marca verificable");
+assert.strictEqual(isBrandVerifiable("Anker PowerCore Play 6K"), true, "Anker debe ser marca verificable");
+assert.strictEqual(isBrandVerifiable("Repetidor TP-LINK RE315"), true, "TP-Link debe ser marca verificable");
+assert.strictEqual(isBrandVerifiable("Mini Jet Fan 2 en 1 Soplador Turbo"), false, "Jet Fan es genérico chino");
+assert.strictEqual(isBrandVerifiable("Mando Windchaser PLUS Youth Edition"), false, "Windchaser es genérico chino");
+console.log("  ✓ Clasificador isBrandVerifiable validado con precisión (marcas vs genéricos).");
+
+// 2. Verificar listados por defecto de Facebook
 assert.strictEqual(FB_USER_DEFAULT_LISTINGS.length, 6, "Debe haber 6 listados por defecto");
 
 FB_USER_DEFAULT_LISTINGS.forEach(item => {
@@ -14,8 +23,15 @@ FB_USER_DEFAULT_LISTINGS.forEach(item => {
   assert.strictEqual(item.maxDiscountPct, 0, `El producto ${item.title} debe iniciar con 0% de descuento`);
   assert.strictEqual(item.pointsCost, 0, `El producto ${item.title} debe iniciar con 0 WP de costo de puntos`);
   assert.strictEqual(item.cashToPayUsd, item.priceUsd, `cashToPayUsd debe ser igual a priceUsd ($${item.priceUsd})`);
-  assert(item.imageUrl.startsWith("data:image/webp;base64,"), `imageUrl debe contener la foto real en base64`);
-  console.log(`  ✓ ${item.title.slice(0, 35)}... -> PENDING_APPROVAL | $${item.priceUsd} USD (0% descuento)`);
+
+  if (item.brandVerified) {
+    assert(item.imageUrl.startsWith("data:image/webp;base64,"), `Producto verificado ${item.title} debe tener foto oficial en base64`);
+    console.log(`  ✓ [MARCA VERIFICADA] ${item.title.slice(0, 30)}... -> FOTO OFICIAL LISTA | $${item.priceUsd} USD`);
+  } else {
+    assert.strictEqual(item.imageUrl, "", `Producto genérico ${item.title} debe iniciar sin foto final fijada`);
+    assert(Array.isArray(item.moldCandidates) && item.moldCandidates.length === 6, `Producto genérico debe incluir 6 opciones de moldes`);
+    console.log(`  ✓ [GENÉRICO CHINO]   ${item.title.slice(0, 30)}... -> 6 MOLDES CANDIDATOS | $${item.priceUsd} USD`);
+  }
 });
 
 // 2. Probar modelo RewardModel con descuento 0%

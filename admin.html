@@ -591,6 +591,9 @@
           <button type="button" class="btn-secondary" style="font-weight: 800; border-color: #0284c7; color: #0369a1; background: #f0f9ff; font-size: 0.78rem; padding: 0.4rem 0.75rem;" onclick="triggerFacebookCloudSync()" id="btn-sync-fb-cloud" title="Fuerza la sincronización en vivo con tu Facebook Marketplace de inmediato sin esperar el ciclo automático de la nube">
             🔄 Sincronizar con Facebook Ahora
           </button>
+          <button type="button" class="btn-primary" id="btn-approve-all-verified" onclick="approveAllBrandVerifiedProducts()" style="font-weight: 800; font-size: 0.78rem; padding: 0.4rem 0.75rem; background: #059669; border-color: #059669; color: #fff;" title="Otorga Luz Verde inmediata en lote a todos los productos con marca verificable y foto oficial lista">
+            🟢 Luz Verde a Verificados
+          </button>
           <button class="btn-primary" onclick="openNewProductModal()">+ Agregar Producto</button>
         </div>
       </div>
@@ -2270,6 +2273,22 @@
             </button>
           </div>
           <textarea id="approval-product-desc-input" rows="4" style="width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; padding: 0.5rem; font-size: 0.82rem; font-family: inherit; line-height: 1.45; resize: vertical;" placeholder="Intro breve y viñetas técnicas con formato '• Categoría: Detalle'"></textarea>
+        </div>
+      </div>
+
+      <!-- ZONA: DETECCIÓN VISUAL DE MOLDES (Google Lens · 6 Candidatos Obligatorios para Genéricos Chinos) -->
+      <div id="approval-lens-molds-container" style="display: none; background: #fffbeb; border: 2px solid #f59e0b; border-radius: 8px; padding: 0.85rem; margin-bottom: 1.25rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem; flex-wrap: wrap; gap: 0.4rem;">
+          <div style="font-size: 0.8rem; font-weight: 900; color: #92400e; display: flex; align-items: center; gap: 6px;">
+            <span>🔍</span> <span>DETECCIÓN VISUAL DE MOLDES (Google Lens Style · 6 Opciones)</span>
+          </div>
+          <span style="font-size: 0.68rem; color: #b45309; font-weight: 800; background: #fef3c7; padding: 2px 6px; border-radius: 4px; border: 1px solid #fde68a;">SELECCIÓN OBLIGATORIA</span>
+        </div>
+        <p style="font-size: 0.73rem; color: #78350f; margin-bottom: 0.75rem; line-height: 1.4;">
+          ⚠️ Este artículo es un producto genérico / chino sin marca propietaria (diversos nombres para un mismo chasis). <strong>Por norma obligatoria, debes seleccionar cuál de las 6 opciones coincide con el diseño físico de tu producto</strong> antes de otorgar Luz Verde.
+        </p>
+        <div id="approval-lens-molds-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px;">
+          <!-- 6 tarjetas de candidatos generadas dinámicamente -->
         </div>
       </div>
 

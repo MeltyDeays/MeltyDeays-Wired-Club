@@ -679,7 +679,7 @@ export function updateSpecsModalCalculation(rewardId, pointsApplied) {
 
   const user = vm?.currentUser;
   const userPts = user ? (user.wiredPoints || 0) : 0;
-  const maxPct = Number(item.maxDiscountPct || 5);
+  const maxPct = item.maxDiscountPct != null ? Number(item.maxDiscountPct) : 0;
   const effectiveCap = item.maxDiscountUsd > 0 ? item.maxDiscountUsd : Number(((item.priceUsd || 0) * (maxPct / 100)).toFixed(2));
   // Invariante oficial MeltyDeays The Wired Club: 1 USD de descuento = 50 WP (1 WP = $0.02 USD = C$ 0.74 NIO)
   const WP_PER_USD = 50;
@@ -984,8 +984,8 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
   const presaleDiscUsd = Number(item.presaleDiscountUsd ?? Math.max(0, item.priceUsd - presalePrice));
   const presaleDiscPct = item.presaleDiscountType === "PERCENTAGE" ? Number(item.presaleDiscountValue || 0) : (item.priceUsd > 0 ? Math.round((presaleDiscUsd / item.priceUsd) * 100) : 0);
 
-  const isPartial = isCombo || item.rewardType === "PARTIAL_DISCOUNT" || (typeof item.isPartialDiscount === "function" && item.isPartialDiscount());
-  const maxPct = Number(item.maxDiscountPct || item.max_discount_pct || item.maxDiscountPercent || (isPartial ? 5 : 0));
+  const rawMaxPct = item.maxDiscountPct !== undefined ? item.maxDiscountPct : (item.max_discount_pct !== undefined ? item.max_discount_pct : item.maxDiscountPercent);
+  const maxPct = (rawMaxPct !== undefined && rawMaxPct !== null) ? Number(rawMaxPct) : 0;
   const isOut = !isIncoming && (item.stock <= 0 || item.status === "SOLD_OUT");
 
   let productImages = typeof item.getImages === "function"
@@ -1710,7 +1710,7 @@ export function renderCatalog(catalog, user) {
     const isPartial = isCombo || item.rewardType === "PARTIAL_DISCOUNT" || (typeof item.isPartialDiscount === "function" && item.isPartialDiscount());
     const userPts = user ? (user.wiredPoints || 0) : 0;
     const maxCapPts = item.pointsCost || 0;
-    const maxPct = item.maxDiscountPct || 5;
+    const maxPct = item.maxDiscountPct != null ? Number(item.maxDiscountPct) : 0;
 
     const presalePrice = Number(item.presalePriceUsd ?? (item.priceUsd * (1 - (item.presaleDiscountPct || item.presaleDiscountValue || 0) / 100)));
     const presaleDiscUsd = Number(item.presaleDiscountUsd ?? Math.max(0, item.priceUsd - presalePrice));
@@ -1826,7 +1826,9 @@ export function renderCatalog(catalog, user) {
     } else if (isIncoming) {
       modeBadge = `<div class="badge-tag badge-coming-soon" style="position: absolute; top: 8px; left: 8px; z-index: 2; background: rgba(15, 23, 42, 0.95); color: #38bdf8; border: 1px solid #0284c7; font-family: var(--font-mono); font-size: 0.65rem; font-weight: 800; padding: 2px 6px; border-radius: 3px; box-shadow: 0 0 8px rgba(56, 189, 248, 0.3);">🕊️ LLEGA EN // -${presaleDiscPct}%</div>`;
     } else if (isPartial) {
-      if (user && userPts >= maxCapPts) {
+      if (maxPct === 0 || maxCapPts === 0) {
+        modeBadge = `<div class="badge-tag" style="position: absolute; top: 8px; left: 8px; z-index: 2; background: rgba(15, 23, 42, 0.85); color: #cbd5e1; border: 1px solid #475569; font-family: var(--font-mono); font-size: 0.65rem; font-weight: 800; padding: 2px 6px; border-radius: 3px;">🛒 PRECIO OFICIAL</div>`;
+      } else if (user && userPts >= maxCapPts) {
         modeBadge = `<div class="badge-tag" style="position: absolute; top: 8px; left: 8px; z-index: 2; background: rgba(15, 23, 42, 0.9); color: #fbbf24; border: 1px solid #d97706; font-family: var(--font-mono); font-size: 0.65rem; font-weight: 800; padding: 2px 6px; border-radius: 3px;">🏷️ TOPE ${maxPct}% OFF</div>`;
       } else if (user && userPts > 0) {
         modeBadge = `<div class="badge-tag" style="position: absolute; top: 8px; left: 8px; z-index: 2; background: rgba(15, 23, 42, 0.9); color: #fbbf24; border: 1px solid #d97706; font-family: var(--font-mono); font-size: 0.65rem; font-weight: 800; padding: 2px 6px; border-radius: 3px;">🏷️ ${formattedAppliedPct}% OFF / MÁX ${maxPct}%</div>`;
@@ -2588,7 +2590,7 @@ export function selectComboRedeemOption(optionId) {
   const ptsEl = document.getElementById("confirm-reward-points");
 
   let targetPrice = reward.priceUsd || 0;
-  let targetMaxPct = reward.maxDiscountPct || 5;
+  let targetMaxPct = reward.maxDiscountPct != null ? Number(reward.maxDiscountPct) : 0;
   let targetMaxCapPts = reward.pointsCost || 0;
   let targetMaxDiscUsd = reward.maxDiscountUsd || 0;
 
@@ -2657,7 +2659,7 @@ export function updateConfirmCalculation() {
   const userPts = vm.currentUser ? (vm.currentUser.wiredPoints || 0) : 0;
 
   let targetPrice = reward.priceUsd || 0;
-  let targetMaxPct = reward.maxDiscountPct || 5;
+  let targetMaxPct = reward.maxDiscountPct != null ? Number(reward.maxDiscountPct) : 0;
   let targetMaxCapPts = reward.pointsCost || 0;
   let targetMaxDiscUsd = reward.maxDiscountUsd || 0;
 
