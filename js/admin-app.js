@@ -537,6 +537,8 @@ function renderCatalogTable(catalog) {
 
   tbody.innerHTML = filtered.map(p => {
     const isPending = p.status === "PENDING_APPROVAL" || p.status === "PENDING_IMAGE";
+    const isIncoming = !isPending && (p.status === "INCOMING" || (typeof p.isIncoming === "function" && p.isIncoming()));
+    const isPartial = !isPending && !isIncoming && (p.rewardType === "PARTIAL_DISCOUNT" || (typeof p.isPartialDiscount === "function" && p.isPartialDiscount()));
     const isBrand = Boolean(p.brandVerified || (typeof window.isBrandVerifiable === "function" ? window.isBrandVerifiable(p.title, p.description) : false));
     const needsMold = isPending && !isBrand && !p.hasSelectedMold;
 

@@ -2287,6 +2287,12 @@
         <p style="font-size: 0.73rem; color: #78350f; margin-bottom: 0.75rem; line-height: 1.4;">
           ⚠️ Este artículo es un producto genérico / chino sin marca propietaria (diversos nombres para un mismo chasis). <strong>Por norma obligatoria, debes seleccionar cuál de las 6 opciones coincide con el diseño físico de tu producto</strong> antes de otorgar Luz Verde.
         </p>
+        <div style="display: flex; gap: 6px; margin-bottom: 0.75rem; align-items: center;">
+          <input type="text" id="approval-lens-search-input" class="form-control" style="font-size: 0.76rem; padding: 0.35rem 0.6rem; border: 1px solid #f59e0b; border-radius: 5px; flex-grow: 1; background: #fff;" placeholder="Término para búsqueda visual (Google Lens)...">
+          <button type="button" id="btn-approval-lens-re-search" class="btn-secondary" onclick="reloadLiveWebMoldsWithQuery()" style="padding: 0.35rem 0.75rem; font-size: 0.72rem; font-weight: 800; background: #fff7ed; border-color: #f97316; color: #c2410c; white-space: nowrap; cursor: pointer;">
+            🔄 Buscar de nuevo
+          </button>
+        </div>
         <div id="approval-lens-molds-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px;">
           <!-- 6 tarjetas de candidatos generadas dinámicamente -->
         </div>

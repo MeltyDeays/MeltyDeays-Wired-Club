@@ -2646,7 +2646,7 @@ export function renderFbDetectedListings() {
         <div style="display: flex; align-items: center; gap: 0.65rem; min-width: 0; flex: 1;">
           <input type="checkbox" id="chk-fb-item-${idx}" checked style="accent-color: #0284c7; cursor: pointer; transform: scale(1.1);" />
           <div style="width: 38px; height: 38px; border-radius: 4px; overflow: hidden; background: #f8fafc; border: 1px solid #e2e8f0; flex-shrink: 0; display: flex; align-items: center; justify-content: center;">
-            <img src="${item.imageUrl}" alt="${item.title}" style="width: 100%; height: 100%; object-fit: contain;" onerror="this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100&auto=format&fit=crop&q=80'" />
+            ${item.imageUrl ? `<img src="${item.imageUrl}" alt="${item.title}" style="width: 100%; height: 100%; object-fit: contain;" onerror="this.onerror=null; this.parentElement.innerHTML='<span style=\\'font-size: 1.2rem;\\'>📦</span>';" />` : `<span style="font-size: 1.2rem;">📦</span>`}
           </div>
           <div style="min-width: 0; flex: 1;">
             <div style="font-size: 0.8rem; font-weight: 800; color: var(--gray-800); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${item.title}">
@@ -2686,7 +2686,7 @@ export async function importSingleFbListingInput() {
     title: text.replace(/\d+([.,]\d+)?/g, "").replace(/[$C]/g, "").trim() || text,
     rawPrice: rawNum,
     currency: isUsd ? "USD" : (rawNum <= 200 ? "USD" : "NIO"),
-    imageUrl: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&auto=format&fit=crop&q=80",
+    imageUrl: "",
     description: text
   };
 
@@ -2715,10 +2715,33 @@ export async function importSelectedFacebookListings() {
 
   if (btn) {
     btn.disabled = true;
-    btn.textContent = "⏳ Procesando con IA (Fondo Blanco + Viñetas)...";
+    btn.textContent = "⏳ Investigando fotos HD en la web con IA...";
   }
 
   showToast(`Iniciando importación IA de ${selected.length} publicaciones...`, "info");
+
+  // Buscar fotos oficiales en vivo en la web para marcas reconocidas
+  for (const item of selected) {
+    const isBrand = isBrandVerifiable(item.title, item.description);
+    if (isBrand) {
+      try {
+        const liveImgs = await searchProductImagesFromWeb(item.title, 1);
+        if (liveImgs && liveImgs.length > 0 && liveImgs[0].imageUrl) {
+          item.imageUrl = liveImgs[0].imageUrl;
+          item.images = [liveImgs[0].imageUrl];
+          item.brandVerified = true;
+        }
+      } catch (err) {
+        console.warn(`[FB Import] Búsqueda HD web omitida para "${item.title}":`, err.message);
+      }
+    } else {
+      // Genérico chino: limpiar foto de Facebook para forzar selección de molde web estilo Google Lens
+      item.imageUrl = "";
+      item.images = [];
+      item.hasSelectedMold = false;
+      item.brandVerified = false;
+    }
+  }
 
   try {
     const colName = typeof getCollectionName === "function" ? getCollectionName("rewards_catalog") : "rewards_catalog";
@@ -2732,7 +2755,12 @@ export async function importSelectedFacebookListings() {
     if (data.success && data.report) {
       const createdCount = data.report.newProductsCreated?.length || 0;
       const updatedCount = data.report.updatedProducts?.length || 0;
-      showToast(`✓ Importación completada: ${createdCount} producto(s) en espera de aprobación en "${colName}".`, "success");
+      const toastMsg = createdCount > 0 
+        ? `✓ Importación completada: ${createdCount} producto(s) en espera de aprobación en "${colName}".`
+        : (updatedCount > 0 
+          ? `✓ Sincronización completada: ${updatedCount} producto(s) actualizados en "${colName}".`
+          : `✓ Publicaciones sincronizadas en "${colName}".`);
+      showToast(toastMsg, "success");
       
       const modal = document.getElementById("modal-fb-sync-assistant");
       if (modal) modal.style.display = "none";
@@ -3107,11 +3135,17 @@ export function renderMoldCards(p) {
   }).join("");
 }
 
-export async function loadLiveWebMoldsForProduct(p) {
+export async function loadLiveWebMoldsForProduct(p, customQuery = null) {
   const lensGrid = document.getElementById("approval-lens-molds-grid");
+  const lensInput = document.getElementById("approval-lens-search-input");
   if (!lensGrid) return;
 
-  if (Array.isArray(p.moldCandidates) && p.moldCandidates.length >= 6) {
+  const targetQuery = (customQuery || (lensInput ? lensInput.value.trim() : "") || p.title || "").trim();
+  if (lensInput && (!lensInput.value || customQuery)) {
+    lensInput.value = targetQuery;
+  }
+
+  if (!customQuery && Array.isArray(p.moldCandidates) && p.moldCandidates.length >= 6) {
     currentProductMolds = p.moldCandidates;
     renderMoldCards(p);
     return;
@@ -3120,18 +3154,17 @@ export async function loadLiveWebMoldsForProduct(p) {
   lensGrid.innerHTML = `
     <div style="grid-column: 1 / -1; text-align: center; padding: 1.5rem; color: #b45309; font-weight: 700; font-size: 0.85rem;">
       <div style="font-size: 1.8rem; margin-bottom: 0.5rem; display: inline-block; animation: spin 1s linear infinite;">🔄</div>
-      <div>Buscando 6 opciones reales en la web (Google Lens / eCommerce en vivo)...</div>
-      <div style="font-size: 0.72rem; color: #78350f; font-weight: normal; margin-top: 4px;">Consultando MercadoLibre, eBay, Amazon y tiendas electrónicas en vivo</div>
+      <div>Buscando 6 opciones reales en la web para "${targetQuery}" (Google Lens Style)...</div>
+      <div style="font-size: 0.72rem; color: #78350f; font-weight: normal; margin-top: 4px;">Consultando MercadoLibre, eBay, Amazon y sitios de venta en vivo</div>
     </div>
   `;
 
   try {
-    const cleanQuery = p.title || "";
-    const results = await searchProductImagesFromWeb(cleanQuery, 6);
+    const results = await searchProductImagesFromWeb(targetQuery, 6);
     if (!results || results.length === 0) {
       lensGrid.innerHTML = `
         <div style="grid-column: 1 / -1; text-align: center; padding: 1.25rem; color: #b45309; font-size: 0.8rem;">
-          No se encontraron moldes automáticos para este término. Puedes subir fotos reales abajo.
+          No se encontraron moldes para "${targetQuery}". Puedes modificar el término en el recuadro arriba y presionar <strong>🔄 Buscar de nuevo</strong>.
         </div>
       `;
       return;
@@ -3144,10 +3177,23 @@ export async function loadLiveWebMoldsForProduct(p) {
     console.warn("Error cargando moldes web:", err);
     lensGrid.innerHTML = `
       <div style="grid-column: 1 / -1; text-align: center; padding: 1.25rem; color: #dc2626; font-size: 0.8rem;">
-        No fue posible conectar con el motor de búsqueda en vivo. Puedes subir tus propias fotos abajo.
+        No fue posible conectar con el motor de búsqueda en vivo. Modifica el término o sube fotos reales abajo.
       </div>
     `;
   }
+}
+
+export async function reloadLiveWebMoldsWithQuery() {
+  const input = document.getElementById("approval-lens-search-input");
+  const query = input ? input.value.trim() : "";
+  const productId = document.getElementById("approval-product-id")?.value;
+  const p = (vm ? vm.catalog : []).find(x => (x.id === productId || x.reward_id === productId));
+  if (!p) return;
+  const targetQuery = query || p.title || "";
+  showToast(`Buscando 6 moldes en internet para: "${targetQuery}"...`, "info");
+  p.moldCandidates = null;
+  selectedMoldIndex = -1;
+  await loadLiveWebMoldsForProduct(p, targetQuery);
 }
 
 export function openApprovalModal(productId) {
@@ -3582,4 +3628,6 @@ if (typeof window !== "undefined") {
   window.selectMoldCandidate = selectMoldCandidate;
   window.approveAllBrandVerifiedProducts = approveAllBrandVerifiedProducts;
   window.isBrandVerifiable = isBrandVerifiable;
+  window.loadLiveWebMoldsForProduct = loadLiveWebMoldsForProduct;
+  window.reloadLiveWebMoldsWithQuery = reloadLiveWebMoldsWithQuery;
 }

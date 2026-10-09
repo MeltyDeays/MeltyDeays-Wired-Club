@@ -142,6 +142,41 @@ async function removeBackgroundViaHf(imageUrl) {
   return imageUrl;
 }
 
+/**
+ * Busca la primera foto de estudio HD oficial en vivo para productos de marca verificable
+ */
+async function searchFirstStudioImageForBrand(query) {
+  try {
+    const clean = String(query || "")
+      .replace(/C\$\s*\d+([.,]\d+)?/gi, "")
+      .replace(/\$\s*\d+([.,]\d+)?/gi, "")
+      .replace(/\b(nuevo en caja|en caja|sellado|ganga|oferta|inbox|negociable|whatsapp|contacto)\b/gi, "")
+      .replace(/[^\w\s\-\.\+]/gi, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+    if (!clean) return null;
+    const searchUrl = `https://duckduckgo.com/?q=${encodeURIComponent(clean + " product studio")}&t=h_&iar=images&iax=images&ia=images`;
+    const tokenRes = await fetch(searchUrl, {
+      headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" }
+    });
+    if (!tokenRes.ok) return null;
+    const html = await tokenRes.text();
+    const vqdMatch = html.match(/vqd=([0-9-]+)/) || html.match(/vqd=["']([0-9-]+)["']/) || html.match(/vqd=([^&"']+)/);
+    if (!vqdMatch) return null;
+    const vqd = vqdMatch[1];
+    const imagesUrl = `https://duckduckgo.com/i.js?l=us-en&o=json&q=${encodeURIComponent(clean + " product studio")}&vqd=${vqd}&f=,,,type:photo,&p=1`;
+    const imgRes = await fetch(imagesUrl, {
+      headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36", "Referer": "https://duckduckgo.com/" }
+    });
+    if (!imgRes.ok) return null;
+    const data = await imgRes.json();
+    const first = (data.results || []).find(r => r && r.image && r.image.startsWith("http"));
+    return first ? first.image : null;
+  } catch (e) {
+    return null;
+  }
+}
+
 // Convertidor de primitivos Firestore REST
 function parseFirestoreValue(valObj) {
   if (!valObj) return null;
@@ -434,6 +469,18 @@ async function createNewProductInFirestore(fbListing, collectionName = "rewards"
 
   const isBrand = fbListing.brandVerified !== undefined ? Boolean(fbListing.brandVerified) : isBrandVerifiable(fbListing.title, fbListing.description);
   const hasSelectedMold = isBrand ? true : Boolean(fbListing.hasSelectedMold);
+
+  if (isBrand && (!finalImage || finalImage.includes("unsplash.com"))) {
+    try {
+      const foundHd = await searchFirstStudioImageForBrand(fbListing.title);
+      if (foundHd) {
+        finalImage = foundHd;
+      }
+    } catch (e) {
+      console.warn("Aviso: no se pudo obtener foto HD para marca:", e.message);
+    }
+  }
+
   if (!isBrand && !hasSelectedMold) {
     finalImage = "";
   }
