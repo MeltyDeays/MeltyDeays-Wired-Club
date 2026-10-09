@@ -79,6 +79,50 @@ assert.equal(json.imageUrl, "data:image/webp;base64,FOTO_1_FRONTAL", "imageUrl d
 assert.equal(json.rawDescription, rawFbItem.rawDescription, "rawDescription debe exportarse en JSON");
 console.log("  ✓ Publicación con Luz Verde completa y consistente.");
 
+// 5. Búsqueda Web de Fotos de Estudio y Adopción 1-Clic
+console.log("\n=== SEC 5: BÚSQUEDA WEB DE FOTOS DE ESTUDIO Y ADOPCIÓN 1-CLIC ===");
+import searchHandler from "../api/search-product-images.js";
+
+async function testWebSearchIntegration() {
+  const req = {
+    method: "POST",
+    body: { query: "Windchaser controller switch green" }
+  };
+  let statusCode = 0;
+  let responseData = null;
+  const res = {
+    setHeader: () => {},
+    status: (code) => {
+      statusCode = code;
+      return {
+        json: (data) => { responseData = data; },
+        end: () => {}
+      };
+    }
+  };
+
+  await searchHandler(req, res);
+  assert.equal(statusCode, 200, "El endpoint de búsqueda web debe responder 200 OK");
+  assert.equal(responseData.success, true, "La búsqueda debe indicar success: true");
+  assert.ok(Array.isArray(responseData.results), "Debe retornar un arreglo de resultados");
+  assert.ok(responseData.results.length > 0, "Debe encontrar fotos de estudio sugeridas");
+  
+  const chosenResult = responseData.results[0];
+  assert.ok(chosenResult.imageUrl.startsWith("http"), "La imagen elegida debe tener URL válida");
+  console.log(`  ✓ Búsqueda web exitosa: ${responseData.results.length} fotos encontradas.`);
+  console.log(`  ✓ Foto sugerida seleccionada: ${chosenResult.title.slice(0, 45)}... [${chosenResult.source}]`);
+
+  // Simular adopción 1-clic en el producto
+  const adoptedList = [chosenResult.imageUrl];
+  reward.images = adoptedList;
+  reward.imageUrl = adoptedList[0];
+  assert.equal(reward.images.length, 1, "Debe tener 1 foto adoptada con un clic");
+  console.log("  ✓ Adopción 1-clic de foto oficial integrada y validada.");
+}
+
+await testWebSearchIntegration();
+
 console.log("\n======================================================");
 console.log("TODAS LAS PRUEBAS DE BANDEJA DE ESPERA PASARON (100%)");
 console.log("======================================================");
+

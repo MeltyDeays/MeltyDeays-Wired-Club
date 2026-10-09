@@ -2920,9 +2920,141 @@ export function openApprovalModal(productId) {
   pendingApprovalImages = [...existingImgs];
   renderApprovalImagesGrid();
 
+  // Iniciar búsqueda automática de fotos de catálogo en internet
+  const searchInput = document.getElementById("approval-search-query-input");
+  if (searchInput) searchInput.value = p.title || "";
+  searchSuggestedWebImages(p.title || "");
+
   modal.style.display = "flex";
   if (typeof window.syncModalScrollLock === "function") {
     window.syncModalScrollLock();
+  }
+}
+
+export async function searchSuggestedWebImages(forcedQuery = null) {
+  const queryInput = document.getElementById("approval-search-query-input");
+  const titleInput = document.getElementById("approval-product-title-input");
+  const query = (forcedQuery || (queryInput ? queryInput.value : "") || (titleInput ? titleInput.value : "")).trim();
+
+  if (!query) {
+    showToast("Escribe un término de búsqueda para buscar fotos de estudio.", "warning");
+    return;
+  }
+
+  const loadingEl = document.getElementById("approval-web-loading");
+  const gridEl = document.getElementById("approval-web-suggestions");
+  const emptyEl = document.getElementById("approval-web-empty");
+  const btnSearch = document.getElementById("btn-approval-search-web");
+
+  if (loadingEl) loadingEl.style.display = "block";
+  if (gridEl) gridEl.innerHTML = "";
+  if (emptyEl) emptyEl.style.display = "none";
+  if (btnSearch) btnSearch.disabled = true;
+
+  try {
+    const res = await fetch("/api/search-product-images", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ query })
+    });
+
+    const data = await res.json();
+    const results = (data && Array.isArray(data.results)) ? data.results : [];
+
+    if (results.length === 0) {
+      if (emptyEl) emptyEl.style.display = "block";
+    } else {
+      if (gridEl) {
+        gridEl.innerHTML = results.map(r => {
+          const safeUrl = (r.imageUrl || "").replace(/'/g, "\\'");
+          const safeSource = (r.source || "Web").replace(/'/g, "\\'");
+          return `
+            <div class="web-suggestion-card" onclick="selectWebSuggestion('${safeUrl}', '${safeSource}')" title="Clic para adoptar esta foto oficial" style="cursor: pointer; position: relative; border-radius: 6px; overflow: hidden; border: 1.5px solid #cbd5e1; background: #fff; padding: 4px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; transition: all 0.15s ease;">
+              <div style="width: 100%; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; overflow: hidden; background: #f8fafc; border-radius: 4px;">
+                <img src="${r.thumbnail || r.imageUrl}" alt="${r.title}" loading="lazy" style="width: 100%; height: 100%; object-fit: contain;">
+              </div>
+              <div style="width: 100%; display: flex; justify-content: space-between; align-items: center; margin-top: 4px; font-size: 0.62rem; font-family: var(--font-mono); color: #64748b;">
+                <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 60px;">${r.source || 'web'}</span>
+                <span style="color: #0284c7; font-weight: 800;">+ Usar</span>
+              </div>
+            </div>
+          `;
+        }).join("");
+      }
+    }
+  } catch (err) {
+    console.warn("Error en búsqueda de fotos de estudio:", err);
+    if (emptyEl) emptyEl.style.display = "block";
+  } finally {
+    if (loadingEl) loadingEl.style.display = "none";
+    if (btnSearch) btnSearch.disabled = false;
+  }
+}
+
+export async function selectWebSuggestion(imageUrl, sourceName = "Web") {
+  showToast(`Descargando y adaptando foto (${sourceName})...`, "info");
+  try {
+    const res = await fetch("/api/search-product-images", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "proxy-base64", url: imageUrl })
+    });
+
+    const data = await res.json();
+    if (!data.success || !data.dataUrl) {
+      throw new Error(data.error || "No se pudo procesar la imagen remota");
+    }
+
+    const img = new Image();
+    await new Promise((resolve, reject) => {
+      img.onload = resolve;
+      img.onerror = reject;
+      img.src = data.dataUrl;
+    });
+
+    const canvas = document.createElement("canvas");
+    const size = 800;
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext("2d");
+    ctx.fillStyle = "#FFFFFF";
+    ctx.fillRect(0, 0, size, size);
+
+    const padding = size * 0.08;
+    const maxDim = size - (padding * 2);
+    let srcW = img.width || img.naturalWidth;
+    let srcH = img.height || img.naturalHeight;
+    let destW = srcW;
+    let destH = srcH;
+
+    if (destW > maxDim || destH > maxDim) {
+      if (destW > destH) {
+        destH = Math.round((destH * maxDim) / destW);
+        destW = maxDim;
+      } else {
+        destW = Math.round((destW * maxDim) / destH);
+        destH = maxDim;
+      }
+    } else if (destW < maxDim && destH < maxDim) {
+      const scale = maxDim / Math.max(destW, destH);
+      destW = Math.round(destW * scale);
+      destH = Math.round(destH * scale);
+    }
+
+    const posX = Math.round((size - destW) / 2);
+    const posY = Math.round((size - destH) / 2);
+    ctx.drawImage(img, posX, posY, destW, destH);
+
+    const optimizedDataUrl = canvas.toDataURL("image/webp", 0.85);
+    if (!pendingApprovalImages.includes(optimizedDataUrl)) {
+      pendingApprovalImages.push(optimizedDataUrl);
+      renderApprovalImagesGrid();
+      showToast(`✓ Foto adoptada con éxito desde ${sourceName}.`, "success");
+    } else {
+      showToast("Esta foto ya fue agregada.", "info");
+    }
+  } catch (err) {
+    showToast(`Error al adoptar imagen: ${err.message}`, "error");
   }
 }
 
@@ -3069,4 +3201,6 @@ if (typeof window !== "undefined") {
   window.regenerateApprovalDescriptionWithAi = regenerateApprovalDescriptionWithAi;
   window.confirmApprovalAndPublish = confirmApprovalAndPublish;
   window.approveAndPublishProduct = approveAndPublishProduct;
+  window.searchSuggestedWebImages = searchSuggestedWebImages;
+  window.selectWebSuggestion = selectWebSuggestion;
 }
