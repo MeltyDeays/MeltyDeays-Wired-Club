@@ -182,6 +182,7 @@ export class RewardModel {
     this.imageUrl = imgs[0] || singleUrl || "";
 
     this.description = data.description || "";
+    this.rawDescription = data.rawDescription || data.raw_description || data.description || "";
     this.category = data.category || "Gaming Hardware";
     this.updatedAt = data.updatedAt || data.updated_at || new Date().toISOString();
   }
@@ -270,8 +271,11 @@ export class RewardModel {
 
   // Comprueba si debe ser visible en el catálogo de clientes:
   // Si es preventa en camino, siempre es visible.
-  // Si está agotado, solo permanece visible durante las primeras 12 horas desde que se agotó.
+  // Si está en espera de aprobación o imagen real, no se muestra a clientes
   isVisibleToCustomer() {
+    if (this.status === "PENDING_APPROVAL" || this.status === "PENDING_IMAGE") {
+      return false;
+    }
     if (this.isIncoming()) {
       return true;
     }
@@ -372,6 +376,8 @@ export class RewardModel {
       dissolved_from_combo: this.dissolvedFromCombo,
       dissolvedFromCombo: this.dissolvedFromCombo,
       description: this.description,
+      raw_description: this.rawDescription,
+      rawDescription: this.rawDescription,
       category: this.category,
       updated_at: this.updatedAt,
       updatedAt: this.updatedAt

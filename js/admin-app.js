@@ -443,7 +443,7 @@ function filterCatalogAdmin() {
 
 function filterCatalogByType(type) {
   catalogTypeFilter = type || "ALL";
-  const types = ["ALL", "FREE", "PARTIAL", "INCOMING"];
+  const types = ["ALL", "FREE", "PARTIAL", "INCOMING", "PENDING"];
   types.forEach(t => {
     const btn = document.getElementById("catalog-filter-" + t);
     if (btn) {
@@ -465,12 +465,26 @@ function renderCatalogTable(catalog) {
   const tbody = document.getElementById("catalog-table-body");
   if (!tbody) return;
 
-  let filtered = [...(catalog || [])];
+  const allItems = catalog || [];
+  const pendingCount = allItems.filter(p => p.status === "PENDING_APPROVAL" || p.status === "PENDING_IMAGE").length;
+  const pendingBadge = document.getElementById("catalog-pending-badge");
+  if (pendingBadge) {
+    if (pendingCount > 0) {
+      pendingBadge.textContent = pendingCount;
+      pendingBadge.style.display = "inline-block";
+    } else {
+      pendingBadge.style.display = "none";
+    }
+  }
 
-  if (catalogTypeFilter === "FREE") {
-    filtered = filtered.filter(p => p.status !== "INCOMING" && !(typeof p.isIncoming === "function" && p.isIncoming()) && p.rewardType !== "PARTIAL_DISCOUNT" && !(typeof p.isPartialDiscount === "function" && p.isPartialDiscount()));
+  let filtered = [...allItems];
+
+  if (catalogTypeFilter === "PENDING") {
+    filtered = filtered.filter(p => p.status === "PENDING_APPROVAL" || p.status === "PENDING_IMAGE");
+  } else if (catalogTypeFilter === "FREE") {
+    filtered = filtered.filter(p => p.status !== "PENDING_APPROVAL" && p.status !== "PENDING_IMAGE" && p.status !== "INCOMING" && !(typeof p.isIncoming === "function" && p.isIncoming()) && p.rewardType !== "PARTIAL_DISCOUNT" && !(typeof p.isPartialDiscount === "function" && p.isPartialDiscount()));
   } else if (catalogTypeFilter === "PARTIAL") {
-    filtered = filtered.filter(p => p.status !== "INCOMING" && !(typeof p.isIncoming === "function" && p.isIncoming()) && (p.rewardType === "PARTIAL_DISCOUNT" || (typeof p.isPartialDiscount === "function" && p.isPartialDiscount())));
+    filtered = filtered.filter(p => p.status !== "PENDING_APPROVAL" && p.status !== "PENDING_IMAGE" && p.status !== "INCOMING" && !(typeof p.isIncoming === "function" && p.isIncoming()) && (p.rewardType === "PARTIAL_DISCOUNT" || (typeof p.isPartialDiscount === "function" && p.isPartialDiscount())));
   } else if (catalogTypeFilter === "INCOMING") {
     filtered = filtered.filter(p => p.status === "INCOMING" || (typeof p.isIncoming === "function" && p.isIncoming()));
   }
@@ -522,13 +536,16 @@ function renderCatalogTable(catalog) {
   }
 
   tbody.innerHTML = filtered.map(p => {
-    const isIncoming = p.status === "INCOMING" || (typeof p.isIncoming === "function" && p.isIncoming());
-    const isPartial = !isIncoming && (p.rewardType === "PARTIAL_DISCOUNT" || (typeof p.isPartialDiscount === "function" && p.isPartialDiscount()));
-    const typeBadge = isIncoming
-      ? `<span class="badge-navi" style="background:#faf5ff; color:#7e22ce; border:1px solid #c084fc; font-size:0.68rem;">灰羽 EN CAMINO</span>`
-      : (isPartial
-        ? `<span class="badge-navi" style="background:#fef3c7; color:#92400e; border:1px solid #fcd34d; font-size:0.68rem;">🏷️ VENTA TOPADA (${p.maxDiscountPct || 5}%)</span>`
-        : `<span class="badge-navi" style="background:#ecfdf5; color:#065f46; border:1px solid #a7f3d0; font-size:0.68rem;">🎁 100% CANJE</span>`);
+    const isPending = p.status === "PENDING_APPROVAL" || p.status === "PENDING_IMAGE";
+    const isIncoming = !isPending && (p.status === "INCOMING" || (typeof p.isIncoming === "function" && p.isIncoming()));
+    const isPartial = !isPending && !isIncoming && (p.rewardType === "PARTIAL_DISCOUNT" || (typeof p.isPartialDiscount === "function" && p.isPartialDiscount()));
+    const typeBadge = isPending
+      ? `<span class="badge-navi" style="background:#fffbeb; color:#b45309; border:1px solid #fcd34d; font-size:0.68rem;">⏳ ESPERANDO FOTO REAL</span>`
+      : (isIncoming
+        ? `<span class="badge-navi" style="background:#faf5ff; color:#7e22ce; border:1px solid #c084fc; font-size:0.68rem;">灰羽 EN CAMINO</span>`
+        : (isPartial
+          ? `<span class="badge-navi" style="background:#fef3c7; color:#92400e; border:1px solid #fcd34d; font-size:0.68rem;">🏷️ VENTA TOPADA (${p.maxDiscountPct || 5}%)</span>`
+          : `<span class="badge-navi" style="background:#ecfdf5; color:#065f46; border:1px solid #a7f3d0; font-size:0.68rem;">🎁 100% CANJE</span>`));
 
     const costDisplay = isIncoming
       ? `<div style="font-size:0.85rem; font-weight:800; color:#7e22ce;">Preventa: $${(p.presalePriceUsd || 0).toFixed(2)} USD</div><div style="font-size:0.7rem; color:var(--gray-500); text-decoration:line-through;">Reg: $${(p.priceUsd || 0).toFixed(2)} USD (-$${(p.presaleDiscountUsd || 0).toFixed(2)})</div><div style="font-size:0.68rem; color:#059669; font-weight:700;">0 WP (Directo)</div>`
@@ -595,7 +612,7 @@ function renderCatalogTable(catalog) {
             <div>
               <div style="display:flex; align-items:center; gap:6px; margin-bottom:2px;">
                 ${typeBadge}
-                <strong style="color:var(--dark);">${p.title}</strong>
+                <strong style="color:var(--dark); cursor:${isPending ? 'pointer' : 'default'};" ${isPending ? `onclick="openApprovalModal('${p.id}')" title="Clic para agregar imágenes reales y gestionar"` : ''}>${p.title}</strong>
               </div>
               <div style="font-size:0.72rem; color:var(--gray-500); font-family:var(--font-mono);">${p.id}</div>
               ${priceInfo}
@@ -606,8 +623,11 @@ function renderCatalogTable(catalog) {
         <td>${stockDisplay}</td>
         <td style="max-width: 380px;">${descDisplay}</td>
         <td style="text-align: right; white-space: nowrap;">
-          <div style="display: inline-flex; align-items: center; gap: 6px; justify-content: flex-end;">
-            ${isIncoming ? `
+            ${isPending ? `
+              <button type="button" class="catalog-action-btn" style="background:#f0f9ff; color:#0369a1; border-color:#0284c7; font-weight:800;" onclick="openApprovalModal('${p.id}')" title="Agregar fotos reales y gestionar aprobación">
+                <span class="btn-icon">📸</span> <span>Agregar Imágenes</span>
+              </button>
+            ` : (isIncoming ? `
               <button type="button" class="catalog-action-btn" style="background:#faf5ff; color:#7e22ce; border-color:#c084fc; font-weight:800;" onclick="handleAdminReleaseIncoming('${p.id}')" title="Desembarcar producto y pasarlo a disponible de inmediato">
                 <span class="btn-icon">⚡</span> <span>Desembarcar</span>
               </button>
@@ -624,7 +644,7 @@ function renderCatalogTable(catalog) {
               <button type="button" class="catalog-action-btn btn-restock" onclick="handleAdminRestock('${p.id}', 1, '${escapedTitle}')" title="Reponer 1 unidad">
                 <span class="btn-icon">➕</span> <span>+1 un.</span>
               </button>
-            `)}
+            `))}
             <button type="button" class="catalog-action-btn btn-edit" onclick="openEditProductModal('${p.id}')" title="Editar producto ${p.id}">
               <span class="btn-icon">✏️</span> <span>Editar</span>
             </button>

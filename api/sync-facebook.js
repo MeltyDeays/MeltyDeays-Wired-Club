@@ -19,18 +19,49 @@ function getRandomGroqKey() {
   return GROQ_KEYS[Math.floor(Math.random() * GROQ_KEYS.length)];
 }
 
+const HIGH_END_HARDWARE_REGEX = /(laptop|computadora|notebook|predator|helios|rtx\s*\d+|gtx\s*\d+|radeon|intel\s*(core\s*)?ultra|core\s*i[79]|ryzen\s*[79]|macbook|torre\s*gamer|pc\s*gamer)/i;
+
 /**
- * Regla de moneda estricta del negocio:
- * 0 a 200 => Dólares (USD)
- * 201 en adelante => Córdobas (NIO)
+ * Normaliza precios con detección inteligente de moneda (USD / NIO):
+ * - Moneda explícita: Si 'currency' es "USD" o contiene "$" (sin "C$").
+ * - Inferencia por categoría técnica: Laptops, GPUs RTX, Intel Core Ultra y hardware de alto valor
+ *   con montos >= 250 se reconocen automáticamente en DÓLARES (USD), no en córdobas.
+ * - Periféricos estándar:
+ *   [0, 200] => USD
+ *   >= 201 => Córdobas (NIO)
  */
-function normalizePriceByThreshold(rawValue) {
+function normalizePriceByThreshold(rawValue, currency = "", title = "", description = "") {
   if (typeof rawValue === "string") {
+    if (rawValue.includes("C$") && !currency) {
+      currency = "NIO";
+    }
     rawValue = rawValue.replace(/[^0-9.]/g, "");
   }
   const val = parseFloat(rawValue) || 0;
   if (val <= 0) return { priceUsd: 0, priceNio: 0, currency: "USD", raw: 0 };
 
+  const cleanCurr = String(currency || "").toUpperCase().trim();
+  const fullText = `${title || ""} ${description || ""}`;
+  const isHighEndHardware = HIGH_END_HARDWARE_REGEX.test(fullText);
+
+  // 1. Detección explícita de Dólares
+  const isExplicitUsd = cleanCurr === "USD" || (cleanCurr.includes("$") && !cleanCurr.includes("C$"));
+
+  // 2. Hardware de alto valor con precio >= 250 siempre es USD
+  if (isExplicitUsd || (isHighEndHardware && val >= 250)) {
+    const usd = Number(val.toFixed(2));
+    const nio = Math.round(usd * EXCHANGE_RATE_NIO);
+    return { priceUsd: usd, priceNio: nio, currency: "USD", raw: val };
+  }
+
+  // 3. Si se especificó explícitamente Córdobas
+  if (cleanCurr === "NIO" || cleanCurr.includes("C$")) {
+    const nio = Math.round(val);
+    const usd = Number((nio / EXCHANGE_RATE_NIO).toFixed(2));
+    return { priceUsd: usd, priceNio: nio, currency: "NIO", raw: val };
+  }
+
+  // 4. Umbral estándar para periféricos
   if (val <= 200) {
     const usd = Number(val.toFixed(2));
     const nio = Math.round(usd * EXCHANGE_RATE_NIO);
@@ -149,7 +180,7 @@ async function scrapeFacebookProfileListings() {
           let match;
           while ((match = itemRegex.exec(scriptTag)) !== null) {
             const rawVal = parseFloat(match[3].replace(/[^0-9.]/g, "")) || 0;
-            const norm = normalizePriceByThreshold(rawVal);
+            const norm = normalizePriceByThreshold(rawVal, match[3], match[2]);
             const lowerPrice = (match[3] || "").toLowerCase();
             const isSold = lowerPrice.includes("vendid") || lowerPrice.includes("agotad") || lowerPrice.includes("sold") || scriptTag.includes(`"listing_id":"${match[1]}","is_sold":true`) || scriptTag.includes(`"is_sold":true`);
             listings.push({
@@ -334,19 +365,23 @@ REGLAS ESTRICTAS DE LIMPIEZA:
 
 // Crear producto nuevo en Firestore cuando se detecta subida desde celular
 async function createNewProductInFirestore(fbListing, collectionName = "rewards") {
-  const norm = normalizePriceByThreshold(fbListing.rawPrice || fbListing.priceUsd);
+  const norm = normalizePriceByThreshold(fbListing.rawPrice || fbListing.priceUsd, fbListing.currency, fbListing.title, fbListing.description);
   const priceUsd = norm.priceUsd;
   const priceNio = norm.priceNio;
   const docId = `fb_${fbListing.listingId || Date.now()}`;
 
   // Procesar imagen con IA (Hugging Face RMBG-1.4) para fondo blanco puro
-  let finalImage = fbListing.imageUrl;
+  let finalImage = fbListing.imageUrl || "";
   if (finalImage && finalImage.startsWith("http")) {
     finalImage = await removeBackgroundViaHf(finalImage);
   }
-  if (!finalImage) {
-    finalImage = "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&auto=format&fit=crop&q=80";
+  if (finalImage && finalImage.includes("unsplash.com")) {
+    finalImage = "";
   }
+
+  // Si no tiene imagen real asignada, se marca PENDING_APPROVAL para la bandeja de aprobación
+  const hasImage = Boolean(finalImage && finalImage.trim().length > 0);
+  const productStatus = fbListing.status || (hasImage ? "ACTIVE" : "PENDING_APPROVAL");
 
   // Limpiar y estructurar descripción con IA (Intro breve + viñetas técnicas)
   const structuredDescription = await cleanAndFormatDescriptionWithGroq(fbListing.title, fbListing.description || "");
@@ -357,21 +392,24 @@ async function createNewProductInFirestore(fbListing, collectionName = "rewards"
   const cashToPayUsd = Math.round((priceUsd - maxDiscountUsd) * 100) / 100;
 
   const fields = {
+    id: { stringValue: docId },
+    reward_id: { stringValue: docId },
     title: { stringValue: fbListing.title },
     description: { stringValue: structuredDescription },
+    rawDescription: { stringValue: String(fbListing.description || fbListing.title || "") },
     priceUsd: { doubleValue: priceUsd },
     priceNio: { integerValue: priceNio },
     pointsCost: { integerValue: calculatedPoints },
     points_cost: { integerValue: calculatedPoints },
     imageUrl: { stringValue: finalImage },
-    images: { arrayValue: { values: [{ stringValue: finalImage }] } },
+    images: { arrayValue: { values: finalImage ? [{ stringValue: finalImage }] : [] } },
     stock: { integerValue: 1 },
     rewardType: { stringValue: "PARTIAL_DISCOUNT" },
     publicationMode: { stringValue: "PARTIAL_DISCOUNT" },
     maxDiscountPct: { integerValue: maxDiscountPct },
     maxDiscountUsd: { doubleValue: maxDiscountUsd },
     cashToPayUsd: { doubleValue: cashToPayUsd },
-    status: { stringValue: "ACTIVE" },
+    status: { stringValue: productStatus },
     facebookListingId: { stringValue: String(fbListing.listingId) },
     syncSource: { stringValue: "facebook_mobile_auto_import" },
     lastSyncedAt: { timestampValue: new Date().toISOString() },

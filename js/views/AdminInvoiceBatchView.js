@@ -12,6 +12,7 @@ import {
 import { RewardModel } from "../models/RewardModel.js";
 import { isProduction, getEnvironmentInfo, getCollectionName } from "../config/env.js";
 import { processImageWithAiWhiteBg } from "../utils/ImageProcessor.js";
+import { cleanCatalogDescription } from "../services/GroqAiService.js";
 import {
   FB_IMG_JET_FAN,
   FB_IMG_GAMESIR_X5,
@@ -2753,6 +2754,302 @@ export async function triggerFacebookCloudSync() {
   }
 }
 
+let pendingApprovalImages = [];
+
+async function optimizeImageForCatalog(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = reject;
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onerror = reject;
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const size = 800;
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext("2d");
+        ctx.fillStyle = "#FFFFFF";
+        ctx.fillRect(0, 0, size, size);
+
+        const padding = size * 0.08;
+        const maxDim = size - (padding * 2);
+        let srcW = img.width || img.naturalWidth;
+        let srcH = img.height || img.naturalHeight;
+        let destW = srcW;
+        let destH = srcH;
+
+        if (destW > maxDim || destH > maxDim) {
+          if (destW > destH) {
+            destH = Math.round((destH * maxDim) / destW);
+            destW = maxDim;
+          } else {
+            destW = Math.round((destW * maxDim) / destH);
+            destH = maxDim;
+          }
+        } else if (destW < maxDim && destH < maxDim) {
+          const scale = maxDim / Math.max(destW, destH);
+          destW = Math.round(destW * scale);
+          destH = Math.round(destH * scale);
+        }
+
+        const posX = Math.round((size - destW) / 2);
+        const posY = Math.round((size - destH) / 2);
+        ctx.drawImage(img, posX, posY, destW, destH);
+        resolve(canvas.toDataURL("image/webp", 0.85));
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function renderApprovalImagesGrid() {
+  const counterEl = document.getElementById("approval-images-counter");
+  const dropzoneEl = document.getElementById("approval-upload-dropzone");
+  const containerEl = document.getElementById("approval-images-container");
+  const gridEl = document.getElementById("approval-images-grid");
+  const alertEl = document.getElementById("approval-validation-alert");
+  const badgeEl = document.getElementById("approval-status-badge");
+  const btnConfirm = document.getElementById("btn-confirm-approval");
+
+  const count = pendingApprovalImages.length;
+  if (counterEl) {
+    counterEl.textContent = `${count} foto${count === 1 ? '' : 's'} agregada${count === 1 ? '' : 's'}`;
+  }
+
+  if (count === 0) {
+    if (dropzoneEl) dropzoneEl.style.display = "block";
+    if (containerEl) containerEl.style.display = "none";
+    if (alertEl) alertEl.style.display = "block";
+    if (badgeEl) {
+      badgeEl.textContent = "● ESPERANDO FOTOS REALES";
+      badgeEl.style.background = "#fffbeb";
+      badgeEl.style.color = "#b45309";
+      badgeEl.style.borderColor = "#fde68a";
+    }
+    if (btnConfirm) {
+      btnConfirm.disabled = true;
+      btnConfirm.style.opacity = "0.5";
+      btnConfirm.style.cursor = "not-allowed";
+      btnConfirm.title = "Agrega al menos una foto real para habilitar este botón";
+    }
+  } else {
+    if (dropzoneEl) dropzoneEl.style.display = "none";
+    if (containerEl) containerEl.style.display = "block";
+    if (alertEl) alertEl.style.display = "none";
+    if (badgeEl) {
+      badgeEl.textContent = `✓ ${count} FOTO${count === 1 ? '' : 'S'} REAL${count === 1 ? '' : 'ES'}`;
+      badgeEl.style.background = "#ecfdf5";
+      badgeEl.style.color = "#065f46";
+      badgeEl.style.borderColor = "#a7f3d0";
+    }
+    if (btnConfirm) {
+      btnConfirm.disabled = false;
+      btnConfirm.style.opacity = "1";
+      btnConfirm.style.cursor = "pointer";
+      btnConfirm.title = "Publicar producto en catálogo activo";
+    }
+
+    if (gridEl) {
+      gridEl.innerHTML = pendingApprovalImages.map((imgSrc, idx) => `
+        <div style="position: relative; width: 100%; aspect-ratio: 1; border-radius: 6px; overflow: hidden; border: 2px solid ${idx === 0 ? '#059669' : '#cbd5e1'}; background: #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.1); display: flex; align-items: center; justify-content: center;">
+          <img src="${imgSrc}" alt="Foto ${idx + 1}" style="width: 100%; height: 100%; object-fit: contain;">
+          ${idx === 0 ? `
+            <span style="position: absolute; top: 3px; left: 3px; background: #059669; color: #fff; font-family: var(--font-mono); font-size: 0.58rem; font-weight: 800; padding: 1px 4px; border-radius: 3px; box-shadow: 0 1px 3px rgba(0,0,0,0.3);">
+              PORTADA
+            </span>
+          ` : `
+            <span style="position: absolute; top: 3px; left: 3px; background: rgba(15,23,42,0.75); color: #fff; font-family: var(--font-mono); font-size: 0.58rem; font-weight: 700; padding: 1px 4px; border-radius: 3px;">
+              #${idx + 1}
+            </span>
+          `}
+          <button type="button" onclick="removeApprovalImage(${idx})" style="position: absolute; top: 3px; right: 3px; background: rgba(239, 68, 68, 0.9); color: #fff; border: none; width: 20px; height: 20px; border-radius: 50%; font-size: 0.65rem; font-weight: 900; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 3px rgba(0,0,0,0.3);" title="Eliminar esta foto">
+            ✕
+          </button>
+        </div>
+      `).join("");
+    }
+  }
+}
+
+export function removeApprovalImage(index) {
+  if (index >= 0 && index < pendingApprovalImages.length) {
+    pendingApprovalImages.splice(index, 1);
+    renderApprovalImagesGrid();
+  }
+}
+
+export function openApprovalModal(productId) {
+  const p = (vm ? vm.catalog : []).find(x => (x.id === productId || x.reward_id === productId));
+  if (!p) {
+    showToast("No se encontró el producto a aprobar.", "warning");
+    return;
+  }
+  const modal = document.getElementById("modal-fb-approval");
+  if (!modal) return;
+
+  const idInput = document.getElementById("approval-product-id");
+  const idBadge = document.getElementById("approval-item-id");
+  const titleInput = document.getElementById("approval-product-title-input");
+  const descInput = document.getElementById("approval-product-desc-input");
+  const priceEl = document.getElementById("approval-product-price");
+  const cashEl = document.getElementById("approval-product-cash");
+  const pointsEl = document.getElementById("approval-product-points");
+
+  if (idInput) idInput.value = p.id;
+  if (idBadge) idBadge.textContent = p.id;
+  if (titleInput) titleInput.value = p.title || "";
+  if (descInput) descInput.value = p.description || "";
+
+  const isUsd = p.currency === "USD" || (p.priceUsd && p.priceUsd > 100);
+  const priceLabel = isUsd 
+    ? `$${(p.priceUsd || 0).toFixed(2)} USD (C$${(p.priceNio || Math.round((p.priceUsd || 0) * 37)).toLocaleString()} NIO)` 
+    : `C$${(p.priceNio || 0).toLocaleString()} NIO ($${(p.priceUsd || 0).toFixed(2)} USD)`;
+  if (priceEl) priceEl.textContent = priceLabel;
+  if (cashEl) cashEl.textContent = `$${(p.cashToPayUsd || p.priceUsd || 0).toFixed(2)} USD`;
+  if (pointsEl) pointsEl.textContent = `${(p.pointsCost || 0).toLocaleString()} WP`;
+
+  // Cargar imágenes existentes válidas
+  let existingImgs = [];
+  if (Array.isArray(p.images) && p.images.length > 0) {
+    existingImgs = p.images.filter(img => img && !img.includes("unsplash.com"));
+  } else if (p.imageUrl && !p.imageUrl.includes("unsplash.com")) {
+    existingImgs = [p.imageUrl];
+  }
+  pendingApprovalImages = [...existingImgs];
+  renderApprovalImagesGrid();
+
+  modal.style.display = "flex";
+  if (typeof window.syncModalScrollLock === "function") {
+    window.syncModalScrollLock();
+  }
+}
+
+export async function handleApprovalImageSelect(event) {
+  const files = event.target.files;
+  if (!files || files.length === 0) return;
+
+  showToast(`Procesando ${files.length} foto(s) real(es)...`, "info");
+  for (let i = 0; i < files.length; i++) {
+    try {
+      const optimizedDataUrl = await optimizeImageForCatalog(files[i]);
+      if (optimizedDataUrl && !pendingApprovalImages.includes(optimizedDataUrl)) {
+        pendingApprovalImages.push(optimizedDataUrl);
+      }
+    } catch (err) {
+      console.warn("Error procesando imagen:", err);
+    }
+  }
+
+  // Reset del input para permitir agregar más fotos subsecuentes
+  event.target.value = "";
+  renderApprovalImagesGrid();
+  showToast(`✓ ${pendingApprovalImages.length} foto(s) real(es) listas.`, "success");
+}
+
+export async function regenerateApprovalDescriptionWithAi() {
+  const productId = document.getElementById("approval-product-id")?.value;
+  const p = (vm ? vm.catalog : []).find(x => (x.id === productId || x.reward_id === productId));
+  if (!p) {
+    showToast("No se encontró el producto a regenerar.", "warning");
+    return;
+  }
+
+  const btn = document.getElementById("btn-approval-regenerate-ai");
+  const textSpan = document.getElementById("btn-approval-regenerate-text");
+  const origText = textSpan ? textSpan.textContent : "Regenerar Ficha con IA";
+  if (btn) btn.disabled = true;
+  if (textSpan) textSpan.textContent = "Regenerando con IA...";
+
+  try {
+    const title = document.getElementById("approval-product-title-input")?.value?.trim() || p.title;
+    const rawDesc = p.rawDescription || p.raw_description || p.description || p.title;
+    const generated = await cleanCatalogDescription(title, rawDesc);
+    if (generated) {
+      const descInput = document.getElementById("approval-product-desc-input");
+      if (descInput) descInput.value = generated;
+      p.description = generated;
+      showToast("✓ Ficha técnica regenerada con éxito vía IA.", "success");
+    }
+  } catch (err) {
+    showToast(`Error al regenerar ficha: ${err.message}`, "error");
+  } finally {
+    if (btn) btn.disabled = false;
+    if (textSpan) textSpan.textContent = origText;
+  }
+}
+
+export async function confirmApprovalAndPublish() {
+  const productId = document.getElementById("approval-product-id")?.value;
+  if (!productId) return;
+  await approveAndPublishProduct(productId);
+}
+
+export async function approveAndPublishProduct(productId) {
+  const p = (vm ? vm.catalog : []).find(x => (x.id === productId || x.reward_id === productId));
+  if (!p) {
+    showToast("No se encontró el producto a aprobar.", "warning");
+    return;
+  }
+
+  if (pendingApprovalImages.length === 0) {
+    showToast("Debes agregar al menos una foto real del producto antes de dar luz verde.", "warning");
+    openApprovalModal(productId);
+    return;
+  }
+
+  const titleInput = document.getElementById("approval-product-title-input");
+  const descInput = document.getElementById("approval-product-desc-input");
+  const newTitle = titleInput ? titleInput.value.trim() : (p.title || "");
+  const newDesc = descInput ? descInput.value.trim() : (p.description || "");
+
+  if (!newTitle) {
+    showToast("El producto debe tener un título.", "warning");
+    return;
+  }
+
+  const btn = document.getElementById("btn-confirm-approval");
+  const origText = btn ? btn.textContent : "";
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = "⏳ Publicando en Catálogo...";
+  }
+
+  try {
+    p.title = newTitle;
+    p.description = newDesc;
+    p.status = "ACTIVE";
+    p.images = [...pendingApprovalImages];
+    p.imageUrl = pendingApprovalImages[0] || "";
+    p.updated_at = new Date().toISOString();
+
+    const payload = typeof p.toJSON === "function" ? p.toJSON() : { ...p };
+    await FirestoreService.saveReward(payload);
+    showToast(`✓ ¡Luz verde concedida! "${p.title}" ahora está activo en el catálogo con ${pendingApprovalImages.length} foto(s) real(es).`, "success");
+
+    const modal = document.getElementById("modal-fb-approval");
+    if (modal) modal.style.display = "none";
+    if (typeof window.syncModalScrollLock === "function") {
+      window.syncModalScrollLock();
+    }
+
+    if (vm && typeof vm.refreshData === "function") {
+      await vm.refreshData();
+    }
+    if (typeof window.filterCatalogAdmin === "function") {
+      window.filterCatalogAdmin();
+    }
+  } catch (err) {
+    showToast(`Error al publicar producto: ${err.message}`, "error");
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = origText || "🟢 DAR LUZ VERDE / PUBLICAR EN CATÁLOGO";
+    }
+  }
+}
+
 if (typeof window !== "undefined") {
   window.addComboItemTab = addComboItemTab;
   window.removeComboItemTab = removeComboItemTab;
@@ -2766,4 +3063,10 @@ if (typeof window !== "undefined") {
   window.removeFbAssistantListing = removeFbAssistantListing;
   window.importSingleFbListingInput = importSingleFbListingInput;
   window.importSelectedFacebookListings = importSelectedFacebookListings;
+  window.openApprovalModal = openApprovalModal;
+  window.handleApprovalImageSelect = handleApprovalImageSelect;
+  window.removeApprovalImage = removeApprovalImage;
+  window.regenerateApprovalDescriptionWithAi = regenerateApprovalDescriptionWithAi;
+  window.confirmApprovalAndPublish = confirmApprovalAndPublish;
+  window.approveAndPublishProduct = approveAndPublishProduct;
 }

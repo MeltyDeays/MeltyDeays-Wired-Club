@@ -1644,6 +1644,9 @@ let currentRedeemReward = null;
 export function renderCatalog(catalog, user) {
   const rawList = Array.isArray(catalog) ? catalog : [];
   const visibleCatalog = rawList.filter(item => {
+    if (item.status === "PENDING_APPROVAL" || item.status === "PENDING_IMAGE") {
+      return false;
+    }
     if (typeof item.isVisibleToCustomer === "function") {
       return item.isVisibleToCustomer();
     }

@@ -142,7 +142,7 @@ export class FirestoreService {
         local.rewards = {};
         if (snap && !snap.empty) {
           snap.forEach(doc => {
-            local.rewards[doc.id] = doc.data();
+            local.rewards[doc.id] = { id: doc.id, ...doc.data() };
           });
         }
         engine.saveSnapshot(local);
@@ -187,7 +187,7 @@ export class FirestoreService {
       try {
         const doc = await db.collection(getCollectionName("rewards_catalog")).doc(rewardId).get();
         if (doc.exists) {
-          const r = doc.data();
+          const r = { id: doc.id, ...doc.data() };
           const snap = engine.getSnapshot();
           if (!snap.rewards) snap.rewards = {};
           snap.rewards[rewardId] = r;
