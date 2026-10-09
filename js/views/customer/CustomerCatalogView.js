@@ -681,8 +681,12 @@ export function updateSpecsModalCalculation(rewardId, pointsApplied) {
   const maxCapPts = item.pointsCost || 0;
   const maxPct = Number(item.maxDiscountPct || 5);
   const appliedPct = maxCapPts > 0 ? Number(((pts / maxCapPts) * maxPct).toFixed(1)) : 0;
-  const usdPerPoint = (maxCapPts > 0 && item.maxDiscountUsd > 0) ? (item.maxDiscountUsd / maxCapPts) : 0;
-  const appliedDiscUsd = Math.min(item.maxDiscountUsd || 0, pts * usdPerPoint);
+  const effectiveCap = item.maxDiscountUsd > 0 ? item.maxDiscountUsd : (item.priceUsd * (maxPct / 100));
+  const usdPerPoint = (maxCapPts > 0 && effectiveCap > 0) ? (effectiveCap / maxCapPts) : 0;
+  let appliedDiscUsd = Math.min(effectiveCap || 0, pts * usdPerPoint);
+  if (item.priceUsd > 0 && appliedDiscUsd >= item.priceUsd) {
+    appliedDiscUsd = Number((item.priceUsd * (maxPct / 100) * (pts / (maxCapPts || 1))).toFixed(2));
+  }
   const cashToPay = Math.max(0, (item.priceUsd || 0) - appliedDiscUsd);
 
   const discEl = document.getElementById(`specs-calc-disc-${rewardId}`);
@@ -1083,8 +1087,12 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
   if (isPartial) {
     appliedPts = maxUsable;
     appliedPct = maxCapPts > 0 ? Number(((appliedPts / maxCapPts) * maxPct).toFixed(1)) : 0;
-    const usdPerPoint = (maxCapPts > 0 && item.maxDiscountUsd > 0) ? (item.maxDiscountUsd / maxCapPts) : 0;
-    appliedDiscountUsd = Number(Math.min(item.maxDiscountUsd || 0, appliedPts * usdPerPoint).toFixed(2));
+    const effectiveCap = item.maxDiscountUsd > 0 ? item.maxDiscountUsd : (item.priceUsd * (maxPct / 100));
+    const usdPerPoint = (maxCapPts > 0 && effectiveCap > 0) ? (effectiveCap / maxCapPts) : 0;
+    appliedDiscountUsd = Number(Math.min(effectiveCap || 0, appliedPts * usdPerPoint).toFixed(2));
+    if (item.priceUsd > 0 && appliedDiscountUsd >= item.priceUsd) {
+      appliedDiscountUsd = Number((item.priceUsd * (maxPct / 100) * (appliedPts / (maxCapPts || 1))).toFixed(2));
+    }
     cashToPayWithPts = Math.max(0, Number(((item.priceUsd || 0) - appliedDiscountUsd).toFixed(2)));
   }
 
@@ -1711,8 +1719,12 @@ export function renderCatalog(catalog, user) {
     if (isPartial && !isCombo) {
       appliedPts = Math.min(userPts, maxCapPts);
       appliedPct = maxCapPts > 0 ? Number(((appliedPts / maxCapPts) * maxPct).toFixed(2)) : 0;
-      const usdPerPoint = (maxCapPts > 0 && item.maxDiscountUsd > 0) ? (item.maxDiscountUsd / maxCapPts) : 0;
-      appliedDiscountUsd = Number(Math.min(item.maxDiscountUsd || 0, appliedPts * usdPerPoint).toFixed(2));
+      const effectiveCap = item.maxDiscountUsd > 0 ? item.maxDiscountUsd : (item.priceUsd * (maxPct / 100));
+      const usdPerPoint = (maxCapPts > 0 && effectiveCap > 0) ? (effectiveCap / maxCapPts) : 0;
+      appliedDiscountUsd = Number(Math.min(effectiveCap || 0, appliedPts * usdPerPoint).toFixed(2));
+      if (item.priceUsd > 0 && appliedDiscountUsd >= item.priceUsd) {
+        appliedDiscountUsd = Number((item.priceUsd * (maxPct / 100) * (appliedPts / (maxCapPts || 1))).toFixed(2));
+      }
       cashToPayWithPts = Math.max(0, Number(((item.priceUsd || 0) - appliedDiscountUsd).toFixed(2)));
     }
     const formattedAppliedPct = appliedPct % 1 === 0 ? appliedPct.toFixed(0) : appliedPct.toFixed(1);

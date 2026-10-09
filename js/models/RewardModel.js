@@ -128,6 +128,49 @@ export class RewardModel {
       this.cashToPayUsd = 0;
     }
 
+    this.pointsCost = Number(data.pointsCost !== undefined ? data.pointsCost : (data.points_cost !== undefined ? data.points_cost : 0));
+    this.stock = Number(data.stock != null ? data.stock : 0);
+    this.initialStock = Number(data.initialStock || data.initial_stock || this.stock || 1);
+    this.isUnique = Boolean(data.isUnique || data.is_unique || (this.initialStock === 1));
+
+    // Invariante de auto-reparación aritmética para hardware de alto valor y descuentos
+    const HIGH_END_HARDWARE_REGEX = /(laptop|computadora|notebook|predator|helios|rtx\s*\d+|gtx\s*\d+|radeon|intel\s*(core\s*)?ultra|core\s*i[79]|ryzen\s*[79]|macbook|torre\s*gamer|pc\s*gamer)/i;
+    const fullText = `${this.title} ${data.description || data.rawDescription || data.raw_description || ""}`;
+    const isHighEnd = HIGH_END_HARDWARE_REGEX.test(fullText);
+
+    // Caso 1: Hardware de alto valor con precio < 250 debido a división errónea de moneda
+    if (isHighEnd && this.priceUsd > 0 && this.priceUsd < 250) {
+      const rawNio = Number(data.priceNio || data.price_nio || 0);
+      if (rawNio >= 250) {
+        this.priceUsd = rawNio >= 5000 ? Math.round(rawNio / 37.0) : rawNio;
+      } else if (Math.round(this.priceUsd * 37.0) >= 250) {
+        this.priceUsd = Math.round(this.priceUsd * 37.0);
+      }
+    }
+
+    // Caso 2: En PARTIAL_DISCOUNT, la suma de cashToPayUsd + maxDiscountUsd no puede superar priceUsd
+    if (this.rewardType === "PARTIAL_DISCOUNT") {
+      const sumBreakdown = Number(((this.cashToPayUsd || 0) + (this.maxDiscountUsd || 0)).toFixed(2));
+      if (sumBreakdown > this.priceUsd && sumBreakdown > 0) {
+        this.priceUsd = sumBreakdown;
+      }
+      if (this.priceUsd > 0) {
+        if (!this.maxDiscountPct || this.maxDiscountPct <= 0) {
+          this.maxDiscountPct = 15;
+        }
+        if (!this.maxDiscountUsd || this.maxDiscountUsd <= 0 || Math.abs((this.maxDiscountUsd + this.cashToPayUsd) - this.priceUsd) > 0.05) {
+          this.maxDiscountUsd = Number((this.priceUsd * (this.maxDiscountPct / 100)).toFixed(2));
+          this.cashToPayUsd = Number((this.priceUsd - this.maxDiscountUsd).toFixed(2));
+        }
+        const expectedCapPts = Math.max(10, Math.round(this.maxDiscountUsd * 20));
+        if (this.pointsCost <= 0 || this.pointsCost > (this.maxDiscountUsd * 35)) {
+          this.pointsCost = expectedCapPts;
+        }
+      }
+    }
+
+    this.priceNio = Number(data.priceNio || data.price_nio || Math.round(this.priceUsd * 37.0));
+
     this.comboData = data.comboData || data.combo_data || null;
     if (this.comboData && !Array.isArray(this.comboData.items)) {
       if (this.comboData.itemA && this.comboData.itemB) {
@@ -135,11 +178,6 @@ export class RewardModel {
       }
     }
     this.dissolvedFromCombo = data.dissolvedFromCombo || data.dissolved_from_combo || null;
-
-    this.pointsCost = Number(data.pointsCost !== undefined ? data.pointsCost : (data.points_cost !== undefined ? data.points_cost : 0));
-    this.stock = Number(data.stock != null ? data.stock : 0);
-    this.initialStock = Number(data.initialStock || data.initial_stock || this.stock || 1);
-    this.isUnique = Boolean(data.isUnique || data.is_unique || (this.initialStock === 1));
 
     this.isIncomingFlag = isIncomingData;
     this.estimatedArrival = data.estimatedArrival || data.estimated_arrival || null;
@@ -339,6 +377,8 @@ export class RewardModel {
       rewardType: this.rewardType,
       price_usd: this.priceUsd,
       priceUsd: this.priceUsd,
+      price_nio: this.priceNio,
+      priceNio: this.priceNio,
       max_discount_pct: this.maxDiscountPct,
       maxDiscountPct: this.maxDiscountPct,
       max_discount_usd: this.maxDiscountUsd,

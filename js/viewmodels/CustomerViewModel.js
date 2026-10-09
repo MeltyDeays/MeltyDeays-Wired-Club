@@ -817,11 +817,15 @@ export class CustomerViewModel {
         pointsSpent = maxUsable;
       }
 
-      const usdPerPoint = (maxCapPoints > 0 && reward.maxDiscountUsd > 0)
-        ? (reward.maxDiscountUsd / maxCapPoints)
+      const effectiveCap = reward.maxDiscountUsd > 0 ? reward.maxDiscountUsd : (reward.priceUsd * ((reward.maxDiscountPct || 15) / 100));
+      const usdPerPoint = (maxCapPoints > 0 && effectiveCap > 0)
+        ? (effectiveCap / maxCapPoints)
         : 0;
 
-      discountUsd = Number(Math.min(reward.maxDiscountUsd || 0, pointsSpent * usdPerPoint).toFixed(2));
+      discountUsd = Number(Math.min(effectiveCap || 0, pointsSpent * usdPerPoint).toFixed(2));
+      if (reward.priceUsd > 0 && discountUsd >= reward.priceUsd) {
+        discountUsd = Number((reward.priceUsd * ((reward.maxDiscountPct || 15) / 100) * (pointsSpent / (maxCapPoints || 1))).toFixed(2));
+      }
       cashToPayUsd = Math.max(0, Number(((reward.priceUsd || 0) - discountUsd).toFixed(2)));
     } else {
       if (!this.currentUser.hasEnoughPoints(reward.pointsCost)) {

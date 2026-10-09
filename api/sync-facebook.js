@@ -44,24 +44,53 @@ function normalizePriceByThreshold(rawValue, currency = "", title = "", descript
   const fullText = `${title || ""} ${description || ""}`;
   const isHighEndHardware = HIGH_END_HARDWARE_REGEX.test(fullText);
 
-  // 1. Detección explícita de Dólares
+  // 1. Detección explícita de Córdobas si el monto es grande (>= 5000) o viene marcado C$/NIO
+  if ((cleanCurr === "NIO" || cleanCurr.includes("C$")) && (val >= 5000 || !isHighEndHardware)) {
+    const nio = Math.round(val);
+    const usd = Number((nio / EXCHANGE_RATE_NIO).toFixed(2));
+    return { priceUsd: usd, priceNio: nio, currency: "NIO", raw: val };
+  }
+
+  // 2. Hardware de alto valor con monto grande (>= 5000) son córdobas (ej. 40700 NIO -> $1100 USD)
+  if (isHighEndHardware && val >= 5000) {
+    const nio = Math.round(val);
+    const usd = Number((nio / EXCHANGE_RATE_NIO).toFixed(2));
+    return { priceUsd: usd, priceNio: nio, currency: "NIO", raw: val };
+  }
+
+  // 3. Detección explícita de Dólares
   const isExplicitUsd = cleanCurr === "USD" || (cleanCurr.includes("$") && !cleanCurr.includes("C$"));
 
-  // 2. Hardware de alto valor con precio >= 250 siempre es USD
-  if (isExplicitUsd || (isHighEndHardware && val >= 250)) {
+  // 4. Hardware de alto valor (laptops RTX, PCs gamers, etc.):
+  // - Entre 250 y 4999: Siempre es USD (ej: 1100 = $1,100 USD)
+  // - Menor a 250 pero que al multiplicarse por 37 dé >= 250: Restaurar división errónea (ej: 29.73 -> $1,100 USD)
+  if (isHighEndHardware) {
+    if (val >= 250 && val < 5000) {
+      const usd = Number(val.toFixed(2));
+      const nio = Math.round(usd * EXCHANGE_RATE_NIO);
+      return { priceUsd: usd, priceNio: nio, currency: "USD", raw: val };
+    }
+    if (val > 0 && val < 250 && (val * EXCHANGE_RATE_NIO >= 250)) {
+      const restoredUsd = Math.round(val * EXCHANGE_RATE_NIO);
+      const nio = Math.round(restoredUsd * EXCHANGE_RATE_NIO);
+      return { priceUsd: restoredUsd, priceNio: nio, currency: "USD", raw: restoredUsd };
+    }
+  }
+
+  if (isExplicitUsd) {
     const usd = Number(val.toFixed(2));
     const nio = Math.round(usd * EXCHANGE_RATE_NIO);
     return { priceUsd: usd, priceNio: nio, currency: "USD", raw: val };
   }
 
-  // 3. Si se especificó explícitamente Córdobas
+  // 5. Si se especificó explícitamente Córdobas
   if (cleanCurr === "NIO" || cleanCurr.includes("C$")) {
     const nio = Math.round(val);
     const usd = Number((nio / EXCHANGE_RATE_NIO).toFixed(2));
     return { priceUsd: usd, priceNio: nio, currency: "NIO", raw: val };
   }
 
-  // 4. Umbral estándar para periféricos
+  // 6. Umbral estándar para periféricos
   if (val <= 200) {
     const usd = Number(val.toFixed(2));
     const nio = Math.round(usd * EXCHANGE_RATE_NIO);
@@ -386,10 +415,10 @@ async function createNewProductInFirestore(fbListing, collectionName = "rewards"
   // Limpiar y estructurar descripción con IA (Intro breve + viñetas técnicas)
   const structuredDescription = await cleanAndFormatDescriptionWithGroq(fbListing.title, fbListing.description || "");
 
-  const calculatedPoints = Math.max(10, Math.round(priceUsd * 20));
   const maxDiscountPct = 15;
   const maxDiscountUsd = Math.round(priceUsd * (maxDiscountPct / 100) * 100) / 100;
   const cashToPayUsd = Math.round((priceUsd - maxDiscountUsd) * 100) / 100;
+  const calculatedPoints = Math.max(10, Math.round(maxDiscountUsd * 20));
 
   const fields = {
     id: { stringValue: docId },
@@ -432,7 +461,7 @@ async function createNewProductInFirestore(fbListing, collectionName = "rewards"
 }
 
 // Actualizar precio e imagen de producto existente
-async function updateProductInFirestore(productId, newPriceUsd, fbListingId, collectionName = "rewards_catalog", newImageUrl = null) {
+async function updateProductInFirestore(productId, newPriceUsd, fbListingId, collectionName = "rewards_catalog", newImageUrl = null, existingProduct = null) {
   const maskPaths = [
     "updateMask.fieldPaths=priceUsd",
     "updateMask.fieldPaths=facebookListingId",
@@ -440,12 +469,35 @@ async function updateProductInFirestore(productId, newPriceUsd, fbListingId, col
     "updateMask.fieldPaths=lastSyncedAt"
   ];
 
+  const priceUsdNum = Number(newPriceUsd);
   const fields = {
-    priceUsd: { doubleValue: Number(newPriceUsd) },
+    priceUsd: { doubleValue: priceUsdNum },
     facebookListingId: { stringValue: String(fbListingId) },
     syncSource: { stringValue: "facebook_phone_sync" },
     lastSyncedAt: { timestampValue: new Date().toISOString() }
   };
+
+  if (priceUsdNum > 0) {
+    const priceNio = Math.round(priceUsdNum * EXCHANGE_RATE_NIO);
+    const maxDiscountPct = (existingProduct && existingProduct.maxDiscountPct) ? Number(existingProduct.maxDiscountPct) : 15;
+    const maxDiscountUsd = Math.round(priceUsdNum * (maxDiscountPct / 100) * 100) / 100;
+    const cashToPayUsd = Math.round((priceUsdNum - maxDiscountUsd) * 100) / 100;
+    const calculatedPoints = Math.max(10, Math.round(maxDiscountUsd * 20));
+
+    maskPaths.push("updateMask.fieldPaths=priceNio");
+    maskPaths.push("updateMask.fieldPaths=maxDiscountPct");
+    maskPaths.push("updateMask.fieldPaths=maxDiscountUsd");
+    maskPaths.push("updateMask.fieldPaths=cashToPayUsd");
+    maskPaths.push("updateMask.fieldPaths=pointsCost");
+    maskPaths.push("updateMask.fieldPaths=points_cost");
+
+    fields.priceNio = { integerValue: priceNio };
+    fields.maxDiscountPct = { integerValue: maxDiscountPct };
+    fields.maxDiscountUsd = { doubleValue: maxDiscountUsd };
+    fields.cashToPayUsd = { doubleValue: cashToPayUsd };
+    fields.pointsCost = { integerValue: calculatedPoints };
+    fields.points_cost = { integerValue: calculatedPoints };
+  }
 
   if (newImageUrl && typeof newImageUrl === "string" && !newImageUrl.includes("unsplash.com")) {
     maskPaths.push("updateMask.fieldPaths=imageUrl");
@@ -537,7 +589,12 @@ module.exports = async function handler(req, res) {
     for (const fbItem of fbListings) {
       if (!fbItem.listingId) continue;
 
-      const norm = normalizePriceByThreshold(fbItem.rawPrice !== undefined ? fbItem.rawPrice : (fbItem.priceUsd || fbItem.priceNio || 0));
+      const norm = normalizePriceByThreshold(
+        fbItem.rawPrice !== undefined ? fbItem.rawPrice : (fbItem.priceUsd || fbItem.priceNio || 0),
+        fbItem.currency || "",
+        fbItem.title || "",
+        fbItem.description || ""
+      );
       fbItem.priceUsd = norm.priceUsd;
       fbItem.priceNio = norm.priceNio;
       fbItem.currency = norm.currency;
@@ -561,7 +618,7 @@ module.exports = async function handler(req, res) {
             const priceChanged = fbItem.priceUsd > 0 && Math.abs(webProd.priceUsd - fbItem.priceUsd) >= 0.5;
             const hasNewRealImage = fbItem.imageUrl && fbItem.imageUrl !== webProd.imageUrl && !fbItem.imageUrl.includes("unsplash.com");
             if (priceChanged || hasNewRealImage) {
-              await updateProductInFirestore(webProd.id, fbItem.priceUsd || webProd.priceUsd, fbItem.listingId, collection, hasNewRealImage ? fbItem.imageUrl : null);
+              await updateProductInFirestore(webProd.id, fbItem.priceUsd || webProd.priceUsd, fbItem.listingId, collection, hasNewRealImage ? fbItem.imageUrl : null, webProd);
               report.updatedProducts.push({
                 productId: webProd.id,
                 title: webProd.title,
