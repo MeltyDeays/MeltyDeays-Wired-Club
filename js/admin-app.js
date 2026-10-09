@@ -537,10 +537,15 @@ function renderCatalogTable(catalog) {
 
   tbody.innerHTML = filtered.map(p => {
     const isPending = p.status === "PENDING_APPROVAL" || p.status === "PENDING_IMAGE";
-    const isIncoming = !isPending && (p.status === "INCOMING" || (typeof p.isIncoming === "function" && p.isIncoming()));
-    const isPartial = !isPending && !isIncoming && (p.rewardType === "PARTIAL_DISCOUNT" || (typeof p.isPartialDiscount === "function" && p.isPartialDiscount()));
+    const isBrand = Boolean(p.brandVerified || (typeof window.isBrandVerifiable === "function" ? window.isBrandVerifiable(p.title, p.description) : false));
+    const needsMold = isPending && !isBrand && !p.hasSelectedMold;
+
     const typeBadge = isPending
-      ? `<span class="badge-navi" style="background:#fffbeb; color:#b45309; border:1px solid #fcd34d; font-size:0.68rem;">⏳ ESPERANDO FOTO REAL</span>`
+      ? (needsMold
+          ? `<span class="badge-navi" style="background:#fffbeb; color:#b45309; border:1px solid #f59e0b; font-size:0.68rem; font-weight:800;">⚠️ REQUIERE MOLDE WEB (LENS)</span>`
+          : (isBrand
+              ? `<span class="badge-navi" style="background:#ecfdf5; color:#047857; border:1px solid #10b981; font-size:0.68rem; font-weight:800;">🛡️ MARCA VERIFICADA</span>`
+              : `<span class="badge-navi" style="background:#fffbeb; color:#b45309; border:1px solid #fcd34d; font-size:0.68rem;">⏳ ESPERANDO APROBACIÓN</span>`))
       : (isIncoming
         ? `<span class="badge-navi" style="background:#faf5ff; color:#7e22ce; border:1px solid #c084fc; font-size:0.68rem;">灰羽 EN CAMINO</span>`
         : (isPartial
@@ -623,11 +628,15 @@ function renderCatalogTable(catalog) {
         <td>${stockDisplay}</td>
         <td style="max-width: 380px;">${descDisplay}</td>
         <td style="text-align: right; white-space: nowrap;">
-            ${isPending ? `
-              <button type="button" class="catalog-action-btn" style="background:#f0f9ff; color:#0369a1; border-color:#0284c7; font-weight:800;" onclick="openApprovalModal('${p.id}')" title="Agregar fotos reales y gestionar aprobación">
-                <span class="btn-icon">📸</span> <span>Agregar Imágenes</span>
+            ${isPending ? (needsMold ? `
+              <button type="button" class="catalog-action-btn" style="background:#fffbeb; color:#b45309; border-color:#f59e0b; font-weight:800;" onclick="openApprovalModal('${p.id}')" title="Elegir cuál de las 6 opciones coincide con el diseño físico (Google Lens)">
+                <span class="btn-icon">🔍</span> <span>Elegir Molde Web</span>
               </button>
-            ` : (isIncoming ? `
+            ` : `
+              <button type="button" class="catalog-action-btn" style="background:#ecfdf5; color:#047857; border-color:#10b981; font-weight:800;" onclick="openApprovalModal('${p.id}')" title="Revisar producto y otorgar Luz Verde">
+                <span class="btn-icon">🟢</span> <span>Dar Luz Verde</span>
+              </button>
+            `) : (isIncoming ? `
               <button type="button" class="catalog-action-btn" style="background:#faf5ff; color:#7e22ce; border-color:#c084fc; font-weight:800;" onclick="handleAdminReleaseIncoming('${p.id}')" title="Desembarcar producto y pasarlo a disponible de inmediato">
                 <span class="btn-icon">⚡</span> <span>Desembarcar</span>
               </button>

@@ -29,8 +29,8 @@ FB_USER_DEFAULT_LISTINGS.forEach(item => {
     console.log(`  ✓ [MARCA VERIFICADA] ${item.title.slice(0, 30)}... -> FOTO OFICIAL LISTA | $${item.priceUsd} USD`);
   } else {
     assert.strictEqual(item.imageUrl, "", `Producto genérico ${item.title} debe iniciar sin foto final fijada`);
-    assert(Array.isArray(item.moldCandidates) && item.moldCandidates.length === 6, `Producto genérico debe incluir 6 opciones de moldes`);
-    console.log(`  ✓ [GENÉRICO CHINO]   ${item.title.slice(0, 30)}... -> 6 MOLDES CANDIDATOS | $${item.priceUsd} USD`);
+    assert(Array.isArray(item.moldCandidates), `moldCandidates debe ser un array para búsqueda dinámica`);
+    console.log(`  ✓ [GENÉRICO CHINO]   ${item.title.slice(0, 30)}... -> BÚSQUEDA WEB EN VIVO (LENS) | $${item.priceUsd} USD`);
   }
 });
 

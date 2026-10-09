@@ -21,6 +21,7 @@ import {
   FB_IMG_WINDCHASER_MANDO,
   FB_IMG_ACER_PREDATOR
 } from "../data/FbRealImages.js";
+import { searchProductImagesFromWeb, fetchImageAsDataUrl } from "../services/WebImageSearchService.js";
 
 let vm = null;
 let showToast = () => {};
@@ -2501,24 +2502,7 @@ export function isBrandVerifiable(title = "", description = "") {
   return KNOWN_BRANDS.some(b => new RegExp(`\\b${b}\\b`, "i").test(text));
 }
 
-export const FB_MOLD_PRESETS = {
-  jet_fan: [
-    { title: "Molde A · Chasis Blanco / Turbina Dual", imageUrl: "/assets/products/molds/jet_fan_mold_1.webp" },
-    { title: "Molde B · Estudio JetFan Boquilla Larga", imageUrl: "/assets/products/molds/jet_fan_mold_2.jpg" },
-    { title: "Molde C · Turbina Compacta Gris Grafito", imageUrl: "/assets/products/molds/jet_fan_mold_3.png" },
-    { title: "Molde D · Soplador Turbo con Gatillo Superior", imageUrl: "/assets/products/molds/jet_fan_mold_4.png" },
-    { title: "Molde E · Motor Brushless Industrial Negro", imageUrl: "/assets/products/molds/jet_fan_mold_5.png" },
-    { title: "Molde F · Versión Aspiradora con Filtro HEPA", imageUrl: "/assets/products/molds/jet_fan_mold_6.png" }
-  ],
-  windchaser: [
-    { title: "Molde A · Windchaser Youth Edition Blanco/Verde", imageUrl: "/assets/products/molds/windchaser_mold_1.webp" },
-    { title: "Molde B · Edición Gamer Palancas Hall Effect", imageUrl: "/assets/products/molds/windchaser_mold_2.jpg" },
-    { title: "Molde C · Chasis Transparente Iluminación RGB", imageUrl: "/assets/products/molds/windchaser_mold_3.jpg" },
-    { title: "Molde D · Mando Bluetooth Switch/PC Asimétrico", imageUrl: "/assets/products/molds/windchaser_mold_4.png" },
-    { title: "Molde E · Mando Ergonómico Agarre Texturizado", imageUrl: "/assets/products/molds/windchaser_mold_5.png" },
-    { title: "Molde F · Grip Móvil Switch Pro Estilo Pastel", imageUrl: "/assets/products/molds/windchaser_mold_6.png" }
-  ]
-};
+export const FB_MOLD_PRESETS = {};
 
 export const FB_USER_DEFAULT_LISTINGS = [
   {
@@ -2538,7 +2522,7 @@ export const FB_USER_DEFAULT_LISTINGS = [
     rewardType: "PARTIAL_DISCOUNT",
     description: "Mini turbina portátil 2 en 1 (soplador turbo y aspiradora de mano). Motor sin escobillas de alta velocidad, batería recargable Type-C, incluye boquillas intercambiables y filtro lavable. Totalmente nuevo en caja.",
     imageUrl: "",
-    moldCandidates: FB_MOLD_PRESETS.jet_fan
+    moldCandidates: []
   },
   {
     listingId: "1198273641889022",
@@ -2608,7 +2592,7 @@ export const FB_USER_DEFAULT_LISTINGS = [
     rewardType: "PARTIAL_DISCOUNT",
     description: "Control inalámbrico multiplataforma compatible con PC, Switch, Android e iOS. Motores de doble vibración háptica, giroscopio de 6 ejes, botones traseros programables y conexión Bluetooth de alta estabilidad.",
     imageUrl: "",
-    moldCandidates: FB_MOLD_PRESETS.windchaser
+    moldCandidates: []
   },
   {
     listingId: "1198273641889026",
@@ -2767,9 +2751,18 @@ export async function importSelectedFacebookListings() {
         vm.notify();
       }
 
-      // Abrir automáticamente el modal de aprobación para el primer producto en espera
+      // Priorizar abrir automáticamente el producto que requiera selección de molde web
+      const firstGenericNeedingMold = (vm ? vm.catalog : []).find(x => 
+        (x.status === "PENDING_APPROVAL" || x.status === "PENDING_IMAGE") &&
+        !x.brandVerified &&
+        !isBrandVerifiable(x.title, x.description) &&
+        !x.hasSelectedMold
+      );
       const firstItem = data.report.newProductsCreated?.[0];
-      const targetId = firstItem?.id || (selected[0] ? `fb_${selected[0].listingId}` : null);
+      const targetId = firstGenericNeedingMold 
+        ? (firstGenericNeedingMold.id || firstGenericNeedingMold.reward_id) 
+        : (firstItem?.id || (selected[0] ? `fb_${selected[0].listingId}` : null));
+
       if (targetId && typeof openApprovalModal === "function") {
         setTimeout(() => {
           openApprovalModal(targetId);
@@ -2969,13 +2962,14 @@ export function removeApprovalImage(index) {
 let currentProductMolds = [];
 let selectedMoldIndex = -1;
 
-export function selectMoldCandidate(index) {
+export async function selectMoldCandidate(index) {
   if (index < 0 || index >= currentProductMolds.length) return;
   selectedMoldIndex = index;
   const candidate = currentProductMolds[index];
-  const imgUrl = (candidate && candidate.imageUrl) ? candidate.imageUrl : candidate;
+  const rawUrl = (candidate && candidate.imageUrl) ? candidate.imageUrl : candidate;
+  const sourceName = (candidate && candidate.source) ? candidate.source : "Web";
 
-  // Actualizar interfaz de tarjetas de moldes
+  // Actualizar interfaz visual de tarjetas
   const moldCards = document.querySelectorAll(".mold-candidate-card");
   moldCards.forEach((c, idx) => {
     const badge = c.querySelector(".mold-badge");
@@ -2984,7 +2978,7 @@ export function selectMoldCandidate(index) {
       c.style.background = "#ecfdf5";
       c.style.boxShadow = "0 0 12px rgba(16, 185, 129, 0.4)";
       if (badge) {
-        badge.textContent = "✓ MOLDE SELECCIONADO";
+        badge.textContent = "✓ ELEGIDO";
         badge.style.background = "#059669";
         badge.style.color = "#fff";
       }
@@ -3000,16 +2994,67 @@ export function selectMoldCandidate(index) {
     }
   });
 
-  // Adoptar esta foto como la foto oficial del producto
-  pendingApprovalImages = [imgUrl];
+  showToast(`Descargando y adaptando foto #${index + 1} (${sourceName})...`, "info");
+
+  let finalUrl = rawUrl;
+  try {
+    const base64Data = await fetchImageAsDataUrl(rawUrl);
+    if (base64Data && base64Data.startsWith("data:image")) {
+      const img = new Image();
+      await new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = reject;
+        img.src = base64Data;
+      });
+
+      const canvas = document.createElement("canvas");
+      const size = 800;
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext("2d");
+      ctx.fillStyle = "#FFFFFF";
+      ctx.fillRect(0, 0, size, size);
+
+      const padding = size * 0.08;
+      const maxDim = size - (padding * 2);
+      let srcW = img.width || img.naturalWidth;
+      let srcH = img.height || img.naturalHeight;
+      let destW = srcW;
+      let destH = srcH;
+
+      if (destW > maxDim || destH > maxDim) {
+        if (destW > destH) {
+          destH = Math.round((destH * maxDim) / destW);
+          destW = maxDim;
+        } else {
+          destW = Math.round((destW * maxDim) / destH);
+          destH = maxDim;
+        }
+      } else if (destW < maxDim && destH < maxDim) {
+        const scale = maxDim / Math.max(destW, destH);
+        destW = Math.round(destW * scale);
+        destH = Math.round(destH * scale);
+      }
+
+      const posX = Math.round((size - destW) / 2);
+      const posY = Math.round((size - destH) / 2);
+      ctx.drawImage(img, posX, posY, destW, destH);
+      finalUrl = canvas.toDataURL("image/webp", 0.85);
+    }
+  } catch (err) {
+    console.warn("Aviso: Optimización local de canvas omitida, usando imagen remota:", err);
+  }
+
+  // Adoptar como foto oficial del producto
+  pendingApprovalImages = [finalUrl];
   renderApprovalImagesGrid();
 
   const productId = document.getElementById("approval-product-id")?.value;
   const p = (vm ? vm.catalog : []).find(x => (x.id === productId || x.reward_id === productId));
   if (p) {
     p.hasSelectedMold = true;
-    p.imageUrl = imgUrl;
-    p.images = [imgUrl];
+    p.imageUrl = finalUrl;
+    p.images = [finalUrl];
   }
 
   const btnConfirm = document.getElementById("btn-confirm-approval");
@@ -3020,7 +3065,89 @@ export function selectMoldCandidate(index) {
     btnConfirm.title = "Publicar producto en catálogo activo";
   }
 
-  showToast(`✓ Molde #${index + 1} seleccionado. Luz verde habilitada.`, "success");
+  showToast(`✓ Molde #${index + 1} (${sourceName}) seleccionado. Luz verde habilitada.`, "success");
+}
+
+export function renderMoldCards(p) {
+  const lensGrid = document.getElementById("approval-lens-molds-grid");
+  if (!lensGrid) return;
+
+  if (!currentProductMolds || currentProductMolds.length === 0) {
+    lensGrid.innerHTML = `
+      <div style="grid-column: 1 / -1; text-align: center; padding: 1.25rem; color: #b45309; font-size: 0.8rem;">
+        No se encontraron moldes automáticos para este término. Puedes subir fotos reales abajo.
+      </div>
+    `;
+    return;
+  }
+
+  lensGrid.innerHTML = currentProductMolds.slice(0, 6).map((m, idx) => {
+    const url = m.thumbnail || m.imageUrl;
+    const title = m.title || `Molde #${idx + 1}`;
+    const source = m.source || "web";
+    const isSelected = p.hasSelectedMold && (p.imageUrl === m.imageUrl || selectedMoldIndex === idx);
+    return `
+      <div class="mold-candidate-card" onclick="selectMoldCandidate(${idx})" style="cursor: pointer; position: relative; border-radius: 8px; overflow: hidden; border: ${isSelected ? '3px solid #10b981' : '1.5px solid #cbd5e1'}; background: ${isSelected ? '#ecfdf5' : '#fff'}; padding: 6px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; transition: all 0.2s ease;">
+        <div style="width: 100%; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; overflow: hidden; background: #f8fafc; border-radius: 6px; margin-bottom: 6px;">
+          <img src="${url}" alt="${title}" loading="lazy" style="width: 100%; height: 100%; object-fit: contain;">
+        </div>
+        <div style="width: 100%; text-align: center;">
+          <div style="display: flex; justify-content: space-between; align-items: center; gap: 4px; margin-bottom: 2px;">
+            <span class="mold-badge" style="display: inline-block; font-size: 0.65rem; font-family: var(--font-mono); font-weight: 800; padding: 2px 5px; border-radius: 4px; background: ${isSelected ? '#059669' : '#f1f5f9'}; color: ${isSelected ? '#fff' : '#64748b'};">
+              ${isSelected ? '✓ ELEGIDO' : `Opción ${idx + 1}`}
+            </span>
+            <span style="font-size: 0.6rem; color: #0284c7; font-family: var(--font-mono); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 60px;">${source}</span>
+          </div>
+          <div style="font-size: 0.68rem; font-weight: 700; color: #1e293b; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${title}">
+            ${title}
+          </div>
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+export async function loadLiveWebMoldsForProduct(p) {
+  const lensGrid = document.getElementById("approval-lens-molds-grid");
+  if (!lensGrid) return;
+
+  if (Array.isArray(p.moldCandidates) && p.moldCandidates.length >= 6) {
+    currentProductMolds = p.moldCandidates;
+    renderMoldCards(p);
+    return;
+  }
+
+  lensGrid.innerHTML = `
+    <div style="grid-column: 1 / -1; text-align: center; padding: 1.5rem; color: #b45309; font-weight: 700; font-size: 0.85rem;">
+      <div style="font-size: 1.8rem; margin-bottom: 0.5rem; display: inline-block; animation: spin 1s linear infinite;">🔄</div>
+      <div>Buscando 6 opciones reales en la web (Google Lens / eCommerce en vivo)...</div>
+      <div style="font-size: 0.72rem; color: #78350f; font-weight: normal; margin-top: 4px;">Consultando MercadoLibre, eBay, Amazon y tiendas electrónicas en vivo</div>
+    </div>
+  `;
+
+  try {
+    const cleanQuery = p.title || "";
+    const results = await searchProductImagesFromWeb(cleanQuery, 6);
+    if (!results || results.length === 0) {
+      lensGrid.innerHTML = `
+        <div style="grid-column: 1 / -1; text-align: center; padding: 1.25rem; color: #b45309; font-size: 0.8rem;">
+          No se encontraron moldes automáticos para este término. Puedes subir fotos reales abajo.
+        </div>
+      `;
+      return;
+    }
+
+    p.moldCandidates = results;
+    currentProductMolds = results;
+    renderMoldCards(p);
+  } catch (err) {
+    console.warn("Error cargando moldes web:", err);
+    lensGrid.innerHTML = `
+      <div style="grid-column: 1 / -1; text-align: center; padding: 1.25rem; color: #dc2626; font-size: 0.8rem;">
+        No fue posible conectar con el motor de búsqueda en vivo. Puedes subir tus propias fotos abajo.
+      </div>
+    `;
+  }
 }
 
 export function openApprovalModal(productId) {
@@ -3041,7 +3168,7 @@ export function openApprovalModal(productId) {
   const pointsEl = document.getElementById("approval-product-points");
   const badgeEl = document.getElementById("approval-status-badge");
   const lensContainer = document.getElementById("approval-lens-molds-container");
-  const lensGrid = document.getElementById("approval-lens-molds-grid");
+  const btnConfirm = document.getElementById("btn-confirm-approval");
 
   if (idInput) idInput.value = p.id;
   if (idBadge) idBadge.textContent = p.id;
@@ -3077,60 +3204,41 @@ export function openApprovalModal(productId) {
       existingImgs = [p.imageUrl];
     }
     pendingApprovalImages = [...existingImgs];
+
+    if (btnConfirm) {
+      btnConfirm.disabled = pendingApprovalImages.length === 0;
+      btnConfirm.style.opacity = pendingApprovalImages.length === 0 ? "0.5" : "1";
+      btnConfirm.style.cursor = pendingApprovalImages.length === 0 ? "not-allowed" : "pointer";
+    }
   } else {
-    // Producto Genérico / Chino: Exige selección obligatoria entre 6 moldes estilo Google Lens
+    // Producto Genérico / Chino: Exige selección obligatoria entre 6 moldes estilo Google Lens en vivo
     if (lensContainer) lensContainer.style.display = "block";
     if (badgeEl) {
-      badgeEl.textContent = "⚠️ GENÉRICO CHINO // SELECCIONAR MOLDE";
+      badgeEl.textContent = "⚠️ GENÉRICO CHINO // SELECCIONAR MOLDE WEB";
       badgeEl.style.background = "#fffbeb";
       badgeEl.style.color = "#b45309";
       badgeEl.style.borderColor = "#fde68a";
     }
 
-    // Obtener los 6 candidatos de moldes
-    let molds = [];
-    if (Array.isArray(p.moldCandidates) && p.moldCandidates.length >= 6) {
-      molds = p.moldCandidates;
-    } else {
-      const lowerT = `${p.title || ""} ${p.description || ""}`.toLowerCase();
-      if (lowerT.includes("jet fan") || lowerT.includes("soplador") || lowerT.includes("turbina") || lowerT.includes("turbo")) {
-        molds = FB_MOLD_PRESETS.jet_fan;
-      } else if (lowerT.includes("windchaser") || lowerT.includes("mando") || lowerT.includes("control") || lowerT.includes("gamepad")) {
-        molds = FB_MOLD_PRESETS.windchaser;
-      } else {
-        molds = FB_MOLD_PRESETS.jet_fan;
+    if (!p.hasSelectedMold) {
+      if (btnConfirm) {
+        btnConfirm.disabled = true;
+        btnConfirm.style.opacity = "0.5";
+        btnConfirm.style.cursor = "not-allowed";
+        btnConfirm.title = "Selecciona cuál de las 6 opciones coincide con el diseño físico de tu producto";
+      }
+      pendingApprovalImages = [];
+    } else if (p.imageUrl && !p.imageUrl.includes("unsplash.com")) {
+      pendingApprovalImages = [p.imageUrl];
+      if (btnConfirm) {
+        btnConfirm.disabled = false;
+        btnConfirm.style.opacity = "1";
+        btnConfirm.style.cursor = "pointer";
       }
     }
-    currentProductMolds = molds || [];
 
-    if (lensGrid && currentProductMolds.length > 0) {
-      lensGrid.innerHTML = currentProductMolds.slice(0, 6).map((m, idx) => {
-        const url = m.imageUrl || m;
-        const title = m.title || `Molde #${idx + 1}`;
-        const isSelected = p.hasSelectedMold && p.imageUrl === url;
-        return `
-          <div class="mold-candidate-card" onclick="selectMoldCandidate(${idx})" style="cursor: pointer; position: relative; border-radius: 8px; overflow: hidden; border: ${isSelected ? '3px solid #10b981' : '1.5px solid #cbd5e1'}; background: ${isSelected ? '#ecfdf5' : '#fff'}; padding: 6px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; transition: all 0.2s ease;">
-            <div style="width: 100%; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; overflow: hidden; background: #f8fafc; border-radius: 6px; margin-bottom: 6px;">
-              <img src="${url}" alt="${title}" loading="lazy" style="width: 100%; height: 100%; object-fit: contain;">
-            </div>
-            <div style="width: 100%; text-align: center;">
-              <span class="mold-badge" style="display: inline-block; font-size: 0.65rem; font-family: var(--font-mono); font-weight: 800; padding: 2px 6px; border-radius: 4px; background: ${isSelected ? '#059669' : '#f1f5f9'}; color: ${isSelected ? '#fff' : '#64748b'};">
-                ${isSelected ? '✓ MOLDE SELECCIONADO' : `Opción ${idx + 1}`}
-              </span>
-              <div style="font-size: 0.68rem; font-weight: 700; color: #1e293b; margin-top: 3px; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${title}">
-                ${title}
-              </div>
-            </div>
-          </div>
-        `;
-      }).join("");
-    }
-
-    if (p.hasSelectedMold && p.imageUrl && !p.imageUrl.includes("unsplash.com")) {
-      pendingApprovalImages = [p.imageUrl];
-    } else {
-      pendingApprovalImages = [];
-    }
+    // Cargar en vivo las 6 opciones reales desde internet
+    loadLiveWebMoldsForProduct(p);
   }
 
   renderApprovalImagesGrid();
@@ -3167,14 +3275,7 @@ export async function searchSuggestedWebImages(forcedQuery = null) {
   if (btnSearch) btnSearch.disabled = true;
 
   try {
-    const res = await fetch("/api/search-product-images", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ query })
-    });
-
-    const data = await res.json();
-    const results = (data && Array.isArray(data.results)) ? data.results : [];
+    const results = await searchProductImagesFromWeb(query, 12);
 
     if (results.length === 0) {
       if (emptyEl) emptyEl.style.display = "block";
@@ -3209,22 +3310,16 @@ export async function searchSuggestedWebImages(forcedQuery = null) {
 export async function selectWebSuggestion(imageUrl, sourceName = "Web") {
   showToast(`Descargando y adaptando foto (${sourceName})...`, "info");
   try {
-    const res = await fetch("/api/search-product-images", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "proxy-base64", url: imageUrl })
-    });
-
-    const data = await res.json();
-    if (!data.success || !data.dataUrl) {
-      throw new Error(data.error || "No se pudo procesar la imagen remota");
+    const dataUrl = await fetchImageAsDataUrl(imageUrl);
+    if (!dataUrl || !dataUrl.startsWith("data:image")) {
+      throw new Error("No se pudo obtener imagen en formato dataUrl");
     }
 
     const img = new Image();
     await new Promise((resolve, reject) => {
       img.onload = resolve;
       img.onerror = reject;
-      img.src = data.dataUrl;
+      img.src = dataUrl;
     });
 
     const canvas = document.createElement("canvas");
@@ -3394,6 +3489,23 @@ export async function approveAndPublishProduct(productId) {
     }
     if (typeof window.filterCatalogAdmin === "function") {
       window.filterCatalogAdmin();
+    }
+
+    // Flujo guiado: si existe otro producto genérico esperando molde, abrirlo automáticamente
+    const remainingGeneric = (vm ? vm.catalog : []).find(x => 
+      (x.status === "PENDING_APPROVAL" || x.status === "PENDING_IMAGE") &&
+      !x.brandVerified &&
+      !isBrandVerifiable(x.title, x.description) &&
+      !x.hasSelectedMold &&
+      x.id !== productId &&
+      x.reward_id !== productId
+    );
+
+    if (remainingGeneric) {
+      setTimeout(() => {
+        showToast(`⚡ Abriendo selección de molde para "${remainingGeneric.title}"...`, "info");
+        openApprovalModal(remainingGeneric.id || remainingGeneric.reward_id);
+      }, 500);
     }
   } catch (err) {
     showToast(`Error al publicar producto: ${err.message}`, "error");

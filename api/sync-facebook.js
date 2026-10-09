@@ -433,7 +433,10 @@ async function createNewProductInFirestore(fbListing, collectionName = "rewards"
   const calculatedPoints = maxDiscountPct > 0 ? Math.max(10, Math.round(maxDiscountUsd * 50)) : 0;
 
   const isBrand = fbListing.brandVerified !== undefined ? Boolean(fbListing.brandVerified) : isBrandVerifiable(fbListing.title, fbListing.description);
-  const hasSelectedMold = isBrand || Boolean(fbListing.hasSelectedMold || (finalImage && !finalImage.includes("unsplash.com")));
+  const hasSelectedMold = isBrand ? true : Boolean(fbListing.hasSelectedMold);
+  if (!isBrand && !hasSelectedMold) {
+    finalImage = "";
+  }
 
   const fields = {
     id: { stringValue: docId },
@@ -633,7 +636,7 @@ module.exports = async function handler(req, res) {
           // Si sigue activo: verificar cambio de precio o imagen real
           else if (!fbItem.isSold) {
             const priceChanged = fbItem.priceUsd > 0 && Math.abs(webProd.priceUsd - fbItem.priceUsd) >= 0.5;
-            const hasNewRealImage = fbItem.imageUrl && fbItem.imageUrl !== webProd.imageUrl && !fbItem.imageUrl.includes("unsplash.com");
+            const hasNewRealImage = Boolean(webProd.brandVerified) && fbItem.imageUrl && fbItem.imageUrl !== webProd.imageUrl && !fbItem.imageUrl.includes("unsplash.com");
             if (priceChanged || hasNewRealImage) {
               await updateProductInFirestore(webProd.id, fbItem.priceUsd || webProd.priceUsd, fbItem.listingId, collection, hasNewRealImage ? fbItem.imageUrl : null, webProd);
               report.updatedProducts.push({

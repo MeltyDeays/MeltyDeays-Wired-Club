@@ -45,6 +45,10 @@
       "dest": "/api/groq-copy.js"
     },
     {
+      "src": "/api/search-product-images(?:\\.js)?",
+      "dest": "/api/search-product-images.js"
+    },
+    {
       "src": "/api/(.*)",
       "dest": "/api/$1.js"
     },
