@@ -807,7 +807,9 @@ export class CustomerViewModel {
 
     if (isPartial) {
       const userPoints = Math.max(0, this.currentUser.wiredPoints || 0);
-      const maxCapPoints = reward.pointsCost || 0;
+      const effectiveCap = reward.maxDiscountUsd > 0 ? reward.maxDiscountUsd : ((reward.priceUsd || 0) * ((reward.maxDiscountPct || 15) / 100));
+      const WP_PER_USD = 50;
+      const maxCapPoints = reward.pointsCost > 0 ? reward.pointsCost : Math.max(10, Math.round(effectiveCap * WP_PER_USD));
       const maxUsable = Math.min(userPoints, maxCapPoints);
 
       if (pointsToApply !== null && pointsToApply !== undefined) {
@@ -817,16 +819,13 @@ export class CustomerViewModel {
         pointsSpent = maxUsable;
       }
 
-      const effectiveCap = reward.maxDiscountUsd > 0 ? reward.maxDiscountUsd : (reward.priceUsd * ((reward.maxDiscountPct || 15) / 100));
       const usdPerPoint = (maxCapPoints > 0 && effectiveCap > 0)
         ? (effectiveCap / maxCapPoints)
-        : 0;
+        : (1 / WP_PER_USD);
 
       discountUsd = Number(Math.min(effectiveCap || 0, pointsSpent * usdPerPoint).toFixed(2));
-      if (reward.priceUsd > 0 && discountUsd >= reward.priceUsd) {
-        discountUsd = Number((reward.priceUsd * ((reward.maxDiscountPct || 15) / 100) * (pointsSpent / (maxCapPoints || 1))).toFixed(2));
-      }
-      cashToPayUsd = Math.max(0, Number(((reward.priceUsd || 0) - discountUsd).toFixed(2)));
+      const minCashAllowed = Math.max(reward.cashToPayUsd || 0, Number(((reward.priceUsd || 0) - effectiveCap).toFixed(2)));
+      cashToPayUsd = Math.max(minCashAllowed, Number(((reward.priceUsd || 0) - discountUsd).toFixed(2)));
     } else {
       if (!this.currentUser.hasEnoughPoints(reward.pointsCost)) {
         throw new Error("Puntos insuficientes. Requieres " + reward.pointsCost + " WP.");

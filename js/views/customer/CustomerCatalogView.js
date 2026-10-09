@@ -677,24 +677,30 @@ export function updateSpecsModalCalculation(rewardId, pointsApplied) {
     (vm?.catalog || []).find(r => r.id === rewardId);
   if (!item) return;
 
-  const pts = Math.max(0, Number(pointsApplied) || 0);
-  const maxCapPts = item.pointsCost || 0;
+  const user = vm?.currentUser;
+  const userPts = user ? (user.wiredPoints || 0) : 0;
   const maxPct = Number(item.maxDiscountPct || 5);
+  const effectiveCap = item.maxDiscountUsd > 0 ? item.maxDiscountUsd : Number(((item.priceUsd || 0) * (maxPct / 100)).toFixed(2));
+  // Invariante oficial MeltyDeays The Wired Club: 1 USD de descuento = 50 WP (1 WP = $0.02 USD = C$ 0.74 NIO)
+  const WP_PER_USD = 50;
+  const maxCapPts = item.pointsCost > 0 ? item.pointsCost : Math.max(10, Math.round(effectiveCap * WP_PER_USD));
+  const maxUsable = Math.min(userPts, maxCapPts);
+  const pts = Math.max(0, Math.min(Number(pointsApplied) || 0, maxUsable));
+
   const appliedPct = maxCapPts > 0 ? Number(((pts / maxCapPts) * maxPct).toFixed(1)) : 0;
-  const effectiveCap = item.maxDiscountUsd > 0 ? item.maxDiscountUsd : (item.priceUsd * (maxPct / 100));
-  const usdPerPoint = (maxCapPts > 0 && effectiveCap > 0) ? (effectiveCap / maxCapPts) : 0;
-  let appliedDiscUsd = Math.min(effectiveCap || 0, pts * usdPerPoint);
-  if (item.priceUsd > 0 && appliedDiscUsd >= item.priceUsd) {
-    appliedDiscUsd = Number((item.priceUsd * (maxPct / 100) * (pts / (maxCapPts || 1))).toFixed(2));
-  }
-  const cashToPay = Math.max(0, (item.priceUsd || 0) - appliedDiscUsd);
+  const usdPerPoint = (maxCapPts > 0 && effectiveCap > 0) ? (effectiveCap / maxCapPts) : (1 / WP_PER_USD);
+  const appliedDiscUsd = Math.min(effectiveCap || 0, Number((pts * usdPerPoint).toFixed(2)));
+
+  const isPartial = item.rewardType === "PARTIAL_DISCOUNT" || (typeof item.isPartialDiscount === "function" && item.isPartialDiscount());
+  const minCashAllowed = isPartial ? Math.max(item.cashToPayUsd || 0, Number(((item.priceUsd || 0) - effectiveCap).toFixed(2))) : 0;
+  const cashToPay = Math.max(minCashAllowed, Number(((item.priceUsd || 0) - appliedDiscUsd).toFixed(2)));
 
   const discEl = document.getElementById(`specs-calc-disc-${rewardId}`);
   const cashEl = document.getElementById(`specs-calc-cash-${rewardId}`);
   const sliderEl = document.getElementById(`specs-slider-${rewardId}`);
   const ptsLabel = document.getElementById(`specs-slider-val-${rewardId}`);
 
-  if (discEl) discEl.textContent = `-$${appliedDiscUsd.toFixed(2)} USD (-${appliedPct}%)`;
+  if (discEl) discEl.textContent = `-${formatPrice(appliedDiscUsd)} (-${appliedPct}%)`;
   if (cashEl) cashEl.innerHTML = formatDualPrice(cashToPay);
   if (sliderEl) sliderEl.value = pts;
   if (ptsLabel) ptsLabel.textContent = `${pts} WP aplicados`;
@@ -1076,7 +1082,9 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
   // Cálculo de valores de puntos del usuario para el banner
   const user = vm?.currentUser;
   const userPts = user ? (user.wiredPoints || 0) : 0;
-  const maxCapPts = item.pointsCost || 0;
+  const effectiveCap = item.maxDiscountUsd > 0 ? item.maxDiscountUsd : Number(((item.priceUsd || 0) * (maxPct / 100)).toFixed(2));
+  const WP_PER_USD = 50;
+  const maxCapPts = item.pointsCost > 0 ? item.pointsCost : Math.max(10, Math.round(effectiveCap * WP_PER_USD));
   const maxUsable = Math.min(userPts, maxCapPts);
 
   let appliedPts = 0;
@@ -1087,13 +1095,10 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
   if (isPartial) {
     appliedPts = maxUsable;
     appliedPct = maxCapPts > 0 ? Number(((appliedPts / maxCapPts) * maxPct).toFixed(1)) : 0;
-    const effectiveCap = item.maxDiscountUsd > 0 ? item.maxDiscountUsd : (item.priceUsd * (maxPct / 100));
-    const usdPerPoint = (maxCapPts > 0 && effectiveCap > 0) ? (effectiveCap / maxCapPts) : 0;
+    const usdPerPoint = (maxCapPts > 0 && effectiveCap > 0) ? (effectiveCap / maxCapPts) : (1 / WP_PER_USD);
     appliedDiscountUsd = Number(Math.min(effectiveCap || 0, appliedPts * usdPerPoint).toFixed(2));
-    if (item.priceUsd > 0 && appliedDiscountUsd >= item.priceUsd) {
-      appliedDiscountUsd = Number((item.priceUsd * (maxPct / 100) * (appliedPts / (maxCapPts || 1))).toFixed(2));
-    }
-    cashToPayWithPts = Math.max(0, Number(((item.priceUsd || 0) - appliedDiscountUsd).toFixed(2)));
+    const minCashAllowed = Math.max(item.cashToPayUsd || 0, Number(((item.priceUsd || 0) - effectiveCap).toFixed(2)));
+    cashToPayWithPts = Math.max(minCashAllowed, Number(((item.priceUsd || 0) - appliedDiscountUsd).toFixed(2)));
   }
 
   const formattedAppliedPct = appliedPct % 1 === 0 ? appliedPct.toFixed(0) : appliedPct.toFixed(1);
@@ -1717,15 +1722,15 @@ export function renderCatalog(catalog, user) {
     let cashToPayWithPts = item.priceUsd || 0;
 
     if (isPartial && !isCombo) {
-      appliedPts = Math.min(userPts, maxCapPts);
-      appliedPct = maxCapPts > 0 ? Number(((appliedPts / maxCapPts) * maxPct).toFixed(2)) : 0;
-      const effectiveCap = item.maxDiscountUsd > 0 ? item.maxDiscountUsd : (item.priceUsd * (maxPct / 100));
-      const usdPerPoint = (maxCapPts > 0 && effectiveCap > 0) ? (effectiveCap / maxCapPts) : 0;
+      const effectiveCap = item.maxDiscountUsd > 0 ? item.maxDiscountUsd : Number(((item.priceUsd || 0) * (maxPct / 100)).toFixed(2));
+      const WP_PER_USD = 50;
+      const effectiveCapPts = maxCapPts > 0 ? maxCapPts : Math.max(10, Math.round(effectiveCap * WP_PER_USD));
+      appliedPts = Math.min(userPts, effectiveCapPts);
+      appliedPct = effectiveCapPts > 0 ? Number(((appliedPts / effectiveCapPts) * maxPct).toFixed(2)) : 0;
+      const usdPerPoint = (effectiveCapPts > 0 && effectiveCap > 0) ? (effectiveCap / effectiveCapPts) : (1 / WP_PER_USD);
       appliedDiscountUsd = Number(Math.min(effectiveCap || 0, appliedPts * usdPerPoint).toFixed(2));
-      if (item.priceUsd > 0 && appliedDiscountUsd >= item.priceUsd) {
-        appliedDiscountUsd = Number((item.priceUsd * (maxPct / 100) * (appliedPts / (maxCapPts || 1))).toFixed(2));
-      }
-      cashToPayWithPts = Math.max(0, Number(((item.priceUsd || 0) - appliedDiscountUsd).toFixed(2)));
+      const minCashAllowed = Math.max(item.cashToPayUsd || 0, Number(((item.priceUsd || 0) - effectiveCap).toFixed(2)));
+      cashToPayWithPts = Math.max(minCashAllowed, Number(((item.priceUsd || 0) - appliedDiscountUsd).toFixed(2)));
     }
     const formattedAppliedPct = appliedPct % 1 === 0 ? appliedPct.toFixed(0) : appliedPct.toFixed(1);
 
@@ -2644,6 +2649,7 @@ export function updateConfirmCalculation() {
   let cashToPayUsd = targetPrice;
 
   if (isPartial) {
+    const minCashAllowed = Math.max(0, Number((targetPrice - targetMaxDiscUsd).toFixed(2)));
     const maxUsablePts = Math.min(userPts, targetMaxCapPts);
     deductPts = Math.max(0, Math.min(selectedPointsToApply, maxUsablePts));
 
@@ -2652,7 +2658,7 @@ export function updateConfirmCalculation() {
       : 0;
 
     discountUsd = Number(Math.min(targetMaxDiscUsd, deductPts * usdPerPoint).toFixed(2));
-    cashToPayUsd = Math.max(0, Number((targetPrice - discountUsd).toFixed(2)));
+    cashToPayUsd = Math.max(minCashAllowed, Number((targetPrice - discountUsd).toFixed(2)));
 
     const currentPct = targetMaxCapPts > 0 ? Number(((deductPts / targetMaxCapPts) * targetMaxPct).toFixed(2)) : 0;
     const formattedPct = currentPct % 1 === 0 ? currentPct.toFixed(0) : currentPct.toFixed(1);

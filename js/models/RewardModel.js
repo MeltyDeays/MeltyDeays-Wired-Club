@@ -162,8 +162,9 @@ export class RewardModel {
           this.maxDiscountUsd = Number((this.priceUsd * (this.maxDiscountPct / 100)).toFixed(2));
           this.cashToPayUsd = Number((this.priceUsd - this.maxDiscountUsd).toFixed(2));
         }
-        const expectedCapPts = Math.max(10, Math.round(this.maxDiscountUsd * 20));
-        if (this.pointsCost <= 0 || this.pointsCost > (this.maxDiscountUsd * 35)) {
+        // Invariante oficial MeltyDeays The Wired Club: 1 USD de descuento = 50 WP (1 WP = $0.02 USD = C$ 0.74 NIO)
+        const expectedCapPts = Math.max(10, Math.round(this.maxDiscountUsd * 50));
+        if (this.pointsCost <= 0 || this.pointsCost < Math.round(this.maxDiscountUsd * 40) || this.pointsCost > Math.round(this.maxDiscountUsd * 60)) {
           this.pointsCost = expectedCapPts;
         }
       }

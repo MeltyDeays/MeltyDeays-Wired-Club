@@ -418,7 +418,7 @@ async function createNewProductInFirestore(fbListing, collectionName = "rewards"
   const maxDiscountPct = 15;
   const maxDiscountUsd = Math.round(priceUsd * (maxDiscountPct / 100) * 100) / 100;
   const cashToPayUsd = Math.round((priceUsd - maxDiscountUsd) * 100) / 100;
-  const calculatedPoints = Math.max(10, Math.round(maxDiscountUsd * 20));
+  const calculatedPoints = Math.max(10, Math.round(maxDiscountUsd * 50));
 
   const fields = {
     id: { stringValue: docId },
@@ -482,7 +482,7 @@ async function updateProductInFirestore(productId, newPriceUsd, fbListingId, col
     const maxDiscountPct = (existingProduct && existingProduct.maxDiscountPct) ? Number(existingProduct.maxDiscountPct) : 15;
     const maxDiscountUsd = Math.round(priceUsdNum * (maxDiscountPct / 100) * 100) / 100;
     const cashToPayUsd = Math.round((priceUsdNum - maxDiscountUsd) * 100) / 100;
-    const calculatedPoints = Math.max(10, Math.round(maxDiscountUsd * 20));
+    const calculatedPoints = Math.max(10, Math.round(maxDiscountUsd * 50));
 
     maskPaths.push("updateMask.fieldPaths=priceNio");
     maskPaths.push("updateMask.fieldPaths=maxDiscountPct");
