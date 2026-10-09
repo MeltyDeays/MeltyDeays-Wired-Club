@@ -155,17 +155,22 @@ export class RewardModel {
         this.priceUsd = sumBreakdown;
       }
       if (this.priceUsd > 0) {
-        if (!this.maxDiscountPct || this.maxDiscountPct <= 0) {
-          this.maxDiscountPct = 15;
-        }
-        if (!this.maxDiscountUsd || this.maxDiscountUsd <= 0 || Math.abs((this.maxDiscountUsd + this.cashToPayUsd) - this.priceUsd) > 0.05) {
-          this.maxDiscountUsd = Number((this.priceUsd * (this.maxDiscountPct / 100)).toFixed(2));
-          this.cashToPayUsd = Number((this.priceUsd - this.maxDiscountUsd).toFixed(2));
-        }
-        // Invariante oficial MeltyDeays The Wired Club: 1 USD de descuento = 50 WP (1 WP = $0.02 USD = C$ 0.74 NIO)
-        const expectedCapPts = Math.max(10, Math.round(this.maxDiscountUsd * 50));
-        if (this.pointsCost <= 0 || this.pointsCost < Math.round(this.maxDiscountUsd * 40) || this.pointsCost > Math.round(this.maxDiscountUsd * 60)) {
-          this.pointsCost = expectedCapPts;
+        if (this.maxDiscountPct > 0) {
+          if (!this.maxDiscountUsd || this.maxDiscountUsd <= 0 || Math.abs((this.maxDiscountUsd + this.cashToPayUsd) - this.priceUsd) > 0.05) {
+            this.maxDiscountUsd = Number((this.priceUsd * (this.maxDiscountPct / 100)).toFixed(2));
+            this.cashToPayUsd = Number((this.priceUsd - this.maxDiscountUsd).toFixed(2));
+          }
+          // Invariante oficial MeltyDeays The Wired Club: 1 USD de descuento = 50 WP (1 WP = $0.02 USD = C$ 0.74 NIO)
+          const expectedCapPts = Math.max(10, Math.round(this.maxDiscountUsd * 50));
+          if (this.pointsCost <= 0 || this.pointsCost < Math.round(this.maxDiscountUsd * 40) || this.pointsCost > Math.round(this.maxDiscountUsd * 60)) {
+            this.pointsCost = expectedCapPts;
+          }
+        } else {
+          // Precio plano sin descuento inicial de puntos
+          this.maxDiscountPct = 0;
+          this.maxDiscountUsd = 0;
+          this.cashToPayUsd = this.priceUsd;
+          this.pointsCost = 0;
         }
       }
     }

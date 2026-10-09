@@ -408,17 +408,19 @@ async function createNewProductInFirestore(fbListing, collectionName = "rewards"
     finalImage = "";
   }
 
-  // Si no tiene imagen real asignada, se marca PENDING_APPROVAL para la bandeja de aprobación
-  const hasImage = Boolean(finalImage && finalImage.trim().length > 0);
-  const productStatus = fbListing.status || (hasImage ? "ACTIVE" : "PENDING_APPROVAL");
+  // Todo producto nuevo o sincronizado desde Facebook Marketplace ingresa a la Bandeja de Espera
+  // (PENDING_APPROVAL) para revisión de ficha técnica, búsqueda de fotos similares y Luz Verde.
+  const productStatus = fbListing.status || "PENDING_APPROVAL";
 
   // Limpiar y estructurar descripción con IA (Intro breve + viñetas técnicas)
   const structuredDescription = await cleanAndFormatDescriptionWithGroq(fbListing.title, fbListing.description || "");
 
-  const maxDiscountPct = 15;
-  const maxDiscountUsd = Math.round(priceUsd * (maxDiscountPct / 100) * 100) / 100;
-  const cashToPayUsd = Math.round((priceUsd - maxDiscountUsd) * 100) / 100;
-  const calculatedPoints = Math.max(10, Math.round(maxDiscountUsd * 50));
+  // Por defecto, los productos de Facebook ingresan a precio plano oficial (0% descuento inicial en puntos)
+  // El administrador decide posteriormente en la web si activa o modifica el porcentaje de descuento en puntos.
+  const maxDiscountPct = Number(fbListing.maxDiscountPct || 0);
+  const maxDiscountUsd = maxDiscountPct > 0 ? (Math.round(priceUsd * (maxDiscountPct / 100) * 100) / 100) : 0;
+  const cashToPayUsd = maxDiscountPct > 0 ? (Math.round((priceUsd - maxDiscountUsd) * 100) / 100) : priceUsd;
+  const calculatedPoints = maxDiscountPct > 0 ? Math.max(10, Math.round(maxDiscountUsd * 50)) : 0;
 
   const fields = {
     id: { stringValue: docId },
@@ -479,10 +481,10 @@ async function updateProductInFirestore(productId, newPriceUsd, fbListingId, col
 
   if (priceUsdNum > 0) {
     const priceNio = Math.round(priceUsdNum * EXCHANGE_RATE_NIO);
-    const maxDiscountPct = (existingProduct && existingProduct.maxDiscountPct) ? Number(existingProduct.maxDiscountPct) : 15;
-    const maxDiscountUsd = Math.round(priceUsdNum * (maxDiscountPct / 100) * 100) / 100;
-    const cashToPayUsd = Math.round((priceUsdNum - maxDiscountUsd) * 100) / 100;
-    const calculatedPoints = Math.max(10, Math.round(maxDiscountUsd * 50));
+    const maxDiscountPct = (existingProduct && existingProduct.maxDiscountPct !== undefined) ? Number(existingProduct.maxDiscountPct) : 0;
+    const maxDiscountUsd = maxDiscountPct > 0 ? (Math.round(priceUsdNum * (maxDiscountPct / 100) * 100) / 100) : 0;
+    const cashToPayUsd = maxDiscountPct > 0 ? (Math.round((priceUsdNum - maxDiscountUsd) * 100) / 100) : priceUsdNum;
+    const calculatedPoints = maxDiscountPct > 0 ? Math.max(10, Math.round(maxDiscountUsd * 50)) : 0;
 
     maskPaths.push("updateMask.fieldPaths=priceNio");
     maskPaths.push("updateMask.fieldPaths=maxDiscountPct");

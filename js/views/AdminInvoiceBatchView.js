@@ -2499,6 +2499,12 @@ export const FB_USER_DEFAULT_LISTINGS = [
     currency: "NIO",
     priceNio: 800,
     priceUsd: 21.62,
+    maxDiscountPct: 0,
+    maxDiscountUsd: 0,
+    cashToPayUsd: 21.62,
+    pointsCost: 0,
+    status: "PENDING_APPROVAL",
+    rewardType: "PARTIAL_DISCOUNT",
     description: "Mini turbina portátil 2 en 1 (soplador turbo y aspiradora de mano). Motor sin escobillas de alta velocidad, batería recargable Type-C, incluye boquillas intercambiables y filtro lavable. Totalmente nuevo en caja.",
     imageUrl: FB_IMG_JET_FAN
   },
@@ -2509,6 +2515,12 @@ export const FB_USER_DEFAULT_LISTINGS = [
     currency: "NIO",
     priceNio: 1350,
     priceUsd: 36.49,
+    maxDiscountPct: 0,
+    maxDiscountUsd: 0,
+    cashToPayUsd: 36.49,
+    pointsCost: 0,
+    status: "PENDING_APPROVAL",
+    rewardType: "PARTIAL_DISCOUNT",
     description: "Mando móvil GameSir X5 Lite con conexión directa Type-C de ultra baja latencia. Palancas y gatillos con efecto Hall anti-drift, agarre ergonómico texturizado, soporte para Xbox Cloud Gaming, GeForce NOW y emuladores. Nuevo en caja.",
     imageUrl: FB_IMG_GAMESIR_X5
   },
@@ -2519,6 +2531,12 @@ export const FB_USER_DEFAULT_LISTINGS = [
     currency: "NIO",
     priceNio: 650,
     priceUsd: 17.57,
+    maxDiscountPct: 0,
+    maxDiscountUsd: 0,
+    cashToPayUsd: 17.57,
+    pointsCost: 0,
+    status: "PENDING_APPROVAL",
+    rewardType: "PARTIAL_DISCOUNT",
     description: "Soporte ergonómico para celular con batería integrada Anker de 6700 mAh y ventilador de refrigeración silencioso integrado. Carga rápida mientras juegas, ideal para sesiones largas de Free Fire, COD Mobile y PUBG.",
     imageUrl: FB_IMG_ANKER_POWERBANK
   },
@@ -2529,6 +2547,12 @@ export const FB_USER_DEFAULT_LISTINGS = [
     currency: "NIO",
     priceNio: 850,
     priceUsd: 22.97,
+    maxDiscountPct: 0,
+    maxDiscountUsd: 0,
+    cashToPayUsd: 22.97,
+    pointsCost: 0,
+    status: "PENDING_APPROVAL",
+    rewardType: "PARTIAL_DISCOUNT",
     description: "Extensor de rango Wi-Fi TP-Link AC1200 doble banda (300 Mbps en 2.4 GHz + 867 Mbps en 5 GHz). Tecnología OneMesh para cobertura total en el hogar sin cortes, indicador inteligente de señal e instalación plug & play.",
     imageUrl: FB_IMG_TPLINK_RE315
   },
@@ -2539,6 +2563,12 @@ export const FB_USER_DEFAULT_LISTINGS = [
     currency: "NIO",
     priceNio: 750,
     priceUsd: 20.27,
+    maxDiscountPct: 0,
+    maxDiscountUsd: 0,
+    cashToPayUsd: 20.27,
+    pointsCost: 0,
+    status: "PENDING_APPROVAL",
+    rewardType: "PARTIAL_DISCOUNT",
     description: "Control inalámbrico multiplataforma compatible con PC, Switch, Android e iOS. Motores de doble vibración háptica, giroscopio de 6 ejes, botones traseros programables y conexión Bluetooth de alta estabilidad.",
     imageUrl: FB_IMG_WINDCHASER_MANDO
   },
@@ -2549,6 +2579,12 @@ export const FB_USER_DEFAULT_LISTINGS = [
     currency: "USD",
     priceNio: 40700,
     priceUsd: 1100,
+    maxDiscountPct: 0,
+    maxDiscountUsd: 0,
+    cashToPayUsd: 1100,
+    pointsCost: 0,
+    status: "PENDING_APPROVAL",
+    rewardType: "PARTIAL_DISCOUNT",
     description: "Laptop gamer de alta gama compacta de 14.5 pulgadas. Procesador Intel Core Ultra 7 155H, gráfica NVIDIA GeForce RTX 4070 8GB GDDR6, pantalla 2.5K a 165Hz con cobertura 100% sRGB, 16GB RAM LPDDR5X y 1TB SSD NVMe Gen4.",
     imageUrl: FB_IMG_ACER_PREDATOR
   }
@@ -2673,7 +2709,7 @@ export async function importSelectedFacebookListings() {
     if (data.success && data.report) {
       const createdCount = data.report.newProductsCreated?.length || 0;
       const updatedCount = data.report.updatedProducts?.length || 0;
-      showToast(`✓ Importación completada: ${createdCount} producto(s) creados con fondo blanco y ficha IA en "${colName}".`, "success");
+      showToast(`✓ Importación completada: ${createdCount} producto(s) en espera de aprobación en "${colName}".`, "success");
       
       const modal = document.getElementById("modal-fb-sync-assistant");
       if (modal) modal.style.display = "none";
@@ -2684,10 +2720,21 @@ export async function importSelectedFacebookListings() {
       if (vm && typeof vm.refreshData === "function") {
         await vm.refreshData();
       }
-      if (typeof window.filterCatalogAdmin === "function") {
+      if (typeof window.filterCatalogByType === "function") {
+        window.filterCatalogByType('PENDING');
+      } else if (typeof window.filterCatalogAdmin === "function") {
         window.filterCatalogAdmin();
       } else if (vm && typeof vm.notify === "function") {
         vm.notify();
+      }
+
+      // Abrir automáticamente el modal de aprobación para el primer producto en espera
+      const firstItem = data.report.newProductsCreated?.[0];
+      const targetId = firstItem?.id || (selected[0] ? `fb_${selected[0].listingId}` : null);
+      if (targetId && typeof openApprovalModal === "function") {
+        setTimeout(() => {
+          openApprovalModal(targetId);
+        }, 350);
       }
     } else {
       showToast(`Aviso al importar: ${data.error || "Verifica la respuesta"}`, "warning");
@@ -2908,7 +2955,9 @@ export function openApprovalModal(productId) {
     : `C$${(p.priceNio || 0).toLocaleString()} NIO ($${(p.priceUsd || 0).toFixed(2)} USD)`;
   if (priceEl) priceEl.textContent = priceLabel;
   if (cashEl) cashEl.textContent = `$${(p.cashToPayUsd || p.priceUsd || 0).toFixed(2)} USD`;
-  if (pointsEl) pointsEl.textContent = `${(p.pointsCost || 0).toLocaleString()} WP`;
+  if (pointsEl) pointsEl.textContent = (p.pointsCost && p.pointsCost > 0)
+    ? `${(p.pointsCost).toLocaleString()} WP (Tope ${p.maxDiscountPct || 0}% OFF)`
+    : `0 WP (Precio plano / Sin descuento)`;
 
   // Cargar imágenes existentes válidas
   let existingImgs = [];

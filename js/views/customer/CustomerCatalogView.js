@@ -1879,7 +1879,19 @@ export function renderCatalog(catalog, user) {
         </div>
       `;
     } else if (isPartial) {
-      if (user && userPts >= maxCapPts) {
+      if (maxPct === 0 || maxCapPts === 0) {
+        partialBreakdown = `
+          <div class="reward-pricing-box" style="background: #f8fafc; border-color: #e2e8f0;">
+            <div class="pricing-row total-row" style="display: flex; justify-content: space-between; align-items: baseline; font-size: 0.85rem; font-weight: 800; color: #0f172a;">
+              <span class="pricing-label">Precio oficial:</span>
+              <span class="pricing-val total" style="color: #0f172a; font-variant-numeric: tabular-nums;">${formatPrice(item.priceUsd)}</span>
+            </div>
+            <div class="pricing-row footnote-row" style="color: #64748b; font-size: 0.65rem; margin-top: 2px;">
+              <span class="pricing-label" style="grid-column: span 2;">✦ Precio de venta plano oficial en tienda física.</span>
+            </div>
+          </div>
+        `;
+      } else if (user && userPts >= maxCapPts) {
         partialBreakdown = `
           <div class="reward-pricing-box">
             <div class="pricing-row">
@@ -1980,6 +1992,18 @@ export function renderCatalog(catalog, user) {
                 <span class="btn-redeem-icon">🔒</span>
                 <span class="btn-redeem-text">AGOTADO TEMPORALMENTE</span>
               </div>
+            </button>
+          </div>
+        `;
+      } else if (maxPct === 0 || maxCapPts === 0) {
+        footerHtml = `
+          <div class="reward-footer reward-footer-partial">
+            <button type="button" class="btn-redeem btn-redeem-partial shop-btn active-canje" onclick="event.stopPropagation(); confirmRedeem('${item.id}')">
+              <div class="btn-redeem-content">
+                <span class="btn-redeem-icon">🛒</span>
+                <span class="btn-redeem-text">COMPRAR EN TIENDA</span>
+              </div>
+              <div class="btn-redeem-pts-badge" style="background: #e2e8f0; color: #334155;">PRECIO PLANO</div>
             </button>
           </div>
         `;
@@ -2472,15 +2496,19 @@ export function confirmRedeem(rewardId) {
   if (typeCallout) {
     if (isPartial) {
       typeCallout.style.display = "block";
-      const maxPct = reward.maxDiscountPct || 5;
+      const maxPct = reward.maxDiscountPct || 0;
       if (typePrice) typePrice.innerHTML = formatDualPrice(reward.priceUsd);
-      if (typeMaxDisc) typeMaxDisc.textContent = `-${formatPrice(reward.maxDiscountUsd)} (${maxCapPts.toLocaleString()} WP = ${maxPct}% OFF)`;
+      if (typeMaxDisc) {
+        typeMaxDisc.textContent = (maxPct === 0 || maxCapPts === 0)
+          ? "Precio plano oficial (Sin descuento en puntos)"
+          : `-${formatPrice(reward.maxDiscountUsd)} (${maxCapPts.toLocaleString()} WP = ${maxPct}% OFF)`;
+      }
 
       if (controlsWrap) {
-        controlsWrap.style.display = (userPts > 0) ? "block" : "none";
+        controlsWrap.style.display = (userPts > 0 && maxCapPts > 0) ? "block" : "none";
       }
       if (zeroNote) {
-        zeroNote.style.display = (userPts <= 0) ? "block" : "none";
+        zeroNote.style.display = (userPts <= 0 && maxCapPts > 0) ? "block" : "none";
       }
 
       if (slider) {
@@ -2671,15 +2699,19 @@ export function updateConfirmCalculation() {
     const ptsAppliedNotice = document.getElementById("confirm-pts-applied-notice");
 
     if (typePct) {
-      typePct.textContent = (Number(formattedPct) === Number(targetMaxPct))
-        ? `${formattedPct}% OFF`
-        : `${formattedPct}% OFF (Máx. ${targetMaxPct}%)`;
+      typePct.textContent = (targetMaxPct === 0 || targetMaxCapPts === 0)
+        ? "0% OFF (Precio Plano)"
+        : ((Number(formattedPct) === Number(targetMaxPct)) ? `${formattedPct}% OFF` : `${formattedPct}% OFF (Máx. ${targetMaxPct}%)`);
     }
-    if (typePctCalc) typePctCalc.textContent = `${formattedPct}% de descuento / Máximo ${targetMaxPct}%`;
+    if (typePctCalc) {
+      typePctCalc.textContent = (targetMaxPct === 0 || targetMaxCapPts === 0)
+        ? "Precio oficial de venta plano en tienda física"
+        : `${formattedPct}% de descuento / Máximo ${targetMaxPct}%`;
+    }
     if (calcPctLabel) calcPctLabel.textContent = `${formattedPct}%`;
-    if (typeDisc) typeDisc.textContent = `-${formatPrice(discountUsd)}`;
+    if (typeDisc) typeDisc.textContent = (targetMaxPct === 0 || targetMaxCapPts === 0) ? "$0.00" : `-${formatPrice(discountUsd)}`;
     if (typeCash) typeCash.innerHTML = formatDualPrice(cashToPayUsd);
-    if (ptsAppliedNotice) ptsAppliedNotice.textContent = `${deductPts.toLocaleString()} WP aplicados`;
+    if (ptsAppliedNotice) ptsAppliedNotice.textContent = (targetMaxPct === 0 || targetMaxCapPts === 0) ? "0 WP (Sin descuento en puntos)" : `${deductPts.toLocaleString()} WP aplicados`;
 
     const doRedeemBtn = document.getElementById("btn-do-redeem");
     if (doRedeemBtn) {
