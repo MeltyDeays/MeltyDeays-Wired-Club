@@ -21,7 +21,7 @@ import {
   FB_IMG_WINDCHASER_MANDO,
   FB_IMG_ACER_PREDATOR
 } from "../data/FbRealImages.js";
-import { searchProductImagesFromWeb, fetchImageAsDataUrl } from "../services/WebImageSearchService.js";
+import { searchProductImagesFromWeb, fetchImageAsDataUrl } from "../services/WebImageSearchService.js?v=2.9.17";
 
 let vm = null;
 let showToast = () => {};
@@ -1322,9 +1322,14 @@ export async function handleAdminReleaseIncoming(rewardId) {
 }
 
 export async function removeProductAdmin(id) {
-  if (confirm("¿Estás seguro de eliminar este producto del catálogo?")) {
+  const ok = confirm("¿Estás seguro de eliminar este producto del catálogo?");
+  if (!ok) return;
+  showToast("Eliminando producto del catálogo...", "info");
+  try {
     await vm.deleteReward(id);
     showToast("Producto eliminado del catálogo", "info");
+  } catch (err) {
+    showToast("❌ Error al eliminar producto: " + err.message, "error");
   }
 }
 
@@ -2493,13 +2498,25 @@ export function renderLainTemplateGrid() {
 }
 
 export function isBrandVerifiable(title = "", description = "") {
-  const text = `${title} ${description}`.toLowerCase();
+  const cleanTitle = (title || "").toLowerCase();
   const KNOWN_BRANDS = [
     "acer", "predator", "helios", "gamesir", "anker", "powercore",
     "tp-link", "tplink", "asus", "lenovo", "dell", "hp", "apple",
     "sony", "nintendo", "xbox", "logitech", "razer", "samsung", "xiaomi"
   ];
-  return KNOWN_BRANDS.some(b => new RegExp(`\\b${b}\\b`, "i").test(text));
+  
+  // 1. La marca debe estar explícitamente en el TÍTULO del producto
+  const hasBrandInTitle = KNOWN_BRANDS.some(b => new RegExp(`\\b${b}\\b`, "i").test(cleanTitle));
+  if (hasBrandInTitle) return true;
+
+  // 2. Si no está en el título, solo se verifica en la descripción si NO es mención de compatibilidad
+  const cleanDesc = (description || "")
+    .replace(/compatib[^\n.]+/gi, "")
+    .replace(/funciona con[^\n.]+/gi, "")
+    .replace(/para (nintendo|xbox|switch|pc|android|ios|ps4|ps5|sony|apple)/gi, "")
+    .toLowerCase();
+
+  return KNOWN_BRANDS.some(b => new RegExp(`\\b${b}\\b`, "i").test(cleanDesc));
 }
 
 export const FB_MOLD_PRESETS = {};

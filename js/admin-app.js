@@ -537,15 +537,15 @@ function renderCatalogTable(catalog) {
 
   tbody.innerHTML = filtered.map(p => {
     const isPending = p.status === "PENDING_APPROVAL" || p.status === "PENDING_IMAGE";
-    const isIncoming = !isPending && (p.status === "INCOMING" || (typeof p.isIncoming === "function" && p.isIncoming()));
-    const isPartial = !isPending && !isIncoming && (p.rewardType === "PARTIAL_DISCOUNT" || (typeof p.isPartialDiscount === "function" && p.isPartialDiscount()));
-    const isBrand = Boolean(p.brandVerified || (typeof window.isBrandVerifiable === "function" ? window.isBrandVerifiable(p.title, p.description) : false));
-    const needsMold = isPending && !isBrand && !p.hasSelectedMold;
+    const hasRealImage = Boolean((p.imageUrl && !p.imageUrl.includes("unsplash.com")) || (Array.isArray(p.images) && p.images.some(img => img && !img.includes("unsplash.com"))));
+    const isBrand = Boolean(typeof window.isBrandVerifiable === "function" ? window.isBrandVerifiable(p.title, p.description) : p.brandVerified);
+    const isBrandWithImage = isBrand && hasRealImage;
+    const needsMold = isPending && (!isBrandWithImage || !hasRealImage) && !p.hasSelectedMold;
 
     const typeBadge = isPending
       ? (needsMold
           ? `<span class="badge-navi" style="background:#fffbeb; color:#b45309; border:1px solid #f59e0b; font-size:0.68rem; font-weight:800;">⚠️ REQUIERE MOLDE WEB (LENS)</span>`
-          : (isBrand
+          : (isBrandWithImage
               ? `<span class="badge-navi" style="background:#ecfdf5; color:#047857; border:1px solid #10b981; font-size:0.68rem; font-weight:800;">🛡️ MARCA VERIFICADA</span>`
               : `<span class="badge-navi" style="background:#fffbeb; color:#b45309; border:1px solid #fcd34d; font-size:0.68rem;">⏳ ESPERANDO APROBACIÓN</span>`))
       : (isIncoming

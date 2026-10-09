@@ -20,13 +20,25 @@ function getRandomGroqKey() {
 }
 
 function isBrandVerifiable(title = "", description = "") {
-  const text = `${title} ${description}`.toLowerCase();
+  const cleanTitle = (title || "").toLowerCase();
   const KNOWN_BRANDS = [
     "acer", "predator", "helios", "gamesir", "anker", "powercore",
     "tp-link", "tplink", "asus", "lenovo", "dell", "hp", "apple",
     "sony", "nintendo", "xbox", "logitech", "razer", "samsung", "xiaomi"
   ];
-  return KNOWN_BRANDS.some(b => new RegExp(`\\b${b}\\b`, "i").test(text));
+  
+  // 1. La marca debe estar explícitamente en el TÍTULO del producto
+  const hasBrandInTitle = KNOWN_BRANDS.some(b => new RegExp(`\\b${b}\\b`, "i").test(cleanTitle));
+  if (hasBrandInTitle) return true;
+
+  // 2. Si no está en el título, solo se verifica en la descripción si NO es mención de compatibilidad
+  const cleanDesc = (description || "")
+    .replace(/compatib[^\n.]+/gi, "")
+    .replace(/funciona con[^\n.]+/gi, "")
+    .replace(/para (nintendo|xbox|switch|pc|android|ios|ps4|ps5|sony|apple)/gi, "")
+    .toLowerCase();
+
+  return KNOWN_BRANDS.some(b => new RegExp(`\\b${b}\\b`, "i").test(cleanDesc));
 }
 
 const HIGH_END_HARDWARE_REGEX = /(laptop|computadora|notebook|predator|helios|rtx\s*\d+|gtx\s*\d+|radeon|intel\s*(core\s*)?ultra|core\s*i[79]|ryzen\s*[79]|macbook|torre\s*gamer|pc\s*gamer)/i;
