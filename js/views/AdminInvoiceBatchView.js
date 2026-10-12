@@ -15,10 +15,12 @@ import { processImageWithAiWhiteBg } from "../utils/ImageProcessor.js";
 import { cleanCatalogDescription } from "../services/GroqAiService.js";
 import {
   FB_IMG_JET_FAN,
+  FB_IMG_JET_FAN_BODY,
   FB_IMG_GAMESIR_X5,
   FB_IMG_ANKER_POWERBANK,
   FB_IMG_TPLINK_RE315,
   FB_IMG_WINDCHASER_MANDO,
+  FB_IMG_WINDCHASER_BODY,
   FB_IMG_ACER_PREDATOR
 } from "../data/FbRealImages.js";
 import { searchProductImagesFromWeb, fetchImageAsDataUrl } from "../services/WebImageSearchService.js?v=2.9.17";
@@ -2539,6 +2541,11 @@ export const FB_USER_DEFAULT_LISTINGS = [
     rewardType: "PARTIAL_DISCOUNT",
     description: "Mini turbina portátil 2 en 1 (soplador turbo y aspiradora de mano). Motor sin escobillas de alta velocidad, batería recargable Type-C, incluye boquillas intercambiables y filtro lavable. Totalmente nuevo en caja.",
     imageUrl: "",
+    images: [],
+    fbPhotos: [
+      FB_IMG_JET_FAN,
+      FB_IMG_JET_FAN_BODY
+    ],
     moldCandidates: []
   },
   {
@@ -2556,7 +2563,9 @@ export const FB_USER_DEFAULT_LISTINGS = [
     brandVerified: true,
     rewardType: "PARTIAL_DISCOUNT",
     description: "Mando móvil GameSir X5 Lite con conexión directa Type-C de ultra baja latencia. Palancas y gatillos con efecto Hall anti-drift, agarre ergonómico texturizado, soporte para Xbox Cloud Gaming, GeForce NOW y emuladores. Nuevo en caja.",
-    imageUrl: FB_IMG_GAMESIR_X5
+    imageUrl: FB_IMG_GAMESIR_X5,
+    images: [FB_IMG_GAMESIR_X5],
+    fbPhotos: [FB_IMG_GAMESIR_X5]
   },
   {
     listingId: "1198273641889023",
@@ -2573,7 +2582,9 @@ export const FB_USER_DEFAULT_LISTINGS = [
     brandVerified: true,
     rewardType: "PARTIAL_DISCOUNT",
     description: "Soporte ergonómico para celular con batería integrada Anker de 6700 mAh y ventilador de refrigeración silencioso integrado. Carga rápida mientras juegas, ideal para sesiones largas de Free Fire, COD Mobile y PUBG.",
-    imageUrl: FB_IMG_ANKER_POWERBANK
+    imageUrl: FB_IMG_ANKER_POWERBANK,
+    images: [FB_IMG_ANKER_POWERBANK],
+    fbPhotos: [FB_IMG_ANKER_POWERBANK]
   },
   {
     listingId: "1198273641889024",
@@ -2590,7 +2601,9 @@ export const FB_USER_DEFAULT_LISTINGS = [
     brandVerified: true,
     rewardType: "PARTIAL_DISCOUNT",
     description: "Extensor de rango Wi-Fi TP-Link AC1200 doble banda (300 Mbps en 2.4 GHz + 867 Mbps en 5 GHz). Tecnología OneMesh para cobertura total en el hogar sin cortes, indicador inteligente de señal e instalación plug & play.",
-    imageUrl: FB_IMG_TPLINK_RE315
+    imageUrl: FB_IMG_TPLINK_RE315,
+    images: [FB_IMG_TPLINK_RE315],
+    fbPhotos: [FB_IMG_TPLINK_RE315]
   },
   {
     listingId: "1198273641889025",
@@ -2609,6 +2622,11 @@ export const FB_USER_DEFAULT_LISTINGS = [
     rewardType: "PARTIAL_DISCOUNT",
     description: "Control inalámbrico multiplataforma compatible con PC, Switch, Android e iOS. Motores de doble vibración háptica, giroscopio de 6 ejes, botones traseros programables y conexión Bluetooth de alta estabilidad.",
     imageUrl: "",
+    images: [],
+    fbPhotos: [
+      FB_IMG_WINDCHASER_MANDO,
+      FB_IMG_WINDCHASER_BODY
+    ],
     moldCandidates: []
   },
   {
@@ -2752,9 +2770,13 @@ export async function importSelectedFacebookListings() {
         console.warn(`[FB Import] Búsqueda HD web omitida para "${item.title}":`, err.message);
       }
     } else {
-      // Genérico chino: limpiar foto de Facebook para forzar selección de molde web estilo Google Lens
-      item.imageUrl = "";
-      item.images = [];
+      // Genérico chino: preservar fotos reales de Facebook (caja, cuerpo, accesorios) como referencia de inspección
+      const existingFbPhotos = Array.isArray(item.fbPhotos) && item.fbPhotos.length > 0
+        ? item.fbPhotos
+        : (Array.isArray(item.images) && item.images.length > 0 ? item.images : (item.imageUrl ? [item.imageUrl] : []));
+      item.fbPhotos = [...existingFbPhotos];
+      item.imageUrl = ""; // Requiere selección obligatoria de molde web oficial para la portada
+      item.images = [...existingFbPhotos];
       item.hasSelectedMold = false;
       item.brandVerified = false;
     }
@@ -3091,15 +3113,18 @@ export async function selectMoldCandidate(index) {
   }
 
   // Adoptar como foto oficial del producto
-  pendingApprovalImages = [finalUrl];
-  renderApprovalImagesGrid();
-
   const productId = document.getElementById("approval-product-id")?.value;
   const p = (vm ? vm.catalog : []).find(x => (x.id === productId || x.reward_id === productId));
+  const rawFbPool = (p && (Array.isArray(p.fbPhotos) && p.fbPhotos.length > 0 ? p.fbPhotos : (Array.isArray(p.images) ? p.images : []))) || [];
+  const otherFbImgs = rawFbPool.filter(img => img && img !== finalUrl);
+
+  pendingApprovalImages = [finalUrl, ...otherFbImgs];
+  renderApprovalImagesGrid();
+
   if (p) {
     p.hasSelectedMold = true;
     p.imageUrl = finalUrl;
-    p.images = [finalUrl];
+    p.images = [finalUrl, ...otherFbImgs];
   }
 
   const btnConfirm = document.getElementById("btn-confirm-approval");
@@ -3130,6 +3155,7 @@ export function renderMoldCards(p) {
     const url = m.thumbnail || m.imageUrl;
     const title = m.title || `Molde #${idx + 1}`;
     const source = m.source || "web";
+    const facetText = m.facetLabel || source;
     const isSelected = p.hasSelectedMold && (p.imageUrl === m.imageUrl || selectedMoldIndex === idx);
     return `
       <div class="mold-candidate-card" onclick="selectMoldCandidate(${idx})" style="cursor: pointer; position: relative; border-radius: 8px; overflow: hidden; border: ${isSelected ? '3px solid #10b981' : '1.5px solid #cbd5e1'}; background: ${isSelected ? '#ecfdf5' : '#fff'}; padding: 6px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; transition: all 0.2s ease;">
@@ -3141,7 +3167,7 @@ export function renderMoldCards(p) {
             <span class="mold-badge" style="display: inline-block; font-size: 0.65rem; font-family: var(--font-mono); font-weight: 800; padding: 2px 5px; border-radius: 4px; background: ${isSelected ? '#059669' : '#f1f5f9'}; color: ${isSelected ? '#fff' : '#64748b'};">
               ${isSelected ? '✓ ELEGIDO' : `Opción ${idx + 1}`}
             </span>
-            <span style="font-size: 0.6rem; color: #0284c7; font-family: var(--font-mono); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 60px;">${source}</span>
+            <span style="font-size: 0.6rem; color: #4338ca; background: #e0e7ff; padding: 1px 5px; border-radius: 4px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 85px;" title="${facetText}">${facetText}</span>
           </div>
           <div style="font-size: 0.68rem; font-weight: 700; color: #1e293b; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${title}">
             ${title}
@@ -3172,12 +3198,16 @@ export async function loadLiveWebMoldsForProduct(p, customQuery = null) {
     <div style="grid-column: 1 / -1; text-align: center; padding: 1.5rem; color: #b45309; font-weight: 700; font-size: 0.85rem;">
       <div style="font-size: 1.8rem; margin-bottom: 0.5rem; display: inline-block; animation: spin 1s linear infinite;">🔄</div>
       <div>Buscando 6 opciones reales en la web para "${targetQuery}" (Google Lens Style)...</div>
-      <div style="font-size: 0.72rem; color: #78350f; font-weight: normal; margin-top: 4px;">Consultando MercadoLibre, eBay, Amazon y sitios de venta en vivo</div>
+      <div style="font-size: 0.72rem; color: #78350f; font-weight: normal; margin-top: 4px;">Consultando empaques, dispositivos, kits y variantes en vivo</div>
     </div>
   `;
 
   try {
-    const results = await searchProductImagesFromWeb(targetQuery, 6);
+    const sampleImgs = Array.isArray(p.fbPhotos) && p.fbPhotos.length > 0 ? p.fbPhotos : (Array.isArray(p.images) ? p.images : []);
+    const results = await searchProductImagesFromWeb(targetQuery, 6, {
+      description: p.description || "",
+      sampleImages: sampleImgs
+    });
     if (!results || results.length === 0) {
       lensGrid.innerHTML = `
         <div style="grid-column: 1 / -1; text-align: center; padding: 1.25rem; color: #b45309; font-size: 0.8rem;">
@@ -3290,9 +3320,12 @@ export function openApprovalModal(productId) {
         btnConfirm.style.cursor = "not-allowed";
         btnConfirm.title = "Selecciona cuál de las 6 opciones coincide con el diseño físico de tu producto";
       }
-      pendingApprovalImages = [];
+      const existingFb = (Array.isArray(p.fbPhotos) && p.fbPhotos.length > 0) ? p.fbPhotos : (Array.isArray(p.images) ? p.images : []);
+      pendingApprovalImages = [...existingFb];
     } else if (p.imageUrl && !p.imageUrl.includes("unsplash.com")) {
-      pendingApprovalImages = [p.imageUrl];
+      const existingFb = (Array.isArray(p.fbPhotos) && p.fbPhotos.length > 0) ? p.fbPhotos : (Array.isArray(p.images) ? p.images : []);
+      const otherImgs = existingFb.filter(img => img !== p.imageUrl);
+      pendingApprovalImages = [p.imageUrl, ...otherImgs];
       if (btnConfirm) {
         btnConfirm.disabled = false;
         btnConfirm.style.opacity = "1";

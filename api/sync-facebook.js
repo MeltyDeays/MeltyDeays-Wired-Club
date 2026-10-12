@@ -519,6 +519,18 @@ async function createNewProductInFirestore(fbListing, collectionName = "rewards"
     finalImage = "";
   }
 
+  const incomingFbPhotos = (Array.isArray(fbListing.fbPhotos) && fbListing.fbPhotos.length > 0)
+    ? fbListing.fbPhotos
+    : (Array.isArray(fbListing.images) && fbListing.images.length > 0 ? fbListing.images : (fbListing.imageUrl ? [fbListing.imageUrl] : []));
+  const cleanFbPhotos = incomingFbPhotos.filter(img => img && typeof img === "string" && !img.includes("unsplash.com"));
+
+  let productImages = [];
+  if (finalImage) {
+    productImages = [finalImage, ...cleanFbPhotos.filter(u => u !== finalImage)];
+  } else {
+    productImages = [...cleanFbPhotos];
+  }
+
   const fields = {
     id: { stringValue: docId },
     reward_id: { stringValue: docId },
@@ -530,7 +542,8 @@ async function createNewProductInFirestore(fbListing, collectionName = "rewards"
     pointsCost: { integerValue: calculatedPoints },
     points_cost: { integerValue: calculatedPoints },
     imageUrl: { stringValue: finalImage },
-    images: { arrayValue: { values: finalImage ? [{ stringValue: finalImage }] : [] } },
+    images: { arrayValue: { values: productImages.map(img => ({ stringValue: img })) } },
+    fbPhotos: { arrayValue: { values: cleanFbPhotos.map(img => ({ stringValue: img })) } },
     stock: { integerValue: 1 },
     rewardType: { stringValue: "PARTIAL_DISCOUNT" },
     publicationMode: { stringValue: "PARTIAL_DISCOUNT" },
@@ -558,7 +571,13 @@ async function createNewProductInFirestore(fbListing, collectionName = "rewards"
     throw new Error(`Error creando producto en Firestore: ${errText}`);
   }
 
-  return { id: docId, title: fbListing.title, priceUsd };
+  return {
+    id: docId,
+    title: fbListing.title,
+    priceUsd,
+    status: productStatus,
+    fbPhotosCount: cleanFbPhotos.length
+  };
 }
 
 // Actualizar precio e imagen de producto existente

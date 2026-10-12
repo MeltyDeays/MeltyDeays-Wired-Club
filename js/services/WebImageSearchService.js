@@ -20,18 +20,25 @@ export function cleanSearchQuery(rawQuery = "") {
 
 /**
  * Busca imágenes en vivo en la web devolviendo array de resultados con formato:
- * [{ title, imageUrl, thumbnail, source, width, height }]
+ * [{ title, imageUrl, thumbnail, source, width, height, facet, facetLabel }]
  */
-export async function searchProductImagesFromWeb(query, limit = 6) {
+export async function searchProductImagesFromWeb(query, limit = 6, options = {}) {
   const clean = cleanSearchQuery(query);
   if (!clean) return [];
+
+  const postPayload = {
+    query: clean,
+    limit,
+    description: options.description || "",
+    sampleImages: options.sampleImages || []
+  };
 
   // Intento 1: POST al endpoint serverless relativo (mismo origen, 100% libre de CORS)
   try {
     const res = await fetch("/api/search-product-images", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ query: clean })
+      body: JSON.stringify(postPayload)
     });
     if (res.ok) {
       const data = await res.json();
@@ -45,7 +52,7 @@ export async function searchProductImagesFromWeb(query, limit = 6) {
 
   // Intento 2: GET fallback al endpoint serverless relativo
   try {
-    const res = await fetch(`/api/search-product-images?q=${encodeURIComponent(clean)}`);
+    const res = await fetch(`/api/search-product-images?q=${encodeURIComponent(clean)}&limit=${limit}`);
     if (res.ok) {
       const data = await res.json();
       if (data && Array.isArray(data.results) && data.results.length > 0) {

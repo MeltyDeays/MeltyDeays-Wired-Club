@@ -59,61 +59,73 @@ module.exports = async function handler(req, res) {
       .replace(/\s+/g, " ")
       .trim();
 
-    const searchQuery = `${cleanQuery} product`;
-    let formatted = [];
+    const limit = Math.min(24, Math.max(6, parseInt(body.limit || queryParams.limit || 12, 10)));
+    const description = (body.description || queryParams.description || "").trim();
 
-    // 1. MOTOR PRIMARIO: Bing Image Search (Directo, sin tokens ni bloqueo en servidor en la nube)
-    try {
-      const bingUrl = `https://www.bing.com/images/search?q=${encodeURIComponent(searchQuery)}&form=HDRSC2&first=1`;
-      const bingRes = await fetch(bingUrl, {
-        headers: {
-          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-          "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-          "Accept-Language": "es-ES,es;q=0.9,en;q=0.8"
-        }
-      });
+    // 1. Identificación de categoría y construcción de facetas visuales (Estilo Google Lens)
+    const qLower = cleanQuery.toLowerCase();
+    const isBlower = /soplador|fan|turb|ventilador|jet/i.test(qLower);
+    const isGamepad = /mando|control|gamesir|gamepad|joystick/i.test(qLower);
 
-      if (bingRes.ok) {
-        const html = await bingRes.text();
-        const regex = /murl&quot;:&quot;(https?:[^&]+)&quot;[^>]*?turl&quot;:&quot;(https?:[^&]+)&quot;[^>]*?t&quot;:&quot;([^&]*)&quot;/g;
-        let m;
-        while ((m = regex.exec(html)) !== null && formatted.length < 12) {
-          let domain = "web";
-          try { domain = new URL(m[1]).hostname.replace(/^www\./, ""); } catch {}
-          formatted.push({
-            title: m[3] ? m[3].replace(/&#\d+;/g, "").trim() : cleanQuery,
-            imageUrl: m[1],
-            thumbnail: m[2] || m[1],
-            width: 800,
-            height: 800,
-            source: domain
-          });
-        }
+    const facets = [
+      { key: "mold", label: "Dispositivo / Molde", q: `${cleanQuery} product studio` },
+      { key: "box", label: "Caja / Empaque", q: `${cleanQuery} caja box packaging retail` },
+      { key: "kit", label: "Kit con Accesorios", q: `${cleanQuery} kit boquillas aspiradora accesorios` }
+    ];
 
-        if (formatted.length === 0) {
-          const simpleRegex = /murl&quot;:&quot;(https?:[^&]+)&quot;/g;
-          while ((m = simpleRegex.exec(html)) !== null && formatted.length < 12) {
-            let domain = "web";
-            try { domain = new URL(m[1]).hostname.replace(/^www\./, ""); } catch {}
-            formatted.push({
-              title: cleanQuery,
-              imageUrl: m[1],
-              thumbnail: m[1],
-              width: 800,
-              height: 800,
-              source: domain
-            });
-          }
-        }
-      }
-    } catch (bErr) {
-      console.warn("Aviso búsqueda Bing:", bErr.message);
+    if (isBlower) {
+      facets.push({ key: "variant", label: "Variante Comercial", q: "Violent Fan turbo jet air blower electric" });
+    } else if (isGamepad) {
+      facets.push({ key: "variant", label: "Variante Comercial", q: "Wireless Game Controller switch pc android" });
+    } else {
+      facets.push({ key: "variant", label: "Variante Comercial", q: `${cleanQuery} official model version` });
     }
 
-    // 2. MOTOR DE RESPALDO: DuckDuckGo si Bing devuelve menos de 3 resultados
-    if (formatted.length < 3) {
+    // 2. Extractor de imágenes desde Bing con decodificación JSON limpia
+    async function fetchBingFacet(facetObj) {
       try {
-        const ddgSearchUrl = `https://duckduckgo.com/?q=${encodeURIComponent(searchQuery)}&t=h_&iar=images&iax=images&ia=images`;
+        const bingUrl = `https://www.bing.com/images/search?q=${encodeURIComponent(facetObj.q)}&form=HDRSC2&first=1`;
+        const bRes = await fetch(bingUrl, {
+          headers: {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Language": "es-ES,es;q=0.9,en;q=0.8"
+          }
+        });
+        if (!bRes.ok) return [];
+        const html = await bRes.text();
+        const regex = /class="iusc"[^>]+m="([^"]+)"/g;
+        let match;
+        const items = [];
+        while ((match = regex.exec(html)) !== null && items.length < 8) {
+          try {
+            const parsed = JSON.parse(match[1].replace(/&quot;/g, '"'));
+            if (!parsed.murl || !parsed.murl.startsWith("http")) continue;
+            let domain = "web";
+            try { domain = new URL(parsed.murl).hostname.replace(/^www\./, ""); } catch {}
+            const titleClean = (parsed.t || parsed.desc || "").replace(/[\uE000-\uF8FF]/g, "").replace(/&#\d+;/g, "").trim();
+            items.push({
+              title: titleClean || cleanQuery,
+              imageUrl: parsed.murl,
+              thumbnail: parsed.turl || parsed.murl,
+              width: parsed.ow || 800,
+              height: parsed.oh || 800,
+              source: domain,
+              facet: facetObj.key,
+              facetLabel: facetObj.label
+            });
+          } catch (e) {}
+        }
+        return items;
+      } catch (err) {
+        return [];
+      }
+    }
+
+    // 3. Extractor de respaldo DuckDuckGo
+    async function fetchDuckDuckGoFacet(queryStr, facetKey, facetLabel) {
+      try {
+        const ddgSearchUrl = `https://duckduckgo.com/?q=${encodeURIComponent(queryStr)}&t=h_&iar=images&iax=images&ia=images`;
         const tokenRes = await fetch(ddgSearchUrl, {
           headers: {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
@@ -122,39 +134,98 @@ module.exports = async function handler(req, res) {
         const ddgHtml = await tokenRes.text();
         const vqdMatch = ddgHtml.match(/vqd=([0-9-]+)/) || ddgHtml.match(/vqd=["']([0-9-]+)["']/) || ddgHtml.match(/vqd=([^&"']+)/);
         const vqd = vqdMatch ? vqdMatch[1] : null;
+        if (!vqd) return [];
 
-        if (vqd) {
-          const imagesUrl = `https://duckduckgo.com/i.js?l=us-en&o=json&q=${encodeURIComponent(searchQuery)}&vqd=${vqd}&f=,,,type:photo,&p=1`;
-          const imgRes = await fetch(imagesUrl, {
-            headers: {
-              "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-              "Referer": "https://duckduckgo.com/"
-            }
+        const imagesUrl = `https://duckduckgo.com/i.js?l=us-en&o=json&q=${encodeURIComponent(queryStr)}&vqd=${vqd}&f=,,,type:photo,&p=1`;
+        const imgRes = await fetch(imagesUrl, {
+          headers: {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Referer": "https://duckduckgo.com/"
+          }
+        });
+        if (!imgRes.ok) return [];
+        const data = await imgRes.json();
+        return (data.results || [])
+          .filter(r => r && r.image && r.image.startsWith("http"))
+          .slice(0, 6)
+          .map(r => {
+            let domain = "web";
+            try { domain = new URL(r.image).hostname.replace(/^www\./, ""); } catch { domain = r.domain || "web"; }
+            return {
+              title: r.title || cleanQuery,
+              imageUrl: r.image,
+              thumbnail: r.thumbnail || r.image,
+              width: r.width || 800,
+              height: r.height || 800,
+              source: domain,
+              facet: facetKey,
+              facetLabel: facetLabel
+            };
           });
+      } catch (err) {
+        return [];
+      }
+    }
 
-          if (imgRes.ok) {
-            const data = await imgRes.json();
-            const rawResults = Array.isArray(data.results) ? data.results : [];
-            const ddgFormatted = rawResults
-              .filter(r => r && r.image && r.image.startsWith("http"))
-              .slice(0, 12 - formatted.length)
-              .map(r => {
-                let domain = "";
-                try { domain = new URL(r.image).hostname.replace(/^www\./, ""); } catch { domain = r.domain || "web"; }
-                return {
-                  title: r.title || cleanQuery,
-                  imageUrl: r.image,
-                  thumbnail: r.thumbnail || r.image,
-                  width: r.width || 800,
-                  height: r.height || 800,
-                  source: domain
-                };
-              });
-            formatted = formatted.concat(ddgFormatted);
+    // Ejecutar facetas en paralelo para máxima velocidad
+    const facetPromises = facets.map(f => fetchBingFacet(f));
+    const settled = await Promise.allSettled(facetPromises);
+    let facetResults = settled.map(s => s.status === "fulfilled" ? s.value : []);
+
+    // Si Bing no devolvió resultados suficientes, complementar con DuckDuckGo
+    const totalFound = facetResults.reduce((acc, curr) => acc + curr.length, 0);
+    if (totalFound < 4) {
+      const ddgBackup = await fetchDuckDuckGoFacet(`${cleanQuery} product`, "mold", "Dispositivo / Molde");
+      if (ddgBackup.length > 0) {
+        facetResults[0] = (facetResults[0] || []).concat(ddgBackup);
+      }
+    }
+
+    // 4. Algoritmo de Fusión Google Lens: Round-Robin Interleaving + Diversidad de Dominio
+    const formatted = [];
+    const seenUrls = new Set();
+    const domainCounts = {};
+    const maxPerDomain = 2;
+
+    let maxLen = 0;
+    for (const list of facetResults) {
+      if (list.length > maxLen) maxLen = list.length;
+    }
+
+    // Ronda 1: Intercalar garantizando 1 de cada faceta (dispositivo, caja, kit, variante)
+    for (let round = 0; round < maxLen; round++) {
+      for (const list of facetResults) {
+        if (round < list.length) {
+          const item = list[round];
+          const normUrl = item.imageUrl.toLowerCase().split('?')[0];
+          if (seenUrls.has(normUrl)) continue;
+
+          const dCount = domainCounts[item.source] || 0;
+          if (dCount >= maxPerDomain && formatted.length < limit) {
+            continue;
+          }
+
+          seenUrls.add(normUrl);
+          domainCounts[item.source] = dCount + 1;
+          formatted.push(item);
+          if (formatted.length >= limit) break;
+        }
+      }
+      if (formatted.length >= limit) break;
+    }
+
+    // Ronda 2: Si aún falta para el límite, admitir los restantes no duplicados
+    if (formatted.length < limit) {
+      for (const list of facetResults) {
+        for (const item of list) {
+          const normUrl = item.imageUrl.toLowerCase().split('?')[0];
+          if (!seenUrls.has(normUrl)) {
+            seenUrls.add(normUrl);
+            formatted.push(item);
+            if (formatted.length >= limit) break;
           }
         }
-      } catch (ddgErr) {
-        console.warn("Aviso búsqueda DuckDuckGo:", ddgErr.message);
+        if (formatted.length >= limit) break;
       }
     }
 

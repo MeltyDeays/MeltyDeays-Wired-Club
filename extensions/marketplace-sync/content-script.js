@@ -228,8 +228,19 @@ function exportMarketplaceListingsToWeb() {
 
     const textContent = parent.innerText || "";
     const lines = textContent.split("\n").map(l => l.trim()).filter(Boolean);
-    const imgEl = parent.querySelector("img");
-    const imageUrl = imgEl ? imgEl.src : "";
+
+    const allImgs = Array.from(parent.querySelectorAll("img"));
+    const fbPhotos = [];
+    allImgs.forEach(img => {
+      const src = img.src || img.getAttribute("data-src") || "";
+      if (!src || !src.startsWith("http")) return;
+      if (src.includes("rsrc.php") || src.includes("/emoji.php") || src.includes("data:image/svg")) return;
+      if (img.naturalWidth > 0 && img.naturalWidth < 45) return;
+      if (!fbPhotos.includes(src)) {
+        fbPhotos.push(src);
+      }
+    });
+    const imageUrl = fbPhotos[0] || "";
 
     const priceLine = lines.find(l => l.includes("$") || l.includes("C$") || /^\d+(\.\d+)?$/.test(l));
     const rawPrice = parsePriceFromText(priceLine) || 0;
@@ -244,6 +255,8 @@ function exportMarketplaceListingsToWeb() {
       rawPrice: rawPrice,
       currency: isUsd ? "USD" : (rawPrice <= 200 ? "USD" : "NIO"),
       imageUrl: imageUrl,
+      images: fbPhotos,
+      fbPhotos: fbPhotos,
       description: textContent
     });
   });
