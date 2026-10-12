@@ -222,7 +222,7 @@ export function openAdjustPointsModal(uid, name, currentPts) {
   modal.style.display = "flex";
   setTimeout(() => {
     const input = document.getElementById("adjust-points-amount");
-    if (input) input.focus();
+    if (input) input.focus({ preventScroll: true });
   }, 100);
 }
 
@@ -230,7 +230,7 @@ export function setAdjustQuickPoints(pts) {
   const input = document.getElementById("adjust-points-amount");
   if (input) {
     input.value = pts;
-    input.focus();
+    input.focus({ preventScroll: true });
   }
 }
 
@@ -374,7 +374,7 @@ export function openNewUserModal() {
     window.syncModalScrollLock();
   }
   setTimeout(() => {
-    if (nameInput) nameInput.focus();
+    if (nameInput) nameInput.focus({ preventScroll: true });
   }, 100);
 }
 
@@ -422,7 +422,7 @@ export function openEditPinModal(uid, name, currentPin, phone) {
   modal.style.display = "flex";
   setTimeout(() => {
     if (input) {
-      input.focus();
+      input.focus({ preventScroll: true });
       input.select();
     }
   }, 100);

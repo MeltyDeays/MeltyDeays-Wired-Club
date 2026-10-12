@@ -38,6 +38,10 @@
 
 html, body {
   touch-action: pan-x pan-y;
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 body {
@@ -50,6 +54,10 @@ body {
   display: flex;
   flex-direction: column;
   overflow-x: hidden;
+  overflow-x: clip;
+  position: relative;
+  width: 100%;
+  max-width: 100vw;
 }
 
 html.modal-open,
@@ -234,12 +242,16 @@ html.modal-open .admin-bottom-dock {
   width: 100%;
   margin: 0 auto;
   padding: 1.75rem 1.25rem;
+  box-sizing: border-box;
 }
 
 #admin-main-panel {
   max-width: 100%;
   width: 100%;
   padding: 1.5rem 1.25rem;
+  box-sizing: border-box;
+  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 /* BOTONES TÉCNICOS ESTILO FACTURA */
@@ -497,12 +509,17 @@ html.modal-open .admin-bottom-dock {
 
 /* TABLAS ESTILO FACTURA (ENCABEZADOS DARK) */
 .table-responsive {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   overflow-x: auto;
   border: 1.5px solid var(--dark);
   border-radius: 4px;
   background: #ffffff;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
 }
 
 .table-responsive::-webkit-scrollbar {

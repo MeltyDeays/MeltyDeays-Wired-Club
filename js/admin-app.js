@@ -369,6 +369,11 @@ export function switchAdminTab(tabName) {
   } else if (tabName === "community") {
     renderAdminCommentsList();
   }
+
+  // Garantizar alineación visual izquierda inmediata sin desplazamientos residuales
+  if (typeof window !== "undefined" && typeof window.scrollTo === "function") {
+    window.scrollTo({ left: 0, behavior: "instant" });
+  }
 }
 
 function renderAdmin(model) {
@@ -379,12 +384,15 @@ function renderAdmin(model) {
     if (lockEl) lockEl.style.display = "flex";
     if (mainEl) mainEl.style.display = "none";
     const pinInput = document.getElementById("input-admin-pin");
-    if (pinInput) setTimeout(() => pinInput.focus(), 100);
+    if (pinInput) setTimeout(() => pinInput.focus({ preventScroll: true }), 100);
     return;
   }
 
   if (lockEl) lockEl.style.display = "none";
   if (mainEl) mainEl.style.display = "block";
+  if (typeof window !== "undefined" && typeof window.scrollTo === "function") {
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+  }
 
   let totalCirc = 0;
   model.tokens.forEach(t => { if (t.isClaimed()) totalCirc += t.pointsValue; });
@@ -1121,7 +1129,7 @@ export function openAdminCommentForm(commentId, mode = 'EDIT') {
     if (btnText) btnText.textContent = "ACTUALIZAR RESPUESTA";
   }
 
-  input.focus();
+  input.focus({ preventScroll: true });
 }
 
 export function closeAdminCommentForm(commentId) {

@@ -1967,7 +1967,7 @@ export async function confirmAdminClaimCustomer() {
   const pts = parseInt(pointsInput?.value, 10);
   if (isNaN(pts) || pts <= 0) {
     showToast("⚠️ Ingresa una cantidad de puntos válida mayor a 0.", "error");
-    if (pointsInput) pointsInput.focus();
+    if (pointsInput) pointsInput.focus({ preventScroll: true });
     return;
   }
 
@@ -3317,7 +3317,7 @@ export function togglePasteLensInput() {
   panel.style.display = isHidden ? "block" : "none";
   if (isHidden) {
     const input = document.getElementById("lens-paste-url-input");
-    if (input) input.focus();
+    if (input) input.focus({ preventScroll: true });
   }
 }
 

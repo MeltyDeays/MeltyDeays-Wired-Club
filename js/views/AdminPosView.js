@@ -43,7 +43,7 @@ export function clearPosScanner() {
   const input = document.getElementById("input-scan-voucher");
   if (input) {
     input.value = "";
-    input.focus();
+    input.focus({ preventScroll: true });
   }
   clearPosFeedback();
 }
@@ -136,7 +136,7 @@ export function submitAdminPin() {
     }
     if (input) {
       input.value = "";
-      input.focus();
+      input.focus({ preventScroll: true });
     }
   } else {
     if (feedback) feedback.style.display = "none";
@@ -158,7 +158,7 @@ export async function verifyVoucherAdmin() {
       group.classList.add("shake-input");
       setTimeout(() => group.classList.remove("shake-input"), 500);
     }
-    if (input) input.focus();
+    if (input) input.focus({ preventScroll: true });
     return;
   }
 
@@ -255,7 +255,7 @@ export async function verifyVoucherAdmin() {
         if (assignArea) assignArea.style.display = "block";
         if (pointsInput) {
           pointsInput.value = "100";
-          setTimeout(() => pointsInput.focus(), 100);
+          setTimeout(() => pointsInput.focus({ preventScroll: true }), 100);
         }
         if (btnSave) btnSave.textContent = "⚡ Guardar Puntos y Activar Factura";
       }
@@ -481,7 +481,7 @@ export async function submitAssignPoints() {
   }
   if (!points || isNaN(points) || points <= 0) {
     showToast("⚠️ Ingresa una cantidad válida de puntos mayor a 0 (ej. 100).", "error");
-    if (pointsInput) pointsInput.focus();
+    if (pointsInput) pointsInput.focus({ preventScroll: true });
     return;
   }
 
@@ -542,7 +542,7 @@ export async function submitAssignPoints() {
 
       posAssignSuccessTimer = setTimeout(() => {
         closePosResult();
-        if (scanInput) scanInput.focus();
+        if (scanInput) scanInput.focus({ preventScroll: true });
       }, 5000);
     }
   } catch (err) {
@@ -554,7 +554,7 @@ export function setQuickPoints(val) {
   const input = document.getElementById("input-assign-points");
   if (input) {
     input.value = val;
-    input.focus();
+    input.focus({ preventScroll: true });
   }
 }
 
@@ -563,7 +563,7 @@ export function promptAssignPoints(tokenCode, folio) {
   const input = document.getElementById("input-scan-voucher");
   if (input) {
     input.value = tokenCode;
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
     verifyVoucherAdmin();
   }
 }
