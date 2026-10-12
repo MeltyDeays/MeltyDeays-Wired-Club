@@ -980,6 +980,7 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
 
   const parsed = parseProductDescription(item.description);
   const isIncoming = !isCombo && (typeof item.isIncoming === "function" ? item.isIncoming() : (item.status === "INCOMING" || Boolean(item.isIncoming || item.is_incoming))) && !(typeof item.isIncomingExpired === "function" && item.isIncomingExpired());
+  const isPartial = isCombo || item.rewardType === "PARTIAL_DISCOUNT" || (typeof item.isPartialDiscount === "function" && item.isPartialDiscount());
   const presalePrice = Number(item.presalePriceUsd ?? (item.priceUsd * (1 - (item.presaleDiscountPct || item.presaleDiscountValue || 0) / 100)));
   const presaleDiscUsd = Number(item.presaleDiscountUsd ?? Math.max(0, item.priceUsd - presalePrice));
   const presaleDiscPct = item.presaleDiscountType === "PERCENTAGE" ? Number(item.presaleDiscountValue || 0) : (item.priceUsd > 0 ? Math.round((presaleDiscUsd / item.priceUsd) * 100) : 0);

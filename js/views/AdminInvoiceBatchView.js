@@ -2500,25 +2500,20 @@ export function renderLainTemplateGrid() {
 }
 
 export function isBrandVerifiable(title = "", description = "") {
-  const cleanTitle = (title || "").toLowerCase();
+  const rawTitle = (title || "").toLowerCase();
+  // Limpiar menciones de compatibilidad en el título (ej: "para Nintendo Switch", "compatible con Xbox", etc.)
+  const cleanTitle = rawTitle
+    .replace(/\b(para|for|compatible(\s+con)?|diseñado\s+para|soporte\s+para|funda\s+para|estuche\s+para)\s+[a-z0-9\-\s]+/gi, "")
+    .trim();
+
   const KNOWN_BRANDS = [
     "acer", "predator", "helios", "gamesir", "anker", "powercore",
     "tp-link", "tplink", "asus", "lenovo", "dell", "hp", "apple",
     "sony", "nintendo", "xbox", "logitech", "razer", "samsung", "xiaomi"
   ];
   
-  // 1. La marca debe estar explícitamente en el TÍTULO del producto
-  const hasBrandInTitle = KNOWN_BRANDS.some(b => new RegExp(`\\b${b}\\b`, "i").test(cleanTitle));
-  if (hasBrandInTitle) return true;
-
-  // 2. Si no está en el título, solo se verifica en la descripción si NO es mención de compatibilidad
-  const cleanDesc = (description || "")
-    .replace(/compatib[^\n.]+/gi, "")
-    .replace(/funciona con[^\n.]+/gi, "")
-    .replace(/para (nintendo|xbox|switch|pc|android|ios|ps4|ps5|sony|apple)/gi, "")
-    .toLowerCase();
-
-  return KNOWN_BRANDS.some(b => new RegExp(`\\b${b}\\b`, "i").test(cleanDesc));
+  // La marca debe estar explícitamente como marca principal en el TÍTULO del producto
+  return KNOWN_BRANDS.some(b => new RegExp(`\\b${b}\\b`, "i").test(cleanTitle));
 }
 
 export const FB_MOLD_PRESETS = {};
@@ -3444,7 +3439,7 @@ export function openApprovalModal(productId) {
     ? `${(p.pointsCost).toLocaleString()} WP (Tope ${p.maxDiscountPct || 0}% OFF)`
     : `0 WP (Precio plano / Sin descuento)`;
 
-  const isBrand = Boolean(p.brandVerified || isBrandVerifiable(p.title, p.description));
+  const isBrand = p.brandVerified !== undefined ? Boolean(p.brandVerified) : isBrandVerifiable(p.title, p.description);
   selectedMoldIndex = -1;
 
   if (isBrand) {
@@ -3697,7 +3692,7 @@ export async function approveAndPublishProduct(productId) {
     return;
   }
 
-  const isBrand = Boolean(p.brandVerified || isBrandVerifiable(p.title, p.description));
+  const isBrand = p.brandVerified !== undefined ? Boolean(p.brandVerified) : isBrandVerifiable(p.title, p.description);
   if (!isBrand && pendingApprovalImages.length === 0) {
     showToast("⚠️ Producto genérico/chino: Debes seleccionar cuál de las 6 opciones coincide con el molde físico de tu producto antes de dar Luz Verde.", "warning");
     openApprovalModal(productId);
@@ -3783,8 +3778,8 @@ export async function approveAllBrandVerifiedProducts() {
   const catalog = (vm && vm.catalog) ? vm.catalog : [];
   const verifiedPending = catalog.filter(p => {
     const isPending = p.status === "PENDING_APPROVAL" || p.status === "PENDING_IMAGE";
-    const isBrand = Boolean(p.brandVerified || isBrandVerifiable(p.title, p.description));
-    const hasImage = Boolean((p.imageUrl && !p.imageUrl.includes("unsplash.com")) || (Array.isArray(p.images) && p.images.length > 0));
+    const isBrand = p.brandVerified !== undefined ? Boolean(p.brandVerified) : isBrandVerifiable(p.title, p.description);
+    const hasImage = Boolean((p.imageUrl && !p.imageUrl.includes("unsplash.com") && !/(brak[-_]?zdj|no[-_]?image|placeholder|sin[-_]?foto)/i.test(p.imageUrl)) || (Array.isArray(p.images) && p.images.length > 0));
     return isPending && isBrand && hasImage;
   });
 

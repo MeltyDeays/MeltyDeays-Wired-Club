@@ -1,5 +1,7 @@
 /* Vercel Serverless Function: Búsqueda de Fotos de Estudio en la Web y Proxy Seguro */
 
+const PLACEHOLDER_IMG_REGEX = /(brak[-_]?zdj|no[-_]?image|placeholder|sin[-_]?foto|image[-_]?not[-_]?found|default[-_]?image|not[-_]?available|sin[-_]?imagen|missing[-_]?image|preview[-_]?unavailable|no[-_]?photo|brakfoto)/i;
+
 module.exports = async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
@@ -115,7 +117,7 @@ module.exports = async function handler(req, res) {
         if (!imgRes.ok) return [];
         const data = await imgRes.json();
         return (data.results || [])
-          .filter(r => r && r.image && r.image.startsWith("http"))
+          .filter(r => r && r.image && r.image.startsWith("http") && !PLACEHOLDER_IMG_REGEX.test(r.image) && !PLACEHOLDER_IMG_REGEX.test(r.title || ""))
           .slice(0, 6)
           .map(r => {
             let domain = "web";
@@ -157,13 +159,13 @@ module.exports = async function handler(req, res) {
         while ((match = regex.exec(html)) !== null && items.length < 8) {
           try {
             const parsed = JSON.parse(match[1].replace(/&quot;/g, '"'));
-            if (!parsed.murl || !parsed.murl.startsWith("http")) continue;
+            if (!parsed.murl || !parsed.murl.startsWith("http") || PLACEHOLDER_IMG_REGEX.test(parsed.murl)) continue;
             let domain = "web";
             try { domain = new URL(parsed.murl).hostname.replace(/^www\./, ""); } catch {}
             if (excludedDomains.test(domain)) continue;
 
             const titleClean = (parsed.t || parsed.desc || "").replace(/[\uE000-\uF8FF]/g, "").replace(/&#\d+;/g, "").trim();
-            if (/cooper|bmw|yamaha|honda|paris|tour/i.test(titleClean)) continue;
+            if (/cooper|bmw|yamaha|honda|paris|tour/i.test(titleClean) || PLACEHOLDER_IMG_REGEX.test(titleClean)) continue;
 
             items.push({
               title: titleClean || cleanQuery,

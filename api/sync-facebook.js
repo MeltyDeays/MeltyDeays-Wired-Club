@@ -19,26 +19,23 @@ function getRandomGroqKey() {
   return GROQ_KEYS[Math.floor(Math.random() * GROQ_KEYS.length)];
 }
 
+const PLACEHOLDER_IMG_REGEX = /(brak[-_]?zdj|no[-_]?image|placeholder|sin[-_]?foto|image[-_]?not[-_]?found|default[-_]?image|not[-_]?available|sin[-_]?imagen|missing[-_]?image|preview[-_]?unavailable|no[-_]?photo|brakfoto)/i;
+
 function isBrandVerifiable(title = "", description = "") {
-  const cleanTitle = (title || "").toLowerCase();
+  const rawTitle = (title || "").toLowerCase();
+  // Limpiar menciones de compatibilidad en el título (ej: "para Nintendo Switch", "compatible con Xbox", etc.)
+  const cleanTitle = rawTitle
+    .replace(/\b(para|for|compatible(\s+con)?|diseñado\s+para|soporte\s+para|funda\s+para|estuche\s+para)\s+[a-z0-9\-\s]+/gi, "")
+    .trim();
+
   const KNOWN_BRANDS = [
     "acer", "predator", "helios", "gamesir", "anker", "powercore",
     "tp-link", "tplink", "asus", "lenovo", "dell", "hp", "apple",
     "sony", "nintendo", "xbox", "logitech", "razer", "samsung", "xiaomi"
   ];
   
-  // 1. La marca debe estar explícitamente en el TÍTULO del producto
-  const hasBrandInTitle = KNOWN_BRANDS.some(b => new RegExp(`\\b${b}\\b`, "i").test(cleanTitle));
-  if (hasBrandInTitle) return true;
-
-  // 2. Si no está en el título, solo se verifica en la descripción si NO es mención de compatibilidad
-  const cleanDesc = (description || "")
-    .replace(/compatib[^\n.]+/gi, "")
-    .replace(/funciona con[^\n.]+/gi, "")
-    .replace(/para (nintendo|xbox|switch|pc|android|ios|ps4|ps5|sony|apple)/gi, "")
-    .toLowerCase();
-
-  return KNOWN_BRANDS.some(b => new RegExp(`\\b${b}\\b`, "i").test(cleanDesc));
+  // La marca debe estar explícitamente como marca principal en el TÍTULO del producto
+  return KNOWN_BRANDS.some(b => new RegExp(`\\b${b}\\b`, "i").test(cleanTitle));
 }
 
 const HIGH_END_HARDWARE_REGEX = /(laptop|computadora|notebook|predator|helios|rtx\s*\d+|gtx\s*\d+|radeon|intel\s*(core\s*)?ultra|core\s*i[79]|ryzen\s*[79]|macbook|torre\s*gamer|pc\s*gamer)/i;
@@ -168,9 +165,37 @@ async function searchFirstStudioImageForBrand(query) {
       .trim();
     if (!clean) return null;
 
-    // 1. Bing Images (Directo y sin bloqueo de IPs en la nube)
+    // 1. DuckDuckGo prioritario (Excelente precisión e-commerce y fotos oficiales limpias)
     try {
-      const bingUrl = `https://www.bing.com/images/search?q=${encodeURIComponent(clean + " product")}&form=HDRSC2&first=1`;
+      const searchUrl = `https://duckduckgo.com/?q=${encodeURIComponent(clean + " product studio")}&t=h_&iar=images&iax=images&ia=images`;
+      const tokenRes = await fetch(searchUrl, {
+        headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" }
+      });
+      if (tokenRes.ok) {
+        const html = await tokenRes.text();
+        const vqdMatch = html.match(/vqd=([0-9-]+)/) || html.match(/vqd=["']([0-9-]+)["']/) || html.match(/vqd=([^&"']+)/);
+        if (vqdMatch) {
+          const vqd = vqdMatch[1];
+          const imagesUrl = `https://duckduckgo.com/i.js?l=us-en&o=json&q=${encodeURIComponent(clean + " product studio")}&vqd=${vqd}&f=,,,type:photo,&p=1`;
+          const imgRes = await fetch(imagesUrl, {
+            headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36", "Referer": "https://duckduckgo.com/" }
+          });
+          if (imgRes.ok) {
+            const data = await imgRes.json();
+            const valid = (data.results || []).find(r => 
+              r && r.image && r.image.startsWith("http") && !PLACEHOLDER_IMG_REGEX.test(r.image)
+            );
+            if (valid) return valid.image;
+          }
+        }
+      }
+    } catch (e) {
+      console.warn("Aviso: DDG search falló, intentando Bing:", e.message);
+    }
+
+    // 2. Bing Images secundario (Filtrado estricto contra placeholders y sin foto)
+    try {
+      const bingUrl = `https://www.bing.com/images/search?q=${encodeURIComponent(clean + " product studio")}&form=HDRSC2&first=1`;
       const bRes = await fetch(bingUrl, {
         headers: {
           "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
@@ -179,32 +204,16 @@ async function searchFirstStudioImageForBrand(query) {
       });
       if (bRes.ok) {
         const html = await bRes.text();
-        const m = /murl&quot;:&quot;(https?:[^&]+)&quot;/.exec(html);
-        if (m && m[1]) return m[1];
-      }
-    } catch {}
-
-    // 2. DuckDuckGo fallback
-    const searchUrl = `https://duckduckgo.com/?q=${encodeURIComponent(clean + " product studio")}&t=h_&iar=images&iax=images&ia=images`;
-    const tokenRes = await fetch(searchUrl, {
-      headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" }
-    });
-    if (tokenRes.ok) {
-      const html = await tokenRes.text();
-      const vqdMatch = html.match(/vqd=([0-9-]+)/) || html.match(/vqd=["']([0-9-]+)["']/) || html.match(/vqd=([^&"']+)/);
-      if (vqdMatch) {
-        const vqd = vqdMatch[1];
-        const imagesUrl = `https://duckduckgo.com/i.js?l=us-en&o=json&q=${encodeURIComponent(clean + " product studio")}&vqd=${vqd}&f=,,,type:photo,&p=1`;
-        const imgRes = await fetch(imagesUrl, {
-          headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36", "Referer": "https://duckduckgo.com/" }
-        });
-        if (imgRes.ok) {
-          const data = await imgRes.json();
-          const first = (data.results || []).find(r => r && r.image && r.image.startsWith("http"));
-          if (first) return first.image;
+        const regex = /murl&quot;:&quot;(https?:[^&]+)&quot;/g;
+        let match;
+        while ((match = regex.exec(html)) !== null) {
+          const candidateUrl = match[1];
+          if (candidateUrl && !PLACEHOLDER_IMG_REGEX.test(candidateUrl)) {
+            return candidateUrl;
+          }
         }
       }
-    }
+    } catch {}
   } catch (e) {
     return null;
   }
