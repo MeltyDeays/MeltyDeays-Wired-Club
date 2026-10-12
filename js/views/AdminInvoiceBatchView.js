@@ -3243,6 +3243,172 @@ export async function reloadLiveWebMoldsWithQuery() {
   await loadLiveWebMoldsForProduct(p, targetQuery);
 }
 
+export function openProductInGoogleLens() {
+  const productId = document.getElementById("approval-product-id")?.value;
+  const p = (vm ? vm.catalog : []).find(x => (x.id === productId || x.reward_id === productId));
+  if (!p) {
+    showToast("No se encontró el producto para Google Lens.", "warning");
+    return;
+  }
+
+  const sampleImgs = Array.isArray(p.fbPhotos) && p.fbPhotos.length > 0
+    ? p.fbPhotos
+    : (Array.isArray(p.images) && p.images.length > 0 ? p.images : (p.imageUrl ? [p.imageUrl] : []));
+
+  const targetImg = sampleImgs[0];
+  if (!targetImg) {
+    showToast("El producto no posee fotos disponibles para buscar en Google Lens.", "warning");
+    return;
+  }
+
+  // Caso A: Imagen con URL HTTP/HTTPS pública (Facebook CDN o web) -> Abre Google Lens directo
+  if (targetImg.startsWith("http://") || targetImg.startsWith("https://")) {
+    const lensUrl = `https://lens.google.com/uploadbyurl?url=${encodeURIComponent(targetImg)}`;
+    window.open(lensUrl, "_blank");
+    showToast("✓ Abriendo Google Lens oficial con la foto del producto...", "info");
+    return;
+  }
+
+  // Caso B: Imagen Base64 DataURL -> Abre visor auxiliar para ejecutar clic derecho > 'Buscar imagen con Google' en Chrome
+  const lensWin = window.open("", "_blank");
+  if (lensWin) {
+    lensWin.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Google Lens · Foto del Producto (${p.title || 'MeltyDeays'})</title>
+        <style>
+          body { font-family: system-ui, -apple-system, sans-serif; background: #0f172a; color: #fff; margin: 0; padding: 2rem; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 90vh; }
+          .banner { background: #1e293b; border: 2px solid #38bdf8; border-radius: 12px; padding: 1.25rem 2rem; max-width: 640px; text-align: center; margin-bottom: 1.5rem; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+          .banner h2 { margin: 0 0 0.5rem 0; font-size: 1.25rem; color: #38bdf8; display: flex; align-items: center; justify-content: center; gap: 8px; }
+          .banner p { margin: 0; font-size: 0.88rem; line-height: 1.55; color: #cbd5e1; }
+          .img-box { background: #fff; padding: 14px; border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.6); max-width: 90vw; max-height: 65vh; display: flex; align-items: center; justify-content: center; }
+          img { max-width: 100%; max-height: 60vh; object-fit: contain; border-radius: 8px; cursor: pointer; }
+        </style>
+      </head>
+      <body>
+        <div class="banner">
+          <h2>🔍 Búsqueda Directa con Google Lens (Chrome)</h2>
+          <p>
+            <strong>Paso 1:</strong> Haz <strong>clic derecho</strong> directamente sobre la foto de abajo.<br>
+            <strong>Paso 2:</strong> Selecciona la opción <strong>"Buscar imagen con Google"</strong> (Google Lens).<br>
+            <strong>Paso 3:</strong> En el panel lateral de Google Lens, cuando veas la foto oficial del producto o caja, haz clic derecho en ella y selecciona <em>"Copiar dirección de imagen"</em>.<br>
+            <strong>Paso 4:</strong> Vuelve al panel de administración y usa <strong>"📌 Pegar Foto de Google Lens"</strong> para adoptarla con fondo blanco automático.
+          </p>
+        </div>
+        <div class="img-box">
+          <img src="${targetImg}" alt="Foto de producto para Google Lens">
+        </div>
+      </body>
+      </html>
+    `);
+    lensWin.document.close();
+    showToast("Visor de foto abierto: haz clic derecho y selecciona 'Buscar imagen con Google'.", "info");
+  } else {
+    showToast("Por favor permite ventanas emergentes para abrir el visor de Google Lens.", "warning");
+  }
+}
+
+export function togglePasteLensInput() {
+  const panel = document.getElementById("lens-paste-url-panel");
+  if (!panel) return;
+  const isHidden = panel.style.display === "none";
+  panel.style.display = isHidden ? "block" : "none";
+  if (isHidden) {
+    const input = document.getElementById("lens-paste-url-input");
+    if (input) input.focus();
+  }
+}
+
+export async function adoptPastedLensUrl() {
+  const input = document.getElementById("lens-paste-url-input");
+  const rawUrl = input ? input.value.trim() : "";
+  if (!rawUrl || !rawUrl.startsWith("http")) {
+    showToast("Ingresa un enlace válido de imagen (ej: https://...)", "warning");
+    return;
+  }
+
+  showToast("Descargando y adaptando imagen de Google Lens...", "info");
+  try {
+    const base64Data = await fetchImageAsDataUrl(rawUrl);
+    let finalUrl = base64Data;
+    if (base64Data && base64Data.startsWith("data:image")) {
+      const img = new Image();
+      await new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = reject;
+        img.src = base64Data;
+      });
+
+      const canvas = document.createElement("canvas");
+      const size = 800;
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext("2d");
+      ctx.fillStyle = "#FFFFFF";
+      ctx.fillRect(0, 0, size, size);
+
+      const padding = size * 0.08;
+      const maxDim = size - (padding * 2);
+      let srcW = img.width || img.naturalWidth;
+      let srcH = img.height || img.naturalHeight;
+      let destW = srcW;
+      let destH = srcH;
+
+      if (destW > maxDim || destH > maxDim) {
+        if (destW > destH) {
+          destH = Math.round((destH * maxDim) / destW);
+          destW = maxDim;
+        } else {
+          destW = Math.round((destW * maxDim) / destH);
+          destH = maxDim;
+        }
+      } else if (destW < maxDim && destH < maxDim) {
+        const scale = maxDim / Math.max(destW, destH);
+        destW = Math.round(destW * scale);
+        destH = Math.round(destH * scale);
+      }
+
+      const posX = Math.round((size - destW) / 2);
+      const posY = Math.round((size - destH) / 2);
+      ctx.drawImage(img, posX, posY, destW, destH);
+      finalUrl = canvas.toDataURL("image/webp", 0.85);
+    }
+
+    const productId = document.getElementById("approval-product-id")?.value;
+    const p = (vm ? vm.catalog : []).find(x => (x.id === productId || x.reward_id === productId));
+    const rawFbPool = (p && (Array.isArray(p.fbPhotos) && p.fbPhotos.length > 0 ? p.fbPhotos : (Array.isArray(p.images) ? p.images : []))) || [];
+    const otherFbImgs = rawFbPool.filter(img => img && img !== finalUrl);
+
+    pendingApprovalImages = [finalUrl, ...otherFbImgs];
+    renderApprovalImagesGrid();
+
+    if (p) {
+      p.hasSelectedMold = true;
+      p.imageUrl = finalUrl;
+      p.images = [finalUrl, ...otherFbImgs];
+    }
+
+    const btnConfirm = document.getElementById("btn-confirm-approval");
+    if (btnConfirm) {
+      btnConfirm.disabled = false;
+      btnConfirm.style.opacity = "1";
+      btnConfirm.style.cursor = "pointer";
+      btnConfirm.title = "Publicar producto en catálogo activo";
+    }
+
+    if (input) input.value = "";
+    const panel = document.getElementById("lens-paste-url-panel");
+    if (panel) panel.style.display = "none";
+
+    showToast("✓ Molde de Google Lens adoptado y normalizado con éxito. Luz verde habilitada.", "success");
+  } catch (err) {
+    console.error("Error adoptando URL de Google Lens:", err);
+    showToast("No se pudo descargar la imagen remota. Verifica el enlace.", "danger");
+  }
+}
+
 export function openApprovalModal(productId) {
   const p = (vm ? vm.catalog : []).find(x => (x.id === productId || x.reward_id === productId));
   if (!p) {
@@ -3680,4 +3846,7 @@ if (typeof window !== "undefined") {
   window.isBrandVerifiable = isBrandVerifiable;
   window.loadLiveWebMoldsForProduct = loadLiveWebMoldsForProduct;
   window.reloadLiveWebMoldsWithQuery = reloadLiveWebMoldsWithQuery;
+  window.openProductInGoogleLens = openProductInGoogleLens;
+  window.togglePasteLensInput = togglePasteLensInput;
+  window.adoptPastedLensUrl = adoptPastedLensUrl;
 }

@@ -2287,6 +2287,29 @@
         <p style="font-size: 0.73rem; color: #78350f; margin-bottom: 0.75rem; line-height: 1.4;">
           ⚠️ Este artículo es un producto genérico / chino sin marca propietaria (diversos nombres para un mismo chasis). <strong>Por norma obligatoria, debes seleccionar cuál de las 6 opciones coincide con el diseño físico de tu producto</strong> antes de otorgar Luz Verde.
         </p>
+        <!-- BOTONES DE ACCIÓN: GOOGLE LENS REAL Y ADOPCIÓN DIRECTA -->
+        <div style="display: flex; gap: 8px; margin-bottom: 0.75rem; flex-wrap: wrap; align-items: center;">
+          <button type="button" id="btn-open-google-lens" class="btn-primary" onclick="openProductInGoogleLens()" style="padding: 0.4rem 0.85rem; font-size: 0.75rem; font-weight: 800; background: #2563eb; border-color: #1d4ed8; color: #fff; display: flex; align-items: center; gap: 6px; border-radius: 6px; cursor: pointer; box-shadow: 0 1px 3px rgba(37,99,235,0.3);">
+            <span>🔍</span> <span>Abrir en Google Lens Real (1-Clic)</span>
+          </button>
+          <button type="button" class="btn-secondary" onclick="togglePasteLensInput()" style="padding: 0.4rem 0.75rem; font-size: 0.75rem; font-weight: 800; background: #ecfdf5; border-color: #10b981; color: #047857; display: flex; align-items: center; gap: 6px; border-radius: 6px; cursor: pointer;">
+            <span>📌</span> <span>Pegar Foto de Google Lens</span>
+          </button>
+        </div>
+
+        <!-- Panel Desplegable para Pegar URL Externa de Google Lens -->
+        <div id="lens-paste-url-panel" style="display: none; background: #fff; border: 1.5px dashed #10b981; border-radius: 6px; padding: 0.6rem; margin-bottom: 0.75rem;">
+          <div style="font-size: 0.7rem; color: #065f46; font-weight: 700; margin-bottom: 4px;">
+            Pega el enlace de la imagen o publicación encontrada en Google Lens (eBay, AliExpress, Shopee, etc.):
+          </div>
+          <div style="display: flex; gap: 6px;">
+            <input type="text" id="lens-paste-url-input" class="form-control" style="font-size: 0.76rem; padding: 0.35rem 0.55rem; border: 1px solid #10b981; border-radius: 5px; flex-grow: 1;" placeholder="https://... o clic derecho 'Copiar dirección de imagen'">
+            <button type="button" class="btn-primary" onclick="adoptPastedLensUrl()" style="padding: 0.35rem 0.75rem; font-size: 0.72rem; font-weight: 800; background: #059669; border-color: #059669; color: #fff; white-space: nowrap; cursor: pointer;">
+              ✓ Adoptar Molde
+            </button>
+          </div>
+        </div>
+
         <div style="display: flex; gap: 6px; margin-bottom: 0.75rem; align-items: center;">
           <input type="text" id="approval-lens-search-input" class="form-control" style="font-size: 0.76rem; padding: 0.35rem 0.6rem; border: 1px solid #f59e0b; border-radius: 5px; flex-grow: 1; background: #fff;" placeholder="Término para búsqueda visual (Google Lens)...">
           <button type="button" id="btn-approval-lens-re-search" class="btn-secondary" onclick="reloadLiveWebMoldsWithQuery()" style="padding: 0.35rem 0.75rem; font-size: 0.72rem; font-weight: 800; background: #fff7ed; border-color: #f97316; color: #c2410c; white-space: nowrap; cursor: pointer;">

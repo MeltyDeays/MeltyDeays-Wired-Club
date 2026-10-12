@@ -62,67 +62,36 @@ module.exports = async function handler(req, res) {
     const limit = Math.min(24, Math.max(6, parseInt(body.limit || queryParams.limit || 12, 10)));
     const description = (body.description || queryParams.description || "").trim();
 
-    // 1. Identificación de categoría y construcción de facetas visuales (Estilo Google Lens)
+    // 1. Identificación de categoría y construcción de facetas visuales especializadas
     const qLower = cleanQuery.toLowerCase();
-    const isBlower = /soplador|fan|turb|ventilador|jet/i.test(qLower);
+    const isBlower = /soplador|fan|turb|ventilador|jet|violent/i.test(qLower);
     const isGamepad = /mando|control|gamesir|gamepad|joystick/i.test(qLower);
 
-    const facets = [
-      { key: "mold", label: "Dispositivo / Molde", q: `${cleanQuery} product studio` },
-      { key: "box", label: "Caja / Empaque", q: `${cleanQuery} caja box packaging retail` },
-      { key: "kit", label: "Kit con Accesorios", q: `${cleanQuery} kit boquillas aspiradora accesorios` }
-    ];
-
+    const facets = [];
     if (isBlower) {
-      facets.push({ key: "variant", label: "Variante Comercial", q: "Violent Fan turbo jet air blower electric" });
+      facets.push(
+        { key: "mold", label: "Molde / Dispositivo 2 en 1", q: "Violent Fan Mini Jet Fan 2 in 1 blower vacuum" },
+        { key: "box", label: "Caja / Empaque", q: "Violent Fan Mini Jet Fan packaging box" },
+        { key: "kit", label: "Kit con Accesorios", q: "Violent Fan handheld air blower accessories kit" },
+        { key: "variant", label: "Variante Comercial", q: "Violent Fan turbo jet fan 130000 RPM" }
+      );
     } else if (isGamepad) {
-      facets.push({ key: "variant", label: "Variante Comercial", q: "Wireless Game Controller switch pc android" });
+      facets.push(
+        { key: "mold", label: "Dispositivo / Molde", q: `${cleanQuery} wireless controller gamepad` },
+        { key: "box", label: "Caja / Empaque", q: `${cleanQuery} packaging box retail` },
+        { key: "kit", label: "Kit con Accesorios", q: `${cleanQuery} accesorios cable soporte` },
+        { key: "variant", label: "Variante Comercial", q: `${cleanQuery} official model version` }
+      );
     } else {
-      facets.push({ key: "variant", label: "Variante Comercial", q: `${cleanQuery} official model version` });
+      facets.push(
+        { key: "mold", label: "Dispositivo / Molde", q: `${cleanQuery} product studio` },
+        { key: "box", label: "Caja / Empaque", q: `${cleanQuery} packaging retail box` },
+        { key: "kit", label: "Kit con Accesorios", q: `${cleanQuery} kit accesorios` },
+        { key: "variant", label: "Variante Comercial", q: `${cleanQuery} official model version` }
+      );
     }
 
-    // 2. Extractor de imágenes desde Bing con decodificación JSON limpia
-    async function fetchBingFacet(facetObj) {
-      try {
-        const bingUrl = `https://www.bing.com/images/search?q=${encodeURIComponent(facetObj.q)}&form=HDRSC2&first=1`;
-        const bRes = await fetch(bingUrl, {
-          headers: {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-            "Accept-Language": "es-ES,es;q=0.9,en;q=0.8"
-          }
-        });
-        if (!bRes.ok) return [];
-        const html = await bRes.text();
-        const regex = /class="iusc"[^>]+m="([^"]+)"/g;
-        let match;
-        const items = [];
-        while ((match = regex.exec(html)) !== null && items.length < 8) {
-          try {
-            const parsed = JSON.parse(match[1].replace(/&quot;/g, '"'));
-            if (!parsed.murl || !parsed.murl.startsWith("http")) continue;
-            let domain = "web";
-            try { domain = new URL(parsed.murl).hostname.replace(/^www\./, ""); } catch {}
-            const titleClean = (parsed.t || parsed.desc || "").replace(/[\uE000-\uF8FF]/g, "").replace(/&#\d+;/g, "").trim();
-            items.push({
-              title: titleClean || cleanQuery,
-              imageUrl: parsed.murl,
-              thumbnail: parsed.turl || parsed.murl,
-              width: parsed.ow || 800,
-              height: parsed.oh || 800,
-              source: domain,
-              facet: facetObj.key,
-              facetLabel: facetObj.label
-            });
-          } catch (e) {}
-        }
-        return items;
-      } catch (err) {
-        return [];
-      }
-    }
-
-    // 3. Extractor de respaldo DuckDuckGo
+    // 2. Extractor Primario DuckDuckGo (Alta precisión e-commerce, evita contaminación de autos Mini Cooper)
     async function fetchDuckDuckGoFacet(queryStr, facetKey, facetLabel) {
       try {
         const ddgSearchUrl = `https://duckduckgo.com/?q=${encodeURIComponent(queryStr)}&t=h_&iar=images&iax=images&ia=images`;
@@ -167,18 +136,67 @@ module.exports = async function handler(req, res) {
       }
     }
 
-    // Ejecutar facetas en paralelo para máxima velocidad
-    const facetPromises = facets.map(f => fetchBingFacet(f));
-    const settled = await Promise.allSettled(facetPromises);
-    let facetResults = settled.map(s => s.status === "fulfilled" ? s.value : []);
+    // 3. Extractor Secundario Bing con filtros de exclusión (descarta autos, wallpapers y turismo)
+    async function fetchBingFacet(facetObj) {
+      try {
+        const bingUrl = `https://www.bing.com/images/search?q=${encodeURIComponent(facetObj.q)}&form=HDRSC2&first=1`;
+        const bRes = await fetch(bingUrl, {
+          headers: {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Language": "es-ES,es;q=0.9,en;q=0.8"
+          }
+        });
+        if (!bRes.ok) return [];
+        const html = await bRes.text();
+        const regex = /class="iusc"[^>]+m="([^"]+)"/g;
+        let match;
+        const items = [];
+        const excludedDomains = /paultan|motor1|theautopian|cargurus|caranddriver|autoblog|wallpaper|gettyimages|discoverwalks|tripadvisor|wikipedia/i;
 
-    // Si Bing no devolvió resultados suficientes, complementar con DuckDuckGo
-    const totalFound = facetResults.reduce((acc, curr) => acc + curr.length, 0);
-    if (totalFound < 4) {
-      const ddgBackup = await fetchDuckDuckGoFacet(`${cleanQuery} product`, "mold", "Dispositivo / Molde");
-      if (ddgBackup.length > 0) {
-        facetResults[0] = (facetResults[0] || []).concat(ddgBackup);
+        while ((match = regex.exec(html)) !== null && items.length < 8) {
+          try {
+            const parsed = JSON.parse(match[1].replace(/&quot;/g, '"'));
+            if (!parsed.murl || !parsed.murl.startsWith("http")) continue;
+            let domain = "web";
+            try { domain = new URL(parsed.murl).hostname.replace(/^www\./, ""); } catch {}
+            if (excludedDomains.test(domain)) continue;
+
+            const titleClean = (parsed.t || parsed.desc || "").replace(/[\uE000-\uF8FF]/g, "").replace(/&#\d+;/g, "").trim();
+            if (/cooper|bmw|yamaha|honda|paris|tour/i.test(titleClean)) continue;
+
+            items.push({
+              title: titleClean || cleanQuery,
+              imageUrl: parsed.murl,
+              thumbnail: parsed.turl || parsed.murl,
+              width: parsed.ow || 800,
+              height: parsed.oh || 800,
+              source: domain,
+              facet: facetObj.key,
+              facetLabel: facetObj.label
+            });
+          } catch (e) {}
+        }
+        return items;
+      } catch (err) {
+        return [];
       }
+    }
+
+    // Ejecutar facetas en paralelo: DuckDuckGo primario para precisión e-commerce
+    const ddgPromises = facets.map(f => fetchDuckDuckGoFacet(f.q, f.key, f.label));
+    const bingPromises = facets.map(f => fetchBingFacet(f));
+    const [ddgSettled, bingSettled] = await Promise.all([
+      Promise.allSettled(ddgPromises),
+      Promise.allSettled(bingPromises)
+    ]);
+
+    const facetResults = [];
+    for (let i = 0; i < facets.length; i++) {
+      const ddgItems = ddgSettled[i].status === "fulfilled" ? ddgSettled[i].value : [];
+      const bingItems = bingSettled[i].status === "fulfilled" ? bingSettled[i].value : [];
+      // DuckDuckGo primero por precisión de producto, complementado con Bing filtrado
+      facetResults.push([...ddgItems, ...bingItems]);
     }
 
     // 4. Algoritmo de Fusión Google Lens: Round-Robin Interleaving + Diversidad de Dominio
