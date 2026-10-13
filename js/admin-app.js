@@ -172,6 +172,10 @@ import {
   handleAdminDecrementStock,
   handleAdminRestock,
   handleAdminReleaseIncoming,
+  openReleaseIncomingModal,
+  adjustReleaseIncomingStock,
+  updateReleaseIncomingNioHint,
+  executeConfirmReleaseIncoming,
   filterLainSeries,
   setActiveLainTemplate,
   cycleLainTemplate,
@@ -1303,6 +1307,10 @@ document.addEventListener("DOMContentLoaded", () => {
   window.applyCalculatedIncomingToProduct = applyCalculatedIncomingToProduct;
   window.toggleProductCalculatorAccordion = toggleProductCalculatorAccordion;
   window.handleAdminReleaseIncoming = handleAdminReleaseIncoming;
+  window.openReleaseIncomingModal = openReleaseIncomingModal;
+  window.adjustReleaseIncomingStock = adjustReleaseIncomingStock;
+  window.updateReleaseIncomingNioHint = updateReleaseIncomingNioHint;
+  window.executeConfirmReleaseIncoming = executeConfirmReleaseIncoming;
 
   // Combo Flexible y Haibane Builder (Hito 2)
   window.addComboItemTab = addComboItemTab;

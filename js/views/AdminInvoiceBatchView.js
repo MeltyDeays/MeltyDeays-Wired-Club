@@ -1300,27 +1300,171 @@ export async function saveProductAdmin() {
 
 export const saveNewProduct = saveProductAdmin;
 
-export async function handleAdminReleaseIncoming(rewardId) {
+export function openReleaseIncomingModal(rewardId) {
+  const product = (vm?.catalog || []).find(p => p.id === rewardId);
+  const targetIdEl = document.getElementById("release-incoming-target-id");
+  const titleEl = document.getElementById("release-incoming-product-title");
+  const idEl = document.getElementById("release-incoming-product-id");
+  const etaBadgeEl = document.getElementById("release-incoming-eta-badge");
+  const imgEl = document.getElementById("release-incoming-product-img");
+  const presalePriceEl = document.getElementById("release-incoming-presale-price");
+  const regularPriceEl = document.getElementById("release-incoming-regular-price");
+  const stockInput = document.getElementById("release-incoming-stock-input");
+  const priceInput = document.getElementById("release-incoming-price-input");
+  const nioHintEl = document.getElementById("release-incoming-price-nio-hint");
+
+  if (targetIdEl) targetIdEl.value = rewardId;
+  if (titleEl) titleEl.textContent = product?.title || rewardId;
+  if (idEl) idEl.textContent = rewardId;
+
+  if (etaBadgeEl) {
+    if (product?.estimatedArrival) {
+      try {
+        const d = new Date(product.estimatedArrival);
+        etaBadgeEl.textContent = `⏱️ Llegada: ${d.toLocaleDateString("es-NI", { month: "short", day: "numeric", year: "numeric" })}`;
+      } catch (e) {
+        etaBadgeEl.textContent = `⏱️ Llegada: ${product.estimatedArrival}`;
+      }
+      etaBadgeEl.style.display = "inline-block";
+    } else {
+      etaBadgeEl.style.display = "none";
+    }
+  }
+
+  const cover = product ? (typeof product.getImages === "function" ? product.getImages()[0] : (product.imageUrl || "")) : "";
+  if (imgEl) {
+    if (cover) {
+      imgEl.src = cover;
+      imgEl.style.display = "block";
+    } else {
+      imgEl.style.display = "none";
+    }
+  }
+
+  const presaleUsd = product?.presalePriceUsd != null ? Number(product.presalePriceUsd) : Number(product?.priceUsd || 0);
+  const regUsd = Number(product?.priceUsd || 0);
+  const presaleNio = Math.round(presaleUsd * 37.0);
+  const regNio = Math.round(regUsd * 37.0);
+
+  if (presalePriceEl) {
+    presalePriceEl.textContent = `$${presaleUsd.toFixed(2)} USD (C$ ${presaleNio.toLocaleString()} NIO)`;
+  }
+  if (regularPriceEl) {
+    regularPriceEl.textContent = `$${regUsd.toFixed(2)} USD (C$ ${regNio.toLocaleString()} NIO)`;
+  }
+
+  if (stockInput) {
+    stockInput.value = Math.max(1, product?.stock || 1);
+  }
+  if (priceInput) {
+    priceInput.value = regUsd.toFixed(2);
+  }
+  if (nioHintEl) {
+    nioHintEl.textContent = `≈ C$ ${regNio.toLocaleString()} NIO`;
+  }
+
+  const modal = document.getElementById("modal-release-incoming");
+  if (modal) {
+    modal.style.display = "flex";
+    if (typeof window.syncModalScrollLock === "function") window.syncModalScrollLock();
+  }
+}
+
+export function adjustReleaseIncomingStock(delta) {
+  const stockInput = document.getElementById("release-incoming-stock-input");
+  if (!stockInput) return;
+  const current = parseInt(stockInput.value, 10) || 1;
+  stockInput.value = Math.max(1, current + delta);
+}
+
+export function updateReleaseIncomingNioHint() {
+  const priceInput = document.getElementById("release-incoming-price-input");
+  const nioHintEl = document.getElementById("release-incoming-price-nio-hint");
+  if (!priceInput || !nioHintEl) return;
+  const valUsd = parseFloat(priceInput.value) || 0;
+  const valNio = Math.round(valUsd * 37.0);
+  nioHintEl.textContent = `≈ C$ ${valNio.toLocaleString()} NIO`;
+}
+
+export async function executeConfirmReleaseIncoming() {
+  const rewardId = document.getElementById("release-incoming-target-id")?.value;
+  if (!rewardId) return;
+
+  const stockInput = document.getElementById("release-incoming-stock-input");
+  const priceInput = document.getElementById("release-incoming-price-input");
+  const finalStock = Math.max(1, parseInt(stockInput?.value, 10) || 1);
+  const finalPriceUsd = Math.max(0, parseFloat(priceInput?.value) || 0);
+  const finalPriceNio = Math.round(finalPriceUsd * 37.0);
+
+  const confirmBtn = document.getElementById("btn-confirm-release-incoming");
+  if (confirmBtn) {
+    confirmBtn.disabled = true;
+    confirmBtn.textContent = "⚡ DESEMBARCANDO...";
+  }
+
+  try {
+    const product = (vm?.catalog || []).find(p => p.id === rewardId);
+    const title = product?.title || rewardId;
+    const raw = await FirestoreService.getReward(rewardId);
+    const reward = raw ? new RewardModel(raw) : (product ? new RewardModel(product) : null);
+    if (!reward) throw new Error("Producto no encontrado.");
+
+    reward.status = "ACTIVE";
+    reward.isIncomingFlag = false;
+    reward.stock = finalStock;
+    reward.priceUsd = finalPriceUsd;
+    reward.priceNio = finalPriceNio;
+    reward.cashToPayUsd = finalPriceUsd;
+    reward.maxDiscountPct = 0;
+    reward.maxDiscountUsd = 0;
+    reward.pointsCost = 0;
+    reward.rewardType = "PARTIAL_DISCOUNT";
+    reward.estimatedArrival = null;
+    reward.updatedAt = new Date().toISOString();
+
+    await FirestoreService.saveReward(reward.toJSON());
+    if (vm && typeof vm.refreshData === "function") {
+      await vm.refreshData();
+    }
+    if (typeof closeModal === "function") {
+      closeModal("modal-release-incoming");
+    } else if (typeof window.closeModal === "function") {
+      window.closeModal("modal-release-incoming");
+    }
+    showToast(`✓ "${title}" desembarcado con éxito. ${finalStock} un. en venta activa.`, "success");
+  } catch (err) {
+    showToast("❌ Error al desembarcar producto: " + err.message, "error");
+  } finally {
+    if (confirmBtn) {
+      confirmBtn.disabled = false;
+      confirmBtn.textContent = "⚡ SÍ, DESEMBARCAR PRODUCTO";
+    }
+  }
+}
+
+export function handleAdminReleaseIncoming(rewardId) {
+  const modal = document.getElementById("modal-release-incoming");
+  if (modal) {
+    openReleaseIncomingModal(rewardId);
+    return;
+  }
   const product = (vm?.catalog || []).find(p => p.id === rewardId);
   const title = product?.title || rewardId;
   if (!confirm(`¿Desembarcar "${title}" y pasarlo a disponible de inmediato?\n\nEl producto dejará el estado En Camino y pasará a venta general activa.`)) {
     return;
   }
-  try {
-    const raw = await FirestoreService.getReward(rewardId);
+  FirestoreService.getReward(rewardId).then(async raw => {
     const reward = raw ? new RewardModel(raw) : (product ? new RewardModel(product) : null);
     if (!reward) throw new Error("Producto no encontrado.");
     reward.status = "ACTIVE";
     reward.isIncomingFlag = false;
     reward.updatedAt = new Date().toISOString();
     await FirestoreService.saveReward(reward.toJSON());
-    if (vm && typeof vm.refreshData === "function") {
-      await vm.refreshData();
-    }
+    if (vm && typeof vm.refreshData === "function") await vm.refreshData();
     showToast(`✓ "${title}" ha sido desembarcado y ya está disponible en venta general.`, "success");
-  } catch (err) {
+  }).catch(err => {
     showToast("❌ Error al desembarcar producto: " + err.message, "error");
-  }
+  });
 }
 
 export async function removeProductAdmin(id) {
