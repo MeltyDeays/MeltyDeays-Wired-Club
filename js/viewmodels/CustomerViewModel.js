@@ -48,21 +48,26 @@ export class CustomerViewModel {
     const num = Number(amountUsd) || 0;
     if (this.preferredCurrency === "NIO") {
       const nio = num * this.usdToNioRate;
-      return `C$ ${nio.toLocaleString('es-NI', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} NIO`;
+      const nioStr = (Math.abs(nio - Math.round(nio)) < 0.25)
+        ? Math.round(nio).toLocaleString("en-US")
+        : nio.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      return `C$ ${nioStr} NIO`;
     }
-    return `$${num.toFixed(2)} USD`;
+    return `$${num.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD`;
   }
 
   formatDualMoney(amountUsd) {
     const num = Number(amountUsd) || 0;
     const nioVal = num * this.usdToNioRate;
-    const nioStr = `C$ ${nioVal.toLocaleString('es-NI', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} NIO`;
-    const usdStr = `$${num.toFixed(2)} USD`;
+    const nioStr = (Math.abs(nioVal - Math.round(nioVal)) < 0.25)
+      ? Math.round(nioVal).toLocaleString("en-US")
+      : nioVal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const usdStr = `$${num.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD`;
 
     if (this.preferredCurrency === "NIO") {
-      return `${nioStr} <span style="font-size:0.85em; opacity:0.8;">(${usdStr})</span>`;
+      return `<strong>C$ ${nioStr} NIO</strong> <span style="font-size:0.75rem; color:#64748b; font-weight:600;">(${usdStr})</span>`;
     }
-    return `${usdStr} <span style="font-size:0.85em; opacity:0.8;">(${nioStr})</span>`;
+    return `<strong>${usdStr}</strong> <span style="font-size:0.75rem; color:#64748b; font-weight:600;">(C$ ${nioStr} NIO)</span>`;
   }
 
   async init() {

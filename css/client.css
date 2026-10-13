@@ -1050,16 +1050,22 @@
   margin: 0.5rem 0;
   font-family: var(--font-mono);
   font-size: 0.74rem;
+  box-sizing: border-box;
+  overflow: hidden;
+  width: 100%;
 }
 
 .pricing-row {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
+  flex-wrap: wrap;
   color: var(--gray-500);
   margin-bottom: 3px;
-  gap: 6px;
+  gap: 4px 8px;
   min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .pricing-label {
@@ -1073,6 +1079,7 @@
   word-break: break-word;
   font-size: 0.74rem;
   min-width: 0;
+  margin-left: auto;
 }
 
 .pricing-row.discount-row {
@@ -1106,9 +1113,23 @@
 }
 
 .pricing-row.footnote-row {
+  display: block !important;
+  width: 100% !important;
   color: #64748b;
   font-size: 0.67rem;
   margin-top: 3px;
+  white-space: normal !important;
+  word-break: break-word !important;
+  line-height: 1.35 !important;
+}
+
+.pricing-row.footnote-row .pricing-label,
+.pricing-row.footnote-row span {
+  white-space: normal !important;
+  word-break: break-word !important;
+  display: block !important;
+  width: 100% !important;
+  line-height: 1.35 !important;
 }
 
 .reward-img-wrap {

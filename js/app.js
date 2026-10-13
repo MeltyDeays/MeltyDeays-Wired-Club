@@ -112,33 +112,52 @@ const vm = new CustomerViewModel();
 // CONVERSIÓN Y FORMATO DE MONEDA (1 USD = 37 C$ NIO)
 export const USD_TO_NIO_RATE = 37.0;
 
+export function formatNio(num) {
+  const n = Number(num) || 0;
+  // Si los centavos son residuales de conversión (< 0.25 de distancia de un entero), redondear al entero con separador de miles
+  if (Math.abs(n - Math.round(n)) < 0.25) {
+    return Math.round(n).toLocaleString("en-US");
+  }
+  return n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+export function formatUsd(num) {
+  const n = Number(num) || 0;
+  return n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
 export function formatPrice(amountUsd) {
   const curr = (vm && vm.preferredCurrency) ? vm.preferredCurrency : "USD";
+  const numUsd = Number(amountUsd) || 0;
   if (curr === "NIO") {
-    const valNio = (Number(amountUsd) || 0) * USD_TO_NIO_RATE;
-    return `C$ ${valNio.toFixed(2)} NIO`;
+    const valNio = numUsd * USD_TO_NIO_RATE;
+    return `C$ ${formatNio(valNio)} NIO`;
   }
-  return `$${(Number(amountUsd) || 0).toFixed(2)} USD`;
+  return `$${formatUsd(numUsd)} USD`;
 }
 
 export function formatDualPrice(amountUsd) {
   const curr = (vm && vm.preferredCurrency) ? vm.preferredCurrency : "USD";
   const usd = Number(amountUsd) || 0;
   const nio = usd * USD_TO_NIO_RATE;
+  const formattedUsd = formatUsd(usd);
+  const formattedNio = formatNio(nio);
   if (curr === "NIO") {
-    return `<strong>C$ ${nio.toFixed(2)} NIO</strong> <span style="font-size:0.75rem; color:#64748b; font-weight:600;">($${usd.toFixed(2)} USD)</span>`;
+    return `<strong>C$ ${formattedNio} NIO</strong> <span style="font-size:0.75rem; color:#64748b; font-weight:600;">($${formattedUsd} USD)</span>`;
   }
-  return `<strong>$${usd.toFixed(2)} USD</strong> <span style="font-size:0.75rem; color:#64748b; font-weight:600;">(C$ ${nio.toFixed(2)} NIO)</span>`;
+  return `<strong>$${formattedUsd} USD</strong> <span style="font-size:0.75rem; color:#64748b; font-weight:600;">(C$ ${formattedNio} NIO)</span>`;
 }
 
 export function formatDualPricePlain(amountUsd) {
   const curr = (vm && vm.preferredCurrency) ? vm.preferredCurrency : "USD";
   const usd = Number(amountUsd) || 0;
   const nio = usd * USD_TO_NIO_RATE;
+  const formattedUsd = formatUsd(usd);
+  const formattedNio = formatNio(nio);
   if (curr === "NIO") {
-    return `C$ ${nio.toFixed(2)} NIO ($${usd.toFixed(2)} USD)`;
+    return `C$ ${formattedNio} NIO ($${formattedUsd} USD)`;
   }
-  return `$${usd.toFixed(2)} USD (C$ ${nio.toFixed(2)} NIO)`;
+  return `$${formattedUsd} USD (C$ ${formattedNio} NIO)`;
 }
 
 export async function setAppCurrency(curr) {
@@ -288,9 +307,9 @@ function render(model) {
     if (passMemberId) passMemberId.textContent = "● " + user.memberCode;
     if (passUsdEquiv) {
       if (curr === "NIO") {
-        passUsdEquiv.innerHTML = `C$ ${equivNio.toFixed(2)} NIO <span style="font-size:0.75rem; color:#64748b; font-weight:700;">($${equivUsd.toFixed(2)} USD)</span>`;
+        passUsdEquiv.innerHTML = `C$ ${formatNio(equivNio)} NIO <span style="font-size:0.75rem; color:#64748b; font-weight:700;">($${formatUsd(equivUsd)} USD)</span>`;
       } else {
-        passUsdEquiv.innerHTML = `$${equivUsd.toFixed(2)} USD <span style="font-size:0.75rem; color:#64748b; font-weight:700;">(C$ ${equivNio.toFixed(2)} NIO)</span>`;
+        passUsdEquiv.innerHTML = `$${formatUsd(equivUsd)} USD <span style="font-size:0.75rem; color:#64748b; font-weight:700;">(C$ ${formatNio(equivNio)} NIO)</span>`;
       }
     }
     renderUserQr(user.memberCode);
@@ -302,9 +321,9 @@ function render(model) {
     if (passMemberId) passMemberId.textContent = "● MC-INVITADO";
     if (passUsdEquiv) {
       if (curr === "NIO") {
-        passUsdEquiv.innerHTML = `C$ 0.00 NIO <span style="font-size:0.75rem; color:#64748b;">($0.00 USD)</span>`;
+        passUsdEquiv.innerHTML = `C$ 0 NIO <span style="font-size:0.75rem; color:#64748b;">($0.00 USD)</span>`;
       } else {
-        passUsdEquiv.innerHTML = `$0.00 USD <span style="font-size:0.75rem; color:#64748b;">(C$ 0.00 NIO)</span>`;
+        passUsdEquiv.innerHTML = `$0.00 USD <span style="font-size:0.75rem; color:#64748b;">(C$ 0 NIO)</span>`;
       }
     }
     renderUserQr("MELTY-WIRED-CLUB-GUEST");

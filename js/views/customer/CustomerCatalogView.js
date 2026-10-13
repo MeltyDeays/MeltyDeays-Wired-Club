@@ -12,14 +12,21 @@ let showVoucherModal = (code) => {
     window.showVoucherModal(code);
   }
 };
-let formatPrice = (usd) => `$${Number(usd || 0).toFixed(2)} USD`;
+let formatPrice = (usd) => {
+  const num = Number(usd || 0);
+  return `$${num.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD`;
+};
 let formatDualPrice = (usd) => {
   if (vm && typeof vm.formatDualMoney === "function") {
     return vm.formatDualMoney(usd);
   }
   const num = Number(usd || 0);
-  const nioVal = (num * 37.0).toFixed(2);
-  return `$${num.toFixed(2)} USD <span style="font-size:0.85em; opacity:0.8;">(C$ ${nioVal} NIO)</span>`;
+  const nioVal = num * 37.0;
+  const nioStr = (Math.abs(nioVal - Math.round(nioVal)) < 0.25)
+    ? Math.round(nioVal).toLocaleString("en-US")
+    : nioVal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const usdStr = `$${num.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD`;
+  return `<strong>${usdStr}</strong> <span style="font-size:0.85em; opacity:0.8;">(C$ ${nioStr} NIO)</span>`;
 };
 let selectedComboOption = "FULL_COMBO";
 let currentlyOpenSpecsId = null;
@@ -1856,8 +1863,8 @@ export function renderCatalog(catalog, user) {
             <span class="pricing-label">Total en Preventa:</span>
             <span class="pricing-val total" style="color: #38bdf8;">${formatPrice(presalePrice)}</span>
           </div>
-          <div class="pricing-row footnote-row" style="color: #94a3b8; font-size: 0.65rem;">
-            <span class="pricing-label" style="grid-column: span 2;">✨ Descuento directo de preventa. No requiere puntos Wired.</span>
+          <div class="pricing-row footnote-row" style="color: #94a3b8; font-size: 0.65rem; margin-top: 3px; line-height: 1.35; display: block; width: 100%; white-space: normal;">
+            <span style="white-space: normal; word-break: break-word; display: block; width: 100%;">✨ Descuento directo de preventa. No requiere puntos Wired.</span>
           </div>
         </div>
       `;
@@ -1876,8 +1883,8 @@ export function renderCatalog(catalog, user) {
             <span class="pricing-label">Precio del Combo:</span>
             <span class="pricing-val total" style="color: #b45309; font-variant-numeric: tabular-nums;">${formatPrice(item.priceUsd)}</span>
           </div>
-          <div class="pricing-row footnote-row" style="color: #92400e; font-size: 0.65rem; margin-top: 3px; line-height: 1.3;">
-            <span class="pricing-label" style="grid-column: span 2;">✦ Adquiere el combo completo con descuento o compra cualquier producto por separado.</span>
+          <div class="pricing-row footnote-row" style="color: #92400e; font-size: 0.65rem; margin-top: 3px; line-height: 1.35; display: block; width: 100%; white-space: normal;">
+            <span style="white-space: normal; word-break: break-word; display: block; width: 100%;">✦ Adquiere el combo completo con descuento o compra cualquier producto por separado.</span>
           </div>
         </div>
       `;
@@ -1885,71 +1892,69 @@ export function renderCatalog(catalog, user) {
       if (maxPct === 0 || maxCapPts === 0) {
         partialBreakdown = `
           <div class="reward-pricing-box" style="background: #f8fafc; border-color: #e2e8f0;">
-            <div class="pricing-row total-row" style="display: flex; justify-content: space-between; align-items: baseline; font-size: 0.85rem; font-weight: 800; color: #0f172a;">
+            <div class="pricing-row total-row" style="display: flex; justify-content: space-between; align-items: baseline; font-size: 0.85rem; font-weight: 800; color: #0f172a; flex-wrap: wrap; gap: 4px 8px;">
               <span class="pricing-label">Precio oficial:</span>
-              <span class="pricing-val total" style="color: #0f172a; font-variant-numeric: tabular-nums;">${formatPrice(item.priceUsd)}</span>
+              <span class="pricing-val total" style="color: #0f172a; font-variant-numeric: tabular-nums; margin-left: auto;">${formatPrice(item.priceUsd)}</span>
             </div>
-            <div class="pricing-row footnote-row" style="color: #64748b; font-size: 0.65rem; margin-top: 2px;">
-              <span class="pricing-label" style="grid-column: span 2;">✦ Precio de venta plano oficial en tienda física.</span>
+            <div class="pricing-row footnote-row" style="color: #64748b; font-size: 0.65rem; margin-top: 3px; line-height: 1.35; display: block; width: 100%; white-space: normal;">
+              <span style="white-space: normal; word-break: break-word; display: block; width: 100%;">✦ Precio de venta plano oficial en tienda física.</span>
             </div>
           </div>
         `;
       } else if (user && userPts >= maxCapPts) {
         partialBreakdown = `
           <div class="reward-pricing-box">
-            <div class="pricing-row">
+            <div class="pricing-row" style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 4px 8px;">
               <span class="pricing-label">Precio oficial:</span>
-              <span class="pricing-val">${formatPrice(item.priceUsd)}</span>
+              <span class="pricing-val" style="margin-left: auto;">${formatPrice(item.priceUsd)}</span>
             </div>
-            <div class="pricing-row discount-row">
+            <div class="pricing-row discount-row" style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 4px 8px;">
               <span class="pricing-label">Tu ahorro (Tope ${maxPct}%):</span>
-              <span class="pricing-val green">-${formatPrice(item.maxDiscountUsd)}</span>
+              <span class="pricing-val green" style="margin-left: auto;">-${formatPrice(item.maxDiscountUsd)}</span>
             </div>
-            <div class="pricing-row total-row">
+            <div class="pricing-row total-row" style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 4px 8px;">
               <span class="pricing-label">Total a pagar:</span>
-              <span class="pricing-val total">${formatPrice(item.cashToPayUsd)}</span>
+              <span class="pricing-val total" style="margin-left: auto;">${formatPrice(item.cashToPayUsd)}</span>
             </div>
           </div>
         `;
       } else if (user && userPts > 0) {
         partialBreakdown = `
           <div class="reward-pricing-box">
-            <div class="pricing-row">
+            <div class="pricing-row" style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 4px 8px;">
               <span class="pricing-label">Precio oficial:</span>
-              <span class="pricing-val">${formatPrice(item.priceUsd)}</span>
+              <span class="pricing-val" style="margin-left: auto;">${formatPrice(item.priceUsd)}</span>
             </div>
-            <div class="pricing-row discount-row">
-              <span class="pricing-label">Tu ahorro (${appliedPts} WP):</span>
-              <span class="pricing-val green">-${formatPrice(appliedDiscountUsd)} (${formattedAppliedPct}%)</span>
+            <div class="pricing-row discount-row" style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 4px 8px;">
+              <span class="pricing-label">Tu ahorro (${appliedPts.toLocaleString()} WP):</span>
+              <span class="pricing-val green" style="margin-left: auto;">-${formatPrice(appliedDiscountUsd)} (${formattedAppliedPct}%)</span>
             </div>
-            <div class="pricing-row total-row">
+            <div class="pricing-row total-row" style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 4px 8px;">
               <span class="pricing-label">Total a pagar:</span>
-              <span class="pricing-val total">${formatPrice(cashToPayWithPts)}</span>
+              <span class="pricing-val total" style="margin-left: auto;">${formatPrice(cashToPayWithPts)}</span>
             </div>
-            <div class="pricing-row footnote-row">
-              <span class="pricing-label">Tope máx. (${maxCapPts} WP):</span>
-              <span class="pricing-val">-${formatPrice(item.maxDiscountUsd)} (${maxPct}% OFF)</span>
+            <div class="pricing-row footnote-row" style="color: #64748b; font-size: 0.65rem; margin-top: 3px; line-height: 1.35; display: block; width: 100%; white-space: normal;">
+              <span style="white-space: normal; word-break: break-word; display: block; width: 100%;">Tope máx. (${maxCapPts.toLocaleString()} WP): -${formatPrice(item.maxDiscountUsd)} (${maxPct}% OFF)</span>
             </div>
           </div>
         `;
       } else if (user) {
         partialBreakdown = `
           <div class="reward-pricing-box">
-            <div class="pricing-row">
+            <div class="pricing-row" style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 4px 8px;">
               <span class="pricing-label">Precio oficial:</span>
-              <span class="pricing-val">${formatPrice(item.priceUsd)}</span>
+              <span class="pricing-val" style="margin-left: auto;">${formatPrice(item.priceUsd)}</span>
             </div>
-            <div class="pricing-row discount-row">
+            <div class="pricing-row discount-row" style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 4px 8px;">
               <span class="pricing-label">Tu ahorro (0 WP):</span>
-              <span class="pricing-val gray">0% (Sin puntos)</span>
+              <span class="pricing-val gray" style="margin-left: auto;">0% (Sin puntos)</span>
             </div>
-            <div class="pricing-row total-row">
+            <div class="pricing-row total-row" style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 4px 8px;">
               <span class="pricing-label">Total a pagar:</span>
-              <span class="pricing-val total">${formatPrice(item.priceUsd)}</span>
+              <span class="pricing-val total" style="margin-left: auto;">${formatPrice(item.priceUsd)}</span>
             </div>
-            <div class="pricing-row footnote-row">
-              <span class="pricing-label">Tope máx. (${maxCapPts} WP):</span>
-              <span class="pricing-val">Hasta -${formatPrice(item.maxDiscountUsd)} (${maxPct}% OFF)</span>
+            <div class="pricing-row footnote-row" style="color: #64748b; font-size: 0.65rem; margin-top: 3px; line-height: 1.35; display: block; width: 100%; white-space: normal;">
+              <span style="white-space: normal; word-break: break-word; display: block; width: 100%;">Tope máx. (${maxCapPts.toLocaleString()} WP): Hasta -${formatPrice(item.maxDiscountUsd)} (${maxPct}% OFF)</span>
             </div>
           </div>
         `;
