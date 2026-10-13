@@ -34,30 +34,103 @@ function parseFirestoreValue(valObj) {
 }
 
 /**
- * Obtiene todos los productos del catálogo web (rewards).
+ * Obtiene todos los productos del catálogo web consultando colecciones activas.
  */
-export async function getWebProducts(collection = "rewards") {
-  const url = `${BASE_URL}/${collection}?key=${FIREBASE_CONFIG.apiKey}&pageSize=100`;
-  try {
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-    const data = await res.json();
-    const documents = data.documents || [];
+export async function getWebProducts(targetCollection = null) {
+  const collectionsToTry = targetCollection ? [targetCollection] : ["dev_rewards_catalog", "rewards_catalog", "rewards"];
+  for (const col of collectionsToTry) {
+    const url = `${BASE_URL}/${col}?key=${FIREBASE_CONFIG.apiKey}&pageSize=100`;
+    try {
+      const res = await fetch(url);
+      if (!res.ok) continue;
+      const data = await res.json();
+      const documents = data.documents || [];
+      if (documents.length > 0) {
+        return documents.map(doc => {
+          const docId = doc.name.split("/").pop();
+          const fields = doc.fields || {};
+          const parsed = { id: docId, _collection: col };
+          for (const [k, v] of Object.entries(fields)) {
+            parsed[k] = parseFirestoreValue(v);
+          }
+          return parsed;
+        });
+      }
+    } catch (err) {
+      console.warn(`Error consultando colección ${col}:`, err);
+    }
+  }
+  return [];
+}
 
-    return documents.map(doc => {
+/**
+ * Obtiene un producto individual por ID buscando en las colecciones del catálogo.
+ */
+export async function getProductById(productId, targetCollection = null) {
+  const collectionsToTry = targetCollection ? [targetCollection] : ["dev_rewards_catalog", "rewards_catalog", "rewards"];
+  for (const col of collectionsToTry) {
+    const url = `${BASE_URL}/${col}/${productId}?key=${FIREBASE_CONFIG.apiKey}`;
+    try {
+      const res = await fetch(url);
+      if (!res.ok) continue;
+      const doc = await res.json();
       const docId = doc.name.split("/").pop();
       const fields = doc.fields || {};
-      const parsed = { id: docId };
+      const parsed = { id: docId, _collection: col };
       for (const [k, v] of Object.entries(fields)) {
         parsed[k] = parseFirestoreValue(v);
       }
       return parsed;
+    } catch (err) {
+      console.warn(`Error buscando producto ${productId} en ${col}:`, err);
+    }
+  }
+  return null;
+}
+
+/**
+ * Enlaza un producto web existente con su publicación gemela en Facebook.
+ */
+export async function linkProductToFacebook(productId, fbListingId, fbUrl = null, collection = "dev_rewards_catalog") {
+  const maskParams = [
+    "updateMask.fieldPaths=facebookListingId",
+    "updateMask.fieldPaths=fbUrl",
+    "updateMask.fieldPaths=syncStatus",
+    "updateMask.fieldPaths=syncSource",
+    "updateMask.fieldPaths=lastSyncedAt"
+  ];
+  const url = `${BASE_URL}/${collection}/${productId}?${maskParams.join("&")}&key=${FIREBASE_CONFIG.apiKey}`;
+  const now = new Date().toISOString();
+  const fields = {
+    facebookListingId: { stringValue: String(fbListingId) },
+    fbUrl: { stringValue: fbUrl || `https://www.facebook.com/marketplace/item/${fbListingId}/` },
+    syncStatus: { stringValue: "SYNCED_TWIN" },
+    syncSource: { stringValue: "twin_matcher" },
+    lastSyncedAt: { timestampValue: now }
+  };
+
+  try {
+    const res = await fetch(url, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ fields })
     });
+    if (!res.ok) {
+      // Intentar en rewards_catalog si dev_rewards_catalog no existe
+      if (collection !== "rewards_catalog") {
+        return await linkProductToFacebook(productId, fbListingId, fbUrl, "rewards_catalog");
+      }
+      const errText = await res.text();
+      throw new Error(`HTTP ${res.status}: ${errText}`);
+    }
+    console.log(`✓ Enlace Gemelo exitoso: Producto ${productId} vinculado a Facebook Listing #${fbListingId}`);
+    return await res.json();
   } catch (err) {
-    console.warn("Error al consultar productos web desde Firestore REST:", err);
-    return [];
+    console.error("Error al enlazar producto con Facebook:", err);
+    throw err;
   }
 }
+
 
 /**
  * Actualiza el precio y estado de sincronización de un producto en Firestore.

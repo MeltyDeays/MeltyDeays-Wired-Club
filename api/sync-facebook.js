@@ -746,7 +746,8 @@ module.exports = async function handler(req, res) {
           else if (!fbItem.isSold) {
             const priceChanged = fbItem.priceUsd > 0 && Math.abs(webProd.priceUsd - fbItem.priceUsd) >= 0.5;
             const hasNewRealImage = Boolean(webProd.brandVerified) && fbItem.imageUrl && fbItem.imageUrl !== webProd.imageUrl && !fbItem.imageUrl.includes("unsplash.com");
-            if (priceChanged || hasNewRealImage) {
+            const needsIdLink = !webProd.facebookListingId || String(webProd.facebookListingId) !== String(fbItem.listingId);
+            if (priceChanged || hasNewRealImage || needsIdLink) {
               await updateProductInFirestore(webProd.id, fbItem.priceUsd || webProd.priceUsd, fbItem.listingId, collection, hasNewRealImage ? fbItem.imageUrl : null, webProd);
               report.updatedProducts.push({
                 productId: webProd.id,

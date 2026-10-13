@@ -3039,6 +3039,17 @@ export async function triggerFacebookCloudSync() {
   }
 }
 
+export function handlePublishProductToFacebook(rewardId) {
+  const product = (vm?.catalog || []).find(p => p.id === rewardId);
+  if (!product) {
+    showToast("Producto no encontrado.", "error");
+    return;
+  }
+  showToast(`Abriendo creador asistido de Marketplace para "${product.title}"...`, "info");
+  const targetUrl = `https://www.facebook.com/marketplace/create/item?haibane_id=${encodeURIComponent(rewardId)}`;
+  window.open(targetUrl, "_blank");
+}
+
 let pendingApprovalImages = [];
 
 async function optimizeImageForCatalog(file) {

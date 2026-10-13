@@ -176,6 +176,7 @@ import {
   adjustReleaseIncomingStock,
   updateReleaseIncomingNioHint,
   executeConfirmReleaseIncoming,
+  handlePublishProductToFacebook,
   filterLainSeries,
   setActiveLainTemplate,
   cycleLainTemplate,
@@ -625,6 +626,10 @@ function renderCatalogTable(catalog) {
           ? `<div class="stock-cell-wrap"><strong style="color:var(--dark);">1</strong> un. <span class="badge-stock-unique">ÚNICO</span></div>`
           : `<div class="stock-cell-wrap"><strong style="color:var(--dark);">${p.stock}</strong> un.</div>`));
 
+    const fbTwinBadge = (p.facebookListingId || p.listingId)
+      ? `<a href="https://www.facebook.com/marketplace/item/${p.facebookListingId || p.listingId}/" target="_blank" rel="noopener" style="display:inline-flex; align-items:center; gap:3px; background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; border-radius:3px; padding:1px 5px; font-size:0.65rem; font-family:var(--font-mono); font-weight:800; text-decoration:none;" title="Publicación gemela en Facebook Marketplace: ID #${p.facebookListingId || p.listingId}"><span>👥</span> FB #${p.facebookListingId || p.listingId} ↗</a>`
+      : (isPending ? '' : `<button type="button" onclick="handlePublishProductToFacebook('${p.id}')" style="display:inline-flex; align-items:center; gap:3px; background:#faf5ff; color:#7e22ce; border:1px solid #d8b4fe; border-radius:3px; padding:1px 5px; font-size:0.65rem; font-family:var(--font-mono); font-weight:800; cursor:pointer;" title="Publicar este producto en Facebook Marketplace con fotos HD"><span>📢</span> Publicar en FB</button>`);
+
     return `
       <tr>
         <td>
@@ -635,7 +640,10 @@ function renderCatalogTable(catalog) {
                 ${typeBadge}
                 <strong style="color:var(--dark); cursor:${isPending ? 'pointer' : 'default'};" ${isPending ? `onclick="openApprovalModal('${p.id}')" title="Clic para agregar imágenes reales y gestionar"` : ''}>${p.title}</strong>
               </div>
-              <div style="font-size:0.72rem; color:var(--gray-500); font-family:var(--font-mono);">${p.id}</div>
+              <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-bottom:2px;">
+                <span style="font-size:0.72rem; color:var(--gray-500); font-family:var(--font-mono);">${p.id}</span>
+                ${fbTwinBadge}
+              </div>
               ${priceInfo}
             </div>
           </div>
@@ -1311,6 +1319,7 @@ document.addEventListener("DOMContentLoaded", () => {
   window.adjustReleaseIncomingStock = adjustReleaseIncomingStock;
   window.updateReleaseIncomingNioHint = updateReleaseIncomingNioHint;
   window.executeConfirmReleaseIncoming = executeConfirmReleaseIncoming;
+  window.handlePublishProductToFacebook = handlePublishProductToFacebook;
 
   // Combo Flexible y Haibane Builder (Hito 2)
   window.addComboItemTab = addComboItemTab;

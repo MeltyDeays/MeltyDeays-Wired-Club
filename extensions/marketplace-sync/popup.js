@@ -8,6 +8,23 @@ function log(msg) {
   }
 }
 
+document.getElementById("btn-link-twins")?.addEventListener("click", async () => {
+  log("Buscando pestaña de Marketplace para enlazar...");
+  try {
+    const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+    const currentTab = tabs[0];
+    if (currentTab && currentTab.url && currentTab.url.includes("facebook.com/marketplace")) {
+      chrome.tabs.sendMessage(currentTab.id, { action: "LINK_TWINS" }, () => {
+        log("Enlace de gemelos iniciado en la pestaña.");
+      });
+    } else {
+      log("⚠️ Abre facebook.com/marketplace/you/selling para enlazar tus publicaciones.");
+    }
+  } catch (err) {
+    log(`Error: ${err.message}`);
+  }
+});
+
 document.getElementById("btn-audit")?.addEventListener("click", async () => {
   log("Buscando pestaña activa de Marketplace...");
   try {
