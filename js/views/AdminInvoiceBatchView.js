@@ -3184,6 +3184,7 @@ export async function selectMoldCandidate(index) {
   selectedMoldIndex = index;
   const candidate = currentProductMolds[index];
   const rawUrl = (candidate && candidate.imageUrl) ? candidate.imageUrl : candidate;
+  const fallbackUrl = (candidate && candidate.thumbnail) ? candidate.thumbnail : null;
   const sourceName = (candidate && candidate.source) ? candidate.source : "Web";
 
   // Actualizar interfaz visual de tarjetas
@@ -3215,7 +3216,7 @@ export async function selectMoldCandidate(index) {
 
   let finalUrl = rawUrl;
   try {
-    const base64Data = await fetchImageAsDataUrl(rawUrl);
+    const base64Data = await fetchImageAsDataUrl(rawUrl, fallbackUrl);
     if (base64Data && base64Data.startsWith("data:image")) {
       const img = new Image();
       await new Promise((resolve, reject) => {
@@ -3695,9 +3696,10 @@ export async function searchSuggestedWebImages(forcedQuery = null) {
       if (gridEl) {
         gridEl.innerHTML = results.map(r => {
           const safeUrl = (r.imageUrl || "").replace(/'/g, "\\'");
+          const safeThumb = (r.thumbnail || "").replace(/'/g, "\\'");
           const safeSource = (r.source || "Web").replace(/'/g, "\\'");
           return `
-            <div class="web-suggestion-card" onclick="selectWebSuggestion('${safeUrl}', '${safeSource}')" title="Clic para adoptar esta foto oficial" style="cursor: pointer; position: relative; border-radius: 6px; overflow: hidden; border: 1.5px solid #cbd5e1; background: #fff; padding: 4px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; transition: all 0.15s ease;">
+            <div class="web-suggestion-card" onclick="selectWebSuggestion('${safeUrl}', '${safeSource}', '${safeThumb}')" title="Clic para adoptar esta foto oficial" style="cursor: pointer; position: relative; border-radius: 6px; overflow: hidden; border: 1.5px solid #cbd5e1; background: #fff; padding: 4px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; transition: all 0.15s ease;">
               <div style="width: 100%; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; overflow: hidden; background: #f8fafc; border-radius: 4px;">
                 <img src="${r.thumbnail || r.imageUrl}" alt="${r.title}" loading="lazy" style="width: 100%; height: 100%; object-fit: contain;">
               </div>
@@ -3719,10 +3721,10 @@ export async function searchSuggestedWebImages(forcedQuery = null) {
   }
 }
 
-export async function selectWebSuggestion(imageUrl, sourceName = "Web") {
+export async function selectWebSuggestion(imageUrl, sourceName = "Web", fallbackUrl = null) {
   showToast(`Descargando y adaptando foto (${sourceName})...`, "info");
   try {
-    const dataUrl = await fetchImageAsDataUrl(imageUrl);
+    const dataUrl = await fetchImageAsDataUrl(imageUrl, fallbackUrl);
     if (!dataUrl || !dataUrl.startsWith("data:image")) {
       throw new Error("No se pudo obtener imagen en formato dataUrl");
     }

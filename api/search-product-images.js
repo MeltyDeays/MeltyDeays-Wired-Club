@@ -19,28 +19,75 @@ module.exports = async function handler(req, res) {
     const action = body.action || queryParams.action || "search";
     const proxyUrl = body.url || queryParams.url || queryParams.proxyUrl;
 
-    // MODO 1: Proxy de Imagen a DataURL (Evita bloqueo CORS y Tainted Canvas en el navegador)
+    // MODO 1: Proxy de Imagen a DataURL (Evita bloqueo CORS, Tainted Canvas y rescata placeholders muertos)
     if (action === "proxy-base64" || proxyUrl) {
       const targetUrl = proxyUrl || body.url;
+      const fallbackUrl = body.fallbackUrl || queryParams.fallbackUrl;
+
       if (!targetUrl || !targetUrl.startsWith("http")) {
         return res.status(400).json({ error: "URL inválida para proxy" });
       }
 
-      const imgRes = await fetch(targetUrl, {
-        headers: {
-          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-          "Referer": "https://www.google.com/"
-        }
-      });
+      async function fetchBufferWithValidation(url) {
+        if (!url || typeof url !== "string" || !url.startsWith("http")) return null;
+        try {
+          const controller = new AbortController();
+          const timeout = setTimeout(() => controller.abort(), 7000);
+          const res = await fetch(url, {
+            signal: controller.signal,
+            headers: {
+              "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+              "Referer": "https://www.google.com/",
+              "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8"
+            }
+          });
+          clearTimeout(timeout);
+          if (!res.ok) return null;
 
-      if (!imgRes.ok) {
-        return res.status(imgRes.status).json({ error: "No se pudo descargar la imagen remota" });
+          const cType = res.headers.get("content-type") || "image/jpeg";
+          if (cType.includes("text/html") || cType.includes("application/json")) return null;
+
+          const buf = Buffer.from(await res.arrayBuffer());
+          if (buf.length < 200) return null;
+
+          // Detectar placeholder de ecsmedia.pl (7273 bytes GIF 'brak zdjęcia') y similares
+          if (buf.length === 7273 && cType.includes("gif")) return null;
+          if (url.includes("ecsmedia.pl") && cType.includes("gif") && !url.toLowerCase().endsWith(".gif")) return null;
+
+          return { buffer: buf, contentType: cType };
+        } catch {
+          return null;
+        }
       }
 
-      const contentType = imgRes.headers.get("content-type") || "image/jpeg";
-      const arrayBuffer = await imgRes.arrayBuffer();
-      const base64 = Buffer.from(arrayBuffer).toString("base64");
-      const dataUrl = `data:${contentType};base64,${base64}`;
+      // 1. Intento primario con targetUrl
+      let imgData = await fetchBufferWithValidation(targetUrl);
+
+      // 2. Si falló o resultó ser un placeholder, recurrir a fallbackUrl en alta resolución
+      if (!imgData && fallbackUrl && fallbackUrl.startsWith("http") && fallbackUrl !== targetUrl) {
+        let optFallback = fallbackUrl;
+        if (fallbackUrl.includes("bing.net/th")) {
+          try {
+            const u = new URL(fallbackUrl);
+            u.searchParams.set("w", "800");
+            u.searchParams.set("h", "800");
+            u.searchParams.set("c", "7");
+            u.searchParams.set("rs", "1");
+            optFallback = u.toString();
+          } catch {}
+        }
+        imgData = await fetchBufferWithValidation(optFallback);
+        if (!imgData && optFallback !== fallbackUrl) {
+          imgData = await fetchBufferWithValidation(fallbackUrl);
+        }
+      }
+
+      if (!imgData) {
+        return res.status(422).json({ error: "No se pudo descargar una imagen válida ni desde la URL ni desde su respaldo" });
+      }
+
+      const base64 = imgData.buffer.toString("base64");
+      const dataUrl = `data:${imgData.contentType};base64,${base64}`;
 
       return res.status(200).json({ success: true, dataUrl });
     }

@@ -67,17 +67,22 @@ export async function searchProductImagesFromWeb(query, limit = 6, options = {})
 }
 
 /**
- * Descarga una imagen remota y la convierte en DataURL Base64 para evitar Tainted Canvas
+ * Descarga una imagen remota y la convierte en DataURL Base64 para evitar Tainted Canvas.
+ * Si la URL primaria falla o es un placeholder remoto, utiliza fallbackUrl (thumbnail / CDN) automáticamente.
  */
-export async function fetchImageAsDataUrl(imageUrl) {
+export async function fetchImageAsDataUrl(imageUrl, fallbackUrl = null) {
   if (!imageUrl || !imageUrl.startsWith("http")) return imageUrl;
 
-  // Endpoint serverless relativo para proxy
+  // Intento 1: Proxy serverless con soporte de URL primaria + fallback
   try {
     const res = await fetch("/api/search-product-images", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "proxy-base64", url: imageUrl })
+      body: JSON.stringify({
+        action: "proxy-base64",
+        url: imageUrl,
+        fallbackUrl: fallbackUrl || null
+      })
     });
     if (res.ok) {
       const d = await res.json();
@@ -85,6 +90,23 @@ export async function fetchImageAsDataUrl(imageUrl) {
     }
   } catch (err) {
     console.warn("[WebSearch] Proxy DataURL falló:", err.message);
+  }
+
+  // Intento 2: Si falló el proxy combinado y se proveyó un fallback diferente, intentar proxy directo con fallbackUrl
+  if (fallbackUrl && fallbackUrl !== imageUrl && fallbackUrl.startsWith("http")) {
+    try {
+      const resFallback = await fetch("/api/search-product-images", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "proxy-base64", url: fallbackUrl })
+      });
+      if (resFallback.ok) {
+        const d = await resFallback.json();
+        if (d && d.success && d.dataUrl) return d.dataUrl;
+      }
+    } catch (err) {
+      console.warn("[WebSearch] Proxy fallback directo falló:", err.message);
+    }
   }
 
   return imageUrl;
