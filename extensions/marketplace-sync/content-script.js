@@ -389,10 +389,16 @@ function dataUrlToBlob(dataUrl) {
   }
 }
 
+let photosInjectedForProduct = null;
+
 /**
- * Inyecta fotografías de alta resolución en el formulario nativo de Marketplace
+ * Inyecta fotografías de alta resolución en el formulario nativo de Marketplace evitando duplicados
  */
-async function injectProductPhotosToForm(photoUrls) {
+async function injectProductPhotosToForm(photoUrls, productId = "") {
+  if (photosInjectedForProduct && photosInjectedForProduct === productId) {
+    console.log("Fotos ya inyectadas para este producto, omitiendo duplicados.");
+    return true;
+  }
   if (!photoUrls || photoUrls.length === 0) return false;
   const fileInput = document.querySelector('input[type="file"][accept*="image"]');
   if (!fileInput) {
@@ -400,9 +406,11 @@ async function injectProductPhotosToForm(photoUrls) {
     return false;
   }
 
+  // Deduplicación estricta de URLs
+  const uniqueUrls = Array.from(new Set(photoUrls.filter(Boolean)));
   const dt = new DataTransfer();
-  for (let i = 0; i < photoUrls.length; i++) {
-    const url = photoUrls[i];
+  for (let i = 0; i < uniqueUrls.length; i++) {
+    const url = uniqueUrls[i];
     if (!url) continue;
     try {
       let blob = null;
@@ -424,6 +432,7 @@ async function injectProductPhotosToForm(photoUrls) {
   if (dt.files.length > 0) {
     fileInput.files = dt.files;
     fileInput.dispatchEvent(new Event("change", { bubbles: true }));
+    photosInjectedForProduct = productId;
     return true;
   }
   return false;
@@ -506,26 +515,117 @@ function findFacebookMarketplaceInputs() {
   return { titleInput, priceInput, descInput, fileInput };
 }
 
+async function expandAndFindDescriptionInput() {
+  let descInput = document.querySelector('textarea[aria-label*="Descripción" i], textarea[aria-label*="Description" i], div[aria-label*="Descripción" i][role="textbox"], div[aria-label*="Description" i][role="textbox"]');
+  if (descInput) return descInput;
+
+  // Buscar acordeón o encabezado de "Más detalles"
+  const allClickables = Array.from(document.querySelectorAll('div[role="button"], span, div, label'));
+  const moreDetailsBtn = allClickables.find(el => {
+    const txt = (el.innerText || "").trim().toLowerCase();
+    return (txt === "más detalles" || txt.includes("más detalles") || txt.includes("incluye otros detalles") || txt.includes("more details")) && el.children.length <= 4;
+  });
+
+  if (moreDetailsBtn) {
+    console.log("Desplegando acordeón 'Más detalles' para revelar la descripción...");
+    moreDetailsBtn.click();
+    await new Promise(r => setTimeout(r, 450));
+  }
+
+  descInput = document.querySelector('textarea[aria-label*="Descripción" i], textarea[aria-label*="Description" i], div[aria-label*="Descripción" i][role="textbox"], div[aria-label*="Description" i][role="textbox"]');
+  if (!descInput) {
+    descInput = document.querySelector('textarea');
+  }
+  return descInput;
+}
+
+async function autoSelectCondition(preferred = "Nuevo") {
+  const labels = Array.from(document.querySelectorAll('label, div[role="combobox"], div[aria-haspopup="listbox"], div[role="button"]'));
+  const conditionEl = labels.find(el => {
+    const aria = (el.getAttribute("aria-label") || "").toLowerCase();
+    const txt = (el.innerText || "").toLowerCase();
+    return (aria.includes("estado") || txt.includes("estado")) && !txt.includes("publicar");
+  });
+
+  if (conditionEl) {
+    conditionEl.click();
+    await new Promise(r => setTimeout(r, 400));
+
+    const options = Array.from(document.querySelectorAll('div[role="option"], div[role="menuitem"], span, div'));
+    const newOpt = options.find(o => {
+      const t = (o.innerText || "").trim().toLowerCase();
+      return t === "nuevo" || t.startsWith("nuevo") || t === "new";
+    });
+    if (newOpt) {
+      newOpt.click();
+      console.log("✓ Estado 'Nuevo' seleccionado automáticamente.");
+      return true;
+    }
+  }
+  return false;
+}
+
+async function autoSelectCategory(product) {
+  const title = (product.title || "").toLowerCase();
+  let keywords = ["electrónica", "computadora", "videojuego", "accesorios"];
+  if (title.includes("teclado") || title.includes("mouse") || title.includes("pantalla") || title.includes("laptop")) {
+    keywords = ["computadora", "informática", "electrónica", "accesorios"];
+  } else if (title.includes("mando") || title.includes("control") || title.includes("gamepad")) {
+    keywords = ["videojuego", "juegos", "electrónica"];
+  }
+
+  const catEls = Array.from(document.querySelectorAll('label, div[role="combobox"], div[aria-haspopup="listbox"], div[role="button"]'));
+  const catBtn = catEls.find(el => {
+    const aria = (el.getAttribute("aria-label") || "").toLowerCase();
+    const txt = (el.innerText || "").toLowerCase();
+    return (aria.includes("categoría") || txt.includes("categoría")) && !txt.includes("publicar");
+  });
+
+  if (catBtn) {
+    catBtn.click();
+    await new Promise(r => setTimeout(r, 450));
+
+    const options = Array.from(document.querySelectorAll('div[role="option"], div[role="menuitem"], span, div'));
+    const matched = options.find(o => {
+      const t = (o.innerText || "").trim().toLowerCase();
+      return keywords.some(k => t.includes(k));
+    });
+    if (matched) {
+      matched.click();
+      console.log("✓ Categoría seleccionada:", matched.innerText);
+      await new Promise(r => setTimeout(r, 400));
+      const subOptions = Array.from(document.querySelectorAll('div[role="option"], div[role="menuitem"], span, div'));
+      const subMatched = subOptions.find(o => {
+        const t = (o.innerText || "").trim().toLowerCase();
+        return keywords.some(k => t.includes(k));
+      });
+      if (subMatched) subMatched.click();
+      return true;
+    }
+  }
+  return false;
+}
+
 function triggerAutoFillPipeline(product) {
   let attempts = 0;
   const maxAttempts = 30; // 30 intentos x 350ms = ~10.5 segundos
   const interval = setInterval(async () => {
     attempts++;
-    const { titleInput, priceInput, descInput, fileInput } = findFacebookMarketplaceInputs();
+    const { titleInput, priceInput, fileInput } = findFacebookMarketplaceInputs();
 
     if (titleInput || priceInput || fileInput) {
       clearInterval(interval);
       const statusEl = document.getElementById("haibane-autofill-status");
-      if (statusEl) statusEl.textContent = "⏳ Inyectando fotos y campos...";
+      if (statusEl) statusEl.textContent = "⏳ Inyectando fotos, campos y desplegando descripción...";
 
       const priceNio = product.priceNio || Math.round((product.priceUsd || 0) * 37.0);
       const images = Array.isArray(product.images) && product.images.length > 0 
         ? product.images 
         : (product.imageUrl ? [product.imageUrl] : []);
 
-      // 1. Fotos HD
+      // 1. Fotos HD (Estrictamente deduplicadas y 1 sola vez)
       if (images.length > 0 && fileInput) {
-        await injectProductPhotosToForm(images);
+        await injectProductPhotosToForm(images, product.id);
       }
 
       // 2. Título
@@ -539,7 +639,12 @@ function triggerAutoFillPipeline(product) {
         setNativeInputValue(priceInput, String(priceNio));
       }
 
-      // 4. Descripción
+      // 4. Categoría y Estado
+      await autoSelectCategory(product);
+      await autoSelectCondition("Nuevo");
+
+      // 5. Expandir "Más detalles" y rellenar Descripción
+      const descInput = await expandAndFindDescriptionInput();
       if (descInput) {
         const formattedDesc = formatAiMarketplaceCopy(product);
         if (descInput.tagName.toLowerCase() === 'textarea') {
@@ -552,7 +657,7 @@ function triggerAutoFillPipeline(product) {
       }
 
       if (statusEl) {
-        statusEl.innerHTML = `<span style="color:#10b981; font-weight:800;">✓ Datos y fotos inyectados.</span> Revisa la vista previa y haz clic en 'Siguiente'.`;
+        statusEl.innerHTML = `<span style="color:#10b981; font-weight:800;">✓ Datos, fotos HD y ficha inyectados.</span> Revisa la vista previa y haz clic en 'Siguiente'.`;
       }
     } else if (attempts >= maxAttempts) {
       clearInterval(interval);
