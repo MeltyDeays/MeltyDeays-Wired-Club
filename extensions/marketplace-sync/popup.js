@@ -84,7 +84,7 @@ function renderGroupsChecklist(groups, selected = []) {
   if (!container) return;
 
   if (!groups || groups.length === 0) {
-    container.innerHTML = `<div style="color: #64748b; font-size: 10px; text-align: center; padding: 6px;">Abre Facebook o pulsa "Escanear" para ver tus grupos aquí.</div>`;
+    container.innerHTML = `<div style="color: #64748b; font-size: 10px; text-align: center; padding: 6px;">Escribe un grupo arriba o pulsa "Escanear" con Facebook abierto.</div>`;
     if (labelCount) labelCount.textContent = `0 / 12`;
     return;
   }
@@ -96,11 +96,14 @@ function renderGroupsChecklist(groups, selected = []) {
     const isChecked = selected.includes(grp) || (selected.length === 0 && idx < 12);
     if (isChecked) checkedCount++;
 
-    const row = document.createElement("label");
-    row.style.cssText = "display: flex; align-items: center; gap: 6px; font-size: 10.5px; color: #f1f5f9; cursor: pointer; padding: 2px 0;";
+    const row = document.createElement("div");
+    row.style.cssText = "display: flex; align-items: center; justify-content: space-between; gap: 4px; font-size: 10.5px; color: #f1f5f9; padding: 2px 0;";
     row.innerHTML = `
-      <input type="checkbox" class="chk-fb-group-item" value="${grp}" ${isChecked ? "checked" : ""}>
-      <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${grp}">🏷️ ${grp}</span>
+      <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; flex: 1; overflow: hidden;">
+        <input type="checkbox" class="chk-fb-group-item" value="${grp}" ${isChecked ? "checked" : ""}>
+        <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${grp}">🏷️ ${grp}</span>
+      </label>
+      <button type="button" class="btn-remove-group" data-group="${grp}" style="background: none; border: none; color: #64748b; cursor: pointer; padding: 0 4px; font-size: 11px; line-height: 1;" title="Quitar de la lista">✕</button>
     `;
     container.appendChild(row);
   });
@@ -118,7 +121,70 @@ function renderGroupsChecklist(groups, selected = []) {
       if (labelCount) labelCount.textContent = `${allChecked.length} / 12 seleccionados`;
     });
   });
+
+  container.querySelectorAll(".btn-remove-group").forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const targetGroup = btn.getAttribute("data-group");
+      chrome.storage?.local?.get(["scannedFacebookGroups", "selectedGroupNames"], (d) => {
+        const newScanned = (d?.scannedFacebookGroups || []).filter(g => g !== targetGroup);
+        const newSelected = (d?.selectedGroupNames || []).filter(g => g !== targetGroup);
+        chrome.storage.local.set({
+          scannedFacebookGroups: newScanned,
+          selectedGroupNames: newSelected
+        }, () => {
+          renderGroupsChecklist(newScanned, newSelected);
+        });
+      });
+    });
+  });
 }
+
+// Escuchar actualizaciones de grupos en segundo plano
+chrome.storage?.onChanged?.addListener((changes, areaName) => {
+  if (areaName === "local" && changes.scannedFacebookGroups) {
+    chrome.storage.local.get(["selectedGroupNames"], (d) => {
+      renderGroupsChecklist(changes.scannedFacebookGroups.newValue || [], d?.selectedGroupNames || []);
+      log(`✓ Se actualizaron ${(changes.scannedFacebookGroups.newValue || []).length} grupos desde Facebook.`);
+    });
+  }
+});
+
+// Añadir grupo manualmente
+function handleAddManualGroup() {
+  const input = document.getElementById("txt-add-group");
+  const rawValue = (input?.value || "").trim();
+  if (!rawValue) return;
+
+  // Permitir agregar varios separados por coma
+  const names = rawValue.split(",").map(n => n.trim()).filter(Boolean);
+  if (names.length === 0) return;
+
+  chrome.storage?.local?.get(["scannedFacebookGroups", "selectedGroupNames"], (d) => {
+    const scanned = Array.isArray(d?.scannedFacebookGroups) ? d.scannedFacebookGroups : [];
+    const selected = Array.isArray(d?.selectedGroupNames) ? d.selectedGroupNames : [];
+
+    const newScanned = Array.from(new Set([...scanned, ...names]));
+    const newSelected = Array.from(new Set([...selected, ...names]));
+
+    chrome.storage.local.set({
+      scannedFacebookGroups: newScanned,
+      selectedGroupNames: newSelected
+    }, () => {
+      renderGroupsChecklist(newScanned, newSelected);
+      if (input) input.value = "";
+      log(`✓ ${names.length} grupo(s) añadido(s) a tu lista.`);
+    });
+  });
+}
+
+document.getElementById("btn-add-group")?.addEventListener("click", handleAddManualGroup);
+document.getElementById("txt-add-group")?.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    handleAddManualGroup();
+  }
+});
 
 // Guardar preferencias de grupos fijos
 document.getElementById("btn-save-group-settings")?.addEventListener("click", () => {
@@ -140,27 +206,28 @@ document.getElementById("btn-save-group-settings")?.addEventListener("click", ()
   });
 });
 
-// Escanear grupos desde la pestaña activa de Facebook
+// Escanear grupos desde Facebook con detección multiruta
 document.getElementById("btn-scan-groups")?.addEventListener("click", async () => {
-  log("Escaneando tus grupos desde Facebook...");
+  log("Buscando grupos en Facebook...");
   try {
-    const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
-    const currentTab = tabs[0];
-    if (currentTab && currentTab.url && currentTab.url.includes("facebook.com")) {
-      chrome.tabs.sendMessage(currentTab.id, { action: "SCAN_MY_GROUPS" }, (res) => {
-        if (res && res.groups && res.groups.length > 0) {
-          chrome.storage?.local?.set({ scannedFacebookGroups: res.groups }, () => {
-            chrome.storage?.local?.get(["selectedGroupNames"], (d) => {
-              renderGroupsChecklist(res.groups, d?.selectedGroupNames || []);
-              log(`✓ Se encontraron ${res.groups.length} grupos en tu cuenta.`);
-            });
+    const fbTabs = await chrome.tabs.query({ url: "*://*.facebook.com/*" });
+    if (fbTabs.length > 0) {
+      const activeFbTab = fbTabs.find(t => t.active) || fbTabs[0];
+      chrome.tabs.sendMessage(activeFbTab.id, { action: "SCAN_MY_GROUPS" }, (res) => {
+        if (!chrome.runtime.lastError && res && res.groups && res.groups.length > 0) {
+          chrome.storage?.local?.get(["selectedGroupNames"], (d) => {
+            renderGroupsChecklist(res.groups, d?.selectedGroupNames || []);
+            log(`✓ ${res.groups.length} grupos detectados.`);
           });
         } else {
-          log("Aviso: Abre el diálogo de 'Publicar en más lugares' en Facebook para leer la lista completa.");
+          // Si la pestaña actual no tiene grupos en el DOM visible, llevarla a /groups/joins/
+          log("Abriendo 'Tus grupos' en Facebook para auto-escanear...");
+          chrome.tabs.update(activeFbTab.id, { url: "https://www.facebook.com/groups/joins/", active: true });
         }
       });
     } else {
-      log("⚠️ Abre facebook.com en esta ventana para escanear tus grupos.");
+      log("Abriendo Facebook para cargar tus grupos...");
+      chrome.tabs.create({ url: "https://www.facebook.com/groups/joins/", active: true });
     }
   } catch (err) {
     log(`Error: ${err.message}`);

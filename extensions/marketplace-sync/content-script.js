@@ -1247,20 +1247,15 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     autoSelectAndShareGroups(msg.targetCount || 12, msg.keywords || [], msg.selectedNames || []);
   }
   if (msg.action === "SCAN_MY_GROUPS") {
-    const dialog = document.querySelector('div[role="dialog"]');
-    const scanned = [];
-    if (dialog) {
-      const allBoxes = Array.from(dialog.querySelectorAll('div[role="checkbox"], div[aria-checked], input[type="checkbox"]'));
-      allBoxes.forEach(box => {
-        const containerRow = box.closest('div[role="listitem"]') || box.parentElement?.parentElement || box.parentElement;
-        const rowTitle = (containerRow?.innerText || "").split("\n")[0]?.trim();
-        if (rowTitle && rowTitle.length > 2 && !scanned.includes(rowTitle)) {
-          scanned.push(rowTitle);
-        }
-      });
-    }
+    const scanned = scanGroupsFromCurrentPage();
     if (scanned.length > 0) {
-      sendResponse({ success: true, groups: scanned });
+      chrome.storage?.local?.get(["scannedFacebookGroups"], (d) => {
+        const existing = Array.isArray(d?.scannedFacebookGroups) ? d.scannedFacebookGroups : [];
+        const merged = Array.from(new Set([...existing, ...scanned]));
+        chrome.storage?.local?.set({ scannedFacebookGroups: merged }, () => {
+          sendResponse({ success: true, groups: merged });
+        });
+      });
     } else {
       chrome.storage?.local?.get(["scannedFacebookGroups"], (d) => {
         sendResponse({ success: true, groups: d?.scannedFacebookGroups || [] });
@@ -1275,6 +1270,122 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   }
 });
 
+/**
+ * Extrae inteligentemente nombres de grupos visibles en la página actual de Facebook
+ * (modales de diálogo, página /groups/joins, feed y barra de accesos directos)
+ */
+function scanGroupsFromCurrentPage() {
+  const scanned = [];
+  const seen = new Set();
+
+  // 1. Si hay un diálogo modal de grupos abierto
+  const dialog = document.querySelector('div[role="dialog"]');
+  if (dialog) {
+    const allBoxes = Array.from(dialog.querySelectorAll('div[role="checkbox"], div[aria-checked], input[type="checkbox"]'));
+    allBoxes.forEach(box => {
+      const containerRow = box.closest('div[role="listitem"]') || box.parentElement?.parentElement || box.parentElement;
+      const rowTitle = (containerRow?.innerText || "").split("\n")[0]?.trim();
+      if (rowTitle && rowTitle.length > 2 && !seen.has(rowTitle.toLowerCase())) {
+        seen.add(rowTitle.toLowerCase());
+        scanned.push(rowTitle);
+      }
+    });
+  }
+
+  // 2. Extraer enlaces a grupos de Facebook
+  const links = Array.from(document.querySelectorAll('a[href*="/groups/"]'));
+  const ignoreSubstrings = [
+    '/groups/feed', '/groups/discover', '/groups/create', '/groups/joins',
+    '/groups/search', '/groups/chats', '/groups/notifications', '/groups/categories',
+    '/groups/membership_questions'
+  ];
+
+  links.forEach(a => {
+    const href = (a.getAttribute('href') || '').toLowerCase();
+    if (ignoreSubstrings.some(sub => href.includes(sub))) return;
+
+    const match = href.match(/\/groups\/([a-zA-Z0-9._-]+)/);
+    if (!match || !match[1]) return;
+    const groupSlug = match[1];
+    if (['feed', 'discover', 'create', 'joins', 'search', 'chats', 'notifications'].includes(groupSlug)) return;
+
+    const rawText = (a.innerText || a.getAttribute('aria-label') || '').trim();
+    if (!rawText) return;
+
+    const lines = rawText.split('\n').map(l => l.trim()).filter(Boolean);
+    const candidateName = lines[0];
+
+    const invalidKeywords = [
+      'grupos', 'tus grupos', 'grupos a los que te has unido', 'ver más', 'ver todos',
+      'crear nuevo grupo', 'descubrir', 'tu feed', 'configuración', 'invitar',
+      'notificaciones', 'mensajes', 'administrar', 'unirte', 'grupo público', 'grupo privado'
+    ];
+
+    if (
+      candidateName &&
+      candidateName.length >= 3 &&
+      candidateName.length <= 100 &&
+      !invalidKeywords.includes(candidateName.toLowerCase()) &&
+      !candidateName.toLowerCase().startsWith('última actividad') &&
+      !candidateName.toLowerCase().startsWith('miembro') &&
+      !seen.has(candidateName.toLowerCase())
+    ) {
+      seen.add(candidateName.toLowerCase());
+      scanned.push(candidateName);
+    }
+  });
+
+  return scanned;
+}
+
+function showHaibaneToast(msg) {
+  const existing = document.getElementById("haibane-floating-toast");
+  if (existing) existing.remove();
+
+  const toast = document.createElement("div");
+  toast.id = "haibane-floating-toast";
+  toast.style.cssText = `
+    position: fixed;
+    bottom: 25px;
+    left: 25px;
+    z-index: 9999999;
+    background: #0f172a;
+    border: 1.5px solid #a855f7;
+    color: #f8fafc;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 11.5px;
+    font-weight: 700;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    transition: opacity 0.3s;
+  `;
+  toast.textContent = msg;
+  document.body.appendChild(toast);
+  setTimeout(() => {
+    toast.style.opacity = "0";
+    setTimeout(() => toast.remove(), 350);
+  }, 4000);
+}
+
+function autoSyncGroupsFromPage() {
+  if (window.location.href.includes("/groups")) {
+    const found = scanGroupsFromCurrentPage();
+    if (found.length > 0) {
+      chrome.storage?.local?.get(["scannedFacebookGroups"], (d) => {
+        const existing = Array.isArray(d?.scannedFacebookGroups) ? d.scannedFacebookGroups : [];
+        const merged = Array.from(new Set([...existing, ...found]));
+        if (merged.length > existing.length) {
+          chrome.storage.local.set({ scannedFacebookGroups: merged }, () => {
+            console.log(`✓ Haibane: ${found.length} grupos sincronizados desde Facebook.`);
+            showHaibaneToast(`✓ Haibane: ${found.length} grupos sincronizados con la extensión.`);
+          });
+        }
+      });
+    }
+  }
+}
+
 // Inicialización robusta para SPA (Facebook React Navigation)
 function checkPageAndInit() {
   if (window.location.href.includes("/marketplace/create/item")) {
@@ -1282,6 +1393,10 @@ function checkPageAndInit() {
   } else {
     injectHaibaneFloatingWidget();
     loadCatalogProducts();
+  }
+  if (window.location.href.includes("/groups")) {
+    setTimeout(autoSyncGroupsFromPage, 1500);
+    setTimeout(autoSyncGroupsFromPage, 3500);
   }
 }
 

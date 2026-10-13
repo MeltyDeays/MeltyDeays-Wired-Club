@@ -145,9 +145,15 @@
     <div style="font-size: 10px; color: #94a3b8; margin-bottom: 6px; line-height: 1.35;">
       Facebook carga tus grupos de compra y venta automáticamente. Selecciona tus 12 preferidos una vez y se recordarán para siempre:
     </div>
-    <button id="btn-scan-groups" class="btn btn-secondary" style="font-size: 10px; padding: 4px 6px; margin-bottom: 6px;">
-      🔍 Escanear Mis Grupos desde Facebook
-    </button>
+    <div style="display: flex; gap: 4px; margin-bottom: 6px;">
+      <button id="btn-scan-groups" class="btn btn-secondary" style="flex: 1; font-size: 10px; padding: 5px 6px;">
+        🔍 Escanear en Facebook
+      </button>
+    </div>
+    <div style="display: flex; gap: 4px; margin-bottom: 6px;">
+      <input type="text" id="txt-add-group" placeholder="Escribe un grupo (ej: Ventas Managua)..." style="flex: 1; background: #020617; border: 1px solid #334155; color: #f8fafc; border-radius: 4px; padding: 4px 6px; font-size: 10px; outline: none;">
+      <button id="btn-add-group" class="btn btn-secondary" style="width: auto; padding: 4px 8px; font-size: 10px; background: #1e293b;">+ Añadir</button>
+    </div>
     
     <!-- Lista interactiva de grupos con scroll -->
     <div id="groups-checklist-container" style="max-height: 110px; overflow-y: auto; background: #020617; border: 1px solid #334155; border-radius: 4px; padding: 5px; margin-bottom: 6px; display: flex; flex-direction: column; gap: 4px;">
