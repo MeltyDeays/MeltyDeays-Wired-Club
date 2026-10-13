@@ -80,7 +80,7 @@ function updateModeUI(mode) {
       btnCustom.style.fontWeight = "normal";
     }
     if (statusEl) {
-      statusEl.innerHTML = `🎯 <strong>Modo IA:</strong> Selecciona automáticamente los 12 grupos con mayor afinidad para Gaming y Tecnología.`;
+      statusEl.innerHTML = `🎯 <strong>Modo IA:</strong> Prioriza grupos de venta y negocios en Juigalpa y zonas cercanas.`;
       statusEl.style.borderLeftColor = "#a855f7";
     }
   } else {
@@ -129,39 +129,67 @@ chrome.storage?.local?.get(["groupShareAuto", "selectedGroupNames", "groupSelect
 
 function scoreGroupRelevance(groupName) {
   const norm = (groupName || "").toLowerCase().trim();
-  let score = 50;
-  let badge = "⚡ Comercial";
-  let badgeColor = "#0284c7"; // Azul
 
-  const isGaming = /gamer|gaming|videojuego|consolas|playstation|xbox|nintendo|pc gamer|setup|geek|steam/.test(norm);
-  const isPC = /computador|laptop|pc|hardware|inform[aá]tica|tecnolog[ií]a/.test(norm);
-  const isTech = /electr[oó]nica|celular|smartphone|gadget|accesorios/.test(norm);
-  const isCommerce = /ventas|compras|mercado libre|tienda|clasificados|bazar|gangas|negocios|comercio/.test(norm);
+  // 1. Detección de grupos opuestos / baja afinidad
   const isOpposite = /ropa|calzado|zapatos|vestidos|moda|belleza|cosm[eé]ticos|bienes ra[ií]ces|casas|terrenos|alquiler|autos|carros|motos|veh[ií]culos|animales|mascotas/.test(norm);
-
   if (isOpposite) {
-    return { score: 15, badge: "⚪ Baja Afinidad", badgeColor: "#64748b" };
+    return { score: 10, badge: "⚪ Baja Afinidad", badgeColor: "#64748b" };
   }
 
-  if (isGaming) {
-    score += 45;
-    badge = "🔥 Gaming Top";
-    badgeColor = "#a855f7"; // Morado
-  } else if (isPC) {
-    score += 38;
-    badge = "🔥 PC & Tech";
-    badgeColor = "#3b82f6"; // Azul brillante
-  } else if (isTech) {
-    score += 30;
-    badge = "⚡ Electrónica";
-    badgeColor = "#06b6d4"; // Cyan
-  } else if (isCommerce) {
-    score += 15;
-    badge = "🏷️ Ventas";
-    badgeColor = "#10b981"; // Esmeralda
+  // 2. Detección geográfica: Juigalpa y Chontales
+  const isJuigalpa = /juigalpa|chontales/.test(norm);
+
+  // 3. Detección geográfica: Lugares cercanos a la ciudad de Juigalpa
+  const isNearby = /acoyapa|santo tom[aá]s|villa sandino|san pedro de l[oó]vago|la libertad|comalapa|cuapa|el coral|boaco|camoapa|teustepe|san lorenzo|el rama|nueva guinea|r[ií]o san juan|san carlos/.test(norm);
+
+  // 4. Detección comercial (vender / compras / negocios / clasificados)
+  const isCommerce = /ventas?|compras?|negocios?|comercio|bazar|gangas?|clasificados?|tienda|mercado|feria|cambalache|baratillo/.test(norm);
+
+  // 5. Detección tecnológica / gaming
+  const isTechGaming = /gamer|gaming|videojuegos?|consolas?|playstation|xbox|nintendo|pc gamer|setup|geek|computador|laptop|pc|hardware|inform[aá]tica|tecnolog[ií]a|electr[oó]nica|celular|smartphone|gadgets?/.test(norm);
+
+  // CATEGORÍA 1: JUIGALPA (Máxima Prioridad)
+  if (isJuigalpa) {
+    if (isCommerce && isTechGaming) {
+      return { score: 99, badge: "🔥 Juigalpa Tech", badgeColor: "#a855f7" }; // Morado
+    }
+    if (isCommerce) {
+      return { score: 96, badge: "📍 Juigalpa Ventas", badgeColor: "#10b981" }; // Esmeralda
+    }
+    if (isTechGaming) {
+      return { score: 94, badge: "⚡ Juigalpa Tech", badgeColor: "#8b5cf6" }; // Violeta
+    }
+    return { score: 90, badge: "📍 Juigalpa Local", badgeColor: "#059669" }; // Verde
   }
 
-  return { score: Math.min(score, 99), badge, badgeColor };
+  // CATEGORÍA 2: LUGARES CERCANOS A JUIGALPA (Segunda Prioridad)
+  if (isNearby) {
+    if (isCommerce && isTechGaming) {
+      return { score: 88, badge: "🏘️ Cercano Tech", badgeColor: "#3b82f6" }; // Azul brillante
+    }
+    if (isCommerce) {
+      return { score: 85, badge: "🏘️ Cercano Ventas", badgeColor: "#0284c7" }; // Azul
+    }
+    if (isTechGaming) {
+      return { score: 82, badge: "🏘️ Cercano Tech", badgeColor: "#06b6d4" }; // Cyan
+    }
+    return { score: 78, badge: "🏘️ Zona Cercana", badgeColor: "#0ea5e9" }; // Sky blue
+  }
+
+  // CATEGORÍA 3: GAMING Y TECH GENERAL (Nacional)
+  if (isTechGaming) {
+    if (isCommerce) {
+      return { score: 68, badge: "⚡ Tech Ventas Nal", badgeColor: "#f59e0b" }; // Ámbar
+    }
+    return { score: 62, badge: "⚡ Gaming/PC Nal", badgeColor: "#d97706" }; // Naranja
+  }
+
+  // CATEGORÍA 4: VENTAS GENERALES (Nacional / Managua)
+  if (isCommerce) {
+    return { score: 52, badge: "🏷️ Ventas Nal", badgeColor: "#64748b" }; // Slate
+  }
+
+  return { score: 40, badge: "🏷️ General", badgeColor: "#475569" };
 }
 
 function renderGroupsChecklist(groups, selected = [], mode = currentGroupMode) {
@@ -306,7 +334,7 @@ document.getElementById("btn-mode-ai")?.addEventListener("click", () => {
       selectedGroupNames: top12
     }, () => {
       renderGroupsChecklist(scanned, top12, "ai");
-      log(`✓ Modo IA: 12 grupos de mayor afinidad (Gaming & Tech) seleccionados.`);
+      log(`✓ Modo IA: Priorizados 12 grupos de ventas en Juigalpa y zonas cercanas.`);
     });
   });
 });
