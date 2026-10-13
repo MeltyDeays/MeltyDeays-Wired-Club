@@ -515,94 +515,216 @@ function findFacebookMarketplaceInputs() {
   return { titleInput, priceInput, descInput, fileInput };
 }
 
-async function expandAndFindDescriptionInput() {
-  let descInput = document.querySelector('textarea[aria-label*="Descripción" i], textarea[aria-label*="Description" i], div[aria-label*="Descripción" i][role="textbox"], div[aria-label*="Description" i][role="textbox"]');
-  if (descInput) return descInput;
-
-  // Buscar acordeón o encabezado de "Más detalles"
-  const allClickables = Array.from(document.querySelectorAll('div[role="button"], span, div, label'));
-  const moreDetailsBtn = allClickables.find(el => {
-    const txt = (el.innerText || "").trim().toLowerCase();
-    return (txt === "más detalles" || txt.includes("más detalles") || txt.includes("incluye otros detalles") || txt.includes("more details")) && el.children.length <= 4;
+function scrollFormContainer(distance = 450) {
+  const scrollables = Array.from(document.querySelectorAll('div, form, main')).filter(el => {
+    const style = window.getComputedStyle(el);
+    return (style.overflowY === 'auto' || style.overflowY === 'scroll') && el.scrollHeight > el.clientHeight;
   });
-
-  if (moreDetailsBtn) {
-    console.log("Desplegando acordeón 'Más detalles' para revelar la descripción...");
-    moreDetailsBtn.click();
-    await new Promise(r => setTimeout(r, 450));
-  }
-
-  descInput = document.querySelector('textarea[aria-label*="Descripción" i], textarea[aria-label*="Description" i], div[aria-label*="Descripción" i][role="textbox"], div[aria-label*="Description" i][role="textbox"]');
-  if (!descInput) {
-    descInput = document.querySelector('textarea');
-  }
-  return descInput;
-}
-
-async function autoSelectCondition(preferred = "Nuevo") {
-  const labels = Array.from(document.querySelectorAll('label, div[role="combobox"], div[aria-haspopup="listbox"], div[role="button"]'));
-  const conditionEl = labels.find(el => {
-    const aria = (el.getAttribute("aria-label") || "").toLowerCase();
-    const txt = (el.innerText || "").toLowerCase();
-    return (aria.includes("estado") || txt.includes("estado")) && !txt.includes("publicar");
+  scrollables.forEach(s => {
+    s.scrollTop += distance;
   });
-
-  if (conditionEl) {
-    conditionEl.click();
-    await new Promise(r => setTimeout(r, 400));
-
-    const options = Array.from(document.querySelectorAll('div[role="option"], div[role="menuitem"], span, div'));
-    const newOpt = options.find(o => {
-      const t = (o.innerText || "").trim().toLowerCase();
-      return t === "nuevo" || t.startsWith("nuevo") || t === "new";
-    });
-    if (newOpt) {
-      newOpt.click();
-      console.log("✓ Estado 'Nuevo' seleccionado automáticamente.");
-      return true;
-    }
-  }
-  return false;
+  window.scrollBy(0, distance);
 }
 
 async function autoSelectCategory(product) {
   const title = (product.title || "").toLowerCase();
-  let keywords = ["electrónica", "computadora", "videojuego", "accesorios"];
-  if (title.includes("teclado") || title.includes("mouse") || title.includes("pantalla") || title.includes("laptop")) {
-    keywords = ["computadora", "informática", "electrónica", "accesorios"];
-  } else if (title.includes("mando") || title.includes("control") || title.includes("gamepad")) {
-    keywords = ["videojuego", "juegos", "electrónica"];
+  
+  // Palabras clave prioritarias según el producto
+  let targetKeywords = [];
+  if (title.includes("mando") || title.includes("control") || title.includes("gamepad") || title.includes("switch") || title.includes("consola")) {
+    targetKeywords = [
+      "videojuegos y consolas", "videojuegos", "consolas", "electrónica y computadoras", "electrónica"
+    ];
+  } else if (title.includes("teclado") || title.includes("mouse") || title.includes("pantalla") || title.includes("laptop") || title.includes("monitor") || title.includes("computador") || title.includes("pc")) {
+    targetKeywords = [
+      "electrónica y computadoras", "computadoras", "electrónica", "accesorios de computadora", "videojuegos y consolas", "videojuegos"
+    ];
+  } else {
+    targetKeywords = [
+      "electrónica y computadoras", "computadoras", "electrónica", "videojuegos", "artículos de oficina"
+    ];
   }
 
-  const catEls = Array.from(document.querySelectorAll('label, div[role="combobox"], div[aria-haspopup="listbox"], div[role="button"]'));
-  const catBtn = catEls.find(el => {
+  // 1. Localizar el botón disparador de "Categoría"
+  const allTriggers = Array.from(document.querySelectorAll('label, div[role="combobox"], div[aria-haspopup="listbox"], div[role="button"]'));
+  const catTrigger = allTriggers.find(el => {
     const aria = (el.getAttribute("aria-label") || "").toLowerCase();
     const txt = (el.innerText || "").toLowerCase();
-    return (aria.includes("categoría") || txt.includes("categoría")) && !txt.includes("publicar");
+    return (aria.includes("categoría") || aria.includes("categoria") || txt.includes("categoría") || txt.includes("categoria")) &&
+           !txt.includes("publicar") && !txt.includes("siguiente") && !txt.includes("guardar");
   });
 
-  if (catBtn) {
-    catBtn.click();
-    await new Promise(r => setTimeout(r, 450));
-
-    const options = Array.from(document.querySelectorAll('div[role="option"], div[role="menuitem"], span, div'));
-    const matched = options.find(o => {
-      const t = (o.innerText || "").trim().toLowerCase();
-      return keywords.some(k => t.includes(k));
-    });
-    if (matched) {
-      matched.click();
-      console.log("✓ Categoría seleccionada:", matched.innerText);
-      await new Promise(r => setTimeout(r, 400));
-      const subOptions = Array.from(document.querySelectorAll('div[role="option"], div[role="menuitem"], span, div'));
-      const subMatched = subOptions.find(o => {
-        const t = (o.innerText || "").trim().toLowerCase();
-        return keywords.some(k => t.includes(k));
-      });
-      if (subMatched) subMatched.click();
-      return true;
-    }
+  if (!catTrigger) {
+    console.warn("Haibane: No se encontró el selector de Categoría en el DOM.");
+    return false;
   }
+
+  catTrigger.scrollIntoView({ block: "center" });
+  catTrigger.click();
+  catTrigger.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+  catTrigger.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }));
+  await new Promise(r => setTimeout(r, 650));
+
+  // 2. Buscar opciones interactivas en el menú emergente
+  const popoverOptions = Array.from(document.querySelectorAll('div[role="button"], div[role="menuitem"], div[role="option"], div[tabindex="0"], div[role="listitem"]'))
+    .filter(el => {
+      const txt = (el.innerText || "").trim().toLowerCase();
+      return txt && txt.length < 50 && el.querySelectorAll('div[role="button"], div[role="option"]').length === 0;
+    });
+
+  let matchedOption = null;
+  for (const kw of targetKeywords) {
+    matchedOption = popoverOptions.find(opt => {
+      const t = (opt.innerText || "").trim().toLowerCase();
+      return t === kw || t.startsWith(kw) || t.includes(kw);
+    });
+    if (matchedOption) break;
+  }
+
+  if (matchedOption) {
+    console.log("✓ Categoría seleccionada:", matchedOption.innerText);
+    matchedOption.scrollIntoView({ block: "center" });
+    matchedOption.click();
+    matchedOption.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+    matchedOption.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }));
+    await new Promise(r => setTimeout(r, 600));
+
+    // Si abrió un submenú de subcategorías, buscar y pulsar coincidencia
+    const subOptions = Array.from(document.querySelectorAll('div[role="button"], div[role="menuitem"], div[role="option"], div[tabindex="0"]'))
+      .filter(el => {
+        const txt = (el.innerText || "").trim().toLowerCase();
+        return txt && txt.length < 50 && el.querySelectorAll('div[role="button"]').length === 0;
+      });
+
+    const matchedSub = subOptions.find(opt => {
+      const t = (opt.innerText || "").trim().toLowerCase();
+      return targetKeywords.some(kw => t.includes(kw) || kw.includes(t));
+    });
+
+    if (matchedSub && matchedSub !== matchedOption) {
+      console.log("✓ Subcategoría seleccionada:", matchedSub.innerText);
+      matchedSub.scrollIntoView({ block: "center" });
+      matchedSub.click();
+      matchedSub.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+      matchedSub.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }));
+      await new Promise(r => setTimeout(r, 600));
+    }
+
+    return true;
+  }
+
+  return false;
+}
+
+async function autoSelectCondition(preferred = "Nuevo") {
+  scrollFormContainer(250);
+  await new Promise(r => setTimeout(r, 300));
+
+  const allTriggers = Array.from(document.querySelectorAll('label, div[role="combobox"], div[aria-haspopup="listbox"], div[role="button"]'));
+  const conditionTrigger = allTriggers.find(el => {
+    const aria = (el.getAttribute("aria-label") || "").toLowerCase();
+    const txt = (el.innerText || "").toLowerCase();
+    return (aria.includes("estado") || txt.includes("estado") || aria.includes("condition") || txt.includes("condition")) &&
+           !txt.includes("publicar") && !txt.includes("siguiente") && !txt.includes("guardar");
+  });
+
+  if (!conditionTrigger) {
+    console.warn("Haibane: No se encontró el selector de Estado.");
+    return false;
+  }
+
+  conditionTrigger.scrollIntoView({ block: "center" });
+  conditionTrigger.click();
+  conditionTrigger.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+  conditionTrigger.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }));
+  await new Promise(r => setTimeout(r, 600));
+
+  const optionElements = Array.from(document.querySelectorAll('div[role="button"], div[role="menuitem"], div[role="option"], div[tabindex="0"], div[role="listitem"]'))
+    .filter(el => {
+      const txt = (el.innerText || "").trim().toLowerCase();
+      return txt && txt.length < 35 && el.querySelectorAll('div[role="button"]').length === 0;
+    });
+
+  const newOption = optionElements.find(el => {
+    const t = (el.innerText || "").trim().toLowerCase();
+    return t === "nuevo" || t.startsWith("nuevo") || t === "new";
+  });
+
+  if (newOption) {
+    console.log("✓ Estado 'Nuevo' seleccionado con éxito.");
+    newOption.scrollIntoView({ block: "center" });
+    newOption.click();
+    newOption.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+    newOption.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }));
+    await new Promise(r => setTimeout(r, 500));
+    return true;
+  }
+
+  return false;
+}
+
+async function expandAndFillDescription(product) {
+  scrollFormContainer(600);
+  await new Promise(r => setTimeout(r, 400));
+
+  // 1. Desplegar acordeón de "Más detalles" si existe
+  const clickables = Array.from(document.querySelectorAll('div[role="button"], span, div, label'));
+  const moreDetailsBtn = clickables.find(el => {
+    const txt = (el.innerText || "").trim().toLowerCase();
+    return (txt === "más detalles" || txt.includes("más detalles") || txt.includes("incluye otros detalles") || txt.includes("more details")) &&
+           el.children.length <= 4 && !txt.includes("publicar") && !txt.includes("siguiente");
+  });
+
+  if (moreDetailsBtn) {
+    console.log("Desplegando 'Más detalles'...");
+    moreDetailsBtn.scrollIntoView({ block: "center" });
+    moreDetailsBtn.click();
+    await new Promise(r => setTimeout(r, 500));
+    scrollFormContainer(400);
+  }
+
+  // 2. Localizar campo de descripción
+  let descInput = document.querySelector('textarea[aria-label*="Descripción" i], textarea[aria-label*="Description" i], textarea[placeholder*="Descripción" i], textarea[placeholder*="Description" i]');
+  if (!descInput) {
+    descInput = document.querySelector('div[role="textbox"][aria-label*="Descripción" i], div[role="textbox"][aria-label*="Description" i]');
+  }
+  if (!descInput) {
+    const allTextareas = Array.from(document.querySelectorAll('textarea'));
+    descInput = allTextareas[0];
+  }
+  if (!descInput) {
+    const contentEditables = Array.from(document.querySelectorAll('div[contenteditable="true"]'));
+    descInput = contentEditables.find(c => {
+      const parentTxt = (c.closest('label')?.innerText || c.parentElement?.innerText || "").toLowerCase();
+      return parentTxt.includes("descrip");
+    }) || contentEditables[0];
+  }
+
+  if (descInput) {
+    console.log("✓ Campo de descripción localizado:", descInput.tagName);
+    descInput.scrollIntoView({ block: "center" });
+    const formattedDesc = formatAiMarketplaceCopy(product);
+
+    if (descInput.tagName.toLowerCase() === 'textarea') {
+      setNativeInputValue(descInput, formattedDesc);
+      descInput.focus();
+      document.execCommand('selectAll', false, null);
+      document.execCommand('insertText', false, formattedDesc);
+      descInput.dispatchEvent(new Event('input', { bubbles: true }));
+      descInput.dispatchEvent(new Event('change', { bubbles: true }));
+      descInput.dispatchEvent(new Event('blur', { bubbles: true }));
+    } else {
+      descInput.focus();
+      document.execCommand('selectAll', false, null);
+      document.execCommand('insertText', false, formattedDesc);
+      descInput.dispatchEvent(new InputEvent('input', { bubbles: true }));
+      descInput.dispatchEvent(new Event('change', { bubbles: true }));
+      descInput.dispatchEvent(new Event('blur', { bubbles: true }));
+    }
+    return true;
+  }
+
+  console.warn("Haibane: No se localizó campo de descripción tras scroll.");
   return false;
 }
 
@@ -616,19 +738,21 @@ function triggerAutoFillPipeline(product) {
     if (titleInput || priceInput || fileInput) {
       clearInterval(interval);
       const statusEl = document.getElementById("haibane-autofill-status");
-      if (statusEl) statusEl.textContent = "⏳ Inyectando fotos, campos y desplegando descripción...";
+      if (statusEl) statusEl.textContent = "⏳ Paso 1/5: Inyectando fotos HD...";
 
       const priceNio = product.priceNio || Math.round((product.priceUsd || 0) * 37.0);
       const images = Array.isArray(product.images) && product.images.length > 0 
         ? product.images 
         : (product.imageUrl ? [product.imageUrl] : []);
 
-      // 1. Fotos HD (Estrictamente deduplicadas y 1 sola vez)
+      // 1. Fotos HD deduplicadas
       if (images.length > 0 && fileInput) {
         await injectProductPhotosToForm(images, product.id);
+        await new Promise(r => setTimeout(r, 600));
       }
 
       // 2. Título
+      if (statusEl) statusEl.textContent = "⏳ Paso 2/5: Inyectando título...";
       if (titleInput) {
         const cleanTitle = (product.title || "").replace(/(\$|c\$|\busd\b)\s*\d+/gi, "").trim();
         setNativeInputValue(titleInput, cleanTitle.slice(0, 75));
@@ -639,25 +763,24 @@ function triggerAutoFillPipeline(product) {
         setNativeInputValue(priceInput, String(priceNio));
       }
 
-      // 4. Categoría y Estado
-      await autoSelectCategory(product);
-      await autoSelectCondition("Nuevo");
+      await new Promise(r => setTimeout(r, 500));
 
-      // 5. Expandir "Más detalles" y rellenar Descripción
-      const descInput = await expandAndFindDescriptionInput();
-      if (descInput) {
-        const formattedDesc = formatAiMarketplaceCopy(product);
-        if (descInput.tagName.toLowerCase() === 'textarea') {
-          setNativeInputValue(descInput, formattedDesc);
-        } else {
-          descInput.focus();
-          document.execCommand('selectAll', false, null);
-          document.execCommand('insertText', false, formattedDesc);
-        }
-      }
+      // 4. Categoría (Secuencial)
+      if (statusEl) statusEl.textContent = "⏳ Paso 3/5: Seleccionando categoría óptima...";
+      await autoSelectCategory(product);
+      await new Promise(r => setTimeout(r, 700));
+
+      // 5. Estado "Nuevo" (Secuencial tras cierre de categoría)
+      if (statusEl) statusEl.textContent = "⏳ Paso 4/5: Estableciendo estado 'Nuevo'...";
+      await autoSelectCondition("Nuevo");
+      await new Promise(r => setTimeout(r, 600));
+
+      // 6. Descripción
+      if (statusEl) statusEl.textContent = "⏳ Paso 5/5: Desplegando y rellenando descripción...";
+      await expandAndFillDescription(product);
 
       if (statusEl) {
-        statusEl.innerHTML = `<span style="color:#10b981; font-weight:800;">✓ Datos, fotos HD y ficha inyectados.</span> Revisa la vista previa y haz clic en 'Siguiente'.`;
+        statusEl.innerHTML = `<span style="color:#10b981; font-weight:800;">✓ Formulario 100% completado (Fotos, Título, Categoría, Estado y Ficha).</span> Revisa la vista previa y haz clic en 'Siguiente'.`;
       }
     } else if (attempts >= maxAttempts) {
       clearInterval(interval);

@@ -78,6 +78,43 @@ chrome.storage?.local?.get(["groupShareAuto", "selectedGroupNames", "scannedFace
   renderGroupsChecklist(scanned, selected);
 });
 
+function scoreGroupRelevance(groupName) {
+  const norm = (groupName || "").toLowerCase().trim();
+  let score = 50;
+  let badge = "⚡ Comercial";
+  let badgeColor = "#0284c7"; // Azul
+
+  const isGaming = /gamer|gaming|videojuego|consolas|playstation|xbox|nintendo|pc gamer|setup|geek|steam/.test(norm);
+  const isPC = /computador|laptop|pc|hardware|inform[aá]tica|tecnolog[ií]a/.test(norm);
+  const isTech = /electr[oó]nica|celular|smartphone|gadget|accesorios/.test(norm);
+  const isCommerce = /ventas|compras|mercado libre|tienda|clasificados|bazar|gangas|negocios|comercio/.test(norm);
+  const isOpposite = /ropa|calzado|zapatos|vestidos|moda|belleza|cosm[eé]ticos|bienes ra[ií]ces|casas|terrenos|alquiler|autos|carros|motos|veh[ií]culos|animales|mascotas/.test(norm);
+
+  if (isOpposite) {
+    return { score: 15, badge: "⚪ Baja Afinidad", badgeColor: "#64748b" };
+  }
+
+  if (isGaming) {
+    score += 45;
+    badge = "🔥 Gaming Top";
+    badgeColor = "#a855f7"; // Morado
+  } else if (isPC) {
+    score += 38;
+    badge = "🔥 PC & Tech";
+    badgeColor = "#3b82f6"; // Azul brillante
+  } else if (isTech) {
+    score += 30;
+    badge = "⚡ Electrónica";
+    badgeColor = "#06b6d4"; // Cyan
+  } else if (isCommerce) {
+    score += 15;
+    badge = "🏷️ Ventas";
+    badgeColor = "#10b981"; // Esmeralda
+  }
+
+  return { score: Math.min(score, 99), badge, badgeColor };
+}
+
 function renderGroupsChecklist(groups, selected = []) {
   const container = document.getElementById("groups-checklist-container");
   const labelCount = document.getElementById("lbl-groups-selected");
@@ -89,21 +126,33 @@ function renderGroupsChecklist(groups, selected = []) {
     return;
   }
 
+  // Ordenar grupos por puntuación de relevancia IA descendente
+  const scoredGroups = groups.map(g => ({
+    name: g,
+    ai: scoreGroupRelevance(g),
+    isFav: selected.includes(g)
+  })).sort((a, b) => b.ai.score - a.ai.score);
+
   container.innerHTML = "";
   let checkedCount = 0;
 
-  groups.forEach((grp, idx) => {
+  scoredGroups.forEach(({ name: grp, ai, isFav }, idx) => {
     const isChecked = selected.includes(grp) || (selected.length === 0 && idx < 12);
     if (isChecked) checkedCount++;
 
     const row = document.createElement("div");
-    row.style.cssText = "display: flex; align-items: center; justify-content: space-between; gap: 4px; font-size: 10.5px; color: #f1f5f9; padding: 2px 0;";
+    row.style.cssText = "display: flex; align-items: center; justify-content: space-between; gap: 4px; font-size: 10.5px; color: #f1f5f9; padding: 3px 0; border-bottom: 1px solid rgba(51, 65, 85, 0.4);";
     row.innerHTML = `
       <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; flex: 1; overflow: hidden;">
         <input type="checkbox" class="chk-fb-group-item" value="${grp}" ${isChecked ? "checked" : ""}>
-        <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${grp}">🏷️ ${grp}</span>
+        <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 145px;" title="${grp}">🏷️ ${grp}</span>
       </label>
-      <button type="button" class="btn-remove-group" data-group="${grp}" style="background: none; border: none; color: #64748b; cursor: pointer; padding: 0 4px; font-size: 11px; line-height: 1;" title="Quitar de la lista">✕</button>
+      <div style="display: flex; align-items: center; gap: 4px;">
+        <span style="font-size: 9px; padding: 1px 4px; border-radius: 3px; font-weight: 700; background: ${ai.badgeColor}22; color: ${ai.badgeColor}; border: 1px solid ${ai.badgeColor}44;" title="Relevancia IA: ${ai.score}%">
+          ${ai.badge}
+        </span>
+        <button type="button" class="btn-remove-group" data-group="${grp}" style="background: none; border: none; color: #64748b; cursor: pointer; padding: 0 4px; font-size: 11px; line-height: 1;" title="Quitar de la lista">✕</button>
+      </div>
     `;
     container.appendChild(row);
   });
@@ -184,6 +233,32 @@ document.getElementById("txt-add-group")?.addEventListener("keydown", (e) => {
     e.preventDefault();
     handleAddManualGroup();
   }
+});
+
+// Recomendar los 12 grupos más relevantes usando IA
+document.getElementById("btn-ai-recommend-groups")?.addEventListener("click", () => {
+  chrome.storage?.local?.get(["scannedFacebookGroups"], (d) => {
+    const scanned = Array.isArray(d?.scannedFacebookGroups) ? d.scannedFacebookGroups : [];
+    if (scanned.length === 0) {
+      log("Aviso: Primero escanea o añade grupos a tu lista.");
+      return;
+    }
+    const scored = scanned.map(g => ({ name: g, score: scoreGroupRelevance(g).score }))
+      .sort((a, b) => b.score - a.score);
+    const top12 = scored.slice(0, 12).map(s => s.name);
+    renderGroupsChecklist(scanned, top12);
+    log(`✓ 12 grupos con mayor afinidad IA (Gaming & Tech) seleccionados.`);
+  });
+});
+
+// Restablecer a los favoritos fijos guardados por el usuario
+document.getElementById("btn-restore-favorites")?.addEventListener("click", () => {
+  chrome.storage?.local?.get(["scannedFacebookGroups", "selectedGroupNames"], (d) => {
+    const scanned = Array.isArray(d?.scannedFacebookGroups) ? d.scannedFacebookGroups : [];
+    const selected = Array.isArray(d?.selectedGroupNames) ? d.selectedGroupNames : [];
+    renderGroupsChecklist(scanned, selected);
+    log(`✓ Restaurados tus ${selected.length} grupos favoritos guardados.`);
+  });
 });
 
 // Guardar preferencias de grupos fijos
