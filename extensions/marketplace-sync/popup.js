@@ -14,8 +14,12 @@ document.getElementById("btn-link-twins")?.addEventListener("click", async () =>
     const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
     const currentTab = tabs[0];
     if (currentTab && currentTab.url && currentTab.url.includes("facebook.com/marketplace")) {
-      chrome.tabs.sendMessage(currentTab.id, { action: "LINK_TWINS" }, () => {
-        log("Enlace de gemelos iniciado en la pestaña.");
+      chrome.tabs.sendMessage(currentTab.id, { action: "LINK_TWINS" }, (res) => {
+        if (chrome.runtime.lastError) {
+          log(`Aviso: ${chrome.runtime.lastError.message}`);
+          return;
+        }
+        log(res?.message || "Enlace de gemelos iniciado en la pestaña.");
       });
     } else {
       log("⚠️ Abre facebook.com/marketplace/you/selling para enlazar tus publicaciones.");
@@ -32,7 +36,11 @@ document.getElementById("btn-audit")?.addEventListener("click", async () => {
     const currentTab = tabs[0];
     if (currentTab && currentTab.url && currentTab.url.includes("facebook.com/marketplace")) {
       chrome.tabs.sendMessage(currentTab.id, { action: "AUDIT_LISTINGS" }, (res) => {
-        log("Auditoría enviada a la pestaña de Facebook.");
+        if (chrome.runtime.lastError) {
+          log(`Aviso: ${chrome.runtime.lastError.message}`);
+          return;
+        }
+        log(res?.message || "Auditoría enviada a la pestaña de Facebook.");
       });
     } else {
       log("⚠️ Abre facebook.com/marketplace/you/selling para auditar directamente.");
@@ -45,7 +53,7 @@ document.getElementById("btn-audit")?.addEventListener("click", async () => {
 document.getElementById("btn-cloud-sync")?.addEventListener("click", async () => {
   log("Conectando con Vercel Serverless Function...");
   try {
-    const res = await fetch("https://lain-wired-club.vercel.app/api/sync-facebook", { method: "POST" });
+    const res = await fetch("https://meltydeays-wired-club.vercel.app/api/sync-facebook", { method: "POST" });
     const data = await res.json();
     if (data.success && data.report) {
       log(`✓ Cloud Sync: ${data.report.updatedProducts.length} actualizados, ${data.report.markedSoldProducts?.length || 0} vendidos.`);
@@ -434,11 +442,19 @@ document.getElementById("btn-run-relist-now")?.addEventListener("click", async (
     const currentTab = tabs[0];
     if (currentTab && currentTab.url && currentTab.url.includes("facebook.com")) {
       chrome.tabs.sendMessage(currentTab.id, { action: "RUN_AUTO_RELIST", maxDays: relistDays }, (res) => {
+        if (chrome.runtime.lastError) {
+          log(`Aviso: ${chrome.runtime.lastError.message}`);
+          return;
+        }
         log(`✓ Ciclo de re-publicación disparado.`);
       });
     } else {
       log("Abriendo ciclo de relist en segundo plano...");
       chrome.runtime.sendMessage({ action: "CHECK_AUTORELIST_NOW", maxDays: relistDays }, (res) => {
+        if (chrome.runtime.lastError) {
+          log(`Aviso: ${chrome.runtime.lastError.message}`);
+          return;
+        }
         log(res?.message || "Comando de re-publicación enviado.");
       });
     }
@@ -449,22 +465,33 @@ document.getElementById("btn-run-relist-now")?.addEventListener("click", async (
 
 // Disparar compartir en grupos inmediatamente
 document.getElementById("btn-share-groups-now")?.addEventListener("click", async () => {
-  log("Buscando diálogo de grupos en la pestaña...");
+  log("Buscando diálogo o pantalla de grupos en la pestaña...");
   try {
     const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
     const currentTab = tabs[0];
     if (currentTab && currentTab.url && currentTab.url.includes("facebook.com/marketplace")) {
-      chrome.storage?.local?.get(["selectedGroupNames"], (d) => {
+      chrome.storage?.local?.get(["selectedGroupNames", "groupSelectionMode"], (d) => {
+        const mode = d?.groupSelectionMode || currentGroupMode || "ai";
+        const selected = Array.isArray(d?.selectedGroupNames) ? d.selectedGroupNames : [];
         chrome.tabs.sendMessage(currentTab.id, {
           action: "AUTO_SHARE_GROUPS",
-          targetCount: (d?.selectedGroupNames?.length) || 12,
-          selectedNames: d?.selectedGroupNames || []
+          mode: mode,
+          targetCount: selected.length > 0 ? selected.length : 12,
+          selectedNames: selected
         }, (res) => {
-          log(`Comando enviado para compartir en tus grupos seleccionados.`);
+          if (chrome.runtime.lastError) {
+            log(`Aviso: ${chrome.runtime.lastError.message}`);
+            return;
+          }
+          if (res && res.success) {
+            log(`✓ ${res.count || 12} grupos seleccionados con éxito.`);
+          } else {
+            log(`Aviso: ${res?.error || "Revisa la pestaña de Marketplace."}`);
+          }
         });
       });
     } else {
-      log("⚠️ Abre la pestaña de Marketplace donde esté la publicación o diálogo.");
+      log("⚠️ Abre la pestaña de Marketplace donde esté la publicación o grupos.");
     }
   } catch (err) {
     log(`Error: ${err.message}`);

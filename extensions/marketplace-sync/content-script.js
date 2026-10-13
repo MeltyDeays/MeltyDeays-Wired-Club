@@ -1486,83 +1486,313 @@ function watchForPublishCompletion(productId, collection) {
  */
 
 /**
- * Selecciona automáticamente N grupos en el diálogo de Facebook y los publica
- * Prioriza los grupos favoritos guardados de por vida por el usuario.
+ * Puntuación de afinidad IA para grupos de Facebook con priorización territorial
+ * 1. Juigalpa y Chontales ventas/tech/negocios (96-99 pts)
+ * 2. Juigalpa local (90 pts)
+ * 3. Lugares cercanos a Juigalpa (Acoyapa, Santo Tomás, Villa Sandino, Lovago, La Libertad, etc.) (78-88 pts)
+ * 4. Tech / Gaming nacional (62-68 pts)
+ * 5. Ventas nacional / Managua (52 pts)
+ * 6. Baja afinidad / descarte (10 pts)
+ */
+function scoreGroupRelevance(groupName) {
+  const norm = (groupName || "").toLowerCase().trim();
+
+  // 1. Detección de grupos opuestos / baja afinidad
+  const isOpposite = /ropa|calzado|zapatos|vestidos|moda|belleza|cosm[eé]ticos|bienes ra[ií]ces|casas|terrenos|alquiler|autos|carros|motos|veh[ií]culos|animales|mascotas/.test(norm);
+  if (isOpposite) {
+    return { score: 10, badge: "⚪ Baja Afinidad" };
+  }
+
+  // 2. Detección geográfica: Juigalpa y Chontales
+  const isJuigalpa = /juigalpa|chontales/.test(norm);
+
+  // 3. Detección geográfica: Lugares cercanos a la ciudad de Juigalpa
+  const isNearby = /acoyapa|santo tom[aá]s|villa sandino|san pedro de l[oó]vago|la libertad|comalapa|cuapa|el coral|boaco|camoapa|teustepe|san lorenzo|el rama|nueva guinea|r[ií]o san juan|san carlos/.test(norm);
+
+  // 4. Detección comercial (vender / compras / negocios / clasificados)
+  const isCommerce = /ventas?|compras?|negocios?|comercio|bazar|gangas?|clasificados?|tienda|mercado|feria|cambalache|baratillo/.test(norm);
+
+  // 5. Detección tecnológica / gaming
+  const isTechGaming = /gamer|gaming|videojuegos?|consolas?|playstation|xbox|nintendo|pc gamer|setup|geek|computador|laptop|pc|hardware|inform[aá]tica|tecnolog[ií]a|electr[oó]nica|celular|smartphone|gadgets?/.test(norm);
+
+  // CATEGORÍA 1: JUIGALPA (Máxima Prioridad)
+  if (isJuigalpa) {
+    if (isCommerce && isTechGaming) return { score: 99, badge: "🔥 Juigalpa Tech" };
+    if (isCommerce) return { score: 96, badge: "📍 Juigalpa Ventas" };
+    if (isTechGaming) return { score: 94, badge: "⚡ Juigalpa Tech" };
+    return { score: 90, badge: "📍 Juigalpa Local" };
+  }
+
+  // CATEGORÍA 2: LUGARES CERCANOS A JUIGALPA (Segunda Prioridad)
+  if (isNearby) {
+    if (isCommerce && isTechGaming) return { score: 88, badge: "🏘️ Cercano Tech" };
+    if (isCommerce) return { score: 85, badge: "🏘️ Cercano Ventas" };
+    if (isTechGaming) return { score: 82, badge: "🏘️ Cercano Tech" };
+    return { score: 78, badge: "🏘️ Zona Cercana" };
+  }
+
+  // CATEGORÍA 3: GAMING Y TECH GENERAL (Nacional)
+  if (isTechGaming) {
+    if (isCommerce) return { score: 68, badge: "⚡ Tech Ventas Nal" };
+    return { score: 62, badge: "⚡ Gaming/PC Nal" };
+  }
+
+  // CATEGORÍA 4: VENTAS GENERALES (Nacional / Managua)
+  if (isCommerce) {
+    return { score: 52, badge: "🏷️ Ventas Nal" };
+  }
+
+  return { score: 40, badge: "🏷️ General" };
+}
+
+/**
+ * Localiza el contenedor de grupos en Facebook Marketplace:
+ * - Soporta tanto diálogos modales (role="dialog")
+ * - Como la pantalla de Paso 2 de publicación (/marketplace/create/item?step=audience)
+ */
+function findGroupSharingContainer() {
+  // 1. Modales abiertos con opciones de grupos
+  const dialogs = Array.from(document.querySelectorAll('div[role="dialog"]'));
+  for (const d of dialogs) {
+    const txt = (d.innerText || "").toLowerCase();
+    if (txt.includes("en tus grupos") || txt.includes("tus grupos de compra") || txt.includes("compartir en grupos") || txt.includes("share to groups")) {
+      return { container: d, type: "dialog" };
+    }
+  }
+
+  // 2. Si hay un diálogo "Tu publicación" con el enlace "Publicar en más lugares"
+  for (const d of dialogs) {
+    const txt = (d.innerText || "").toLowerCase();
+    if (txt.includes("tu publicación") && (txt.includes("publicar en más lugares") || txt.includes("list in more places"))) {
+      const link = Array.from(d.querySelectorAll('span, a, div[role="button"]')).find(el => {
+        const t = (el.innerText || "").trim().toLowerCase();
+        return t === "publicar en más lugares" || t === "list in more places";
+      });
+      if (link) {
+        link.click();
+        return { container: d, type: "navigating" };
+      }
+    }
+  }
+
+  // 3. Pantalla de Creación de Publicación Paso 2 (step=audience o contenedor en DOM principal)
+  const isAudienceUrl = window.location.href.includes("step=audience");
+  const audienceHeadings = Array.from(document.querySelectorAll('h1, h2, h3, span, div')).filter(el => {
+    const txt = (el.innerText || "").trim().toLowerCase();
+    return (txt === "publicar en más lugares" || txt === "en tus grupos" || txt === "list in more places") && el.children.length === 0;
+  });
+
+  if (isAudienceUrl || audienceHeadings.length > 0) {
+    let root = null;
+    if (audienceHeadings.length > 0) {
+      root = audienceHeadings[0].closest('div[role="main"]') ||
+             audienceHeadings[0].closest('form') ||
+             audienceHeadings[0].closest('div[style*="max-width"]') ||
+             audienceHeadings[0].parentElement?.parentElement?.parentElement;
+    }
+    if (!root) {
+      root = document.querySelector('div[role="main"]') || document.querySelector('form') || document.body;
+    }
+    return { container: root, type: "audience_page" };
+  }
+
+  return null;
+}
+
+/**
+ * Extrae casillas de grupos descartando la opción de Marketplace público
+ */
+function getValidGroupItems(rootContainer) {
+  const allBoxes = Array.from(
+    rootContainer.querySelectorAll('div[role="checkbox"], div[aria-checked], input[type="checkbox"]')
+  );
+
+  const groupItems = [];
+
+  for (const box of allBoxes) {
+    const row = box.closest('div[role="listitem"]') || 
+                box.closest('div[role="button"]') || 
+                box.closest('label') ||
+                box.parentElement?.parentElement || 
+                box.parentElement;
+    const rowText = (row?.innerText || "").trim();
+    const rowTextLower = rowText.toLowerCase();
+
+    // Descartar si es la opción de Marketplace público
+    if (
+      rowTextLower.includes("los artículos de marketplace son públicos") ||
+      rowTextLower.includes("marketplace son públicos") ||
+      rowTextLower.includes("públicamente\nmarketplace") ||
+      (rowTextLower.includes("marketplace") && !rowTextLower.includes("miembros") && !rowTextLower.includes("members"))
+    ) {
+      continue;
+    }
+
+    const lines = rowText.split("\n").map(l => l.trim()).filter(Boolean);
+    let groupName = lines[0] || "";
+    if (groupName.length <= 2 && lines.length > 1) {
+      groupName = lines[1];
+    }
+
+    groupItems.push({
+      box,
+      row,
+      name: groupName,
+      fullText: rowText,
+      isChecked: box.getAttribute("aria-checked") === "true" || box.checked === true
+    });
+  }
+
+  return groupItems;
+}
+
+/**
+ * Simula clic robusto en una casilla de grupo compatible con React de Facebook
+ */
+async function toggleGroupCheckbox(groupItem) {
+  if (groupItem.isChecked) return true;
+
+  const { box, row } = groupItem;
+  box.scrollIntoView({ block: "nearest", behavior: "instant" });
+  await new Promise(r => setTimeout(r, 40));
+
+  const evtDown = new MouseEvent("mousedown", { bubbles: true, cancelable: true, view: window });
+  const evtUp = new MouseEvent("mouseup", { bubbles: true, cancelable: true, view: window });
+
+  box.dispatchEvent(evtDown);
+  box.dispatchEvent(evtUp);
+  box.click();
+  box.dispatchEvent(new Event("change", { bubbles: true }));
+
+  await new Promise(r => setTimeout(r, 60));
+
+  const stillUnchecked = box.getAttribute("aria-checked") === "false" || box.checked === false;
+  if (stillUnchecked && row && row !== box) {
+    row.dispatchEvent(evtDown);
+    row.dispatchEvent(evtUp);
+    row.click();
+    await new Promise(r => setTimeout(r, 60));
+  }
+
+  groupItem.isChecked = box.getAttribute("aria-checked") === "true" || box.checked === true;
+  return groupItem.isChecked;
+}
+
+/**
+ * Localiza el botón de publicar / compartir en la pantalla o diálogo
+ */
+function findPublishButton(rootContainer) {
+  const candidates = Array.from(
+    (rootContainer || document).querySelectorAll('div[role="button"], button')
+  );
+  return candidates.find(b => {
+    const txt = (b.innerText || b.getAttribute("aria-label") || "").trim().toLowerCase();
+    return (
+      (txt === "publicar" || txt === "compartir" || txt === "publish" || txt === "share" || txt === "listo" || txt === "done") &&
+      !b.disabled &&
+      b.getAttribute("aria-disabled") !== "true" &&
+      b.offsetParent !== null
+    );
+  });
+}
+
+/**
+ * Selecciona automáticamente N grupos en Facebook (Paso 2 o Diálogo modal) y publica.
+ * Prioriza Juigalpa y zonas cercanas con IA o la lista de grupos fijos guardados.
  * @param {number} targetCount Cantidad de grupos a marcar (default: 12)
  * @param {string[]} keywords Filtro opcional de palabras clave
  * @param {string[]} selectedNames Lista de nombres exactos de grupos favoritos guardados
+ * @param {string} mode Modo de selección ('ai' | 'custom')
  * @returns {Promise<{success: boolean, count: number, error?: string}>}
  */
-async function autoSelectAndShareGroups(targetCount = 12, keywords = [], selectedNames = []) {
-  const dialog = document.querySelector('div[role="dialog"]');
-  if (!dialog) {
-    console.warn("Haibane: No se detectó ningún diálogo de grupos en pantalla.");
-    return { success: false, error: "Diálogo de grupos no detectado en el DOM" };
+async function autoSelectAndShareGroups(targetCount = 12, keywords = [], selectedNames = [], mode = "ai") {
+  let containerInfo = findGroupSharingContainer();
+
+  // Si no se detecta de inmediato, reintentar durante hasta 2 segundos
+  if (!containerInfo) {
+    for (let i = 0; i < 5; i++) {
+      await new Promise(r => setTimeout(r, 400));
+      containerInfo = findGroupSharingContainer();
+      if (containerInfo) break;
+    }
   }
 
-  // Si no se pasaron grupos seleccionados explícitamente, intentar leer del storage local
-  if ((!selectedNames || selectedNames.length === 0) && chrome.storage?.local) {
+  if (!containerInfo || !containerInfo.container) {
+    console.warn("Haibane: No se detectó ningún contenedor de grupos ni paso de audiencia en pantalla.");
+    return { success: false, error: "Contenedor de grupos no detectado en el DOM" };
+  }
+
+  if (containerInfo.type === "navigating") {
+    await new Promise(r => setTimeout(r, 800));
+    containerInfo = findGroupSharingContainer() || containerInfo;
+  }
+
+  // Si no se pasaron grupos explícitamente, intentar leer del storage local
+  if ((!selectedNames || selectedNames.length === 0 || !mode) && chrome.storage?.local) {
     try {
-      const stored = await new Promise(r => chrome.storage.local.get(["selectedGroupNames"], r));
+      const stored = await new Promise(r => chrome.storage.local.get(["selectedGroupNames", "groupSelectionMode"], r));
       if (Array.isArray(stored?.selectedGroupNames) && stored.selectedGroupNames.length > 0) {
         selectedNames = stored.selectedGroupNames;
+      }
+      if (stored?.groupSelectionMode) {
+        mode = stored.groupSelectionMode;
       }
     } catch (e) {}
   }
 
-  // 1. Localizar casillas de verificación de grupos en el diálogo
-  const checkboxes = Array.from(
-    dialog.querySelectorAll('div[role="checkbox"], div[aria-checked], input[type="checkbox"]')
-  );
+  let groupItems = getValidGroupItems(containerInfo.container);
+  if (groupItems.length === 0) {
+    // Respaldo: escanear en todo el documento por si el contenedor es parcial
+    groupItems = getValidGroupItems(document.body);
+  }
 
-  if (checkboxes.length === 0) {
+  if (groupItems.length === 0) {
     console.warn("Haibane: No se detectaron casillas de grupos.");
     return { success: false, error: "No se encontraron casillas de grupos" };
   }
 
-  let selectedCount = 0;
-  for (const box of checkboxes) {
-    if (selectedCount >= targetCount) break;
+  let groupsToSelect = [];
 
-    const isChecked = box.getAttribute("aria-checked") === "true" || box.checked === true;
-    if (isChecked) {
-      selectedCount++;
-      continue;
+  if (mode === "custom" && selectedNames && selectedNames.length > 0) {
+    // Modo Mis Fijos: Prioridad a favoritos exactos del usuario
+    for (const item of groupItems) {
+      const matches = selectedNames.some(name => item.fullText.toLowerCase().includes(name.trim().toLowerCase()));
+      if (matches) {
+        groupsToSelect.push(item);
+        if (groupsToSelect.length >= targetCount) break;
+      }
     }
-
-    const containerRow = box.closest('div[role="listitem"]') || box.parentElement?.parentElement || box.parentElement;
-    const rowText = (containerRow?.innerText || "").trim().toLowerCase();
-
-    // Prioridad 1: Coincidencia con lista fija de grupos guardados por el usuario
-    if (selectedNames && selectedNames.length > 0) {
-      const matchesFavorite = selectedNames.some(name => rowText.includes(name.trim().toLowerCase()));
-      if (!matchesFavorite) continue;
-    } else if (keywords && keywords.length > 0) {
-      // Prioridad 2: Filtro por palabras clave
-      const matches = keywords.some(k => rowText.includes(k.trim().toLowerCase()));
-      if (!matches) continue;
+    // Si faltan grupos para completar targetCount, rellenar con los mejor puntuados por IA
+    if (groupsToSelect.length < targetCount) {
+      const remaining = groupItems.filter(item => !groupsToSelect.includes(item));
+      const scored = remaining.map(item => ({ item, ai: scoreGroupRelevance(item.name) }))
+                              .sort((a, b) => b.ai.score - a.ai.score);
+      for (const { item } of scored) {
+        groupsToSelect.push(item);
+        if (groupsToSelect.length >= targetCount) break;
+      }
     }
+  } else {
+    // Modo IA: Clasificación estricta (1. Juigalpa Ventas -> 2. Zonas cercanas -> 3. General)
+    const scored = groupItems.map(item => ({
+      item,
+      ai: scoreGroupRelevance(item.name)
+    })).sort((a, b) => b.ai.score - a.ai.score);
 
-    // Disparar clic para activar el checkbox de forma compatible con React
-    box.click();
-    box.dispatchEvent(new Event("change", { bubbles: true }));
-    selectedCount++;
-    await new Promise(r => setTimeout(r, 120)); // Delay para permitir render de React
+    groupsToSelect = scored.slice(0, targetCount).map(s => s.item);
   }
 
-  // 2. Localizar y presionar el botón de publicar/compartir
-  const buttons = Array.from(dialog.querySelectorAll('div[role="button"], button'));
-  const submitBtn = buttons.find(b => {
-    const txt = (b.innerText || b.getAttribute("aria-label") || "").trim().toLowerCase();
-    return (
-      (txt === "publicar" || txt === "compartir" || txt === "listo" || txt === "guardar" || txt === "share" || txt === "done") &&
-      !b.disabled &&
-      b.offsetParent !== null
-    );
-  });
+  let selectedCount = 0;
+  for (const item of groupsToSelect) {
+    const ok = await toggleGroupCheckbox(item);
+    if (ok) selectedCount++;
+    await new Promise(r => setTimeout(r, 100)); // Delay escalonado compatible con React
+  }
 
+  // 2. Localizar y presionar el botón de publicar / compartir
+  const submitBtn = findPublishButton(containerInfo.container) || findPublishButton(document.body);
   if (submitBtn) {
-    await new Promise(r => setTimeout(r, 250));
+    await new Promise(r => setTimeout(r, 350));
     submitBtn.click();
     console.log(`✓ Publicación enviada con éxito a ${selectedCount} grupos de Facebook.`);
     return { success: true, count: selectedCount };
@@ -1572,24 +1802,22 @@ async function autoSelectAndShareGroups(targetCount = 12, keywords = [], selecte
 }
 
 /**
- * Inyecta un banner de control visual dentro del modal de compartir en grupos de Facebook
+ * Inyecta un banner de control visual dentro del diálogo o pantalla de audiencia de Facebook
  */
-function attachGroupSharerToDialog(dialog) {
-  if (dialog.querySelector("#haibane-group-auto-banner")) return;
+function attachGroupSharerToDialog(dialogOrContainer) {
+  if (document.getElementById("haibane-group-auto-banner")) return;
+  const target = dialogOrContainer || document.body;
 
-  // Extraer grupos visibles en el modal y guardarlos en storage para el selector
-  const foundGroups = [];
-  const allBoxes = Array.from(dialog.querySelectorAll('div[role="checkbox"], div[aria-checked], input[type="checkbox"]'));
-  allBoxes.forEach(box => {
-    const containerRow = box.closest('div[role="listitem"]') || box.parentElement?.parentElement || box.parentElement;
-    const rowTitle = (containerRow?.innerText || "").split("\n")[0]?.trim();
-    if (rowTitle && rowTitle.length > 2 && !foundGroups.includes(rowTitle)) {
-      foundGroups.push(rowTitle);
-    }
-  });
+  // Extraer grupos visibles y sincronizarlos con storage
+  const groupItems = getValidGroupItems(target);
+  const foundGroups = groupItems.map(g => g.name).filter(n => n && n.length > 2);
 
   if (foundGroups.length > 0) {
-    chrome.storage?.local?.set({ scannedFacebookGroups: foundGroups });
+    chrome.storage?.local?.get(["scannedFacebookGroups"], (d) => {
+      const existing = Array.isArray(d?.scannedFacebookGroups) ? d.scannedFacebookGroups : [];
+      const merged = Array.from(new Set([...existing, ...foundGroups]));
+      chrome.storage?.local?.set({ scannedFacebookGroups: merged });
+    });
   }
 
   const banner = document.createElement("div");
@@ -1616,14 +1844,17 @@ function attachGroupSharerToDialog(dialog) {
       <span style="font-size: 10px; background: #581c87; color: #f3e8ff; padding: 1px 6px; border-radius: 4px;">AUTOMÁTICO</span>
     </div>
     <div id="haibane-group-banner-desc" style="color: #94a3b8; font-size: 11px; line-height: 1.35;">
-      Cargando tus 12 grupos favoritos fijos...
+      Cargando configuración de grupos de Facebook...
     </div>
     <div style="display: flex; gap: 6px; flex-wrap: wrap;">
       <button id="haibane-btn-share-12-groups" style="flex: 2; background: #7e22ce; color: #ffffff; border: none; border-radius: 4px; padding: 6px 10px; font-weight: 800; cursor: pointer; font-size: 11px;">
         🚀 Enviar a Mis 12 Grupos Fijos
       </button>
-      <button id="haibane-btn-save-as-fixed" style="flex: 1; background: #059669; color: #ffffff; border: none; border-radius: 4px; padding: 6px 8px; font-weight: 700; cursor: pointer; font-size: 10.5px;" title="Memoriza los grupos que tengas marcados actualmente como tu lista fija de por vida">
-        💾 Fijar Selección
+      <button id="haibane-btn-share-ai-groups" style="flex: 2; background: #2563eb; color: #ffffff; border: none; border-radius: 4px; padding: 6px 10px; font-weight: 800; cursor: pointer; font-size: 11px;" title="Prioriza grupos de venta y negocios en Juigalpa y zonas cercanas">
+        🎯 12 Grupos IA (Juigalpa)
+      </button>
+      <button id="haibane-btn-save-as-fixed" style="flex: 1; background: #059669; color: #ffffff; border: none; border-radius: 4px; padding: 6px 8px; font-weight: 700; cursor: pointer; font-size: 10.5px;" title="Memoriza los grupos marcados actualmente como tu lista fija de por vida">
+        💾 Fijar
       </button>
       <button id="haibane-btn-select-all-groups" style="background: #334155; color: #f1f5f9; border: none; border-radius: 4px; padding: 6px 8px; font-weight: 700; cursor: pointer; font-size: 10.5px;">
         ✓ Todos
@@ -1632,46 +1863,44 @@ function attachGroupSharerToDialog(dialog) {
     <div id="haibane-group-share-status" style="font-size: 10.5px; color: #38bdf8;"></div>
   `;
 
-  // Insertar en la cabecera del diálogo
-  const header = dialog.querySelector('h2, [role="heading"]') || dialog.firstChild;
+  // Insertar estratégicamente en la cabecera del diálogo o panel lateral de audiencia
+  const header = target.querySelector('h1, h2, [role="heading"]') || target.firstChild;
   if (header && header.parentElement) {
     header.parentElement.insertBefore(banner, header.nextSibling);
   } else {
-    dialog.prepend(banner);
+    target.prepend(banner);
   }
 
   // Leer configuración desde almacenamiento
-  chrome.storage?.local?.get(["groupShareCount", "groupShareAuto", "groupKeywords", "selectedGroupNames"], (config) => {
+  chrome.storage?.local?.get(["groupShareCount", "groupShareAuto", "groupKeywords", "selectedGroupNames", "groupSelectionMode"], (config) => {
     const selectedNames = Array.isArray(config?.selectedGroupNames) ? config.selectedGroupNames : [];
     const targetCount = selectedNames.length > 0 ? selectedNames.length : (config?.groupShareCount || 12);
-    const isAuto = config?.groupShareAuto !== false; // true por defecto
+    const isAuto = config?.groupShareAuto !== false;
+    const mode = config?.groupSelectionMode || "ai";
     const keywords = (config?.groupKeywords || "").split(",").map(k => k.trim()).filter(Boolean);
 
     const descEl = document.getElementById("haibane-group-banner-desc");
     if (descEl) {
-      descEl.textContent = selectedNames.length > 0
-        ? `Tienes ${selectedNames.length} grupos favoritos configurados. Se marcarán exactamente esos.`
-        : `Sin lista fija configurada. Se seleccionarán los primeros ${targetCount} grupos disponibles.`;
+      if (mode === "custom" && selectedNames.length > 0) {
+        descEl.textContent = `Tienes ${selectedNames.length} grupos fijos memorizados. Se marcarán exactamente esos.`;
+      } else {
+        descEl.textContent = `Modo IA activo: Priorizando grupos de ventas en Juigalpa y zonas cercanas (hasta ${targetCount}).`;
+      }
     }
 
     const btn12 = document.getElementById("haibane-btn-share-12-groups");
-    if (btn12) btn12.textContent = `🚀 Enviar a Mis ${targetCount} Grupos Fijos`;
+    if (btn12 && selectedNames.length > 0) {
+      btn12.textContent = `🚀 Enviar a Mis ${selectedNames.length} Grupos Fijos`;
+    }
 
     const statusEl = document.getElementById("haibane-group-share-status");
 
     // Botón para fijar la selección actual
     document.getElementById("haibane-btn-save-as-fixed")?.addEventListener("click", () => {
-      const userSelected = [];
-      allBoxes.forEach(box => {
-        const isChecked = box.getAttribute("aria-checked") === "true" || box.checked === true;
-        if (isChecked) {
-          const containerRow = box.closest('div[role="listitem"]') || box.parentElement?.parentElement || box.parentElement;
-          const rowTitle = (containerRow?.innerText || "").split("\n")[0]?.trim();
-          if (rowTitle) userSelected.push(rowTitle);
-        }
-      });
+      const currentItems = getValidGroupItems(target);
+      const userSelected = currentItems.filter(i => i.isChecked).map(i => i.name).filter(Boolean);
       if (userSelected.length > 0) {
-        chrome.storage?.local?.set({ selectedGroupNames: userSelected, groupShareCount: userSelected.length }, () => {
+        chrome.storage?.local?.set({ selectedGroupNames: userSelected, groupShareCount: userSelected.length, groupSelectionMode: "custom" }, () => {
           if (statusEl) statusEl.innerHTML = `<span style="color:#10b981; font-weight:700;">✓ ${userSelected.length} grupos memorizados de por vida.</span>`;
           if (descEl) descEl.textContent = `${userSelected.length} grupos guardados como tu lista fija.`;
         });
@@ -1682,17 +1911,25 @@ function attachGroupSharerToDialog(dialog) {
 
     btn12?.addEventListener("click", async () => {
       if (statusEl) statusEl.textContent = `⏳ Seleccionando ${targetCount} grupos favoritos...`;
-      const res = await autoSelectAndShareGroups(targetCount, keywords, selectedNames);
-      if (res.success) {
-        if (statusEl) statusEl.innerHTML = `<span style="color:#10b981; font-weight:700;">✓ ${res.count} grupos seleccionados y compartidos.</span>`;
-      } else {
-        if (statusEl) statusEl.textContent = `Aviso: ${res.error}`;
+      const res = await autoSelectAndShareGroups(targetCount, keywords, selectedNames, "custom");
+      if (res.success && statusEl) {
+        statusEl.innerHTML = `<span style="color:#10b981; font-weight:700;">✓ ${res.count} grupos seleccionados y compartidos.</span>`;
+      } else if (statusEl) {
+        statusEl.textContent = `Aviso: ${res.error}`;
+      }
+    });
+
+    document.getElementById("haibane-btn-share-ai-groups")?.addEventListener("click", async () => {
+      if (statusEl) statusEl.textContent = `🎯 Seleccionando 12 grupos con IA territorial (Juigalpa)...`;
+      const res = await autoSelectAndShareGroups(12, [], [], "ai");
+      if (res.success && statusEl) {
+        statusEl.innerHTML = `<span style="color:#10b981; font-weight:700;">✓ ${res.count} grupos de Juigalpa y zonas cercanas seleccionados.</span>`;
       }
     });
 
     document.getElementById("haibane-btn-select-all-groups")?.addEventListener("click", async () => {
       if (statusEl) statusEl.textContent = "⏳ Seleccionando todos los grupos disponibles (máx 20)...";
-      const res = await autoSelectAndShareGroups(20, [], []);
+      const res = await autoSelectAndShareGroups(20, [], [], "ai");
       if (res.success && statusEl) {
         statusEl.innerHTML = `<span style="color:#10b981; font-weight:700;">✓ ${res.count} grupos seleccionados.</span>`;
       }
@@ -1709,7 +1946,7 @@ function attachGroupSharerToDialog(dialog) {
         } else {
           clearInterval(timer);
           if (statusEl) statusEl.textContent = `⏳ Marcando ${targetCount} grupos y publicando...`;
-          const res = await autoSelectAndShareGroups(targetCount, keywords, selectedNames);
+          const res = await autoSelectAndShareGroups(targetCount, keywords, selectedNames, mode);
           if (res.success && statusEl) {
             statusEl.innerHTML = `<span style="color:#10b981; font-weight:700;">✓ ${res.count} grupos compartidos automáticamente.</span>`;
           }
@@ -1718,6 +1955,7 @@ function attachGroupSharerToDialog(dialog) {
     }
   });
 }
+
 
 /**
  * =======================================================================
@@ -1767,6 +2005,11 @@ async function runAutoRelistCycle(maxDays = 7) {
  */
 function setupGroupSharingObserver() {
   const checkDialogs = () => {
+    const containerInfo = findGroupSharingContainer();
+    if (containerInfo && containerInfo.container) {
+      attachGroupSharerToDialog(containerInfo.container);
+      return;
+    }
     const dialogs = document.querySelectorAll('div[role="dialog"]');
     dialogs.forEach(dialog => {
       const text = (dialog.innerText || "").toLowerCase();
@@ -1865,10 +2108,12 @@ function injectHaibaneFloatingWidget() {
   });
 
   document.getElementById("haibane-btn-share-groups-wgt")?.addEventListener("click", () => {
-    chrome.storage?.local?.get(["groupShareCount", "groupKeywords"], (config) => {
+    chrome.storage?.local?.get(["groupShareCount", "groupKeywords", "selectedGroupNames", "groupSelectionMode"], (config) => {
       const targetCount = config?.groupShareCount || 12;
       const keywords = (config?.groupKeywords || "").split(",").map(k => k.trim()).filter(Boolean);
-      autoSelectAndShareGroups(targetCount, keywords);
+      const selectedNames = Array.isArray(config?.selectedGroupNames) ? config.selectedGroupNames : [];
+      const mode = config?.groupSelectionMode || "ai";
+      autoSelectAndShareGroups(targetCount, keywords, selectedNames, mode);
     });
   });
 
@@ -1885,17 +2130,49 @@ function injectHaibaneFloatingWidget() {
   });
 }
 
-// Escuchar peticiones del background service worker
+// Escuchar peticiones del background service worker o popup
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg.action === "AUDIT_LISTINGS") {
-    auditMarketplaceListings();
+    (async () => {
+      try {
+        await auditMarketplaceListings();
+        sendResponse({ success: true, message: "Auditoría completada." });
+      } catch (err) {
+        sendResponse({ success: false, error: err.message });
+      }
+    })();
+    return true; // Mantener canal abierto para respuesta asíncrona
   }
+
   if (msg.action === "LINK_TWINS") {
-    linkExistingMarketplaceTwins();
+    (async () => {
+      try {
+        await linkExistingMarketplaceTwins();
+        sendResponse({ success: true, message: "Enlace de gemelos completado." });
+      } catch (err) {
+        sendResponse({ success: false, error: err.message });
+      }
+    })();
+    return true;
   }
+
   if (msg.action === "AUTO_SHARE_GROUPS") {
-    autoSelectAndShareGroups(msg.targetCount || 12, msg.keywords || [], msg.selectedNames || []);
+    (async () => {
+      try {
+        const res = await autoSelectAndShareGroups(
+          msg.targetCount || 12,
+          msg.keywords || [],
+          msg.selectedNames || [],
+          msg.mode || "ai"
+        );
+        sendResponse(res || { success: true });
+      } catch (err) {
+        sendResponse({ success: false, error: err.message });
+      }
+    })();
+    return true;
   }
+
   if (msg.action === "SCAN_MY_GROUPS") {
     const scanned = scanGroupsFromCurrentPage();
     if (scanned.length > 0) {
@@ -1913,9 +2190,16 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     }
     return true;
   }
+
   if (msg.action === "RUN_AUTO_RELIST") {
-    runAutoRelistCycle(msg.maxDays || 7);
-    sendResponse({ success: true });
+    (async () => {
+      try {
+        await runAutoRelistCycle(msg.maxDays || 7);
+        sendResponse({ success: true });
+      } catch (err) {
+        sendResponse({ success: false, error: err.message });
+      }
+    })();
     return true;
   }
 });
