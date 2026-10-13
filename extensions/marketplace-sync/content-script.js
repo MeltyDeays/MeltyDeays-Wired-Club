@@ -390,6 +390,7 @@ function dataUrlToBlob(dataUrl) {
 }
 
 let photosInjectedForProduct = null;
+let photosInjectedLock = false;
 
 /**
  * Genera un slide HD 800x800 con código QR oficial para el catálogo web
@@ -474,24 +475,41 @@ async function generateQrCardDataUrl() {
  * Inyecta fotografías de alta resolución en el formulario nativo de Marketplace evitando duplicados
  */
 async function injectProductPhotosToForm(photoUrls, productId = "") {
-  if (photosInjectedForProduct && photosInjectedForProduct === productId) {
-    console.log("Fotos ya inyectadas para este producto, omitiendo duplicados.");
+  if (photosInjectedLock || (photosInjectedForProduct && photosInjectedForProduct === productId)) {
+    console.log("Haibane: Fotos ya inyectadas para este producto, omitiendo duplicados.");
     return true;
   }
+
+  // Comprobar si Facebook ya tiene miniaturas de fotos añadidas en pantalla
+  const existingPreviews = document.querySelectorAll(
+    'div[role="button"][aria-label*="Eliminar" i], ' +
+    'div[aria-label*="Eliminar foto" i]'
+  );
+  if (existingPreviews.length >= 2) {
+    console.log("Haibane: El formulario ya contiene fotos cargadas en el DOM, omitiendo duplicados.");
+    photosInjectedLock = true;
+    photosInjectedForProduct = productId;
+    return true;
+  }
+
+  // Candado síncrono inmediato para bloquear ejecuciones concurrentes
+  photosInjectedLock = true;
+
   if (!photoUrls || photoUrls.length === 0) return false;
   const fileInput = document.querySelector('input[type="file"][accept*="image"]');
   if (!fileInput) {
     console.warn("No se encontró el input file de fotos en Facebook");
+    photosInjectedLock = false;
     return false;
   }
 
   // Deduplicación estricta de URLs
   const uniqueUrls = Array.from(new Set(photoUrls.filter(Boolean)));
 
-  // Generar y agregar slide con código QR oficial al final de la galería
+  // Generar y agregar slide con código QR oficial al final de la galería (solo 1 vez)
   try {
     const qrSlide = await generateQrCardDataUrl();
-    if (qrSlide) {
+    if (qrSlide && !uniqueUrls.includes(qrSlide)) {
       uniqueUrls.push(qrSlide);
     }
   } catch (err) {
@@ -511,7 +529,7 @@ async function injectProductPhotosToForm(photoUrls, productId = "") {
         blob = await res.blob();
       }
       if (blob) {
-        const file = new File([blob], `haibane_hd_${Date.now()}_${i}.jpg`, { type: blob.type || "image/jpeg" });
+        const file = new File([blob], `haibane_hd_${productId || 'item'}_${i}.jpg`, { type: blob.type || "image/jpeg" });
         dt.items.add(file);
       }
     } catch (e) {
@@ -898,43 +916,122 @@ function generateProductSeoTags(product) {
   return Array.from(tags).slice(0, 20);
 }
 
+let isAutofillPipelineActive = false;
+let isAutofillPipelineCompleted = false;
+let assistantInitializedForUrl = null;
+
+function findProductTagsInput() {
+  // 1. Selector directo por aria-label o placeholder
+  let tagInput = document.querySelector(
+    'input[aria-label*="etiquetas de productos" i], ' +
+    'input[aria-label*="etiquetas" i], ' +
+    'input[placeholder*="etiquetas de productos" i], ' +
+    'input[placeholder*="etiquetas" i], ' +
+    'textarea[aria-label*="etiquetas" i]'
+  );
+  if (tagInput) return tagInput;
+
+  // 2. Buscar por label específico de texto "Etiquetas de productos" (nodo hoja)
+  const allTextElements = Array.from(document.querySelectorAll('label, span, div, p')).filter(el => {
+    const txt = (el.innerText || '').trim().toLowerCase();
+    return (txt === 'etiquetas de productos' || txt === 'etiquetas' || txt.startsWith('etiquetas de productos')) && el.children.length <= 3;
+  });
+
+  for (const textEl of allTextElements) {
+    const parentContainer = textEl.closest('label') || textEl.parentElement?.parentElement || textEl.parentElement;
+    const input = parentContainer?.querySelector('input, textarea');
+    if (input) return input;
+  }
+
+  // 3. Buscar por el texto descriptivo "Opcional. Límite: 20"
+  const limitGuide = Array.from(document.querySelectorAll('span, div')).find(el => {
+    const txt = (el.innerText || '').trim().toLowerCase();
+    return (txt.includes('límite: 20') || txt.includes('limite: 20')) && el.children.length === 0;
+  });
+  if (limitGuide) {
+    const parentContainer = limitGuide.closest('div[role="none"]') || limitGuide.parentElement?.parentElement || limitGuide.parentElement;
+    const input = parentContainer?.querySelector('input, textarea');
+    if (input) return input;
+    const prevSibling = limitGuide.parentElement?.previousElementSibling;
+    const prevInput = prevSibling?.querySelector('input, textarea');
+    if (prevInput) return prevInput;
+  }
+
+  return null;
+}
+
 /**
  * Inyecta hasta 20 etiquetas SEO en el campo nativo de Marketplace
  */
 async function injectProductTags(tags) {
   if (!tags || tags.length === 0) return false;
-  scrollFormContainer(500);
-  await new Promise(r => setTimeout(r, 350));
 
-  let tagInput = document.querySelector('input[aria-label*="Etiquetas" i], input[placeholder*="Etiquetas" i]');
+  scrollFormContainer(650);
+  await new Promise(r => setTimeout(r, 450));
+
+  let tagInput = findProductTagsInput();
   if (!tagInput) {
-    const allLabels = Array.from(document.querySelectorAll('label, div'));
-    const container = allLabels.find(el => {
-      const txt = (el.innerText || "").toLowerCase();
-      return (txt.includes("etiquetas de productos") || txt.includes("product tags")) && el.querySelector('input');
-    });
-    if (container) {
-      tagInput = container.querySelector('input');
-    }
+    scrollFormContainer(500);
+    await new Promise(r => setTimeout(r, 450));
+    tagInput = findProductTagsInput();
   }
 
   if (!tagInput) {
-    console.warn("Haibane: No se encontró el campo de Etiquetas.");
+    console.warn("Haibane: No se encontró el campo de Etiquetas de productos tras scroll.");
     return false;
   }
 
-  tagInput.scrollIntoView({ block: "center" });
-  for (const tag of tags) {
-    tagInput.focus();
-    setNativeInputValue(tagInput, tag);
-    tagInput.dispatchEvent(new Event('input', { bubbles: true }));
-    await new Promise(r => setTimeout(r, 60));
+  tagInput.scrollIntoView({ block: "center", behavior: "instant" });
+  await new Promise(r => setTimeout(r, 200));
 
-    tagInput.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true }));
-    tagInput.dispatchEvent(new KeyboardEvent('keypress', { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true }));
-    tagInput.dispatchEvent(new KeyboardEvent('keyup', { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true }));
-    await new Promise(r => setTimeout(r, 90));
+  let insertedCount = 0;
+  for (const tag of tags) {
+    if (!tag) continue;
+    try {
+      tagInput.focus();
+      tagInput.click();
+
+      setNativeInputValue(tagInput, tag);
+      tagInput.dispatchEvent(new Event('input', { bubbles: true }));
+      document.execCommand('selectAll', false, null);
+      document.execCommand('insertText', false, tag);
+      tagInput.dispatchEvent(new Event('input', { bubbles: true }));
+      await new Promise(r => setTimeout(r, 60));
+
+      const enterEvtInit = {
+        key: 'Enter',
+        code: 'Enter',
+        keyCode: 13,
+        which: 13,
+        charCode: 13,
+        bubbles: true,
+        cancelable: true,
+        composed: true
+      };
+      tagInput.dispatchEvent(new KeyboardEvent('keydown', enterEvtInit));
+      tagInput.dispatchEvent(new KeyboardEvent('keypress', enterEvtInit));
+      tagInput.dispatchEvent(new KeyboardEvent('keyup', enterEvtInit));
+
+      const commaEvtInit = {
+        key: ',',
+        code: 'Comma',
+        keyCode: 188,
+        which: 188,
+        bubbles: true,
+        cancelable: true,
+        composed: true
+      };
+      tagInput.dispatchEvent(new KeyboardEvent('keydown', commaEvtInit));
+      tagInput.dispatchEvent(new KeyboardEvent('keyup', commaEvtInit));
+
+      insertedCount++;
+      await new Promise(r => setTimeout(r, 130));
+    } catch (e) {
+      console.warn(`Error al inyectar etiqueta '${tag}':`, e);
+    }
   }
+
+  console.log(`✓ Haibane: ${insertedCount} etiquetas inyectadas en Marketplace.`);
   return true;
 }
 
@@ -942,39 +1039,90 @@ async function injectProductTags(tags) {
  * Marca automáticamente las preferencias de entrega: Encuentro en lugar público, Retiro en la puerta y Entrega en la puerta
  */
 async function autoSelectDeliveryPreferences() {
-  scrollFormContainer(600);
-  await new Promise(r => setTimeout(r, 350));
+  scrollFormContainer(650);
+  await new Promise(r => setTimeout(r, 450));
 
-  const targetPreferences = [
-    "encuentro en un lugar público",
-    "retiro en la puerta",
-    "entrega en la puerta"
+  const preferences = [
+    { name: "Encuentro en un lugar público", keywords: ["encuentro en un lugar público", "lugar público", "lugar publico"] },
+    { name: "Retiro en la puerta", keywords: ["retiro en la puerta", "retira el artículo en tu puerta", "retira el articulo en tu puerta"] },
+    { name: "Entrega en la puerta", keywords: ["entrega en la puerta", "entrega en la puerta del comprador"] }
   ];
 
-  const allElements = Array.from(document.querySelectorAll('label, div[role="checkbox"], div[role="listitem"], div'));
+  for (const pref of preferences) {
+    try {
+      // 1. Buscar elementos de texto hoja
+      const textNodes = Array.from(document.querySelectorAll('div, span, label, p')).filter(el => {
+        const txt = (el.innerText || "").trim().toLowerCase();
+        return pref.keywords.some(k => txt.includes(k)) && txt.length < 100 && el.children.length <= 3;
+      });
 
-  for (const pref of targetPreferences) {
-    const matchedEl = allElements.find(el => {
-      const txt = (el.innerText || "").trim().toLowerCase();
-      return txt.includes(pref) && el.children.length <= 6;
-    });
-
-    if (matchedEl) {
-      const row = matchedEl.closest('div[role="listitem"]') || matchedEl.parentElement || matchedEl;
-      const box = row.querySelector('input[type="checkbox"], div[role="checkbox"]') || matchedEl;
-      const isChecked = box.checked === true || box.getAttribute('aria-checked') === 'true';
-      if (!isChecked) {
-        box.scrollIntoView({ block: "center" });
-        box.click();
-        box.dispatchEvent(new Event('change', { bubbles: true }));
-        console.log(`✓ Preferencia activada: ${pref}`);
-        await new Promise(r => setTimeout(r, 150));
+      if (textNodes.length === 0) {
+        console.warn(`Haibane: No se encontró texto para preferencia '${pref.name}'`);
+        continue;
       }
+
+      textNodes.sort((a, b) => (a.innerText || "").length - (b.innerText || "").length);
+      const textEl = textNodes[0];
+
+      // 2. Localizar el contenedor de la fila
+      const row = textEl.closest('div[role="listitem"]') || 
+                  textEl.closest('label') || 
+                  textEl.closest('div[role="button"]') ||
+                  textEl.parentElement?.parentElement || 
+                  textEl.parentElement;
+
+      if (!row) continue;
+
+      // 3. Localizar el checkbox dentro de la fila o en el propio row
+      const box = row.querySelector('div[role="checkbox"], input[type="checkbox"], div[aria-checked]') || row;
+
+      const isChecked = (
+        box.checked === true ||
+        box.getAttribute('aria-checked') === 'true' ||
+        box.getAttribute('aria-pressed') === 'true' ||
+        row.getAttribute('aria-checked') === 'true'
+      );
+
+      if (!isChecked) {
+        box.scrollIntoView({ block: "center", behavior: "instant" });
+        await new Promise(r => setTimeout(r, 80));
+
+        const targetToClick = box !== row ? box : (row.querySelector('label') || row);
+        targetToClick.click();
+        targetToClick.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true }));
+        targetToClick.dispatchEvent(new MouseEvent("mouseup", { bubbles: true, cancelable: true }));
+        targetToClick.dispatchEvent(new Event("change", { bubbles: true }));
+
+        console.log(`✓ Haibane: Preferencia activada -> ${pref.name}`);
+        await new Promise(r => setTimeout(r, 200));
+
+        // Respaldo secundario si aún no cambió el estado
+        const stillChecked = (
+          box.checked === true ||
+          box.getAttribute('aria-checked') === 'true' ||
+          row.getAttribute('aria-checked') === 'true'
+        );
+        if (!stillChecked && row !== targetToClick) {
+          row.click();
+          row.dispatchEvent(new Event("change", { bubbles: true }));
+          await new Promise(r => setTimeout(r, 150));
+        }
+      } else {
+        console.log(`Haibane: Preferencia ya estaba activa -> ${pref.name}`);
+      }
+    } catch (err) {
+      console.warn(`Haibane: Error al marcar preferencia '${pref.name}':`, err);
     }
   }
 }
 
 function triggerAutoFillPipeline(product) {
+  if (isAutofillPipelineActive || isAutofillPipelineCompleted) {
+    console.log("Haibane: Pipeline de auto-rellenado ya en curso o finalizado, omitiendo ejecución redundante.");
+    return;
+  }
+  isAutofillPipelineActive = true;
+
   let attempts = 0;
   const maxAttempts = 30; // 30 intentos x 350ms = ~10.5 segundos
   const interval = setInterval(async () => {
@@ -992,10 +1140,14 @@ function triggerAutoFillPipeline(product) {
         ? product.images 
         : (product.imageUrl ? [product.imageUrl] : []);
 
-      // 1. Fotos HD deduplicadas + Slide con Código QR oficial
+      // 1. Fotos HD deduplicadas + Slide con Código QR oficial (solo 1 vez con lock)
       if (images.length > 0 && fileInput) {
-        await injectProductPhotosToForm(images, product.id);
-        await new Promise(r => setTimeout(r, 600));
+        try {
+          await injectProductPhotosToForm(images, product.id);
+          await new Promise(r => setTimeout(r, 600));
+        } catch (e) {
+          console.warn("Error en fotos:", e);
+        }
       }
 
       // 2. Título
@@ -1014,34 +1166,58 @@ function triggerAutoFillPipeline(product) {
 
       // 4. Categoría (Secuencial)
       if (statusEl) statusEl.textContent = "⏳ Paso 3/7: Seleccionando categoría óptima...";
-      await autoSelectCategory(product);
-      await new Promise(r => setTimeout(r, 700));
+      try {
+        await autoSelectCategory(product);
+        await new Promise(r => setTimeout(r, 700));
+      } catch (e) {
+        console.warn("Error en categoría:", e);
+      }
 
       // 5. Estado "Nuevo" (Secuencial tras cierre de categoría)
       if (statusEl) statusEl.textContent = "⏳ Paso 4/7: Estableciendo estado 'Nuevo'...";
-      await autoSelectCondition("Nuevo");
-      await new Promise(r => setTimeout(r, 600));
+      try {
+        await autoSelectCondition("Nuevo");
+        await new Promise(r => setTimeout(r, 600));
+      } catch (e) {
+        console.warn("Error en estado:", e);
+      }
 
       // 6. Descripción con enlace oficial y mención del QR
       if (statusEl) statusEl.textContent = "⏳ Paso 5/7: Rellenando ficha técnica con link web y QR...";
-      await expandAndFillDescription(product);
-      await new Promise(r => setTimeout(r, 500));
+      try {
+        await expandAndFillDescription(product);
+        await new Promise(r => setTimeout(r, 500));
+      } catch (e) {
+        console.warn("Error en descripción:", e);
+      }
 
       // 7. Etiquetas de Producto (hasta 20 tags SEO)
       if (statusEl) statusEl.textContent = "⏳ Paso 6/7: Inyectando 20 etiquetas SEO para búsquedas...";
-      const tags = generateProductSeoTags(product);
-      await injectProductTags(tags);
-      await new Promise(r => setTimeout(r, 500));
+      try {
+        const tags = generateProductSeoTags(product);
+        await injectProductTags(tags);
+        await new Promise(r => setTimeout(r, 500));
+      } catch (e) {
+        console.warn("Error en etiquetas:", e);
+      }
 
       // 8. Preferencias de Entrega (Encuentro público, Retiro en puerta, Entrega en puerta)
       if (statusEl) statusEl.textContent = "⏳ Paso 7/7: Marcando preferencias de entrega y retiro...";
-      await autoSelectDeliveryPreferences();
+      try {
+        await autoSelectDeliveryPreferences();
+      } catch (e) {
+        console.warn("Error en preferencias:", e);
+      }
+
+      isAutofillPipelineCompleted = true;
+      isAutofillPipelineActive = false;
 
       if (statusEl) {
         statusEl.innerHTML = `<span style="color:#10b981; font-weight:800;">✓ ¡Publicación completada al 100%! (Fotos + QR, Precio C$ ${roundedPrice.toLocaleString()}, Categoría, Estado, Ficha, 20 Etiquetas y Entrega).</span> Pulsa 'Siguiente' para publicar.`;
       }
     } else if (attempts >= maxAttempts) {
       clearInterval(interval);
+      isAutofillPipelineActive = false;
       const statusEl = document.getElementById("haibane-autofill-status");
       if (statusEl) {
         statusEl.innerHTML = `<span style="color:#f59e0b;">Pulsa '⚡ Inyectar' cuando el formulario cargue.</span>`;
@@ -1058,7 +1234,16 @@ function initAutoPublishAssistant() {
   const haibaneId = urlParams.get("haibane_id");
   if (!haibaneId) return;
 
+  const currentSignature = `${window.location.pathname}?haibane_id=${haibaneId}`;
+  if (assistantInitializedForUrl === currentSignature) {
+    return; // Ya inicializado para esta URL exacta
+  }
+  assistantInitializedForUrl = currentSignature;
+
+  let loaded = false;
   function onProductLoaded(prod) {
+    if (loaded) return;
+    loaded = true;
     if (!prod) {
       console.warn("No se pudo obtener el producto para auto-publicar:", haibaneId);
       return;
@@ -1067,11 +1252,9 @@ function initAutoPublishAssistant() {
     triggerAutoFillPipeline(prod);
   }
 
-  let loaded = false;
   try {
     chrome.runtime?.sendMessage({ action: "GET_PRODUCT_BY_ID", productId: haibaneId }, (response) => {
       if (response && response.success && response.product) {
-        loaded = true;
         onProductLoaded(response.product);
       } else {
         fetchProductDirectFromFirestore(haibaneId).then(onProductLoaded);
@@ -1081,12 +1264,12 @@ function initAutoPublishAssistant() {
     fetchProductDirectFromFirestore(haibaneId).then(onProductLoaded);
   }
 
-  // Fallback de contingencia si el mensaje no responde en 800ms
+  // Fallback de contingencia solo si aún no cargó
   setTimeout(() => {
-    if (!loaded && !document.getElementById("haibane-publish-banner")) {
+    if (!loaded) {
       fetchProductDirectFromFirestore(haibaneId).then(onProductLoaded);
     }
-  }, 800);
+  }, 1200);
 }
 
 /**
@@ -1182,6 +1365,8 @@ function injectPublishAssistantBanner(product) {
   });
 
   document.getElementById("haibane-btn-do-autofill")?.addEventListener("click", () => {
+    isAutofillPipelineActive = false;
+    isAutofillPipelineCompleted = false;
     triggerAutoFillPipeline(product);
     watchForPublishCompletion(product.id, product._collection);
   });
