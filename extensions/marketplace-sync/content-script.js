@@ -1522,7 +1522,7 @@ function watchForPublishCompletion(productId, collection) {
         fbUrl: href,
         collection: collection || "dev_rewards_catalog"
       }, () => {
-        alert(`✓ ¡Publicación gemela sellada!\n\nProducto: ${productId}\nFacebook Listing: #${newListingId}\n\nLos cambios futuros se sincronizarán en ambos lados.`);
+        showHaibaneToast(`✓ Publicación gemela sellada (#${newListingId}). Sincronizado con la web.`);
       });
     }
     if (attempts > 60) clearInterval(interval); // Dejar de buscar a los 2 minutos
@@ -2046,27 +2046,27 @@ async function runAutoRelistCycle(maxDays = 7) {
   });
 }
 
+let activeGroupSharingObserver = null;
+
 /**
  * Observa mutaciones en el DOM para detectar el diálogo de compartir en grupos de Facebook
- * Ejecución con debounce y aislamiento total frente a modales de visualización nativa
+ * Activación EXCLUSIVA en flujos de creación (/marketplace/create o step=audience) con desconexión total en el dashboard
  */
 function setupGroupSharingObserver() {
-  const checkDialogs = () => {
-    // Si estamos en /marketplace/you/selling, NUNCA tocar modales de visualización de producto
-    if (window.location.href.includes("/marketplace/you/selling")) {
-      const groupDialog = Array.from(document.querySelectorAll('div[role="dialog"]')).find(d => {
-        const txt = (d.innerText || "").toLowerCase();
-        // Solo si es un diálogo EXCLUSIVO de selección de grupos con casillas reales
-        return (txt.includes("en tus grupos") || txt.includes("tus grupos de compra")) &&
-               !txt.includes("esta publicación está en revisión") &&
-               d.querySelectorAll('div[role="checkbox"], input[type="checkbox"]').length > 0;
-      });
-      if (groupDialog) {
-        attachGroupSharerToDialog(groupDialog);
-      }
-      return;
-    }
+  const isCreateFlow = window.location.href.includes("/marketplace/create") || window.location.href.includes("step=audience");
 
+  // Si no es flujo de creación, desconectar observer para no interferir con modales de visualización
+  if (!isCreateFlow) {
+    if (activeGroupSharingObserver) {
+      activeGroupSharingObserver.disconnect();
+      activeGroupSharingObserver = null;
+    }
+    return;
+  }
+
+  if (activeGroupSharingObserver) return; // Ya está activo
+
+  const checkDialogs = () => {
     const containerInfo = findGroupSharingContainer();
     if (containerInfo && containerInfo.container) {
       attachGroupSharerToDialog(containerInfo.container);
@@ -2094,14 +2094,14 @@ function setupGroupSharingObserver() {
   };
 
   let debounceTimer = null;
-  const observer = new MutationObserver(() => {
+  activeGroupSharingObserver = new MutationObserver(() => {
     if (debounceTimer) clearTimeout(debounceTimer);
     debounceTimer = setTimeout(() => {
       checkDialogs();
     }, 350);
   });
 
-  observer.observe(document.body, { childList: true, subtree: true });
+  activeGroupSharingObserver.observe(document.body, { childList: true, subtree: true });
   checkDialogs();
 }
 
@@ -2433,9 +2433,14 @@ function autoSyncGroupsFromPage() {
 
 // Inicialización robusta para SPA (Facebook React Navigation)
 function checkPageAndInit() {
-  if (window.location.href.includes("/marketplace/create/item")) {
+  if (window.location.href.includes("/marketplace/create/item") || window.location.href.includes("step=audience")) {
     initAutoPublishAssistant();
+    setupGroupSharingObserver();
   } else {
+    if (activeGroupSharingObserver) {
+      activeGroupSharingObserver.disconnect();
+      activeGroupSharingObserver = null;
+    }
     injectHaibaneFloatingWidget();
     loadCatalogProducts();
   }
@@ -2445,7 +2450,6 @@ function checkPageAndInit() {
   }
 }
 
-setupGroupSharingObserver();
 checkPageAndInit();
 setTimeout(checkPageAndInit, 800);
 setTimeout(checkPageAndInit, 2000);
