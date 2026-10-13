@@ -920,27 +920,87 @@ let isAutofillPipelineActive = false;
 let isAutofillPipelineCompleted = false;
 let assistantInitializedForUrl = null;
 
+function isBrandInputElement(el) {
+  if (!el) return false;
+  const aria = (el.getAttribute('aria-label') || '').toLowerCase().trim();
+  const placeholder = (el.getAttribute('placeholder') || '').toLowerCase().trim();
+  const name = (el.getAttribute('name') || '').toLowerCase().trim();
+  const labelTxt = (el.closest('label')?.innerText || el.parentElement?.innerText || '').toLowerCase().trim();
+  return aria === 'marca' || aria.startsWith('marca') ||
+         placeholder === 'marca' || placeholder.startsWith('marca') ||
+         name === 'brand' || name === 'marca' ||
+         labelTxt.startsWith('marca') || labelTxt === 'marca';
+}
+
+function findBrandInput() {
+  const inputs = Array.from(document.querySelectorAll('input:not([type="hidden"]):not([type="file"])'));
+  return inputs.find(i => isBrandInputElement(i)) || null;
+}
+
+/**
+ * Inyecta la marca legítima del producto si fue configurada en la página web.
+ * Si es marca china sin mención o producto sin marca, deja el campo vacío.
+ */
+async function injectProductBrand(product) {
+  const brandInput = findBrandInput();
+  if (!brandInput) {
+    console.log("Haibane: No se detectó campo de Marca en Facebook.");
+    return false;
+  }
+
+  // Extraer marca solo si fue configurada legítimamente en la página web
+  let legitimateBrand = "";
+  if (product.brand && typeof product.brand === "string" && product.brand.trim()) {
+    legitimateBrand = product.brand.trim();
+  } else if (product.marca && typeof product.marca === "string" && product.marca.trim()) {
+    legitimateBrand = product.marca.trim();
+  } else if (product.brandVerified && product.brandName) {
+    legitimateBrand = product.brandName.trim();
+  }
+
+  if (legitimateBrand) {
+    console.log(`✓ Haibane: Inyectando marca legítima del catálogo: "${legitimateBrand}"`);
+    brandInput.scrollIntoView({ block: "center", behavior: "instant" });
+    brandInput.focus();
+    setNativeInputValue(brandInput, legitimateBrand);
+    brandInput.dispatchEvent(new Event('input', { bubbles: true }));
+    brandInput.dispatchEvent(new Event('change', { bubbles: true }));
+    await new Promise(r => setTimeout(r, 200));
+    return true;
+  } else {
+    // Si no tiene marca en web o es china genérica, garantizar que esté vacío (limpiar cualquier residuo)
+    if (brandInput.value && brandInput.value !== "") {
+      setNativeInputValue(brandInput, "");
+      brandInput.dispatchEvent(new Event('input', { bubbles: true }));
+      brandInput.dispatchEvent(new Event('change', { bubbles: true }));
+      console.log("✓ Haibane: Campo Marca limpiado a vacío (marca no especificada en web).");
+    }
+    return true;
+  }
+}
+
 function findProductTagsInput() {
-  // 1. Selector directo por aria-label o placeholder
-  let tagInput = document.querySelector(
+  // 1. Selector directo por aria-label o placeholder excluyendo explícitamente el campo Marca
+  const directCandidates = Array.from(document.querySelectorAll(
     'input[aria-label*="etiquetas de productos" i], ' +
     'input[aria-label*="etiquetas" i], ' +
     'input[placeholder*="etiquetas de productos" i], ' +
     'input[placeholder*="etiquetas" i], ' +
+    'textarea[aria-label*="etiquetas de productos" i], ' +
     'textarea[aria-label*="etiquetas" i]'
-  );
-  if (tagInput) return tagInput;
+  )).filter(i => !isBrandInputElement(i));
+  if (directCandidates.length > 0) return directCandidates[0];
 
-  // 2. Buscar por label específico de texto "Etiquetas de productos" (nodo hoja)
-  const allTextElements = Array.from(document.querySelectorAll('label, span, div, p')).filter(el => {
+  // 2. Buscar por label específico de texto "Etiquetas de productos"
+  const tagLabels = Array.from(document.querySelectorAll('label, div, span, p')).filter(el => {
     const txt = (el.innerText || '').trim().toLowerCase();
-    return (txt === 'etiquetas de productos' || txt === 'etiquetas' || txt.startsWith('etiquetas de productos')) && el.children.length <= 3;
+    return (txt === 'etiquetas de productos' || txt === 'product tags' || txt.startsWith('etiquetas de productos')) && el.children.length <= 2;
   });
 
-  for (const textEl of allTextElements) {
-    const parentContainer = textEl.closest('label') || textEl.parentElement?.parentElement || textEl.parentElement;
-    const input = parentContainer?.querySelector('input, textarea');
-    if (input) return input;
+  for (const tagLabel of tagLabels) {
+    const parentContainer = tagLabel.closest('label') || tagLabel.closest('div[role="none"]') || tagLabel.parentElement;
+    const input = parentContainer?.querySelector('input:not([type="hidden"]):not([type="file"]), textarea');
+    if (input && !isBrandInputElement(input)) return input;
   }
 
   // 3. Buscar por el texto descriptivo "Opcional. Límite: 20"
@@ -949,12 +1009,12 @@ function findProductTagsInput() {
     return (txt.includes('límite: 20') || txt.includes('limite: 20')) && el.children.length === 0;
   });
   if (limitGuide) {
-    const parentContainer = limitGuide.closest('div[role="none"]') || limitGuide.parentElement?.parentElement || limitGuide.parentElement;
-    const input = parentContainer?.querySelector('input, textarea');
-    if (input) return input;
-    const prevSibling = limitGuide.parentElement?.previousElementSibling;
-    const prevInput = prevSibling?.querySelector('input, textarea');
-    if (prevInput) return prevInput;
+    const parent = limitGuide.parentElement;
+    if (parent) {
+      const prevBox = limitGuide.previousElementSibling || parent.querySelector('label') || parent.previousElementSibling;
+      const input = prevBox?.querySelector('input:not([type="hidden"]):not([type="file"]), textarea');
+      if (input && !isBrandInputElement(input)) return input;
+    }
   }
 
   return null;
@@ -971,13 +1031,27 @@ async function injectProductTags(tags) {
 
   let tagInput = findProductTagsInput();
   if (!tagInput) {
-    scrollFormContainer(500);
-    await new Promise(r => setTimeout(r, 450));
+    // Si aún no está en foco, buscar el contenedor de texto y hacer clic para montar el input
+    const tagLabel = Array.from(document.querySelectorAll('label, div, span')).find(el => {
+      const txt = (el.innerText || '').trim().toLowerCase();
+      return (txt === 'etiquetas de productos' || txt.startsWith('etiquetas de productos')) && el.children.length <= 2;
+    });
+    if (tagLabel) {
+      tagLabel.scrollIntoView({ block: "center", behavior: "instant" });
+      tagLabel.click();
+      await new Promise(r => setTimeout(r, 200));
+      if (document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') && !isBrandInputElement(document.activeElement)) {
+        tagInput = document.activeElement;
+      }
+    }
+  }
+
+  if (!tagInput) {
     tagInput = findProductTagsInput();
   }
 
   if (!tagInput) {
-    console.warn("Haibane: No se encontró el campo de Etiquetas de productos tras scroll.");
+    console.warn("Haibane: No se encontró el campo exclusivo de Etiquetas de productos tras scroll.");
     return false;
   }
 
@@ -1031,7 +1105,7 @@ async function injectProductTags(tags) {
     }
   }
 
-  console.log(`✓ Haibane: ${insertedCount} etiquetas inyectadas en Marketplace.`);
+  console.log(`✓ Haibane: ${insertedCount} etiquetas inyectadas con éxito en Etiquetas de productos.`);
   return true;
 }
 
@@ -1174,7 +1248,7 @@ function triggerAutoFillPipeline(product) {
       }
 
       // 5. Estado "Nuevo" (Secuencial tras cierre de categoría)
-      if (statusEl) statusEl.textContent = "⏳ Paso 4/7: Estableciendo estado 'Nuevo'...";
+      if (statusEl) statusEl.textContent = "⏳ Paso 4/8: Estableciendo estado 'Nuevo'...";
       try {
         await autoSelectCondition("Nuevo");
         await new Promise(r => setTimeout(r, 600));
@@ -1182,8 +1256,17 @@ function triggerAutoFillPipeline(product) {
         console.warn("Error en estado:", e);
       }
 
-      // 6. Descripción con enlace oficial y mención del QR
-      if (statusEl) statusEl.textContent = "⏳ Paso 5/7: Rellenando ficha técnica con link web y QR...";
+      // 6. Marca de Producto (solo si está en catálogo web, si no se deja limpia/vacía)
+      if (statusEl) statusEl.textContent = "⏳ Paso 5/8: Configurando campo Marca...";
+      try {
+        await injectProductBrand(product);
+        await new Promise(r => setTimeout(r, 400));
+      } catch (e) {
+        console.warn("Error en marca:", e);
+      }
+
+      // 7. Descripción con enlace oficial y mención del QR
+      if (statusEl) statusEl.textContent = "⏳ Paso 6/8: Rellenando ficha técnica con link web y QR...";
       try {
         await expandAndFillDescription(product);
         await new Promise(r => setTimeout(r, 500));
@@ -1191,8 +1274,8 @@ function triggerAutoFillPipeline(product) {
         console.warn("Error en descripción:", e);
       }
 
-      // 7. Etiquetas de Producto (hasta 20 tags SEO)
-      if (statusEl) statusEl.textContent = "⏳ Paso 6/7: Inyectando 20 etiquetas SEO para búsquedas...";
+      // 8. Etiquetas de Producto (hasta 20 tags SEO exclusivas en su campo)
+      if (statusEl) statusEl.textContent = "⏳ Paso 7/8: Inyectando 20 etiquetas SEO en Etiquetas de productos...";
       try {
         const tags = generateProductSeoTags(product);
         await injectProductTags(tags);
@@ -1201,8 +1284,8 @@ function triggerAutoFillPipeline(product) {
         console.warn("Error en etiquetas:", e);
       }
 
-      // 8. Preferencias de Entrega (Encuentro público, Retiro en puerta, Entrega en puerta)
-      if (statusEl) statusEl.textContent = "⏳ Paso 7/7: Marcando preferencias de entrega y retiro...";
+      // 9. Preferencias de Entrega (Encuentro público, Retiro en puerta, Entrega en puerta)
+      if (statusEl) statusEl.textContent = "⏳ Paso 8/8: Marcando preferencias de entrega y retiro...";
       try {
         await autoSelectDeliveryPreferences();
       } catch (e) {
