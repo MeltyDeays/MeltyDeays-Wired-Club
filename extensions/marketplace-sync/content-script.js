@@ -372,6 +372,23 @@ function exportMarketplaceListingsToWeb() {
   });
 }
 
+function dataUrlToBlob(dataUrl) {
+  if (!dataUrl || !dataUrl.startsWith("data:")) return null;
+  try {
+    const parts = dataUrl.split(",");
+    const mime = parts[0].match(/:(.*?);/)?.[1] || "image/jpeg";
+    const bstr = atob(parts[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    while (n--) {
+      u8arr[n] = bstr.charCodeAt(n);
+    }
+    return new Blob([u8arr], { type: mime });
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Inyecta fotografías de alta resolución en el formulario nativo de Marketplace
  */
@@ -386,13 +403,21 @@ async function injectProductPhotosToForm(photoUrls) {
   const dt = new DataTransfer();
   for (let i = 0; i < photoUrls.length; i++) {
     const url = photoUrls[i];
+    if (!url) continue;
     try {
-      const res = await fetch(url);
-      const blob = await res.blob();
-      const file = new File([blob], `hd_product_${Date.now()}_${i}.jpg`, { type: blob.type || "image/jpeg" });
-      dt.items.add(file);
+      let blob = null;
+      if (url.startsWith("data:")) {
+        blob = dataUrlToBlob(url);
+      } else {
+        const res = await fetch(url);
+        blob = await res.blob();
+      }
+      if (blob) {
+        const file = new File([blob], `haibane_hd_${Date.now()}_${i}.jpg`, { type: blob.type || "image/jpeg" });
+        dt.items.add(file);
+      }
     } catch (e) {
-      console.warn(`Error al descargar foto HD ${url}:`, e);
+      console.warn(`Error al preparar foto ${url}:`, e);
     }
   }
 
@@ -404,6 +429,141 @@ async function injectProductPhotosToForm(photoUrls) {
   return false;
 }
 
+function parseFirestoreValue(valObj) {
+  if (!valObj) return null;
+  if ("stringValue" in valObj) return valObj.stringValue;
+  if ("integerValue" in valObj) return parseInt(valObj.integerValue, 10);
+  if ("doubleValue" in valObj) return parseFloat(valObj.doubleValue);
+  if ("booleanValue" in valObj) return valObj.booleanValue;
+  if ("timestampValue" in valObj) return valObj.timestampValue;
+  if ("nullValue" in valObj) return null;
+  if ("arrayValue" in valObj) {
+    const values = valObj.arrayValue.values || [];
+    return values.map(parseFirestoreValue);
+  }
+  if ("mapValue" in valObj) {
+    const fields = valObj.mapValue.fields || {};
+    const res = {};
+    for (const [k, v] of Object.entries(fields)) {
+      res[k] = parseFirestoreValue(v);
+    }
+    return res;
+  }
+  return null;
+}
+
+async function fetchProductDirectFromFirestore(productId) {
+  const apiKey = "AIzaSyCzoNf4_dMiwcb_H9Ob_kQ-bvRCn97Pyig";
+  const collections = ["dev_rewards_catalog", "rewards_catalog", "rewards"];
+  for (const col of collections) {
+    try {
+      const url = `https://firestore.googleapis.com/v1/projects/lain-wired-club/databases/(default)/documents/${col}/${productId}?key=${apiKey}`;
+      const res = await fetch(url);
+      if (!res.ok) continue;
+      const doc = await res.json();
+      const docId = doc.name.split("/").pop();
+      const fields = doc.fields || {};
+      const parsed = { id: docId, _collection: col };
+      for (const [k, v] of Object.entries(fields)) {
+        parsed[k] = parseFirestoreValue(v);
+      }
+      return parsed;
+    } catch (e) {}
+  }
+  return null;
+}
+
+function findFacebookMarketplaceInputs() {
+  let titleInput = document.querySelector('input[aria-label*="Título" i], input[aria-label*="Title" i], input[name*="title" i], input[placeholder*="Título" i]');
+  if (!titleInput) {
+    const textInputs = Array.from(document.querySelectorAll('input[type="text"]:not([aria-hidden="true"]), input:not([type]):not([aria-hidden="true"])'));
+    titleInput = textInputs.find(i => {
+      const label = (i.closest('label')?.innerText || i.getAttribute('aria-label') || '').toLowerCase();
+      return label.includes("título") || label.includes("title");
+    });
+  }
+
+  let priceInput = document.querySelector('input[aria-label*="Precio" i], input[aria-label*="Price" i], input[name*="price" i], input[placeholder*="Precio" i]');
+  if (!priceInput) {
+    const allInputs = Array.from(document.querySelectorAll('input:not([aria-hidden="true"])'));
+    priceInput = allInputs.find(i => {
+      const label = (i.closest('label')?.innerText || i.getAttribute('aria-label') || '').toLowerCase();
+      return label.includes("precio") || label.includes("price");
+    });
+  }
+
+  let descInput = document.querySelector('textarea[aria-label*="Descripción" i], textarea[aria-label*="Description" i], div[aria-label*="Descripción" i][role="textbox"], div[aria-label*="Description" i][role="textbox"]');
+  if (!descInput) {
+    const allTextareas = Array.from(document.querySelectorAll('textarea, div[role="textbox"]'));
+    descInput = allTextareas.find(t => {
+      const label = (t.closest('label')?.innerText || t.getAttribute('aria-label') || '').toLowerCase();
+      return label.includes("descrip");
+    }) || allTextareas[0];
+  }
+
+  const fileInput = document.querySelector('input[type="file"][accept*="image"]');
+
+  return { titleInput, priceInput, descInput, fileInput };
+}
+
+function triggerAutoFillPipeline(product) {
+  let attempts = 0;
+  const maxAttempts = 30; // 30 intentos x 350ms = ~10.5 segundos
+  const interval = setInterval(async () => {
+    attempts++;
+    const { titleInput, priceInput, descInput, fileInput } = findFacebookMarketplaceInputs();
+
+    if (titleInput || priceInput || fileInput) {
+      clearInterval(interval);
+      const statusEl = document.getElementById("haibane-autofill-status");
+      if (statusEl) statusEl.textContent = "⏳ Inyectando fotos y campos...";
+
+      const priceNio = product.priceNio || Math.round((product.priceUsd || 0) * 37.0);
+      const images = Array.isArray(product.images) && product.images.length > 0 
+        ? product.images 
+        : (product.imageUrl ? [product.imageUrl] : []);
+
+      // 1. Fotos HD
+      if (images.length > 0 && fileInput) {
+        await injectProductPhotosToForm(images);
+      }
+
+      // 2. Título
+      if (titleInput) {
+        const cleanTitle = (product.title || "").replace(/(\$|c\$|\busd\b)\s*\d+/gi, "").trim();
+        setNativeInputValue(titleInput, cleanTitle.slice(0, 75));
+      }
+
+      // 3. Precio
+      if (priceInput) {
+        setNativeInputValue(priceInput, String(priceNio));
+      }
+
+      // 4. Descripción
+      if (descInput) {
+        const formattedDesc = formatAiMarketplaceCopy(product);
+        if (descInput.tagName.toLowerCase() === 'textarea') {
+          setNativeInputValue(descInput, formattedDesc);
+        } else {
+          descInput.focus();
+          document.execCommand('selectAll', false, null);
+          document.execCommand('insertText', false, formattedDesc);
+        }
+      }
+
+      if (statusEl) {
+        statusEl.innerHTML = `<span style="color:#10b981; font-weight:800;">✓ Datos y fotos inyectados.</span> Revisa la vista previa y haz clic en 'Siguiente'.`;
+      }
+    } else if (attempts >= maxAttempts) {
+      clearInterval(interval);
+      const statusEl = document.getElementById("haibane-autofill-status");
+      if (statusEl) {
+        statusEl.innerHTML = `<span style="color:#f59e0b;">Pulsa '⚡ Inyectar' cuando el formulario cargue.</span>`;
+      }
+    }
+  }, 350);
+}
+
 /**
  * Asistente de Creación Automática Web ➔ Facebook Marketplace (/marketplace/create/item)
  */
@@ -412,28 +572,35 @@ function initAutoPublishAssistant() {
   const haibaneId = urlParams.get("haibane_id");
   if (!haibaneId) return;
 
-  const isAutoRelist = urlParams.get("auto_relist") === "true";
-
-  chrome.runtime.sendMessage({ action: "GET_PRODUCT_BY_ID", productId: haibaneId }, (response) => {
-    if (!response || !response.success || !response.product) {
+  function onProductLoaded(prod) {
+    if (!prod) {
       console.warn("No se pudo obtener el producto para auto-publicar:", haibaneId);
       return;
     }
-
-    const prod = response.product;
     injectPublishAssistantBanner(prod);
+    triggerAutoFillPipeline(prod);
+  }
 
-    // Si viene de un ciclo automático de auto-relist semanal, disparar auto-inyección
-    if (isAutoRelist) {
-      console.log("⚡ Ciclo Auto-Relist activado: disparando inyección de fotos y ficha en 1.5s...");
-      setTimeout(() => {
-        const btnAutofill = document.getElementById("haibane-btn-do-autofill");
-        if (btnAutofill) {
-          btnAutofill.click();
-        }
-      }, 1500);
+  let loaded = false;
+  try {
+    chrome.runtime?.sendMessage({ action: "GET_PRODUCT_BY_ID", productId: haibaneId }, (response) => {
+      if (response && response.success && response.product) {
+        loaded = true;
+        onProductLoaded(response.product);
+      } else {
+        fetchProductDirectFromFirestore(haibaneId).then(onProductLoaded);
+      }
+    });
+  } catch {
+    fetchProductDirectFromFirestore(haibaneId).then(onProductLoaded);
+  }
+
+  // Fallback de contingencia si el mensaje no responde en 800ms
+  setTimeout(() => {
+    if (!loaded && !document.getElementById("haibane-publish-banner")) {
+      fetchProductDirectFromFirestore(haibaneId).then(onProductLoaded);
     }
-  });
+  }, 800);
 }
 
 /**
@@ -527,46 +694,8 @@ function injectPublishAssistantBanner(product) {
     banner.remove();
   });
 
-  document.getElementById("haibane-btn-do-autofill")?.addEventListener("click", async () => {
-    const statusEl = document.getElementById("haibane-autofill-status");
-    if (statusEl) statusEl.textContent = "⏳ Inyectando fotos y campos...";
-
-    // 1. Inyectar Fotos HD
-    if (images.length > 0) {
-      await injectProductPhotosToForm(images);
-    }
-
-    // 2. Rellenar Título (Limpio y directo, sin precios)
-    const titleInput = document.querySelector('input[aria-label*="Título" i], input[name*="title" i]') || document.querySelectorAll('form input[type="text"]')[0];
-    if (titleInput) {
-      const cleanTitle = (product.title || "").replace(/(\$|c\$|\busd\b)\s*\d+/gi, "").trim();
-      setNativeInputValue(titleInput, cleanTitle.slice(0, 75));
-    }
-
-    // 3. Rellenar Precio estrictamente en la casilla de precio (Córdobas)
-    const priceInput = document.querySelector('input[aria-label*="Precio" i], input[name*="price" i]');
-    if (priceInput) {
-      setNativeInputValue(priceInput, String(priceNio));
-    }
-
-    // 4. Rellenar Descripción estructurada con iconos, sin precios
-    const descInput = document.querySelector('textarea[aria-label*="Descripción" i], div[aria-label*="Descripción" i][role="textbox"]');
-    if (descInput) {
-      const formattedDesc = formatAiMarketplaceCopy(product);
-      if (descInput.tagName.toLowerCase() === 'textarea') {
-        setNativeInputValue(descInput, formattedDesc);
-      } else {
-        descInput.focus();
-        document.execCommand('selectAll', false, null);
-        document.execCommand('insertText', false, formattedDesc);
-      }
-    }
-
-    if (statusEl) {
-      statusEl.innerHTML = `<span style="color:#10b981; font-weight:700;">✓ Datos y fotos inyectados.</span> Haz clic en 'Publicar' y el ID gemelo se vinculará automáticamente.`;
-    }
-
-    // Escuchar redirección tras publicar para guardar el ID en Firestore
+  document.getElementById("haibane-btn-do-autofill")?.addEventListener("click", () => {
+    triggerAutoFillPipeline(product);
     watchForPublishCompletion(product.id, product._collection);
   });
 }
@@ -1041,13 +1170,26 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   }
 });
 
-// Inicialización
-setTimeout(() => {
-  setupGroupSharingObserver();
+// Inicialización robusta para SPA (Facebook React Navigation)
+function checkPageAndInit() {
   if (window.location.href.includes("/marketplace/create/item")) {
     initAutoPublishAssistant();
   } else {
     injectHaibaneFloatingWidget();
     loadCatalogProducts();
   }
-}, 1200);
+}
+
+setupGroupSharingObserver();
+checkPageAndInit();
+setTimeout(checkPageAndInit, 800);
+setTimeout(checkPageAndInit, 2000);
+
+let lastKnownUrl = window.location.href;
+setInterval(() => {
+  if (window.location.href !== lastKnownUrl) {
+    lastKnownUrl = window.location.href;
+    checkPageAndInit();
+  }
+}, 800);
+

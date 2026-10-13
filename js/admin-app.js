@@ -664,6 +664,11 @@ function renderCatalogTable(catalog) {
               <button type="button" class="catalog-action-btn" style="background:#faf5ff; color:#7e22ce; border-color:#c084fc; font-weight:800;" onclick="handleAdminReleaseIncoming('${p.id}')" title="Desembarcar producto y pasarlo a disponible de inmediato">
                 <span class="btn-icon">⚡</span> <span>Desembarcar</span>
               </button>
+              ${!(p.facebookListingId || p.listingId) ? `
+                <button type="button" class="catalog-action-btn" style="background:#eff6ff; color:#1d4ed8; border-color:#93c5fd; font-weight:800;" onclick="handlePublishProductToFacebook('${p.id}')" title="Publicar como preventa en Facebook Marketplace con fotos HD">
+                  <span class="btn-icon">📢</span> <span>Publicar FB</span>
+                </button>
+              ` : ''}
             ` : (!isSoldOut ? `
               <button type="button" class="catalog-action-btn btn-sold" onclick="handleAdminMarkSold('${p.id}', '${escapedTitle}')" title="Marcar como vendido externamente (Stock a 0)">
                 <span class="btn-icon">🏷️</span> <span>Vendido</span>
