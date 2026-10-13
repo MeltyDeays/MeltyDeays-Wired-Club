@@ -4,22 +4,45 @@
   <meta charset="UTF-8">
   <title>Haibane Marketplace Sync</title>
   <style>
-    body {
-      width: 320px;
-      margin: 0;
-      padding: 14px;
-      background: #0f172a;
-      color: #f8fafc;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    * {
       box-sizing: border-box;
     }
+    body {
+      width: 350px;
+      margin: 0;
+      padding: 12px;
+      background: #090d16;
+      color: #f8fafc;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif;
+      box-sizing: border-box;
+      user-select: none;
+    }
+    /* Scrollbar estilizada */
+    ::-webkit-scrollbar {
+      width: 5px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #090d16;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #64748b;
+    }
+
     .header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      border-bottom: 1px solid #334155;
+      border-bottom: 1px solid #1e293b;
       padding-bottom: 8px;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
+    }
+    .header-title-box {
+      display: flex;
+      flex-direction: column;
     }
     .header h1 {
       margin: 0;
@@ -27,16 +50,24 @@
       color: #fbbf24;
       font-weight: 800;
       letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .header-sub {
+      font-size: 9.5px;
+      color: #64748b;
+      font-weight: 600;
     }
     .status-badge {
       display: inline-flex;
       align-items: center;
       gap: 5px;
-      background: #064e3b;
+      background: rgba(6, 78, 59, 0.4);
       color: #34d399;
       padding: 2px 7px;
       border-radius: 9999px;
-      font-size: 10px;
+      font-size: 9.5px;
       font-weight: 700;
       border: 1px solid #059669;
     }
@@ -45,174 +76,292 @@
       height: 6px;
       border-radius: 50%;
       background: #34d399;
+      box-shadow: 0 0 6px #10b981;
     }
     .info-card {
-      background: #1e293b;
-      border: 1px solid #334155;
-      border-radius: 6px;
-      padding: 10px;
-      font-size: 11px;
-      margin-bottom: 12px;
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      border-radius: 8px;
+      padding: 9px 10px;
+      font-size: 10.5px;
+      margin-bottom: 10px;
       line-height: 1.4;
     }
     .info-card strong {
       color: #38bdf8;
     }
-    .actions {
+    .section-title {
+      font-size: 10px;
+      font-weight: 800;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    /* Tarjetas de acción */
+    .actions-grid {
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 6px;
+      margin-bottom: 10px;
     }
-    .btn {
+    .action-tile {
       width: 100%;
-      padding: 8px 10px;
-      border-radius: 5px;
-      border: none;
-      font-size: 11px;
-      font-weight: 800;
+      padding: 7px 10px;
+      border-radius: 6px;
+      border: 1px solid #334155;
+      background: #0f172a;
+      color: #f1f5f9;
       cursor: pointer;
       display: flex;
       align-items: center;
-      justify-content: center;
-      gap: 6px;
+      justify-content: space-between;
+      gap: 8px;
       transition: all 0.15s ease;
+      text-align: left;
     }
-    .btn-primary {
-      background: #d97706;
-      color: #ffffff;
+    .action-tile:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     }
-    .btn-primary:hover {
-      background: #b45309;
+    .action-tile:active {
+      transform: translateY(0);
     }
-    .btn-secondary {
+    .action-tile-content {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      flex: 1;
+    }
+    .action-tile-title {
+      font-size: 11px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .action-tile-sub {
+      font-size: 9.5px;
+      color: #94a3b8;
+      font-weight: normal;
+      line-height: 1.25;
+    }
+    .action-tile-primary {
+      background: linear-gradient(135deg, #065f46 0%, #047857 100%);
+      border-color: #10b981;
+    }
+    .action-tile-primary:hover {
+      background: linear-gradient(135deg, #047857 0%, #059669 100%);
+    }
+    .action-tile-purple {
+      background: linear-gradient(135deg, #581c87 0%, #6b21a8 100%);
+      border-color: #a855f7;
+    }
+    .action-tile-purple:hover {
+      background: linear-gradient(135deg, #6b21a8 0%, #7e22ce 100%);
+    }
+    .action-tile-secondary {
+      background: #111827;
+      border-color: #1f2937;
+    }
+    .action-tile-secondary:hover {
+      background: #1e293b;
+      border-color: #374151;
+    }
+
+    .btn {
+      padding: 6px 10px;
+      border-radius: 5px;
+      border: 1px solid #334155;
+      font-size: 10.5px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      transition: all 0.15s ease;
+      color: #f8fafc;
+      background: #1e293b;
+    }
+    .btn:hover {
       background: #334155;
-      color: #f1f5f9;
-      border: 1px solid #475569;
     }
-    .btn-secondary:hover {
-      background: #475569;
-    }
+
     .log-box {
-      margin-top: 10px;
+      margin-top: 8px;
       background: #020617;
       border: 1px solid #1e293b;
-      border-radius: 4px;
-      padding: 8px;
-      font-family: monospace;
-      font-size: 10px;
+      border-radius: 6px;
+      padding: 7px 9px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 9.5px;
       color: #94a3b8;
-      max-height: 70px;
+      max-height: 60px;
       overflow-y: auto;
+      line-height: 1.35;
+      border-left: 2px solid #38bdf8;
     }
   </style>
 </head>
 <body>
+  <!-- Encabezado Principal -->
   <div class="header">
-    <h1>✦ HAIBANE SYNC</h1>
-    <div class="status-badge">
+    <div class="header-title-box">
+      <h1>✦ HAIBANE SYNC</h1>
+      <span class="header-sub">Marketplace & The Wired Club</span>
+    </div>
+    <div class="status-badge" title="Servicio activo conectado con base de datos Firestore">
       <span class="status-dot"></span>
-      <span>FIRESTORE 24/7</span>
+      <span>ONLINE 24/7</span>
     </div>
   </div>
 
-  <div class="info-card">
-    <div><strong>Perfil FB:</strong> 100071051942718</div>
-    <div><strong>Proyecto:</strong> meltydeays-wired-club</div>
-    <div><strong>Regla de Agotado:</strong> Ocultación auto a las 12h</div>
+  <!-- Ficha de Perfil -->
+  <div class="info-card" style="display: flex; justify-content: space-between; align-items: center; padding: 7px 10px;">
+    <div>
+      <span style="color: #64748b; font-size: 9.5px;">PERFIL FACEBOOK</span><br>
+      <strong style="color: #f1f5f9;">100071051942718</strong>
+    </div>
+    <div style="text-align: right;">
+      <span style="color: #64748b; font-size: 9.5px;">ESTADO CATÁLOGO</span><br>
+      <strong style="color: #34d399;">Anti-Duplicados Activo</strong>
+    </div>
   </div>
 
-  <div class="actions">
-    <button id="btn-link-twins" class="btn btn-primary" style="background: #7e22ce;">
-      🔗 Enlazar Gemelos (Anti-Duplicados)
+  <!-- Acciones Rápidas con Botones Explicativos -->
+  <div class="section-title">
+    <span>⚡ Acciones Rápidas</span>
+    <span style="font-size: 9px; color: #64748b; font-weight: normal;">1-clic directo</span>
+  </div>
+
+  <div class="actions-grid">
+    <!-- Botón 1: Auto-compartir en grupos -->
+    <button id="btn-share-groups-now" class="action-tile action-tile-primary" title="Marca y envía tu producto a los 12 grupos de Facebook inmediatamente">
+      <div class="action-tile-content">
+        <span class="action-tile-title">📢 Publicar en 12 Grupos Ahora</span>
+        <span class="action-tile-sub">Marca y publica en tus grupos de Facebook con 1 solo clic</span>
+      </div>
+      <span style="font-size: 14px;">➔</span>
     </button>
-    <button id="btn-share-groups-now" class="btn btn-primary" style="background: #059669;">
-      📢 Auto-Compartir en 12 Grupos
+
+    <!-- Botón 2: Enlazar con web -->
+    <button id="btn-link-twins" class="action-tile action-tile-purple" title="Conecta tus publicaciones existentes de Facebook con el catálogo web para no volver a subirlas duplicadas">
+      <div class="action-tile-content">
+        <span class="action-tile-title">🔗 Enlazar Gemelos con Tienda Web</span>
+        <span class="action-tile-sub">Conecta productos de Facebook a la web (evita duplicados)</span>
+      </div>
+      <span style="font-size: 14px;">➔</span>
     </button>
-    <button id="btn-audit" class="btn btn-secondary">
-      🔄 Auditar Pestaña de Facebook
+
+    <!-- Botón 3: Auditar pestaña de FB -->
+    <button id="btn-audit" class="action-tile action-tile-secondary" title="Comprueba si editaste precios o marcaste productos como vendidos en Facebook">
+      <div class="action-tile-content">
+        <span class="action-tile-title">🔄 Comprobar Precios y Vendidos</span>
+        <span class="action-tile-sub">Detecta cambios en Facebook y los anota en el sistema</span>
+      </div>
+      <span style="font-size: 13px; color: #94a3b8;">🔍</span>
     </button>
-    <button id="btn-cloud-sync" class="btn btn-secondary">
-      ☁️ Forzar Sincronización Vercel Cloud
+
+    <!-- Botón 4: Sincronización en la nube -->
+    <button id="btn-cloud-sync" class="action-tile action-tile-secondary" title="Fuerza la sincronización con la base de datos de Vercel para reflejar el stock online">
+      <div class="action-tile-content">
+        <span class="action-tile-title">☁️ Sincronizar Tienda en la Nube</span>
+        <span class="action-tile-sub">Actualiza la web online en tiempo real con datos de venta</span>
+      </div>
+      <span style="font-size: 13px; color: #94a3b8;">⚡</span>
     </button>
   </div>
 
   <!-- Configuración de Auto-Compartir y Grupos Fijos -->
-  <!-- Configuración de Auto-Compartir y Grupos Fijos -->
-  <div class="info-card" style="margin-top: 10px; border-color: #a855f7;">
+  <div class="info-card" style="border-color: #a855f7; margin-bottom: 10px;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
       <span style="font-weight: 800; color: #c084fc; font-size: 11px;">📢 GRUPOS PARA PUBLICAR</span>
-      <span id="lbl-groups-selected" style="font-size: 10px; color: #34d399; font-weight: 700;">0 / 12 seleccionados</span>
+      <span id="lbl-groups-selected" style="font-size: 10px; color: #34d399; font-weight: 800; background: rgba(5,150,105,0.2); padding: 2px 6px; border-radius: 9999px; border: 1px solid rgba(16,185,129,0.3);">
+        0 / 12 seleccionados
+      </span>
     </div>
 
     <!-- Pestañas Interactivas de Modo -->
-    <div style="display: flex; gap: 4px; margin-bottom: 6px;">
-      <button id="btn-mode-ai" class="btn btn-secondary" style="flex: 1; font-size: 10px; padding: 6px 4px; transition: all 0.2s;" title="La IA selecciona automáticamente los grupos de ventas y negocios en Juigalpa y localidades cercanas">
+    <div style="display: flex; gap: 5px; margin-bottom: 6px;">
+      <button id="btn-mode-ai" class="btn" style="flex: 1; font-size: 10px; padding: 6px 4px; border-radius: 5px;" title="La IA selecciona automáticamente los grupos de ventas y negocios en Juigalpa y localidades cercanas">
         🎯 Recomendar IA
       </button>
-      <button id="btn-mode-custom" class="btn btn-secondary" style="flex: 1; font-size: 10px; padding: 6px 4px; transition: all 0.2s;" title="Elige tus propios grupos favoritos fijos de forma personalizada">
+      <button id="btn-mode-custom" class="btn" style="flex: 1; font-size: 10px; padding: 6px 4px; border-radius: 5px;" title="Elige tus propios grupos favoritos fijos de forma personalizada">
         ⭐ Mis Fijos
       </button>
     </div>
 
-    <div id="mode-status-text" style="font-size: 9.5px; color: #94a3b8; margin-bottom: 6px; padding: 4px 6px; background: rgba(15,23,42,0.6); border-radius: 4px; border-left: 2px solid #a855f7; line-height: 1.35;">
+    <!-- Explicación del Modo Activo -->
+    <div id="mode-status-text" style="font-size: 9.5px; color: #94a3b8; margin-bottom: 7px; padding: 5px 7px; background: rgba(15,23,42,0.7); border-radius: 5px; border-left: 2px solid #a855f7; line-height: 1.35;">
       Cargando modo...
     </div>
 
+    <!-- Barra de Herramientas de Grupos -->
     <div style="display: flex; gap: 4px; margin-bottom: 6px;">
-      <button id="btn-scan-groups" class="btn btn-secondary" style="flex: 1; font-size: 10px; padding: 5px 6px;">
-        🔍 Escanear en Facebook
+      <button id="btn-scan-groups" class="btn" style="flex: 1; font-size: 9.5px; padding: 5px 6px;" title="Lee los grupos a los que perteneces desde Facebook">
+        🔍 Escanear en FB
       </button>
-      <button id="btn-clear-selection" class="btn btn-secondary" style="width: auto; font-size: 10px; padding: 5px 8px; background: #1e293b;" title="Desmarcar todas las casillas para elegir desde cero">
+      <button id="btn-clear-selection" class="btn" style="width: auto; font-size: 9.5px; padding: 5px 8px; background: #0f172a;" title="Desmarcar todas las casillas para elegir desde cero">
         ✕ Limpiar
       </button>
     </div>
 
+    <!-- Agregar Grupo Manualmente -->
     <div style="display: flex; gap: 4px; margin-bottom: 6px;">
-      <input type="text" id="txt-add-group" placeholder="Escribe un grupo (ej: Ventas Managua)..." style="flex: 1; background: #020617; border: 1px solid #334155; color: #f8fafc; border-radius: 4px; padding: 4px 6px; font-size: 10px; outline: none;">
-      <button id="btn-add-group" class="btn btn-secondary" style="width: auto; padding: 4px 8px; font-size: 10px; background: #1e293b;">+ Añadir</button>
+      <input type="text" id="txt-add-group" placeholder="Escribe un grupo (ej: Ventas Juigalpa)..." style="flex: 1; background: #020617; border: 1px solid #334155; color: #f8fafc; border-radius: 5px; padding: 5px 7px; font-size: 10px; outline: none;">
+      <button id="btn-add-group" class="btn" style="width: auto; padding: 5px 8px; font-size: 10px; background: #1e293b;">+ Añadir</button>
     </div>
     
     <!-- Lista interactiva de grupos con scroll -->
-    <div id="groups-checklist-container" style="max-height: 120px; overflow-y: auto; background: #020617; border: 1px solid #334155; border-radius: 4px; padding: 5px; margin-bottom: 6px; display: flex; flex-direction: column; gap: 4px;">
+    <div id="groups-checklist-container" style="max-height: 125px; overflow-y: auto; background: #020617; border: 1px solid #1e293b; border-radius: 5px; padding: 5px 7px; margin-bottom: 6px; display: flex; flex-direction: column; gap: 4px;">
       <div style="color: #64748b; font-size: 10px; text-align: center; padding: 6px;">Abre Facebook o pulsa "Escanear" para ver tus grupos aquí.</div>
     </div>
 
+    <!-- Inputs Ocultos Requeridos por el Motor de Sincronización -->
     <input type="hidden" id="num-group-count" value="12">
     <input type="hidden" id="txt-group-keywords" value="">
-    <label style="display: flex; align-items: center; gap: 6px; font-size: 10.5px; cursor: pointer; margin-bottom: 6px;">
-      <input type="checkbox" id="chk-group-auto" checked>
+
+    <!-- Opciones de Auto-publicación -->
+    <label style="display: flex; align-items: center; gap: 6px; font-size: 10px; color: #cbd5e1; cursor: pointer; margin-bottom: 6px;">
+      <input type="checkbox" id="chk-group-auto" checked style="accent-color: #10b981;">
       <span>Auto-compartir al terminar de publicar</span>
     </label>
-    <button id="btn-save-group-settings" class="btn btn-secondary" style="font-size: 10px; padding: 6px 8px; background: #059669; border-color: #10b981; font-weight: 800;">
-      💾 Guardar Mi Selección como Mis 12 Fijos
+    <button id="btn-save-group-settings" class="btn" style="width: 100%; font-size: 10px; padding: 6px 8px; background: #059669; border-color: #10b981; font-weight: 800;" title="Guarda tu lista elegida para usarla siempre por defecto">
+      💾 Guardar Selección como Mis 12 Fijos
     </button>
   </div>
 
   <!-- Ciclo de Re-publicación Semanal (Auto-Relist con IA) -->
-  <div class="info-card" style="margin-top: 10px; border-color: #3b82f6;">
-    <div style="font-weight: 800; color: #60a5fa; margin-bottom: 6px; font-size: 11px;">
-      🔄 RE-PUBLICACIÓN SEMANAL (AUTO-RELIST CON IA)
+  <div class="info-card" style="border-color: #3b82f6; margin-bottom: 8px;">
+    <div style="font-weight: 800; color: #60a5fa; margin-bottom: 4px; font-size: 11px;">
+      🔄 RE-PUBLICACIÓN (AUTO-RELIST)
     </div>
-    <div style="font-size: 10px; color: #94a3b8; margin-bottom: 6px; line-height: 1.35;">
-      Borra automáticamente productos sin vender tras 7 días y los re-publica desde cero con nuevo copy IA, fotos HD y envío a tus 12 grupos.
+    <div style="font-size: 9.5px; color: #94a3b8; margin-bottom: 6px; line-height: 1.35;">
+      Renueva anuncios con más de 7 días sin venderse para que vuelvan al tope de Facebook con fotos HD y copy IA.
     </div>
-    <label style="display: flex; align-items: center; gap: 6px; font-size: 10.5px; cursor: pointer; margin-bottom: 6px;">
-      <input type="checkbox" id="chk-relist-auto" checked>
+    <label style="display: flex; align-items: center; gap: 6px; font-size: 10px; color: #cbd5e1; cursor: pointer; margin-bottom: 6px;">
+      <input type="checkbox" id="chk-relist-auto" checked style="accent-color: #3b82f6;">
       <span>Activar Auto-Relist semanal programado</span>
     </label>
-    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
-      <span style="font-size: 10px; color: #cbd5e1;">Frecuencia de re-publicación:</span>
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; background: #020617; padding: 4px 6px; border-radius: 4px; border: 1px solid #1e293b;">
+      <span style="font-size: 9.5px; color: #cbd5e1;">Re-publicar si tiene más de:</span>
       <div style="display: flex; align-items: center; gap: 4px;">
-        <input type="number" id="num-relist-days" value="7" min="1" max="30" style="width: 40px; background: #0f172a; border: 1px solid #475569; color: #f8fafc; border-radius: 4px; padding: 2px 4px; text-align: center; font-size: 11px; font-weight: 700;">
-        <span style="font-size: 10px; color: #94a3b8;">días</span>
+        <input type="number" id="num-relist-days" value="7" min="1" max="30" style="width: 38px; background: #0f172a; border: 1px solid #475569; color: #f8fafc; border-radius: 4px; padding: 2px 4px; text-align: center; font-size: 10.5px; font-weight: 700;">
+        <span style="font-size: 9.5px; color: #94a3b8;">días</span>
       </div>
     </div>
-    <button id="btn-run-relist-now" class="btn btn-secondary" style="font-size: 10px; padding: 5px 8px; background: #1d4ed8; border-color: #2563eb;">
-      ⚡ Ejecutar Auto-Relist en Caducados (> 7d)
+    <button id="btn-run-relist-now" class="btn" style="width: 100%; font-size: 10px; padding: 5px 8px; background: #1d4ed8; border-color: #2563eb; font-weight: 800;" title="Busca productos viejos y los renueva al instante">
+      ⚡ Renovar Anuncios Viejos Ahora
     </button>
   </div>
 
-  <div id="log" class="log-box">Listo para sincronizar.</div>
+  <!-- Terminal de Estado / Log -->
+  <div id="log" class="log-box">Listo para sincronizar. Pulsa una acción arriba.</div>
 
   <script src="popup.js" type="module"></script>
 </body>

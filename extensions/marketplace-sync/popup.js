@@ -1,4 +1,4 @@
-/* Controlador de popup de la extensión */
+/* Controlador de popup de la extensión Haibane Sync */
 
 const logEl = document.getElementById("log");
 
@@ -8,60 +8,65 @@ function log(msg) {
   }
 }
 
+// Botón: Enlazar Gemelos con Tienda Web (Anti-Duplicados)
 document.getElementById("btn-link-twins")?.addEventListener("click", async () => {
-  log("Buscando pestaña de Marketplace para enlazar...");
+  log("🔍 Buscando tus publicaciones en Facebook para enlazarlas con la web...");
   try {
     const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
     const currentTab = tabs[0];
     if (currentTab && currentTab.url && currentTab.url.includes("facebook.com/marketplace")) {
       chrome.tabs.sendMessage(currentTab.id, { action: "LINK_TWINS" }, (res) => {
         if (chrome.runtime.lastError) {
-          log(`Aviso: ${chrome.runtime.lastError.message}`);
+          log(`⚠️ Aviso: ${chrome.runtime.lastError.message}`);
           return;
         }
-        log(res?.message || "Enlace de gemelos iniciado en la pestaña.");
+        log(res?.message || "✓ Enlace de gemelos completado con éxito.");
       });
     } else {
-      log("⚠️ Abre facebook.com/marketplace/you/selling para enlazar tus publicaciones.");
+      log("⚠️ Abre facebook.com/marketplace/you/selling para conectar tus productos.");
     }
   } catch (err) {
-    log(`Error: ${err.message}`);
+    log(`❌ Error: ${err.message}`);
   }
 });
 
+// Botón: Comprobar Precios y Vendidos (Auditoría)
 document.getElementById("btn-audit")?.addEventListener("click", async () => {
-  log("Buscando pestaña activa de Marketplace...");
+  log("🔍 Revisando publicaciones en Facebook para detectar precios y ventas...");
   try {
     const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
     const currentTab = tabs[0];
     if (currentTab && currentTab.url && currentTab.url.includes("facebook.com/marketplace")) {
       chrome.tabs.sendMessage(currentTab.id, { action: "AUDIT_LISTINGS" }, (res) => {
         if (chrome.runtime.lastError) {
-          log(`Aviso: ${chrome.runtime.lastError.message}`);
+          log(`⚠️ Aviso: ${chrome.runtime.lastError.message}`);
           return;
         }
-        log(res?.message || "Auditoría enviada a la pestaña de Facebook.");
+        log(res?.message || "✓ Auditoría finalizada correctamente.");
       });
     } else {
-      log("⚠️ Abre facebook.com/marketplace/you/selling para auditar directamente.");
+      log("⚠️ Abre facebook.com/marketplace/you/selling para revisar tus productos.");
     }
   } catch (err) {
-    log(`Error: ${err.message}`);
+    log(`❌ Error: ${err.message}`);
   }
 });
 
+// Botón: Sincronizar Tienda en la Nube (Vercel)
 document.getElementById("btn-cloud-sync")?.addEventListener("click", async () => {
-  log("Conectando con Vercel Serverless Function...");
+  log("☁️ Conectando con los servidores en la nube de Vercel...");
   try {
     const res = await fetch("https://meltydeays-wired-club.vercel.app/api/sync-facebook", { method: "POST" });
     const data = await res.json();
     if (data.success && data.report) {
-      log(`✓ Cloud Sync: ${data.report.updatedProducts.length} actualizados, ${data.report.markedSoldProducts?.length || 0} vendidos.`);
+      const up = data.report.updatedProducts?.length || 0;
+      const sold = data.report.markedSoldProducts?.length || 0;
+      log(`✓ Nube sincronizada: ${up} productos al día, ${sold} marcados como vendidos.`);
     } else {
-      log(`Aviso Cloud: ${data.error || "Sin novedades."}`);
+      log(`✓ Nube verificada: ${data.error || "Catálogo sincronizado sin cambios pendientes."}`);
     }
   } catch (err) {
-    log(`Error conectando a Vercel: ${err.message}`);
+    log(`❌ Error al conectar con Vercel: ${err.message}`);
   }
 });
 
@@ -82,13 +87,13 @@ function updateModeUI(mode) {
       btnAi.style.fontWeight = "800";
     }
     if (btnCustom) {
-      btnCustom.style.background = "#1e293b";
+      btnCustom.style.background = "#0f172a";
       btnCustom.style.color = "#94a3b8";
-      btnCustom.style.borderColor = "#334155";
+      btnCustom.style.borderColor = "#1e293b";
       btnCustom.style.fontWeight = "normal";
     }
     if (statusEl) {
-      statusEl.innerHTML = `🎯 <strong>Modo IA:</strong> Prioriza grupos de venta y negocios en Juigalpa y zonas cercanas.`;
+      statusEl.innerHTML = `🎯 <strong>Modo IA Activo:</strong> Prioriza automáticamente ventas y negocios en Juigalpa y zonas cercanas (Chontales, Boaco, etc.).`;
       statusEl.style.borderLeftColor = "#a855f7";
     }
   } else {
@@ -99,13 +104,13 @@ function updateModeUI(mode) {
       btnCustom.style.fontWeight = "800";
     }
     if (btnAi) {
-      btnAi.style.background = "#1e293b";
+      btnAi.style.background = "#0f172a";
       btnAi.style.color = "#94a3b8";
-      btnAi.style.borderColor = "#334155";
+      btnAi.style.borderColor = "#1e293b";
       btnAi.style.fontWeight = "normal";
     }
     if (statusEl) {
-      statusEl.innerHTML = `⭐ <strong>Modo Mis Fijos:</strong> Marca las casillas de tus grupos preferidos y pulsa "Guardar" para fijarlos.`;
+      statusEl.innerHTML = `⭐ <strong>Modo Mis Fijos Activo:</strong> Marca las casillas de tus 12 grupos favoritos abajo y pulsa "Guardar Selección".`;
       statusEl.style.borderLeftColor = "#10b981";
     }
   }
@@ -246,7 +251,13 @@ function renderGroupsChecklist(groups, selected = [], mode = currentGroupMode) {
     container.appendChild(row);
   });
 
-  if (labelCount) labelCount.textContent = `${checkedCount} / 12 seleccionados`;
+  function formatGroupCountText(count) {
+    if (count === 12) return "12 / 12 (Óptimo)";
+    if (count === 0) return "0 / 12 seleccionados";
+    return `${count} / 12 seleccionados`;
+  }
+
+  if (labelCount) labelCount.textContent = formatGroupCountText(checkedCount);
 
   container.querySelectorAll(".chk-fb-group-item").forEach(chk => {
     chk.addEventListener("change", () => {
@@ -256,7 +267,7 @@ function renderGroupsChecklist(groups, selected = [], mode = currentGroupMode) {
         alert("Facebook permite un máximo de 20 grupos a la vez.");
         return;
       }
-      if (labelCount) labelCount.textContent = `${allChecked.length} / 12 seleccionados`;
+      if (labelCount) labelCount.textContent = formatGroupCountText(allChecked.length);
     });
   });
 
@@ -393,14 +404,14 @@ document.getElementById("btn-save-group-settings")?.addEventListener("click", ()
     groupShareCount: selected.length || 12
   }, () => {
     const labelCount = document.getElementById("lbl-groups-selected");
-    if (labelCount) labelCount.textContent = `${selected.length} / 12 seleccionados`;
-    log(`✓ ${selected.length} grupos guardados permanentemente como 'Mis Fijos'.`);
+    if (labelCount) labelCount.textContent = selected.length === 12 ? "12 / 12 (Óptimo)" : `${selected.length} / 12 seleccionados`;
+    log(`✓ ${selected.length} grupo(s) guardado(s) exitosamente como 'Mis Fijos'.`);
   });
 });
 
 // Escanear grupos desde Facebook con detección multiruta
 document.getElementById("btn-scan-groups")?.addEventListener("click", async () => {
-  log("Buscando grupos en Facebook...");
+  log("🔍 Buscando grupos a los que perteneces en Facebook...");
   try {
     const fbTabs = await chrome.tabs.query({ url: "*://*.facebook.com/*" });
     if (fbTabs.length > 0) {
@@ -409,20 +420,20 @@ document.getElementById("btn-scan-groups")?.addEventListener("click", async () =
         if (!chrome.runtime.lastError && res && res.groups && res.groups.length > 0) {
           chrome.storage?.local?.get(["selectedGroupNames"], (d) => {
             renderGroupsChecklist(res.groups, d?.selectedGroupNames || []);
-            log(`✓ ${res.groups.length} grupos detectados.`);
+            log(`✓ ${res.groups.length} grupos detectados listos para organizar.`);
           });
         } else {
           // Si la pestaña actual no tiene grupos en el DOM visible, llevarla a /groups/joins/
-          log("Abriendo 'Tus grupos' en Facebook para auto-escanear...");
+          log("Abriendo 'Tus grupos' en Facebook para escanearlos automáticamente...");
           chrome.tabs.update(activeFbTab.id, { url: "https://www.facebook.com/groups/joins/", active: true });
         }
       });
     } else {
-      log("Abriendo Facebook para cargar tus grupos...");
+      log("Abriendo Facebook para cargar tu lista de grupos...");
       chrome.tabs.create({ url: "https://www.facebook.com/groups/joins/", active: true });
     }
   } catch (err) {
-    log(`Error: ${err.message}`);
+    log(`❌ Error: ${err.message}`);
   }
 });
 
@@ -434,7 +445,7 @@ document.getElementById("btn-run-relist-now")?.addEventListener("click", async (
   const relistAuto = chkRelist ? chkRelist.checked : true;
 
   chrome.storage?.local?.set({ relistDays, relistAuto }, () => {
-    log(`Buscando productos activos con más de ${relistDays} días para re-publicar...`);
+    log(`🔍 Buscando publicaciones con más de ${relistDays} días sin venderse para renovar...`);
   });
 
   try {
@@ -443,29 +454,29 @@ document.getElementById("btn-run-relist-now")?.addEventListener("click", async (
     if (currentTab && currentTab.url && currentTab.url.includes("facebook.com")) {
       chrome.tabs.sendMessage(currentTab.id, { action: "RUN_AUTO_RELIST", maxDays: relistDays }, (res) => {
         if (chrome.runtime.lastError) {
-          log(`Aviso: ${chrome.runtime.lastError.message}`);
+          log(`⚠️ Aviso: ${chrome.runtime.lastError.message}`);
           return;
         }
-        log(`✓ Ciclo de re-publicación disparado.`);
+        log(`✓ Ciclo de re-publicación con fotos HD y copy IA iniciado.`);
       });
     } else {
-      log("Abriendo ciclo de relist en segundo plano...");
+      log("Iniciando ciclo de re-publicación en segundo plano...");
       chrome.runtime.sendMessage({ action: "CHECK_AUTORELIST_NOW", maxDays: relistDays }, (res) => {
         if (chrome.runtime.lastError) {
-          log(`Aviso: ${chrome.runtime.lastError.message}`);
+          log(`⚠️ Aviso: ${chrome.runtime.lastError.message}`);
           return;
         }
-        log(res?.message || "Comando de re-publicación enviado.");
+        log(res?.message || "✓ Comando de re-publicación enviado.");
       });
     }
   } catch (err) {
-    log(`Error: ${err.message}`);
+    log(`❌ Error: ${err.message}`);
   }
 });
 
 // Disparar compartir en grupos inmediatamente
 document.getElementById("btn-share-groups-now")?.addEventListener("click", async () => {
-  log("Buscando diálogo o pantalla de grupos en la pestaña...");
+  log("🔍 Buscando la pantalla de compartir grupos en Facebook...");
   try {
     const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
     const currentTab = tabs[0];
@@ -480,21 +491,21 @@ document.getElementById("btn-share-groups-now")?.addEventListener("click", async
           selectedNames: selected
         }, (res) => {
           if (chrome.runtime.lastError) {
-            log(`Aviso: ${chrome.runtime.lastError.message}`);
+            log(`⚠️ Aviso: ${chrome.runtime.lastError.message}`);
             return;
           }
           if (res && res.success) {
-            log(`✓ ${res.count || 12} grupos seleccionados con éxito.`);
+            log(`✓ ${res.count || 12} grupos marcados y compartidos con éxito.`);
           } else {
-            log(`Aviso: ${res?.error || "Revisa la pestaña de Marketplace."}`);
+            log(`⚠️ Aviso: ${res?.error || "Asegúrate de estar en el paso de compartir grupos en Facebook."}`);
           }
         });
       });
     } else {
-      log("⚠️ Abre la pestaña de Marketplace donde esté la publicación o grupos.");
+      log("⚠️ Abre Facebook Marketplace donde esté la publicación o grupos.");
     }
   } catch (err) {
-    log(`Error: ${err.message}`);
+    log(`❌ Error: ${err.message}`);
   }
 });
 

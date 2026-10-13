@@ -85,6 +85,80 @@ function loadCatalogProducts(callback) {
 }
 
 /**
+ * Extrae de forma exhaustiva las publicaciones visibles en /marketplace/you/selling o feeds de Marketplace.
+ * Soporta tanto enlaces nativos (/marketplace/item/) como tarjetas visuales de React.
+ */
+function getScannableListings() {
+  const listings = [];
+  const seenIds = new Set();
+  const seenTitles = new Set();
+
+  // 1. Enlaces con ID de publicación
+  const links = Array.from(document.querySelectorAll('a[href*="/marketplace/item/"], a[href*="/marketplace/you/selling/"], a[href*="/item/"]'));
+  for (const a of links) {
+    const href = a.getAttribute("href") || "";
+    const idMatch = href.match(/(?:\/item\/|\/selling\/)?(\d{10,})/);
+    const fbListingId = idMatch ? idMatch[1] : null;
+    const parent = a.closest('div[role="article"]') || a.closest('div[role="row"]') || a.closest('div[role="listitem"]') || a.parentElement?.parentElement || a.parentElement;
+    const textContent = (parent ? parent.innerText : a.innerText) || "";
+    const lines = textContent.split("\n").map(l => l.trim()).filter(Boolean);
+    const priceLine = lines.find(l => l.includes("$") || l.includes("C$") || /^\d+(\.\d+)?$/.test(l));
+    const titleCandidates = lines.filter(l => l !== priceLine && !l.toLowerCase().includes("vendid") && !l.toLowerCase().includes("agotad") && !l.toLowerCase().includes("revisando") && l.length > 3);
+    const fbTitle = titleCandidates[0] || "";
+
+    if (fbListingId && !seenIds.has(fbListingId)) {
+      seenIds.add(fbListingId);
+      if (fbTitle) seenTitles.add(fbTitle.toLowerCase());
+      listings.push({
+        element: parent,
+        link: a,
+        fbListingId,
+        fbTitle,
+        textContent,
+        lines,
+        priceLine
+      });
+    }
+  }
+
+  // 2. Tarjetas visuales de productos en /you/selling cuando Facebook usa divs con onClick sin enlaces <a> directos
+  const candidateRows = Array.from(document.querySelectorAll('div[role="article"], div[role="row"], div[role="listitem"]'));
+  for (const r of candidateRows) {
+    const textContent = (r.innerText || "");
+    if (textContent.length > 600) continue;
+    const lines = textContent.split("\n").map(l => l.trim()).filter(Boolean);
+    const priceLine = lines.find(l => l.includes("$") || l.includes("C$") || l.includes("NIO"));
+    const hasAction = lines.some(l => {
+      const low = l.toLowerCase();
+      return low.includes("compartir") || low.includes("promocionar") || low.includes("marcar como") || low.includes("disponible") || low.includes("revisando");
+    });
+
+    if (priceLine && hasAction) {
+      const titleCandidates = lines.filter(l => l !== priceLine && !l.toLowerCase().includes("vendid") && !l.toLowerCase().includes("agotad") && !l.toLowerCase().includes("revisando") && !l.toLowerCase().includes("disponible") && !l.toLowerCase().includes("compartir") && !l.toLowerCase().includes("promocionar") && l.length > 3);
+      const fbTitle = titleCandidates[0] || "";
+      if (fbTitle && !seenTitles.has(fbTitle.toLowerCase())) {
+        seenTitles.add(fbTitle.toLowerCase());
+        const innerA = r.querySelector('a');
+        const href = innerA?.getAttribute("href") || "";
+        const idMatch = href.match(/(\d{10,})/);
+        const fbListingId = idMatch ? idMatch[1] : null;
+        listings.push({
+          element: r,
+          link: innerA,
+          fbListingId,
+          fbTitle,
+          textContent,
+          lines,
+          priceLine
+        });
+      }
+    }
+  }
+
+  return listings;
+}
+
+/**
  * FASE 1: Enlace Preventivo y Anti-Duplicados
  * Escanea las publicaciones en pantalla y las empareja con el catálogo web sin duplicar.
  */
@@ -93,9 +167,9 @@ function linkExistingMarketplaceTwins() {
   if (info) info.textContent = "Escaneando publicaciones para enlazar gemelos...";
 
   const isSellingPage = window.location.href.includes("/marketplace/you/selling");
-  const listingLinks = Array.from(document.querySelectorAll('a[href*="/marketplace/item/"]'));
+  const listings = getScannableListings();
 
-  if (listingLinks.length === 0) {
+  if (listings.length === 0) {
     if (info) {
       info.textContent = isSellingPage 
         ? "No se encontraron publicaciones en pantalla." 
@@ -106,28 +180,12 @@ function linkExistingMarketplaceTwins() {
 
   let newlyLinked = 0;
   let alreadyLinked = 0;
-  const seenListingIds = new Set();
 
-  listingLinks.forEach(link => {
-    const parent = link.closest('div[role="article"]') || link.parentElement;
-    if (!parent) return;
-
-    const href = link.getAttribute("href") || "";
-    const idMatch = href.match(/\/marketplace\/item\/(\d+)/);
-    const fbListingId = idMatch ? idMatch[1] : null;
-    if (!fbListingId || seenListingIds.has(fbListingId)) return;
-    seenListingIds.add(fbListingId);
-
-    const textContent = parent.innerText || "";
-    const lines = textContent.split("\n").map(l => l.trim()).filter(Boolean);
-
-    const priceLine = lines.find(l => l.includes("$") || l.includes("C$") || /^\d+(\.\d+)?$/.test(l));
+  listings.forEach(({ element, fbListingId, fbTitle, lines, priceLine }) => {
     const rawPrice = parsePriceFromText(priceLine);
-    const titleCandidates = lines.filter(l => l !== priceLine && !l.toLowerCase().includes("vendid") && !l.toLowerCase().includes("agotad") && l.length > 3);
-    const fbTitle = titleCandidates[0] || "";
 
     // 1. Verificar si ya está enlazado directamente
-    const existingTwin = cachedWebProducts.find(p => String(p.facebookListingId) === String(fbListingId));
+    const existingTwin = cachedWebProducts.find(p => fbListingId && String(p.facebookListingId) === String(fbListingId));
     if (existingTwin) {
       alreadyLinked++;
       return;
@@ -139,7 +197,7 @@ function linkExistingMarketplaceTwins() {
 
     for (const prod of cachedWebProducts) {
       // Si ya tiene otro ID de Facebook distinto, no asociar
-      if (prod.facebookListingId && String(prod.facebookListingId) !== String(fbListingId)) continue;
+      if (prod.facebookListingId && fbListingId && String(prod.facebookListingId) !== String(fbListingId)) continue;
 
       const sim = computeTitleSimilarity(prod.title, fbTitle);
       if (sim > highestSim && sim >= 0.70) {
@@ -158,7 +216,7 @@ function linkExistingMarketplaceTwins() {
       }
     }
 
-    if (bestMatch) {
+    if (bestMatch && fbListingId) {
       console.log(`🔗 Emparejamiento Gemelo Detectado: Web "${bestMatch.title}" <==> FB "${fbTitle}" (#${fbListingId})`);
       chrome.runtime.sendMessage({
         action: "LINK_PRODUCT_TO_FB",
@@ -182,8 +240,8 @@ function linkExistingMarketplaceTwins() {
         info.textContent = `✓ ${newlyLinked} nuevo(s) gemelo(s) enlazado(s). (${alreadyLinked} ya estaban al día).`;
       } else {
         info.textContent = alreadyLinked > 0 
-          ? `✓ ${alreadyLinked} gemelos confirmados. Cero duplicados.` 
-          : `Escaneo listo. No hubo nuevas coincidencias.`;
+          ? `✓ ${alreadyLinked} gemelos confirmados (${listings.length} detectados en pantalla).` 
+          : `✓ ${listings.length} publicaciones activas detectadas en Facebook.`;
       }
     }
   }, 1000);
@@ -216,19 +274,16 @@ function auditMarketplaceListings() {
   const info = document.getElementById("haibane-sync-info");
   if (info) info.textContent = "Escaneando precios y estado en pantalla...";
 
-  const listingLinks = Array.from(document.querySelectorAll('a[href*="/marketplace/item/"]'));
+  const listings = getScannableListings();
   let updatedCount = 0;
 
-  listingLinks.forEach(link => {
-    const parent = link.closest('div[role="article"]') || link.parentElement;
-    if (!parent) return;
+  if (listings.length === 0) {
+    if (info) info.textContent = "No hay publicaciones visibles para auditar.";
+    return;
+  }
 
-    const textContent = parent.innerText || "";
-    const lines = textContent.split("\n").map(l => l.trim()).filter(Boolean);
-
-    const href = link.getAttribute("href") || "";
-    const idMatch = href.match(/\/marketplace\/item\/(\d+)/);
-    const fbListingId = idMatch ? idMatch[1] : null;
+  listings.forEach(({ fbListingId, lines, priceLine }) => {
+    const rawPrice = parsePriceFromText(priceLine);
 
     for (const prod of cachedWebProducts) {
       const isDirectTwin = fbListingId && String(prod.facebookListingId) === String(fbListingId);
@@ -257,33 +312,28 @@ function auditMarketplaceListings() {
               if (info) info.textContent = `✓ "${prod.title}" marcado como AGOTADO (regla 12h)`;
             }
           });
-        } else {
-          const priceLine = lines.find(l => l.includes("$") || l.includes("C$") || /^\d+(\.\d+)?$/.test(l));
-          const rawPrice = parsePriceFromText(priceLine);
+        } else if (rawPrice !== null && prod.priceUsd !== undefined) {
+          let normalizedFbUsd = rawPrice;
+          if (rawPrice > 200) {
+            normalizedFbUsd = Number((rawPrice / 37.0).toFixed(2));
+          }
 
-          if (rawPrice !== null && prod.priceUsd !== undefined) {
-            let normalizedFbUsd = rawPrice;
-            if (rawPrice > 200) {
-              normalizedFbUsd = Number((rawPrice / 37.0).toFixed(2));
-            }
-
-            const diff = Math.abs(normalizedFbUsd - prod.priceUsd);
-            if (diff >= 0.5) {
-              console.log(`✦ Precio actualizado en FB para "${prod.title}": Web=$${prod.priceUsd} vs FB=$${normalizedFbUsd}`);
-              chrome.runtime.sendMessage({
-                action: "SYNC_PRICE_TO_FIRESTORE",
-                productId: prod.id,
-                newPrice: normalizedFbUsd,
-                fbListingId: fbListingId,
-                collection: prod._collection
-              }, (res) => {
-                if (res && res.success) {
-                  prod.priceUsd = normalizedFbUsd;
-                  updatedCount++;
-                  if (info) info.textContent = `✓ Actualizado "${prod.title}" a $${normalizedFbUsd}`;
-                }
-              });
-            }
+          const diff = Math.abs(normalizedFbUsd - prod.priceUsd);
+          if (diff >= 0.5) {
+            console.log(`✦ Precio actualizado en FB para "${prod.title}": Web=$${prod.priceUsd} vs FB=$${normalizedFbUsd}`);
+            chrome.runtime.sendMessage({
+              action: "SYNC_PRICE_TO_FIRESTORE",
+              productId: prod.id,
+              newPrice: normalizedFbUsd,
+              fbListingId: fbListingId,
+              collection: prod._collection
+            }, (res) => {
+              if (res && res.success) {
+                prod.priceUsd = normalizedFbUsd;
+                updatedCount++;
+                if (info) info.textContent = `✓ Actualizado "${prod.title}" a $${normalizedFbUsd}`;
+              }
+            });
           }
         }
         break;
@@ -295,7 +345,7 @@ function auditMarketplaceListings() {
     if (info) {
       info.textContent = updatedCount > 0 
         ? `✓ ${updatedCount} precio(s)/estado(s) sincronizado(s).` 
-        : `Todo sincronizado (${cachedWebProducts.length} productos).`;
+        : `Todo sincronizado (${listings.length} publicaciones en pantalla).`;
     }
   }, 1200);
 }
@@ -1549,51 +1599,52 @@ function scoreGroupRelevance(groupName) {
  * Localiza el contenedor de grupos en Facebook Marketplace:
  * - Soporta tanto diálogos modales (role="dialog")
  * - Como la pantalla de Paso 2 de publicación (/marketplace/create/item?step=audience)
+ * - Garantiza CERO efectos secundarios sobre el visor nativo de publicaciones.
  */
 function findGroupSharingContainer() {
-  // 1. Modales abiertos con opciones de grupos
+  // 1. Modales abiertos con opciones de grupos específicas
   const dialogs = Array.from(document.querySelectorAll('div[role="dialog"]'));
   for (const d of dialogs) {
     const txt = (d.innerText || "").toLowerCase();
-    if (txt.includes("en tus grupos") || txt.includes("tus grupos de compra") || txt.includes("compartir en grupos") || txt.includes("share to groups")) {
+    // Omitir si es visor de detalles de la publicación ("Tu publicación" o "Esta publicación está en revisión")
+    if (txt.includes("esta publicación está en revisión") || (txt.includes("tu publicación") && !txt.includes("en tus grupos"))) {
+      continue;
+    }
+    // Verificar que sea un diálogo con casillas de grupos reales
+    const hasBoxes = d.querySelectorAll('div[role="checkbox"], input[type="checkbox"]').length > 0;
+    if (
+      hasBoxes &&
+      (txt.includes("en tus grupos") || txt.includes("tus grupos de compra") || txt.includes("publicar en hasta 20 grupos") || txt.includes("share to groups"))
+    ) {
       return { container: d, type: "dialog" };
     }
   }
 
-  // 2. Si hay un diálogo "Tu publicación" con el enlace "Publicar en más lugares"
-  for (const d of dialogs) {
-    const txt = (d.innerText || "").toLowerCase();
-    if (txt.includes("tu publicación") && (txt.includes("publicar en más lugares") || txt.includes("list in more places"))) {
-      const link = Array.from(d.querySelectorAll('span, a, div[role="button"]')).find(el => {
-        const t = (el.innerText || "").trim().toLowerCase();
-        return t === "publicar en más lugares" || t === "list in more places";
-      });
-      if (link) {
-        link.click();
-        return { container: d, type: "navigating" };
+  // 2. Pantalla de Creación de Publicación Paso 2 (ÚNICAMENTE si la URL es de creación de item)
+  const isCreateUrl = window.location.href.includes("/marketplace/create");
+  const isAudienceUrl = window.location.href.includes("step=audience");
+
+  if (isCreateUrl || isAudienceUrl) {
+    const audienceHeadings = Array.from(document.querySelectorAll('h1, h2, h3, span, div')).filter(el => {
+      const txt = (el.innerText || "").trim().toLowerCase();
+      return (txt === "publicar en más lugares" || txt === "en tus grupos" || txt === "list in more places") && el.children.length === 0;
+    });
+
+    if (isAudienceUrl || audienceHeadings.length > 0) {
+      let root = null;
+      if (audienceHeadings.length > 0) {
+        root = audienceHeadings[0].closest('div[role="main"]') ||
+               audienceHeadings[0].closest('form') ||
+               audienceHeadings[0].closest('div[style*="max-width"]') ||
+               audienceHeadings[0].parentElement?.parentElement?.parentElement;
+      }
+      if (!root) {
+        root = document.querySelector('div[role="main"]') || document.querySelector('form');
+      }
+      if (root) {
+        return { container: root, type: "audience_page" };
       }
     }
-  }
-
-  // 3. Pantalla de Creación de Publicación Paso 2 (step=audience o contenedor en DOM principal)
-  const isAudienceUrl = window.location.href.includes("step=audience");
-  const audienceHeadings = Array.from(document.querySelectorAll('h1, h2, h3, span, div')).filter(el => {
-    const txt = (el.innerText || "").trim().toLowerCase();
-    return (txt === "publicar en más lugares" || txt === "en tus grupos" || txt === "list in more places") && el.children.length === 0;
-  });
-
-  if (isAudienceUrl || audienceHeadings.length > 0) {
-    let root = null;
-    if (audienceHeadings.length > 0) {
-      root = audienceHeadings[0].closest('div[role="main"]') ||
-             audienceHeadings[0].closest('form') ||
-             audienceHeadings[0].closest('div[style*="max-width"]') ||
-             audienceHeadings[0].parentElement?.parentElement?.parentElement;
-    }
-    if (!root) {
-      root = document.querySelector('div[role="main"]') || document.querySelector('form') || document.body;
-    }
-    return { container: root, type: "audience_page" };
   }
 
   return null;
@@ -1603,6 +1654,8 @@ function findGroupSharingContainer() {
  * Extrae casillas de grupos descartando la opción de Marketplace público
  */
 function getValidGroupItems(rootContainer) {
+  if (!rootContainer) return [];
+
   const allBoxes = Array.from(
     rootContainer.querySelectorAll('div[role="checkbox"], div[aria-checked], input[type="checkbox"]')
   );
@@ -1679,16 +1732,17 @@ async function toggleGroupCheckbox(groupItem) {
 }
 
 /**
- * Localiza el botón de publicar / compartir en la pantalla o diálogo
+ * Localiza el botón de publicar / compartir ÚNICAMENTE dentro del contenedor de grupos
  */
 function findPublishButton(rootContainer) {
+  if (!rootContainer) return null;
   const candidates = Array.from(
-    (rootContainer || document).querySelectorAll('div[role="button"], button')
+    rootContainer.querySelectorAll('div[role="button"], button')
   );
   return candidates.find(b => {
     const txt = (b.innerText || b.getAttribute("aria-label") || "").trim().toLowerCase();
     return (
-      (txt === "publicar" || txt === "compartir" || txt === "publish" || txt === "share" || txt === "listo" || txt === "done") &&
+      (txt === "publicar" || txt === "publish" || txt === "listo" || txt === "done") &&
       !b.disabled &&
       b.getAttribute("aria-disabled") !== "true" &&
       b.offsetParent !== null
@@ -1722,11 +1776,6 @@ async function autoSelectAndShareGroups(targetCount = 12, keywords = [], selecte
     return { success: false, error: "Contenedor de grupos no detectado en el DOM" };
   }
 
-  if (containerInfo.type === "navigating") {
-    await new Promise(r => setTimeout(r, 800));
-    containerInfo = findGroupSharingContainer() || containerInfo;
-  }
-
   // Si no se pasaron grupos explícitamente, intentar leer del storage local
   if ((!selectedNames || selectedNames.length === 0 || !mode) && chrome.storage?.local) {
     try {
@@ -1741,13 +1790,9 @@ async function autoSelectAndShareGroups(targetCount = 12, keywords = [], selecte
   }
 
   let groupItems = getValidGroupItems(containerInfo.container);
-  if (groupItems.length === 0) {
-    // Respaldo: escanear en todo el documento por si el contenedor es parcial
-    groupItems = getValidGroupItems(document.body);
-  }
 
   if (groupItems.length === 0) {
-    console.warn("Haibane: No se detectaron casillas de grupos.");
+    console.warn("Haibane: No se detectaron casillas de grupos en el contenedor.");
     return { success: false, error: "No se encontraron casillas de grupos" };
   }
 
@@ -1789,8 +1834,8 @@ async function autoSelectAndShareGroups(targetCount = 12, keywords = [], selecte
     await new Promise(r => setTimeout(r, 100)); // Delay escalonado compatible con React
   }
 
-  // 2. Localizar y presionar el botón de publicar / compartir
-  const submitBtn = findPublishButton(containerInfo.container) || findPublishButton(document.body);
+  // 2. Localizar y presionar el botón de publicar ÚNICAMENTE dentro del contenedor
+  const submitBtn = findPublishButton(containerInfo.container);
   if (submitBtn) {
     await new Promise(r => setTimeout(r, 350));
     submitBtn.click();
@@ -1935,8 +1980,9 @@ function attachGroupSharerToDialog(dialogOrContainer) {
       }
     });
 
-    // Auto-ejecución si está habilitado con countdown
-    if (isAuto) {
+    // Auto-ejecución si está habilitado con countdown (solo en flujo de creación paso 2 o diálogo con casillas)
+    const isCreateOrAudience = window.location.href.includes("/marketplace/create") || window.location.href.includes("step=audience");
+    if (isAuto && isCreateOrAudience) {
       let countdown = 2;
       if (statusEl) statusEl.innerHTML = `⏳ Auto-compartiendo en ${targetCount} grupos en <strong>${countdown}s</strong>...`;
       const timer = setInterval(async () => {
@@ -2002,32 +2048,57 @@ async function runAutoRelistCycle(maxDays = 7) {
 
 /**
  * Observa mutaciones en el DOM para detectar el diálogo de compartir en grupos de Facebook
+ * Ejecución con debounce y aislamiento total frente a modales de visualización nativa
  */
 function setupGroupSharingObserver() {
   const checkDialogs = () => {
+    // Si estamos en /marketplace/you/selling, NUNCA tocar modales de visualización de producto
+    if (window.location.href.includes("/marketplace/you/selling")) {
+      const groupDialog = Array.from(document.querySelectorAll('div[role="dialog"]')).find(d => {
+        const txt = (d.innerText || "").toLowerCase();
+        // Solo si es un diálogo EXCLUSIVO de selección de grupos con casillas reales
+        return (txt.includes("en tus grupos") || txt.includes("tus grupos de compra")) &&
+               !txt.includes("esta publicación está en revisión") &&
+               d.querySelectorAll('div[role="checkbox"], input[type="checkbox"]').length > 0;
+      });
+      if (groupDialog) {
+        attachGroupSharerToDialog(groupDialog);
+      }
+      return;
+    }
+
     const containerInfo = findGroupSharingContainer();
     if (containerInfo && containerInfo.container) {
       attachGroupSharerToDialog(containerInfo.container);
       return;
     }
+
     const dialogs = document.querySelectorAll('div[role="dialog"]');
     dialogs.forEach(dialog => {
       const text = (dialog.innerText || "").toLowerCase();
+      if (text.includes("esta publicación está en revisión") || (text.includes("tu publicación") && !text.includes("en tus grupos"))) {
+        return;
+      }
       if (
-        text.includes("publicar en más lugares") ||
+        (text.includes("publicar en más lugares") ||
         text.includes("compartir en grupos") ||
         text.includes("publicar en grupos") ||
         text.includes("tus grupos de compra") ||
         text.includes("list in more places") ||
-        text.includes("share to groups")
+        text.includes("share to groups")) &&
+        dialog.querySelectorAll('div[role="checkbox"], input[type="checkbox"]').length > 0
       ) {
         attachGroupSharerToDialog(dialog);
       }
     });
   };
 
+  let debounceTimer = null;
   const observer = new MutationObserver(() => {
-    checkDialogs();
+    if (debounceTimer) clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      checkDialogs();
+    }, 350);
   });
 
   observer.observe(document.body, { childList: true, subtree: true });
@@ -2038,6 +2109,40 @@ function setupGroupSharingObserver() {
 function injectHaibaneFloatingWidget() {
   if (document.getElementById("haibane-sync-widget")) return;
 
+  // 1. Píldora de reapertura minimizada
+  let pill = document.getElementById("haibane-sync-pill");
+  if (!pill) {
+    pill = document.createElement("button");
+    pill.id = "haibane-sync-pill";
+    pill.title = "Haz clic para abrir el panel de control Haibane Sync";
+    pill.style.cssText = `
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 999999;
+      background: #090d16;
+      border: 1.5px solid #a855f7;
+      border-radius: 9999px;
+      padding: 6px 12px;
+      color: #f8fafc;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-size: 11px;
+      font-weight: 800;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6);
+      cursor: pointer;
+      display: none;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+    `;
+    pill.innerHTML = `
+      <span style="width: 7px; height: 7px; border-radius: 50%; background: #10b981; box-shadow: 0 0 6px #10b981; display: inline-block;"></span>
+      <span style="color: #c084fc;">✦ Haibane Sync</span>
+    `;
+    document.body.appendChild(pill);
+  }
+
+  // 2. Widget desplegado
   const widget = document.createElement("div");
   widget.id = "haibane-sync-widget";
   widget.style.cssText = `
@@ -2045,59 +2150,64 @@ function injectHaibaneFloatingWidget() {
     bottom: 20px;
     right: 20px;
     z-index: 999999;
-    background: #0f172a;
+    background: #090d16;
     border: 1.5px solid #a855f7;
-    border-radius: 8px;
-    padding: 10px 14px;
+    border-radius: 10px;
+    padding: 10px 12px;
     color: #f8fafc;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    font-size: 12px;
-    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+    font-size: 11.5px;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.7);
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    max-width: 270px;
+    gap: 7px;
+    max-width: 280px;
+    box-sizing: border-box;
+    user-select: none;
   `;
 
   widget.innerHTML = `
-    <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #334155; padding-bottom: 6px;">
-      <span style="font-weight: 800; color: #c084fc; display: flex; align-items: center; gap: 5px;">
-        ✦ Haibane Sync
-      </span>
-      <span id="haibane-sync-status-dot" style="width: 8px; height: 8px; border-radius: 50%; background: #10b981; display: inline-block;" title="Conectado a Firestore"></span>
+    <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #1e293b; padding-bottom: 5px;">
+      <div style="display: flex; align-items: center; gap: 6px;">
+        <span style="width: 7px; height: 7px; border-radius: 50%; background: #10b981; box-shadow: 0 0 5px #10b981; display: inline-block;"></span>
+        <span style="font-weight: 800; color: #c084fc; font-size: 11px;">✦ Haibane Sync</span>
+      </div>
+      <button id="haibane-btn-minimize" style="background: transparent; color: #64748b; border: none; cursor: pointer; font-size: 13px; padding: 0 4px; line-height: 1;" title="Minimizar panel">✕</button>
     </div>
-    <div id="haibane-sync-info" style="font-size: 11px; color: #94a3b8;">
-      Conectado a Wired Club.
+    <div id="haibane-sync-info" style="font-size: 10px; color: #94a3b8; line-height: 1.3;">
+      Panel de control rápido para Marketplace y catálogo web.
     </div>
     <div style="display: flex; flex-direction: column; gap: 5px;">
-      <div style="display: flex; gap: 5px;">
-        <button id="haibane-btn-link-twins" style="flex: 1; background: #7e22ce; color: #ffffff; border: none; border-radius: 4px; padding: 5px 6px; font-weight: 800; cursor: pointer; font-size: 10px;" title="Enlaza publicaciones existentes de Facebook con el catálogo web sin duplicar">
+      <div style="display: flex; gap: 4px;">
+        <button id="haibane-btn-link-twins" style="flex: 1; background: #6b21a8; color: #ffffff; border: 1px solid #9333ea; border-radius: 4px; padding: 6px 4px; font-weight: 800; cursor: pointer; font-size: 9.5px;" title="Conecta productos existentes con la web para no duplicar">
           🔗 Enlazar Gemelos
         </button>
-        <button id="haibane-btn-check-orphans" style="flex: 1; background: #2563eb; color: #ffffff; border: none; border-radius: 4px; padding: 5px 6px; font-weight: 800; cursor: pointer; font-size: 10px;" title="Detecta qué productos web aún no están en Facebook para crearlos">
+        <button id="haibane-btn-check-orphans" style="flex: 1; background: #1d4ed8; color: #ffffff; border: 1px solid #2563eb; border-radius: 4px; padding: 6px 4px; font-weight: 800; cursor: pointer; font-size: 9.5px;" title="Detecta qué productos web aún no están en Facebook para subirlos">
           📢 Publicar Huérfanos
         </button>
       </div>
-      <div style="display: flex; gap: 5px;">
-        <button id="haibane-btn-share-groups-wgt" style="flex: 1; background: #059669; color: #ffffff; border: none; border-radius: 4px; padding: 5px 6px; font-weight: 800; cursor: pointer; font-size: 10px;" title="Compartir automáticamente en 12 grupos de Facebook">
+      <div style="display: flex; gap: 4px;">
+        <button id="haibane-btn-share-groups-wgt" style="flex: 1; background: #047857; color: #ffffff; border: 1px solid #059669; border-radius: 4px; padding: 6px 4px; font-weight: 800; cursor: pointer; font-size: 9.5px;" title="Marca y comparte automáticamente en 12 grupos de Facebook">
           📢 Compartir en Grupos
         </button>
-        <button id="haibane-btn-scan-now" style="flex: 1; background: #334155; color: #f1f5f9; border: none; border-radius: 4px; padding: 5px 6px; font-weight: 700; cursor: pointer; font-size: 10px;">
+        <button id="haibane-btn-scan-now" style="flex: 1; background: #1e293b; color: #f1f5f9; border: 1px solid #334155; border-radius: 4px; padding: 6px 4px; font-weight: 700; cursor: pointer; font-size: 9.5px;" title="Comprueba si editaste precios o vendiste productos">
           🔄 Auditar Precios
         </button>
       </div>
-      <div style="display: flex; gap: 5px;">
-        <button id="haibane-btn-export-web" style="flex: 1; background: #0284c7; color: #ffffff; border: none; border-radius: 4px; padding: 5px 6px; font-weight: 700; cursor: pointer; font-size: 10px;">
+      <div style="display: flex; gap: 4px;">
+        <button id="haibane-btn-export-web" style="flex: 1; background: #0284c7; color: #ffffff; border: 1px solid #0369a1; border-radius: 4px; padding: 5px 4px; font-weight: 700; cursor: pointer; font-size: 9.5px;" title="Exporta tus publicaciones hacia el catálogo online">
           ⚡ Exportar a Web
-        </button>
-        <button id="haibane-btn-minimize" style="background: #1e293b; color: #94a3b8; border: none; border-radius: 4px; padding: 5px 7px; cursor: pointer; font-size: 10px;">
-          ✕
         </button>
       </div>
     </div>
   `;
 
   document.body.appendChild(widget);
+
+  pill.addEventListener("click", () => {
+    pill.style.display = "none";
+    widget.style.display = "flex";
+  });
 
   document.getElementById("haibane-btn-link-twins")?.addEventListener("click", () => {
     linkExistingMarketplaceTwins();
@@ -2127,6 +2237,7 @@ function injectHaibaneFloatingWidget() {
 
   document.getElementById("haibane-btn-minimize")?.addEventListener("click", () => {
     widget.style.display = "none";
+    pill.style.display = "flex";
   });
 }
 
