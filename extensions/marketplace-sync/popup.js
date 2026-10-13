@@ -57,8 +57,54 @@ document.getElementById("btn-cloud-sync")?.addEventListener("click", async () =>
   }
 });
 
+// Variable de modo activo ('ai' | 'custom')
+let currentGroupMode = "ai";
+
+function updateModeUI(mode) {
+  currentGroupMode = mode;
+  const btnAi = document.getElementById("btn-mode-ai");
+  const btnCustom = document.getElementById("btn-mode-custom");
+  const statusEl = document.getElementById("mode-status-text");
+
+  if (mode === "ai") {
+    if (btnAi) {
+      btnAi.style.background = "#7e22ce";
+      btnAi.style.color = "#ffffff";
+      btnAi.style.borderColor = "#a855f7";
+      btnAi.style.fontWeight = "800";
+    }
+    if (btnCustom) {
+      btnCustom.style.background = "#1e293b";
+      btnCustom.style.color = "#94a3b8";
+      btnCustom.style.borderColor = "#334155";
+      btnCustom.style.fontWeight = "normal";
+    }
+    if (statusEl) {
+      statusEl.innerHTML = `🎯 <strong>Modo IA:</strong> Selecciona automáticamente los 12 grupos con mayor afinidad para Gaming y Tecnología.`;
+      statusEl.style.borderLeftColor = "#a855f7";
+    }
+  } else {
+    if (btnCustom) {
+      btnCustom.style.background = "#059669";
+      btnCustom.style.color = "#ffffff";
+      btnCustom.style.borderColor = "#10b981";
+      btnCustom.style.fontWeight = "800";
+    }
+    if (btnAi) {
+      btnAi.style.background = "#1e293b";
+      btnAi.style.color = "#94a3b8";
+      btnAi.style.borderColor = "#334155";
+      btnAi.style.fontWeight = "normal";
+    }
+    if (statusEl) {
+      statusEl.innerHTML = `⭐ <strong>Modo Mis Fijos:</strong> Marca las casillas de tus grupos preferidos y pulsa "Guardar" para fijarlos.`;
+      statusEl.style.borderLeftColor = "#10b981";
+    }
+  }
+}
+
 // Cargar preferencias de auto-compartir en grupos y auto-relist
-chrome.storage?.local?.get(["groupShareAuto", "selectedGroupNames", "scannedFacebookGroups", "relistAuto", "relistDays"], (data) => {
+chrome.storage?.local?.get(["groupShareAuto", "selectedGroupNames", "groupSelectionMode", "scannedFacebookGroups", "relistAuto", "relistDays"], (data) => {
   const chkAuto = document.getElementById("chk-group-auto");
   const chkRelist = document.getElementById("chk-relist-auto");
   const numRelistDays = document.getElementById("num-relist-days");
@@ -73,9 +119,12 @@ chrome.storage?.local?.get(["groupShareAuto", "selectedGroupNames", "scannedFace
     numRelistDays.value = data.relistDays;
   }
 
+  const mode = data?.groupSelectionMode || "ai";
+  updateModeUI(mode);
+
   const scanned = Array.isArray(data?.scannedFacebookGroups) ? data.scannedFacebookGroups : [];
   const selected = Array.isArray(data?.selectedGroupNames) ? data.selectedGroupNames : [];
-  renderGroupsChecklist(scanned, selected);
+  renderGroupsChecklist(scanned, selected, mode);
 });
 
 function scoreGroupRelevance(groupName) {
@@ -115,29 +164,33 @@ function scoreGroupRelevance(groupName) {
   return { score: Math.min(score, 99), badge, badgeColor };
 }
 
-function renderGroupsChecklist(groups, selected = []) {
+function renderGroupsChecklist(groups, selected = [], mode = currentGroupMode) {
   const container = document.getElementById("groups-checklist-container");
   const labelCount = document.getElementById("lbl-groups-selected");
   if (!container) return;
 
   if (!groups || groups.length === 0) {
     container.innerHTML = `<div style="color: #64748b; font-size: 10px; text-align: center; padding: 6px;">Escribe un grupo arriba o pulsa "Escanear" con Facebook abierto.</div>`;
-    if (labelCount) labelCount.textContent = `0 / 12`;
+    if (labelCount) labelCount.textContent = `0 / 12 seleccionados`;
     return;
   }
 
   // Ordenar grupos por puntuación de relevancia IA descendente
   const scoredGroups = groups.map(g => ({
     name: g,
-    ai: scoreGroupRelevance(g),
-    isFav: selected.includes(g)
+    ai: scoreGroupRelevance(g)
   })).sort((a, b) => b.ai.score - a.ai.score);
 
   container.innerHTML = "";
   let checkedCount = 0;
 
-  scoredGroups.forEach(({ name: grp, ai, isFav }, idx) => {
-    const isChecked = selected.includes(grp) || (selected.length === 0 && idx < 12);
+  scoredGroups.forEach(({ name: grp, ai }, idx) => {
+    // Si estamos en modo IA y selected está vacío, se seleccionan los 12 primeros.
+    // Si estamos en modo custom, SOLO se seleccionan los que estén en selected.
+    const isChecked = mode === "ai"
+      ? (selected.length > 0 ? selected.includes(grp) : idx < 12)
+      : selected.includes(grp);
+
     if (isChecked) checkedCount++;
 
     const row = document.createElement("div");
@@ -182,7 +235,7 @@ function renderGroupsChecklist(groups, selected = []) {
           scannedFacebookGroups: newScanned,
           selectedGroupNames: newSelected
         }, () => {
-          renderGroupsChecklist(newScanned, newSelected);
+          renderGroupsChecklist(newScanned, newSelected, currentGroupMode);
         });
       });
     });
@@ -193,7 +246,7 @@ function renderGroupsChecklist(groups, selected = []) {
 chrome.storage?.onChanged?.addListener((changes, areaName) => {
   if (areaName === "local" && changes.scannedFacebookGroups) {
     chrome.storage.local.get(["selectedGroupNames"], (d) => {
-      renderGroupsChecklist(changes.scannedFacebookGroups.newValue || [], d?.selectedGroupNames || []);
+      renderGroupsChecklist(changes.scannedFacebookGroups.newValue || [], d?.selectedGroupNames || [], currentGroupMode);
       log(`✓ Se actualizaron ${(changes.scannedFacebookGroups.newValue || []).length} grupos desde Facebook.`);
     });
   }
@@ -220,7 +273,7 @@ function handleAddManualGroup() {
       scannedFacebookGroups: newScanned,
       selectedGroupNames: newSelected
     }, () => {
-      renderGroupsChecklist(newScanned, newSelected);
+      renderGroupsChecklist(newScanned, newSelected, currentGroupMode);
       if (input) input.value = "";
       log(`✓ ${names.length} grupo(s) añadido(s) a tu lista.`);
     });
@@ -235,8 +288,9 @@ document.getElementById("txt-add-group")?.addEventListener("keydown", (e) => {
   }
 });
 
-// Recomendar los 12 grupos más relevantes usando IA
-document.getElementById("btn-ai-recommend-groups")?.addEventListener("click", () => {
+// Selector de Pestaña: Recomendar IA
+document.getElementById("btn-mode-ai")?.addEventListener("click", () => {
+  updateModeUI("ai");
   chrome.storage?.local?.get(["scannedFacebookGroups"], (d) => {
     const scanned = Array.isArray(d?.scannedFacebookGroups) ? d.scannedFacebookGroups : [];
     if (scanned.length === 0) {
@@ -246,18 +300,41 @@ document.getElementById("btn-ai-recommend-groups")?.addEventListener("click", ()
     const scored = scanned.map(g => ({ name: g, score: scoreGroupRelevance(g).score }))
       .sort((a, b) => b.score - a.score);
     const top12 = scored.slice(0, 12).map(s => s.name);
-    renderGroupsChecklist(scanned, top12);
-    log(`✓ 12 grupos con mayor afinidad IA (Gaming & Tech) seleccionados.`);
+
+    chrome.storage.local.set({
+      groupSelectionMode: "ai",
+      selectedGroupNames: top12
+    }, () => {
+      renderGroupsChecklist(scanned, top12, "ai");
+      log(`✓ Modo IA: 12 grupos de mayor afinidad (Gaming & Tech) seleccionados.`);
+    });
   });
 });
 
-// Restablecer a los favoritos fijos guardados por el usuario
-document.getElementById("btn-restore-favorites")?.addEventListener("click", () => {
+// Selector de Pestaña: Mis Fijos
+document.getElementById("btn-mode-custom")?.addEventListener("click", () => {
+  updateModeUI("custom");
   chrome.storage?.local?.get(["scannedFacebookGroups", "selectedGroupNames"], (d) => {
     const scanned = Array.isArray(d?.scannedFacebookGroups) ? d.scannedFacebookGroups : [];
     const selected = Array.isArray(d?.selectedGroupNames) ? d.selectedGroupNames : [];
-    renderGroupsChecklist(scanned, selected);
-    log(`✓ Restaurados tus ${selected.length} grupos favoritos guardados.`);
+    chrome.storage.local.set({ groupSelectionMode: "custom" }, () => {
+      renderGroupsChecklist(scanned, selected, "custom");
+      log(`✓ Modo 'Mis Fijos' activado: ${selected.length} grupos guardados seleccionados.`);
+    });
+  });
+});
+
+// Limpiar todas las casillas para elegir desde cero
+document.getElementById("btn-clear-selection")?.addEventListener("click", () => {
+  updateModeUI("custom");
+  const container = document.getElementById("groups-checklist-container");
+  const labelCount = document.getElementById("lbl-groups-selected");
+  container?.querySelectorAll(".chk-fb-group-item").forEach(chk => {
+    chk.checked = false;
+  });
+  if (labelCount) labelCount.textContent = `0 / 12 seleccionados`;
+  chrome.storage?.local?.set({ groupSelectionMode: "custom", selectedGroupNames: [] }, () => {
+    log("Casillas desmarcadas. Selecciona manualmente tus grupos y pulsa 'Guardar'.");
   });
 });
 
@@ -272,12 +349,16 @@ document.getElementById("btn-save-group-settings")?.addEventListener("click", ()
 
   const groupShareAuto = chkAuto ? chkAuto.checked : true;
 
+  updateModeUI("custom");
   chrome.storage?.local?.set({
     groupShareAuto,
     selectedGroupNames: selected,
+    groupSelectionMode: "custom",
     groupShareCount: selected.length || 12
   }, () => {
-    log(`✓ ${selected.length} grupos guardados como tus favoritos fijos.`);
+    const labelCount = document.getElementById("lbl-groups-selected");
+    if (labelCount) labelCount.textContent = `${selected.length} / 12 seleccionados`;
+    log(`✓ ${selected.length} grupos guardados permanentemente como 'Mis Fijos'.`);
   });
 });
 

@@ -137,32 +137,43 @@
   </div>
 
   <!-- Configuración de Auto-Compartir y Grupos Fijos -->
+  <!-- Configuración de Auto-Compartir y Grupos Fijos -->
   <div class="info-card" style="margin-top: 10px; border-color: #a855f7;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-      <span style="font-weight: 800; color: #c084fc; font-size: 11px;">📢 MIS 12 GRUPOS FAVORITOS</span>
-      <span id="lbl-groups-selected" style="font-size: 10px; color: #34d399; font-weight: 700;">0 / 12</span>
+      <span style="font-weight: 800; color: #c084fc; font-size: 11px;">📢 GRUPOS PARA PUBLICAR</span>
+      <span id="lbl-groups-selected" style="font-size: 10px; color: #34d399; font-weight: 700;">0 / 12 seleccionados</span>
     </div>
-    <div style="font-size: 10px; color: #94a3b8; margin-bottom: 6px; line-height: 1.35;">
-      Facebook carga tus grupos de compra y venta automáticamente. Selecciona tus 12 preferidos una vez y se recordarán para siempre:
+
+    <!-- Pestañas Interactivas de Modo -->
+    <div style="display: flex; gap: 4px; margin-bottom: 6px;">
+      <button id="btn-mode-ai" class="btn btn-secondary" style="flex: 1; font-size: 10px; padding: 6px 4px; transition: all 0.2s;" title="La IA selecciona automáticamente los 12 grupos con mayor afinidad para Gaming y Tecnología">
+        🎯 Recomendar IA
+      </button>
+      <button id="btn-mode-custom" class="btn btn-secondary" style="flex: 1; font-size: 10px; padding: 6px 4px; transition: all 0.2s;" title="Elige tus propios grupos favoritos fijos de forma personalizada">
+        ⭐ Mis Fijos
+      </button>
     </div>
+
+    <div id="mode-status-text" style="font-size: 9.5px; color: #94a3b8; margin-bottom: 6px; padding: 4px 6px; background: rgba(15,23,42,0.6); border-radius: 4px; border-left: 2px solid #a855f7; line-height: 1.35;">
+      Cargando modo...
+    </div>
+
     <div style="display: flex; gap: 4px; margin-bottom: 6px;">
       <button id="btn-scan-groups" class="btn btn-secondary" style="flex: 1; font-size: 10px; padding: 5px 6px;">
         🔍 Escanear en Facebook
       </button>
-      <button id="btn-ai-recommend-groups" class="btn btn-secondary" style="flex: 1; font-size: 10px; padding: 5px 6px; background: #6b21a8; border-color: #a855f7;" title="Analiza con IA la relevancia de tus grupos para Gaming y Tecnología">
-        🎯 Recomendar IA
-      </button>
-      <button id="btn-restore-favorites" class="btn btn-secondary" style="flex: 1; font-size: 10px; padding: 5px 6px; background: #1e293b;" title="Marcar tus grupos favoritos guardados">
-        ⭐ Mis Fijos
+      <button id="btn-clear-selection" class="btn btn-secondary" style="width: auto; font-size: 10px; padding: 5px 8px; background: #1e293b;" title="Desmarcar todas las casillas para elegir desde cero">
+        ✕ Limpiar
       </button>
     </div>
+
     <div style="display: flex; gap: 4px; margin-bottom: 6px;">
       <input type="text" id="txt-add-group" placeholder="Escribe un grupo (ej: Ventas Managua)..." style="flex: 1; background: #020617; border: 1px solid #334155; color: #f8fafc; border-radius: 4px; padding: 4px 6px; font-size: 10px; outline: none;">
       <button id="btn-add-group" class="btn btn-secondary" style="width: auto; padding: 4px 8px; font-size: 10px; background: #1e293b;">+ Añadir</button>
     </div>
     
     <!-- Lista interactiva de grupos con scroll -->
-    <div id="groups-checklist-container" style="max-height: 110px; overflow-y: auto; background: #020617; border: 1px solid #334155; border-radius: 4px; padding: 5px; margin-bottom: 6px; display: flex; flex-direction: column; gap: 4px;">
+    <div id="groups-checklist-container" style="max-height: 120px; overflow-y: auto; background: #020617; border: 1px solid #334155; border-radius: 4px; padding: 5px; margin-bottom: 6px; display: flex; flex-direction: column; gap: 4px;">
       <div style="color: #64748b; font-size: 10px; text-align: center; padding: 6px;">Abre Facebook o pulsa "Escanear" para ver tus grupos aquí.</div>
     </div>
 
@@ -172,8 +183,8 @@
       <input type="checkbox" id="chk-group-auto" checked>
       <span>Auto-compartir al terminar de publicar</span>
     </label>
-    <button id="btn-save-group-settings" class="btn btn-secondary" style="font-size: 10px; padding: 5px 8px; background: #4c1d95; border-color: #7e22ce;">
-      💾 Guardar Mis 12 Grupos Fijos
+    <button id="btn-save-group-settings" class="btn btn-secondary" style="font-size: 10px; padding: 6px 8px; background: #059669; border-color: #10b981; font-weight: 800;">
+      💾 Guardar Mi Selección como Mis 12 Fijos
     </button>
   </div>
 

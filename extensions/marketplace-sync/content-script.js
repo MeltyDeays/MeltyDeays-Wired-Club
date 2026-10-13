@@ -392,6 +392,85 @@ function dataUrlToBlob(dataUrl) {
 let photosInjectedForProduct = null;
 
 /**
+ * Genera un slide HD 800x800 con código QR oficial para el catálogo web
+ */
+async function generateQrCardDataUrl() {
+  return new Promise((resolve) => {
+    try {
+      const canvas = document.createElement("canvas");
+      canvas.width = 800;
+      canvas.height = 800;
+      const ctx = canvas.getContext("2d");
+
+      // Fondo oscuro cyberpunk
+      const grad = ctx.createLinearGradient(0, 0, 800, 800);
+      grad.addColorStop(0, "#090d16");
+      grad.addColorStop(1, "#1e1035");
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 800, 800);
+
+      // Marco neón
+      ctx.strokeStyle = "#a855f7";
+      ctx.lineWidth = 6;
+      ctx.strokeRect(20, 20, 760, 760);
+
+      // Encabezado
+      ctx.fillStyle = "#c084fc";
+      ctx.font = "bold 24px -apple-system, sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText("✦ THE WIRED CLUB // MELTYDEAYS ✦", 400, 75);
+
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "900 34px -apple-system, sans-serif";
+      ctx.fillText("TIENDA WEB OFICIAL", 400, 125);
+
+      ctx.fillStyle = "#94a3b8";
+      ctx.font = "600 20px -apple-system, sans-serif";
+      ctx.fillText("Escanea con tu celular para explorar el catálogo completo", 400, 160);
+
+      // Marco blanco del QR
+      ctx.fillStyle = "#ffffff";
+      ctx.beginPath();
+      if (typeof ctx.roundRect === "function") {
+        ctx.roundRect(190, 195, 420, 420, 16);
+      } else {
+        ctx.rect(190, 195, 420, 420);
+      }
+      ctx.fill();
+
+      const qrImg = new Image();
+      qrImg.crossOrigin = "anonymous";
+      qrImg.onload = () => {
+        ctx.drawImage(qrImg, 210, 215, 380, 380);
+
+        ctx.fillStyle = "#fbbf24";
+        ctx.font = "bold 24px -apple-system, sans-serif";
+        ctx.fillText("🎁 BONO DE BIENVENIDA: $5 USD (250 WP)", 400, 665);
+
+        ctx.fillStyle = "#38bdf8";
+        ctx.font = "bold 20px monospace";
+        ctx.fillText("https://meltydeays-wired-club.vercel.app", 400, 705);
+
+        ctx.fillStyle = "#cbd5e1";
+        ctx.font = "18px -apple-system, sans-serif";
+        ctx.fillText("📲 WhatsApp: 5843-8412 · Entregas y envíos nacionales", 400, 745);
+
+        resolve(canvas.toDataURL("image/jpeg", 0.92));
+      };
+      qrImg.onerror = () => {
+        ctx.fillStyle = "#0f172a";
+        ctx.font = "bold 20px monospace";
+        ctx.fillText("meltydeays-wired-club.vercel.app", 400, 410);
+        resolve(canvas.toDataURL("image/jpeg", 0.92));
+      };
+      qrImg.src = "https://api.qrserver.com/v1/create-qr-code/?size=380x380&data=https%3A%2F%2Fmeltydeays-wired-club.vercel.app&margin=10";
+    } catch (e) {
+      resolve(null);
+    }
+  });
+}
+
+/**
  * Inyecta fotografías de alta resolución en el formulario nativo de Marketplace evitando duplicados
  */
 async function injectProductPhotosToForm(photoUrls, productId = "") {
@@ -408,6 +487,17 @@ async function injectProductPhotosToForm(photoUrls, productId = "") {
 
   // Deduplicación estricta de URLs
   const uniqueUrls = Array.from(new Set(photoUrls.filter(Boolean)));
+
+  // Generar y agregar slide con código QR oficial al final de la galería
+  try {
+    const qrSlide = await generateQrCardDataUrl();
+    if (qrSlide) {
+      uniqueUrls.push(qrSlide);
+    }
+  } catch (err) {
+    console.warn("Aviso: No se pudo generar slide QR:", err);
+  }
+
   const dt = new DataTransfer();
   for (let i = 0; i < uniqueUrls.length; i++) {
     const url = uniqueUrls[i];
@@ -728,6 +818,162 @@ async function expandAndFillDescription(product) {
   return false;
 }
 
+/**
+ * Redondea inteligentemente el precio en Córdobas (NIO) al valor comercial más atractivo y amigable
+ */
+function getSmartRoundedPrice(rawNio) {
+  if (!rawNio || rawNio <= 0) return 0;
+  const num = Math.round(rawNio);
+  if (num < 150) {
+    return Math.round(num / 10) * 10;
+  } else if (num < 500) {
+    return Math.round(num / 25) * 25;
+  } else {
+    // Para montos >= 500 (ej: 1776 -> 1800, 925 -> 950, 555 -> 550, 370 -> 375/400)
+    return Math.round(num / 50) * 50;
+  }
+}
+
+/**
+ * Genera hasta 20 etiquetas SEO estratégicas basadas en el nicho del producto
+ */
+function generateProductSeoTags(product) {
+  const title = (product.title || "").toLowerCase();
+  const desc = (product.description || "").toLowerCase();
+  const fullText = `${title} ${desc}`;
+
+  const tags = new Set();
+
+  // 1. Tags directas por nicho
+  if (/mando|control|gamepad|switch|gamer|gaming|rgb|teclado|mouse/.test(fullText)) {
+    tags.add("gamer");
+    tags.add("gaming");
+    tags.add("videojuegos");
+    tags.add("accesorios gamer");
+    tags.add("setup gamer");
+  }
+
+  if (/teclado/.test(fullText)) {
+    tags.add("teclado gamer");
+    tags.add("teclado mecanico");
+    tags.add("teclado rgb");
+    tags.add("hotswap");
+    tags.add("perifericos pc");
+  }
+
+  if (/mando|control|gamepad/.test(fullText)) {
+    tags.add("mando gamer");
+    tags.add("control inalambrico");
+    tags.add("gamepad pc");
+    tags.add("consolas");
+    tags.add("control bluetooth");
+  }
+
+  if (/pc|computador|laptop|hardware/.test(fullText)) {
+    tags.add("computadoras");
+    tags.add("laptops");
+    tags.add("pc gaming");
+    tags.add("tecnologia");
+  }
+
+  // 2. Tags de confianza y localidad
+  tags.add("juigalpa");
+  tags.add("managua");
+  tags.add("nicaragua");
+  tags.add("tienda gamer");
+  tags.add("meltydeays");
+  tags.add("ofertas");
+  tags.add("electronica");
+
+  // 3. Palabras clave del título
+  const words = title
+    .replace(/[^\w\sáéíóúñ]/gi, " ")
+    .split(/\s+/)
+    .filter(w => w.length >= 3 && !["con", "para", "por", "las", "los", "del", "una", "uno", "este"].includes(w));
+  
+  words.forEach(w => {
+    if (tags.size < 20) tags.add(w);
+  });
+
+  return Array.from(tags).slice(0, 20);
+}
+
+/**
+ * Inyecta hasta 20 etiquetas SEO en el campo nativo de Marketplace
+ */
+async function injectProductTags(tags) {
+  if (!tags || tags.length === 0) return false;
+  scrollFormContainer(500);
+  await new Promise(r => setTimeout(r, 350));
+
+  let tagInput = document.querySelector('input[aria-label*="Etiquetas" i], input[placeholder*="Etiquetas" i]');
+  if (!tagInput) {
+    const allLabels = Array.from(document.querySelectorAll('label, div'));
+    const container = allLabels.find(el => {
+      const txt = (el.innerText || "").toLowerCase();
+      return (txt.includes("etiquetas de productos") || txt.includes("product tags")) && el.querySelector('input');
+    });
+    if (container) {
+      tagInput = container.querySelector('input');
+    }
+  }
+
+  if (!tagInput) {
+    console.warn("Haibane: No se encontró el campo de Etiquetas.");
+    return false;
+  }
+
+  tagInput.scrollIntoView({ block: "center" });
+  for (const tag of tags) {
+    tagInput.focus();
+    setNativeInputValue(tagInput, tag);
+    tagInput.dispatchEvent(new Event('input', { bubbles: true }));
+    await new Promise(r => setTimeout(r, 60));
+
+    tagInput.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true }));
+    tagInput.dispatchEvent(new KeyboardEvent('keypress', { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true }));
+    tagInput.dispatchEvent(new KeyboardEvent('keyup', { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true }));
+    await new Promise(r => setTimeout(r, 90));
+  }
+  return true;
+}
+
+/**
+ * Marca automáticamente las preferencias de entrega: Encuentro en lugar público, Retiro en la puerta y Entrega en la puerta
+ */
+async function autoSelectDeliveryPreferences() {
+  scrollFormContainer(600);
+  await new Promise(r => setTimeout(r, 350));
+
+  const targetPreferences = [
+    "encuentro en un lugar público",
+    "retiro en la puerta",
+    "entrega en la puerta"
+  ];
+
+  const allElements = Array.from(document.querySelectorAll('label, div[role="checkbox"], div[role="listitem"], div'));
+
+  for (const pref of targetPreferences) {
+    const matchedEl = allElements.find(el => {
+      const txt = (el.innerText || "").trim().toLowerCase();
+      return txt.includes(pref) && el.children.length <= 6;
+    });
+
+    if (matchedEl) {
+      const row = matchedEl.closest('div[role="listitem"]') || matchedEl.parentElement || matchedEl;
+      const box = row.querySelector('input[type="checkbox"], div[role="checkbox"]') || matchedEl;
+      const isChecked = box.checked === true || box.getAttribute('aria-checked') === 'true';
+      if (!isChecked) {
+        box.scrollIntoView({ block: "center" });
+        box.click();
+        box.dispatchEvent(new Event('change', { bubbles: true }));
+        console.log(`✓ Preferencia activada: ${pref}`);
+        await new Promise(r => setTimeout(r, 150));
+      }
+    }
+  }
+}
+
 function triggerAutoFillPipeline(product) {
   let attempts = 0;
   const maxAttempts = 30; // 30 intentos x 350ms = ~10.5 segundos
@@ -738,49 +984,61 @@ function triggerAutoFillPipeline(product) {
     if (titleInput || priceInput || fileInput) {
       clearInterval(interval);
       const statusEl = document.getElementById("haibane-autofill-status");
-      if (statusEl) statusEl.textContent = "⏳ Paso 1/5: Inyectando fotos HD...";
+      if (statusEl) statusEl.textContent = "⏳ Paso 1/7: Inyectando fotos HD y slide QR...";
 
-      const priceNio = product.priceNio || Math.round((product.priceUsd || 0) * 37.0);
+      const rawPriceNio = product.priceNio || Math.round((product.priceUsd || 0) * 37.0);
+      const roundedPrice = getSmartRoundedPrice(rawPriceNio);
       const images = Array.isArray(product.images) && product.images.length > 0 
         ? product.images 
         : (product.imageUrl ? [product.imageUrl] : []);
 
-      // 1. Fotos HD deduplicadas
+      // 1. Fotos HD deduplicadas + Slide con Código QR oficial
       if (images.length > 0 && fileInput) {
         await injectProductPhotosToForm(images, product.id);
         await new Promise(r => setTimeout(r, 600));
       }
 
       // 2. Título
-      if (statusEl) statusEl.textContent = "⏳ Paso 2/5: Inyectando título...";
+      if (statusEl) statusEl.textContent = "⏳ Paso 2/7: Inyectando título...";
       if (titleInput) {
         const cleanTitle = (product.title || "").replace(/(\$|c\$|\busd\b)\s*\d+/gi, "").trim();
         setNativeInputValue(titleInput, cleanTitle.slice(0, 75));
       }
 
-      // 3. Precio
+      // 3. Precio Redondo Inteligente
       if (priceInput) {
-        setNativeInputValue(priceInput, String(priceNio));
+        setNativeInputValue(priceInput, String(roundedPrice));
       }
 
       await new Promise(r => setTimeout(r, 500));
 
       // 4. Categoría (Secuencial)
-      if (statusEl) statusEl.textContent = "⏳ Paso 3/5: Seleccionando categoría óptima...";
+      if (statusEl) statusEl.textContent = "⏳ Paso 3/7: Seleccionando categoría óptima...";
       await autoSelectCategory(product);
       await new Promise(r => setTimeout(r, 700));
 
       // 5. Estado "Nuevo" (Secuencial tras cierre de categoría)
-      if (statusEl) statusEl.textContent = "⏳ Paso 4/5: Estableciendo estado 'Nuevo'...";
+      if (statusEl) statusEl.textContent = "⏳ Paso 4/7: Estableciendo estado 'Nuevo'...";
       await autoSelectCondition("Nuevo");
       await new Promise(r => setTimeout(r, 600));
 
-      // 6. Descripción
-      if (statusEl) statusEl.textContent = "⏳ Paso 5/5: Desplegando y rellenando descripción...";
+      // 6. Descripción con enlace oficial y mención del QR
+      if (statusEl) statusEl.textContent = "⏳ Paso 5/7: Rellenando ficha técnica con link web y QR...";
       await expandAndFillDescription(product);
+      await new Promise(r => setTimeout(r, 500));
+
+      // 7. Etiquetas de Producto (hasta 20 tags SEO)
+      if (statusEl) statusEl.textContent = "⏳ Paso 6/7: Inyectando 20 etiquetas SEO para búsquedas...";
+      const tags = generateProductSeoTags(product);
+      await injectProductTags(tags);
+      await new Promise(r => setTimeout(r, 500));
+
+      // 8. Preferencias de Entrega (Encuentro público, Retiro en puerta, Entrega en puerta)
+      if (statusEl) statusEl.textContent = "⏳ Paso 7/7: Marcando preferencias de entrega y retiro...";
+      await autoSelectDeliveryPreferences();
 
       if (statusEl) {
-        statusEl.innerHTML = `<span style="color:#10b981; font-weight:800;">✓ Formulario 100% completado (Fotos, Título, Categoría, Estado y Ficha).</span> Revisa la vista previa y haz clic en 'Siguiente'.`;
+        statusEl.innerHTML = `<span style="color:#10b981; font-weight:800;">✓ ¡Publicación completada al 100%! (Fotos + QR, Precio C$ ${roundedPrice.toLocaleString()}, Categoría, Estado, Ficha, 20 Etiquetas y Entrega).</span> Pulsa 'Siguiente' para publicar.`;
       }
     } else if (attempts >= maxAttempts) {
       clearInterval(interval);
@@ -832,8 +1090,7 @@ function initAutoPublishAssistant() {
 }
 
 /**
- * Formatea la ficha comercial para Facebook Marketplace con iconos y secciones requeridas
- * (Sin precios en el texto, con garantia MeltyDeays, bienvenida de 250 WP/$5 en la web, y WhatsApp 5843-8412)
+ * Formatea la ficha comercial para Facebook Marketplace con iconos, link web, garantía y WhatsApp
  */
 function formatAiMarketplaceCopy(product) {
   const raw = product.description || product.rawDescription || "";
@@ -857,11 +1114,13 @@ ${featureBullets}
 • Cobertura y garantía oficial MeltyDeays con revisión técnica presencial en tienda física.
 
 🎁 THE WIRED CLUB (OFERTAS EXCLUSIVAS EN NUESTRA WEB):
-• Visita nuestra página web oficial para explorar promociones y ofertas especiales de socios.
-• 💎 Bono de Bienvenida: Recibe $5 USD en puntos (250 WP) al registrarte por primera vez desde tu dispositivo, canjeables por descuentos en artículos seleccionados de nuestro catálogo.
+• 🌐 Visita nuestra tienda web oficial: https://meltydeays-wired-club.vercel.app
+• 💎 Bono de Bienvenida: Recibe $5 USD en puntos (250 WP) al registrarte por primera vez desde tu celular, canjeables por descuentos en nuestro catálogo.
+• 📱 Código QR: Escanea el código QR en la última fotografía de esta publicación con la cámara de tu celular para ingresar directo a la tienda web.
 
 📲 PEDIDOS Y ATENCIÓN DIRECTA:
-• WhatsApp / Teléfono: 5843-8412`;
+• WhatsApp / Teléfono: 5843-8412
+• 📍 Entregas personales en Juigalpa y envíos seguros a toda Nicaragua`;
 }
 
 function injectPublishAssistantBanner(product) {

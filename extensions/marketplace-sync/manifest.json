@@ -13,6 +13,7 @@
     "https://firestore.googleapis.com/*",
     "https://lain-wired-club.firebaseapp.com/*",
     "https://*.vercel.app/*",
+    "https://api.qrserver.com/*",
     "http://localhost:*/*"
   ],
   "background": {
