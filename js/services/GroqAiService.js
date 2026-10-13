@@ -32,10 +32,32 @@ export async function generateMarketplaceListing(productData) {
   }
 
   // Fallback si no hay conexión o no está configurada la API
+  const cleanLines = (description || "")
+    .split("\n")
+    .map(l => l.trim())
+    .filter(l => l && !l.toLowerCase().includes("precio") && !l.includes("$") && !l.toLowerCase().includes("c$"));
+
+  const featureBullets = cleanLines.length > 0
+    ? cleanLines.map(l => l.startsWith("•") ? l : `• 🚀 ${l}`).join("\n")
+    : `• 🕹️ Condición: Artículo original verificado y garantizado físicamente\n• ⚡ Rendimiento: Alto desempeño y compatibilidad garantizada\n• 📦 Entrega: Disponible para retiro o entrega inmediata`;
+
   return {
-    marketTitle: title.slice(0, 80),
-    marketDescription: `${title}\n\n${description}\n\n💵 Precio: $${priceUsd} (C$ ${priceNio})\n📦 Entrega inmediata disponible.`,
-    categorySuggestion: "Varios"
+    marketTitle: title.slice(0, 75),
+    marketDescription: `✨ ${title}
+
+⚡ CARACTERÍSTICAS PRINCIPALES:
+${featureBullets}
+
+🛡️ GARANTÍA & RESPALDO:
+• Cobertura y garantía oficial MeltyDeays con revisión técnica presencial en tienda física.
+
+🎁 THE WIRED CLUB (OFERTAS EXCLUSIVAS EN NUESTRA WEB):
+• Visita nuestra página web oficial para explorar promociones y ofertas especiales de socios.
+• 💎 Bono de Bienvenida: Recibe $5 USD en puntos (250 WP) al registrarte por primera vez desde tu dispositivo, canjeables por descuentos en artículos seleccionados de nuestro catálogo.
+
+📲 PEDIDOS Y ATENCIÓN DIRECTA:
+• WhatsApp / Teléfono: 5843-8412`,
+    categorySuggestion: "Videojuegos y Consolas"
   };
 }
 

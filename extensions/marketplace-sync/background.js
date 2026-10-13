@@ -17,8 +17,12 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
     // Notificar a las pestañas activas de Facebook para auditar cambios
     try {
       const tabs = await chrome.tabs.query({ url: "https://www.facebook.com/marketplace/*" });
+      const storage = await chrome.storage?.local?.get(["relistAuto", "relistDays"]);
       for (const tab of tabs) {
         chrome.tabs.sendMessage(tab.id, { action: "AUDIT_LISTINGS" }).catch(() => {});
+        if (storage?.relistAuto) {
+          chrome.tabs.sendMessage(tab.id, { action: "RUN_AUTO_RELIST", maxDays: storage.relistDays || 7 }).catch(() => {});
+        }
       }
     } catch (e) {
       console.warn("Aviso en alarma de sincronización:", e);
@@ -74,6 +78,37 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }, (tab) => {
       sendResponse({ success: true, tabId: tab.id });
     });
+    return true;
+  }
+
+  if (request.action === "RELIST_EXPIRED_PRODUCT") {
+    const { productId, oldListingId } = request;
+    chrome.tabs.create({
+      url: `https://www.facebook.com/marketplace/create/item?haibane_id=${encodeURIComponent(productId)}&auto_relist=true&old_listing_id=${encodeURIComponent(oldListingId || "")}`
+    }, (tab) => {
+      sendResponse({ success: true, tabId: tab.id });
+    });
+    return true;
+  }
+
+  if (request.action === "CHECK_AUTORELIST_NOW") {
+    chrome.tabs.query({ url: "https://www.facebook.com/marketplace/*" })
+      .then(tabs => {
+        if (tabs.length === 0) {
+          chrome.tabs.create({ url: "https://www.facebook.com/marketplace/you/selling" }, (newTab) => {
+            setTimeout(() => {
+              chrome.tabs.sendMessage(newTab.id, { action: "RUN_AUTO_RELIST", maxDays: request.maxDays || 7 }).catch(() => {});
+            }, 4000);
+          });
+          sendResponse({ success: true, message: "Abriendo Marketplace para auditar publicaciones caducadas..." });
+        } else {
+          for (const tab of tabs) {
+            chrome.tabs.sendMessage(tab.id, { action: "RUN_AUTO_RELIST", maxDays: request.maxDays || 7 }).catch(() => {});
+          }
+          sendResponse({ success: true, message: "Ciclo de re-publicación enviado a pestaña activa." });
+        }
+      })
+      .catch(err => sendResponse({ success: false, error: err.message }));
     return true;
   }
 

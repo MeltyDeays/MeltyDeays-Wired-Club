@@ -412,6 +412,8 @@ function initAutoPublishAssistant() {
   const haibaneId = urlParams.get("haibane_id");
   if (!haibaneId) return;
 
+  const isAutoRelist = urlParams.get("auto_relist") === "true";
+
   chrome.runtime.sendMessage({ action: "GET_PRODUCT_BY_ID", productId: haibaneId }, (response) => {
     if (!response || !response.success || !response.product) {
       console.warn("No se pudo obtener el producto para auto-publicar:", haibaneId);
@@ -420,7 +422,51 @@ function initAutoPublishAssistant() {
 
     const prod = response.product;
     injectPublishAssistantBanner(prod);
+
+    // Si viene de un ciclo automático de auto-relist semanal, disparar auto-inyección
+    if (isAutoRelist) {
+      console.log("⚡ Ciclo Auto-Relist activado: disparando inyección de fotos y ficha en 1.5s...");
+      setTimeout(() => {
+        const btnAutofill = document.getElementById("haibane-btn-do-autofill");
+        if (btnAutofill) {
+          btnAutofill.click();
+        }
+      }, 1500);
+    }
   });
+}
+
+/**
+ * Formatea la ficha comercial para Facebook Marketplace con iconos y secciones requeridas
+ * (Sin precios en el texto, con garantia MeltyDeays, bienvenida de 250 WP/$5 en la web, y WhatsApp 5843-8412)
+ */
+function formatAiMarketplaceCopy(product) {
+  const raw = product.description || product.rawDescription || "";
+  const lines = raw
+    .split("\n")
+    .map(l => l.trim())
+    .filter(l => l && !l.toLowerCase().includes("precio") && !l.includes("$") && !l.toLowerCase().includes("c$"));
+
+  const featureBullets = lines.length > 0
+    ? lines.map(l => l.startsWith("•") ? l : `• 🚀 ${l}`).join("\n")
+    : `• 🕹️ Condición: Artículo original verificado y garantizado físicamente\n• ⚡ Rendimiento: Alto desempeño y compatibilidad garantizada\n• 📦 Entrega: Disponible para retiro o entrega inmediata`;
+
+  const cleanHeaderTitle = (product.title || "").replace(/(\$|c\$|\busd\b)\s*\d+/gi, "").trim();
+
+  return `✨ ${cleanHeaderTitle}
+
+⚡ CARACTERÍSTICAS PRINCIPALES:
+${featureBullets}
+
+🛡️ GARANTÍA & RESPALDO:
+• Cobertura y garantía oficial MeltyDeays con revisión técnica presencial en tienda física.
+
+🎁 THE WIRED CLUB (OFERTAS EXCLUSIVAS EN NUESTRA WEB):
+• Visita nuestra página web oficial para explorar promociones y ofertas especiales de socios.
+• 💎 Bono de Bienvenida: Recibe $5 USD en puntos (250 WP) al registrarte por primera vez desde tu dispositivo, canjeables por descuentos en artículos seleccionados de nuestro catálogo.
+
+📲 PEDIDOS Y ATENCIÓN DIRECTA:
+• WhatsApp / Teléfono: 5843-8412`;
 }
 
 function injectPublishAssistantBanner(product) {
@@ -460,7 +506,7 @@ function injectPublishAssistantBanner(product) {
     <div style="font-size: 11.5px; line-height: 1.4;">
       <div style="font-weight: 800; color: #ffffff;">${product.title}</div>
       <div style="color: #38bdf8; font-weight: 700; margin-top: 2px;">
-        Precio: $${product.priceUsd} USD (C$ ${priceNio.toLocaleString()} NIO)
+        Precio: C$ ${priceNio.toLocaleString()} NIO ($${product.priceUsd} USD)
       </div>
       <div style="color: #94a3b8; font-size: 10.5px;">
         ${images.length} foto(s) HD disponibles para inyectar.
@@ -490,28 +536,29 @@ function injectPublishAssistantBanner(product) {
       await injectProductPhotosToForm(images);
     }
 
-    // 2. Rellenar Título
+    // 2. Rellenar Título (Limpio y directo, sin precios)
     const titleInput = document.querySelector('input[aria-label*="Título" i], input[name*="title" i]') || document.querySelectorAll('form input[type="text"]')[0];
     if (titleInput) {
-      setNativeInputValue(titleInput, product.title);
+      const cleanTitle = (product.title || "").replace(/(\$|c\$|\busd\b)\s*\d+/gi, "").trim();
+      setNativeInputValue(titleInput, cleanTitle.slice(0, 75));
     }
 
-    // 3. Rellenar Precio (Córdobas o USD)
+    // 3. Rellenar Precio estrictamente en la casilla de precio (Córdobas)
     const priceInput = document.querySelector('input[aria-label*="Precio" i], input[name*="price" i]');
     if (priceInput) {
       setNativeInputValue(priceInput, String(priceNio));
     }
 
-    // 4. Rellenar Descripción
+    // 4. Rellenar Descripción estructurada con iconos, sin precios
     const descInput = document.querySelector('textarea[aria-label*="Descripción" i], div[aria-label*="Descripción" i][role="textbox"]');
     if (descInput) {
-      const cleanDesc = product.rawDescription || product.description || product.title;
+      const formattedDesc = formatAiMarketplaceCopy(product);
       if (descInput.tagName.toLowerCase() === 'textarea') {
-        setNativeInputValue(descInput, cleanDesc);
+        setNativeInputValue(descInput, formattedDesc);
       } else {
         descInput.focus();
         document.execCommand('selectAll', false, null);
-        document.execCommand('insertText', false, cleanDesc);
+        document.execCommand('insertText', false, formattedDesc);
       }
     }
 
@@ -546,6 +593,318 @@ function watchForPublishCompletion(productId, collection) {
     }
     if (attempts > 60) clearInterval(interval); // Dejar de buscar a los 2 minutos
   }, 2000);
+}
+
+/**
+ * =======================================================================
+ * MOTOR DE AUTO-COMPARTIR EN GRUPOS DE FACEBOOK MARKETPLACE (12 GRUPOS)
+ * =======================================================================
+ */
+
+/**
+ * Selecciona automáticamente N grupos en el diálogo de Facebook y los publica
+ * Prioriza los grupos favoritos guardados de por vida por el usuario.
+ * @param {number} targetCount Cantidad de grupos a marcar (default: 12)
+ * @param {string[]} keywords Filtro opcional de palabras clave
+ * @param {string[]} selectedNames Lista de nombres exactos de grupos favoritos guardados
+ * @returns {Promise<{success: boolean, count: number, error?: string}>}
+ */
+async function autoSelectAndShareGroups(targetCount = 12, keywords = [], selectedNames = []) {
+  const dialog = document.querySelector('div[role="dialog"]');
+  if (!dialog) {
+    console.warn("Haibane: No se detectó ningún diálogo de grupos en pantalla.");
+    return { success: false, error: "Diálogo de grupos no detectado en el DOM" };
+  }
+
+  // Si no se pasaron grupos seleccionados explícitamente, intentar leer del storage local
+  if ((!selectedNames || selectedNames.length === 0) && chrome.storage?.local) {
+    try {
+      const stored = await new Promise(r => chrome.storage.local.get(["selectedGroupNames"], r));
+      if (Array.isArray(stored?.selectedGroupNames) && stored.selectedGroupNames.length > 0) {
+        selectedNames = stored.selectedGroupNames;
+      }
+    } catch (e) {}
+  }
+
+  // 1. Localizar casillas de verificación de grupos en el diálogo
+  const checkboxes = Array.from(
+    dialog.querySelectorAll('div[role="checkbox"], div[aria-checked], input[type="checkbox"]')
+  );
+
+  if (checkboxes.length === 0) {
+    console.warn("Haibane: No se detectaron casillas de grupos.");
+    return { success: false, error: "No se encontraron casillas de grupos" };
+  }
+
+  let selectedCount = 0;
+  for (const box of checkboxes) {
+    if (selectedCount >= targetCount) break;
+
+    const isChecked = box.getAttribute("aria-checked") === "true" || box.checked === true;
+    if (isChecked) {
+      selectedCount++;
+      continue;
+    }
+
+    const containerRow = box.closest('div[role="listitem"]') || box.parentElement?.parentElement || box.parentElement;
+    const rowText = (containerRow?.innerText || "").trim().toLowerCase();
+
+    // Prioridad 1: Coincidencia con lista fija de grupos guardados por el usuario
+    if (selectedNames && selectedNames.length > 0) {
+      const matchesFavorite = selectedNames.some(name => rowText.includes(name.trim().toLowerCase()));
+      if (!matchesFavorite) continue;
+    } else if (keywords && keywords.length > 0) {
+      // Prioridad 2: Filtro por palabras clave
+      const matches = keywords.some(k => rowText.includes(k.trim().toLowerCase()));
+      if (!matches) continue;
+    }
+
+    // Disparar clic para activar el checkbox de forma compatible con React
+    box.click();
+    box.dispatchEvent(new Event("change", { bubbles: true }));
+    selectedCount++;
+    await new Promise(r => setTimeout(r, 120)); // Delay para permitir render de React
+  }
+
+  // 2. Localizar y presionar el botón de publicar/compartir
+  const buttons = Array.from(dialog.querySelectorAll('div[role="button"], button'));
+  const submitBtn = buttons.find(b => {
+    const txt = (b.innerText || b.getAttribute("aria-label") || "").trim().toLowerCase();
+    return (
+      (txt === "publicar" || txt === "compartir" || txt === "listo" || txt === "guardar" || txt === "share" || txt === "done") &&
+      !b.disabled &&
+      b.offsetParent !== null
+    );
+  });
+
+  if (submitBtn) {
+    await new Promise(r => setTimeout(r, 250));
+    submitBtn.click();
+    console.log(`✓ Publicación enviada con éxito a ${selectedCount} grupos de Facebook.`);
+    return { success: true, count: selectedCount };
+  }
+
+  return { success: true, count: selectedCount, note: "Grupos marcados. Esperando confirmación manual." };
+}
+
+/**
+ * Inyecta un banner de control visual dentro del modal de compartir en grupos de Facebook
+ */
+function attachGroupSharerToDialog(dialog) {
+  if (dialog.querySelector("#haibane-group-auto-banner")) return;
+
+  // Extraer grupos visibles en el modal y guardarlos en storage para el selector
+  const foundGroups = [];
+  const allBoxes = Array.from(dialog.querySelectorAll('div[role="checkbox"], div[aria-checked], input[type="checkbox"]'));
+  allBoxes.forEach(box => {
+    const containerRow = box.closest('div[role="listitem"]') || box.parentElement?.parentElement || box.parentElement;
+    const rowTitle = (containerRow?.innerText || "").split("\n")[0]?.trim();
+    if (rowTitle && rowTitle.length > 2 && !foundGroups.includes(rowTitle)) {
+      foundGroups.push(rowTitle);
+    }
+  });
+
+  if (foundGroups.length > 0) {
+    chrome.storage?.local?.set({ scannedFacebookGroups: foundGroups });
+  }
+
+  const banner = document.createElement("div");
+  banner.id = "haibane-group-auto-banner";
+  banner.style.cssText = `
+    background: #0f172a;
+    border: 1.5px solid #a855f7;
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin: 8px 12px;
+    color: #f8fafc;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 11.5px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+    z-index: 999999;
+  `;
+
+  banner.innerHTML = `
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <strong style="color: #c084fc; font-size: 12px;">⚡ Haibane Group Auto-Sharer</strong>
+      <span style="font-size: 10px; background: #581c87; color: #f3e8ff; padding: 1px 6px; border-radius: 4px;">AUTOMÁTICO</span>
+    </div>
+    <div id="haibane-group-banner-desc" style="color: #94a3b8; font-size: 11px; line-height: 1.35;">
+      Cargando tus 12 grupos favoritos fijos...
+    </div>
+    <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+      <button id="haibane-btn-share-12-groups" style="flex: 2; background: #7e22ce; color: #ffffff; border: none; border-radius: 4px; padding: 6px 10px; font-weight: 800; cursor: pointer; font-size: 11px;">
+        🚀 Enviar a Mis 12 Grupos Fijos
+      </button>
+      <button id="haibane-btn-save-as-fixed" style="flex: 1; background: #059669; color: #ffffff; border: none; border-radius: 4px; padding: 6px 8px; font-weight: 700; cursor: pointer; font-size: 10.5px;" title="Memoriza los grupos que tengas marcados actualmente como tu lista fija de por vida">
+        💾 Fijar Selección
+      </button>
+      <button id="haibane-btn-select-all-groups" style="background: #334155; color: #f1f5f9; border: none; border-radius: 4px; padding: 6px 8px; font-weight: 700; cursor: pointer; font-size: 10.5px;">
+        ✓ Todos
+      </button>
+    </div>
+    <div id="haibane-group-share-status" style="font-size: 10.5px; color: #38bdf8;"></div>
+  `;
+
+  // Insertar en la cabecera del diálogo
+  const header = dialog.querySelector('h2, [role="heading"]') || dialog.firstChild;
+  if (header && header.parentElement) {
+    header.parentElement.insertBefore(banner, header.nextSibling);
+  } else {
+    dialog.prepend(banner);
+  }
+
+  // Leer configuración desde almacenamiento
+  chrome.storage?.local?.get(["groupShareCount", "groupShareAuto", "groupKeywords", "selectedGroupNames"], (config) => {
+    const selectedNames = Array.isArray(config?.selectedGroupNames) ? config.selectedGroupNames : [];
+    const targetCount = selectedNames.length > 0 ? selectedNames.length : (config?.groupShareCount || 12);
+    const isAuto = config?.groupShareAuto !== false; // true por defecto
+    const keywords = (config?.groupKeywords || "").split(",").map(k => k.trim()).filter(Boolean);
+
+    const descEl = document.getElementById("haibane-group-banner-desc");
+    if (descEl) {
+      descEl.textContent = selectedNames.length > 0
+        ? `Tienes ${selectedNames.length} grupos favoritos configurados. Se marcarán exactamente esos.`
+        : `Sin lista fija configurada. Se seleccionarán los primeros ${targetCount} grupos disponibles.`;
+    }
+
+    const btn12 = document.getElementById("haibane-btn-share-12-groups");
+    if (btn12) btn12.textContent = `🚀 Enviar a Mis ${targetCount} Grupos Fijos`;
+
+    const statusEl = document.getElementById("haibane-group-share-status");
+
+    // Botón para fijar la selección actual
+    document.getElementById("haibane-btn-save-as-fixed")?.addEventListener("click", () => {
+      const userSelected = [];
+      allBoxes.forEach(box => {
+        const isChecked = box.getAttribute("aria-checked") === "true" || box.checked === true;
+        if (isChecked) {
+          const containerRow = box.closest('div[role="listitem"]') || box.parentElement?.parentElement || box.parentElement;
+          const rowTitle = (containerRow?.innerText || "").split("\n")[0]?.trim();
+          if (rowTitle) userSelected.push(rowTitle);
+        }
+      });
+      if (userSelected.length > 0) {
+        chrome.storage?.local?.set({ selectedGroupNames: userSelected, groupShareCount: userSelected.length }, () => {
+          if (statusEl) statusEl.innerHTML = `<span style="color:#10b981; font-weight:700;">✓ ${userSelected.length} grupos memorizados de por vida.</span>`;
+          if (descEl) descEl.textContent = `${userSelected.length} grupos guardados como tu lista fija.`;
+        });
+      } else {
+        if (statusEl) statusEl.textContent = "Marca primero las casillas de los grupos que deseas memorizar.";
+      }
+    });
+
+    btn12?.addEventListener("click", async () => {
+      if (statusEl) statusEl.textContent = `⏳ Seleccionando ${targetCount} grupos favoritos...`;
+      const res = await autoSelectAndShareGroups(targetCount, keywords, selectedNames);
+      if (res.success) {
+        if (statusEl) statusEl.innerHTML = `<span style="color:#10b981; font-weight:700;">✓ ${res.count} grupos seleccionados y compartidos.</span>`;
+      } else {
+        if (statusEl) statusEl.textContent = `Aviso: ${res.error}`;
+      }
+    });
+
+    document.getElementById("haibane-btn-select-all-groups")?.addEventListener("click", async () => {
+      if (statusEl) statusEl.textContent = "⏳ Seleccionando todos los grupos disponibles (máx 20)...";
+      const res = await autoSelectAndShareGroups(20, [], []);
+      if (res.success && statusEl) {
+        statusEl.innerHTML = `<span style="color:#10b981; font-weight:700;">✓ ${res.count} grupos seleccionados.</span>`;
+      }
+    });
+
+    // Auto-ejecución si está habilitado con countdown
+    if (isAuto) {
+      let countdown = 2;
+      if (statusEl) statusEl.innerHTML = `⏳ Auto-compartiendo en ${targetCount} grupos en <strong>${countdown}s</strong>...`;
+      const timer = setInterval(async () => {
+        countdown--;
+        if (countdown > 0) {
+          if (statusEl) statusEl.innerHTML = `⏳ Auto-compartiendo en ${targetCount} grupos en <strong>${countdown}s</strong>...`;
+        } else {
+          clearInterval(timer);
+          if (statusEl) statusEl.textContent = `⏳ Marcando ${targetCount} grupos y publicando...`;
+          const res = await autoSelectAndShareGroups(targetCount, keywords, selectedNames);
+          if (res.success && statusEl) {
+            statusEl.innerHTML = `<span style="color:#10b981; font-weight:700;">✓ ${res.count} grupos compartidos automáticamente.</span>`;
+          }
+        }
+      }, 1000);
+    }
+  });
+}
+
+/**
+ * =======================================================================
+ * MOTOR DE AUTO-RELIST SEMANAL (BORRADO + RE-PUBLICACIÓN CON IA)
+ * =======================================================================
+ */
+
+/**
+ * Revisa el catálogo y re-publica publicaciones activas que tengan más de maxDays sin venderse
+ * @param {number} maxDays Días de antigüedad para caducidad (default: 7)
+ */
+async function runAutoRelistCycle(maxDays = 7) {
+  const info = document.getElementById("haibane-sync-info");
+  if (info) info.textContent = `Comprobando publicaciones de más de ${maxDays} días para re-publicar...`;
+
+  loadCatalogProducts(async (products) => {
+    const now = Date.now();
+    const thresholdMs = maxDays * 24 * 60 * 60 * 1000;
+
+    const expiredListings = products.filter(p => {
+      if (!p.facebookListingId || p.status !== "ACTIVE") return false;
+      const pubDate = new Date(p.lastRelistedAt || p.createdAt || 0).getTime();
+      return (now - pubDate) >= thresholdMs;
+    });
+
+    if (expiredListings.length === 0) {
+      if (info) info.textContent = `✓ Todas las publicaciones están al día (< ${maxDays} días).`;
+      return;
+    }
+
+    const target = expiredListings[0];
+    if (info) info.textContent = `🔄 Re-publicando: "${target.title}" (> ${maxDays}d sin ventas)...`;
+
+    // 1. Desvincular/Eliminar publicación antigua en Marketplace
+    chrome.runtime.sendMessage({
+      action: "RELIST_EXPIRED_PRODUCT",
+      productId: target.id,
+      oldListingId: target.facebookListingId
+    }, (res) => {
+      console.log(`✓ Iniciando re-publicación limpia para ${target.title}`);
+    });
+  });
+}
+
+/**
+ * Observa mutaciones en el DOM para detectar el diálogo de compartir en grupos de Facebook
+ */
+function setupGroupSharingObserver() {
+  const checkDialogs = () => {
+    const dialogs = document.querySelectorAll('div[role="dialog"]');
+    dialogs.forEach(dialog => {
+      const text = (dialog.innerText || "").toLowerCase();
+      if (
+        text.includes("publicar en más lugares") ||
+        text.includes("compartir en grupos") ||
+        text.includes("publicar en grupos") ||
+        text.includes("tus grupos de compra") ||
+        text.includes("list in more places") ||
+        text.includes("share to groups")
+      ) {
+        attachGroupSharerToDialog(dialog);
+      }
+    });
+  };
+
+  const observer = new MutationObserver(() => {
+    checkDialogs();
+  });
+
+  observer.observe(document.body, { childList: true, subtree: true });
+  checkDialogs();
 }
 
 // Crear widget flotante de control Haibane
@@ -593,9 +952,14 @@ function injectHaibaneFloatingWidget() {
         </button>
       </div>
       <div style="display: flex; gap: 5px;">
+        <button id="haibane-btn-share-groups-wgt" style="flex: 1; background: #059669; color: #ffffff; border: none; border-radius: 4px; padding: 5px 6px; font-weight: 800; cursor: pointer; font-size: 10px;" title="Compartir automáticamente en 12 grupos de Facebook">
+          📢 Compartir en Grupos
+        </button>
         <button id="haibane-btn-scan-now" style="flex: 1; background: #334155; color: #f1f5f9; border: none; border-radius: 4px; padding: 5px 6px; font-weight: 700; cursor: pointer; font-size: 10px;">
           🔄 Auditar Precios
         </button>
+      </div>
+      <div style="display: flex; gap: 5px;">
         <button id="haibane-btn-export-web" style="flex: 1; background: #0284c7; color: #ffffff; border: none; border-radius: 4px; padding: 5px 6px; font-weight: 700; cursor: pointer; font-size: 10px;">
           ⚡ Exportar a Web
         </button>
@@ -616,6 +980,14 @@ function injectHaibaneFloatingWidget() {
     checkOrphanWebProducts();
   });
 
+  document.getElementById("haibane-btn-share-groups-wgt")?.addEventListener("click", () => {
+    chrome.storage?.local?.get(["groupShareCount", "groupKeywords"], (config) => {
+      const targetCount = config?.groupShareCount || 12;
+      const keywords = (config?.groupKeywords || "").split(",").map(k => k.trim()).filter(Boolean);
+      autoSelectAndShareGroups(targetCount, keywords);
+    });
+  });
+
   document.getElementById("haibane-btn-scan-now")?.addEventListener("click", () => {
     auditMarketplaceListings();
   });
@@ -630,17 +1002,48 @@ function injectHaibaneFloatingWidget() {
 }
 
 // Escuchar peticiones del background service worker
-chrome.runtime.onMessage.addListener((msg) => {
+chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg.action === "AUDIT_LISTINGS") {
     auditMarketplaceListings();
   }
   if (msg.action === "LINK_TWINS") {
     linkExistingMarketplaceTwins();
   }
+  if (msg.action === "AUTO_SHARE_GROUPS") {
+    autoSelectAndShareGroups(msg.targetCount || 12, msg.keywords || [], msg.selectedNames || []);
+  }
+  if (msg.action === "SCAN_MY_GROUPS") {
+    const dialog = document.querySelector('div[role="dialog"]');
+    const scanned = [];
+    if (dialog) {
+      const allBoxes = Array.from(dialog.querySelectorAll('div[role="checkbox"], div[aria-checked], input[type="checkbox"]'));
+      allBoxes.forEach(box => {
+        const containerRow = box.closest('div[role="listitem"]') || box.parentElement?.parentElement || box.parentElement;
+        const rowTitle = (containerRow?.innerText || "").split("\n")[0]?.trim();
+        if (rowTitle && rowTitle.length > 2 && !scanned.includes(rowTitle)) {
+          scanned.push(rowTitle);
+        }
+      });
+    }
+    if (scanned.length > 0) {
+      sendResponse({ success: true, groups: scanned });
+    } else {
+      chrome.storage?.local?.get(["scannedFacebookGroups"], (d) => {
+        sendResponse({ success: true, groups: d?.scannedFacebookGroups || [] });
+      });
+    }
+    return true;
+  }
+  if (msg.action === "RUN_AUTO_RELIST") {
+    runAutoRelistCycle(msg.maxDays || 7);
+    sendResponse({ success: true });
+    return true;
+  }
 });
 
 // Inicialización
 setTimeout(() => {
+  setupGroupSharingObserver();
   if (window.location.href.includes("/marketplace/create/item")) {
     initAutoPublishAssistant();
   } else {

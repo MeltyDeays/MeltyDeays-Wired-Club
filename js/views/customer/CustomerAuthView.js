@@ -156,12 +156,17 @@ export async function submitClientRegister() {
     if (vm.pendingClaimToken) {
       try {
         const claimRes = await vm.claimPendingToken();
-        showToast(`¡Cuenta creada con éxito! Se acreditaron +${claimRes.pointsAdded} WP a tu CyberPass.`, "success");
+        const bonusTxt = user._welcomeBonusAwarded ? " (+250 WP bono de bienvenida)" : "";
+        showToast(`¡Cuenta creada con éxito! Se acreditaron +${claimRes.pointsAdded} WP de tu factura${bonusTxt}.`, "success");
       } catch (claimErr) {
         showToast("¡Cuenta creada! CyberPass activado.", "success");
       }
     } else {
-      showToast("¡Cuenta creada con éxito! CyberPass activado", "success");
+      if (user._welcomeBonusAwarded) {
+        showToast(`🎁 ¡Bienvenido ${user.displayName}! Recibiste +250 WP ($5 USD en puntos) por registrarte en este dispositivo.`, "success");
+      } else {
+        showToast(`¡Cuenta creada con éxito! CyberPass activado. (Bono de bienvenida de $5 ya canjeado previamente en este dispositivo).`, "info");
+      }
     }
   } catch (err) {
     setAuthFeedback(err.message || "Error al crear cuenta", "error");

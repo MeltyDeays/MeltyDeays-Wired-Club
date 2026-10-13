@@ -9,7 +9,7 @@
     "tabs"
   ],
   "host_permissions": [
-    "https://www.facebook.com/marketplace/*",
+    "https://www.facebook.com/*",
     "https://firestore.googleapis.com/*",
     "https://lain-wired-club.firebaseapp.com/*",
     "https://*.vercel.app/*",
@@ -21,7 +21,7 @@
   "content_scripts": [
     {
       "matches": [
-        "https://www.facebook.com/marketplace/*"
+        "https://www.facebook.com/*"
       ],
       "js": [
         "content-script.js"

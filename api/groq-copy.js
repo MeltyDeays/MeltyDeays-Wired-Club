@@ -74,29 +74,62 @@ REGLAS ESTRICTAS DE LIMPIEZA:
     return res.status(200).json({ catalogDescription: fallbackDesc });
   }
 
-  // MODO 2: Ficha comercial persuasiva para publicar en Marketplace (Web -> Facebook)
+  // MODO 2: Ficha comercial persuasiva y estética para publicar en Marketplace (Web -> Facebook)
+  function buildFallbackMarketplaceCopy(prodTitle, prodDesc) {
+    const cleanLines = (prodDesc || "")
+      .split("\n")
+      .map(l => l.trim())
+      .filter(l => l && !l.toLowerCase().includes("precio") && !l.includes("$") && !l.toLowerCase().includes("c$"));
+
+    const featureBullets = cleanLines.length > 0
+      ? cleanLines.map(l => l.startsWith("•") ? l : `• 🚀 ${l}`).join("\n")
+      : `• 🕹️ Condición: Artículo original verificado y garantizado físicamente\n• ⚡ Rendimiento: Alto desempeño y compatibilidad garantizada\n• 📦 Entrega: Disponible para retiro o entrega inmediata`;
+
+    return `✨ ${prodTitle}
+
+⚡ CARACTERÍSTICAS PRINCIPALES:
+${featureBullets}
+
+🛡️ GARANTÍA & RESPALDO:
+• Cobertura y garantía oficial MeltyDeays con revisión técnica presencial en tienda física.
+
+🎁 THE WIRED CLUB (OFERTAS EXCLUSIVAS EN NUESTRA WEB):
+• Visita nuestra página web oficial para explorar promociones y ofertas especiales de socios.
+• 💎 Bono de Bienvenida: Recibe $5 USD en puntos (250 WP) al registrarte por primera vez desde tu dispositivo, canjeables por descuentos en artículos seleccionados de nuestro catálogo.
+
+📲 PEDIDOS Y ATENCIÓN DIRECTA:
+• WhatsApp / Teléfono: 5843-8412`;
+  }
+
   if (GROQ_KEYS.length === 0) {
     return res.status(200).json({
-      marketTitle: title.slice(0, 80),
-      marketDescription: `${title}\n\n${description}\n\n💵 Precio: $${priceUsd} (C$ ${priceNio})\n📦 Entrega inmediata disponible.`,
-      categorySuggestion: "Varios"
+      marketTitle: title.slice(0, 75),
+      marketDescription: buildFallbackMarketplaceCopy(title, description),
+      categorySuggestion: "Videojuegos y Consolas"
     });
   }
 
-  const systemPrompt = `Eres un experto en ventas de comercio electrónico y Facebook Marketplace en Nicaragua/Centroamérica.
-Tu objetivo es transformar los datos de un producto en una publicación de alta conversión para Facebook Marketplace.
+  const systemPrompt = `Eres un copywriter experto en ventas para Facebook Marketplace en Nicaragua (MeltyDeays · The Wired Club).
+Tu objetivo es redactar publicaciones de alta conversión, sumamente atractivas, estéticas y profesionales.
 
-Reglas estrictas de formato:
-1. "marketTitle": Máximo 80 caracteres. Directo, incluye palabras clave y estado (Nuevo/Garantía). Sin emojis en el título.
-2. "marketDescription": Formato persuasivo, viñetas cortas, especificaciones técnicas claras, llamada a la acción ("Escríbenos al inbox o WhatsApp para entrega"). Incluir precio en USD ($) y Córdobas (C$).
+REGLAS ESTRICTAS DE FORMATO Y CONTENIDO:
+1. "marketTitle": Máximo 75 caracteres. Atractivo, incluye palabras clave y estado (Nuevo/Garantía). PROHIBIDO incluir precios en el título.
+2. "marketDescription":
+   - PROHIBIDO TERMINANTEMENTE mencionar precios o montos de dinero en el texto de la descripción (el precio se ingresa exclusivamente en la casilla nativa de precio de Marketplace).
+   - Cada apartado y característica DEBE tener un ícono llamativo y temático (⚡, 🎮, 🛡️, 💎, 🎁, 📲, 🚀, 📦). Cero texto plano sin formato.
+   - ESTRUCTURA OBLIGATORIA:
+     • Apertura llamativa del producto con icono (ej: ✨ [Nombre del producto]).
+     • ⚡ CARACTERÍSTICAS PRINCIPALES: Viñetas breves con especificaciones técnicas e iconos temáticos al inicio de cada línea.
+     • 🛡️ GARANTÍA & RESPALDO: Cobertura oficial MeltyDeays con revisión técnica física en tienda.
+     • 🎁 THE WIRED CLUB (OFERTAS EXCLUSIVAS EN NUESTRA WEB): Invitar a visitar nuestra plataforma web donde tenemos ofertas especiales con descuentos de socios y destacar que al registrarse por primera vez en su dispositivo reciben un Bono de Bienvenida de $5 USD en puntos (250 WP) para canjear en descuentos en artículos seleccionados de nuestro catálogo.
+     • 📲 CONTACTO Y PEDIDOS DIRECTOS: WhatsApp / Teléfono 58438412 (5843-8412).
 3. "categorySuggestion": Categoría recomendada de Facebook Marketplace.
 
-Responde ÚNICAMENTE un objeto JSON válido con los campos: "marketTitle", "marketDescription", "categorySuggestion".`;
+Responde ÚNICAMENTE un objeto JSON válido con las claves: "marketTitle", "marketDescription", "categorySuggestion".`;
 
   const userPrompt = `Producto: ${title}
-Descripción técnica actual: ${description}
-Precio USD: $${priceUsd}
-Precio NIO: C$${priceNio}`;
+Detalles técnicos o descripción web: ${description}
+(Nota: NUNCA incluyas menciones de precio en el texto de la descripción)`;
 
   for (const apiKey of GROQ_KEYS) {
     try {
@@ -121,7 +154,10 @@ Precio NIO: C$${priceNio}`;
         const data = await response.json();
         const content = data.choices?.[0]?.message?.content;
         if (content) {
-          return res.status(200).json(JSON.parse(content));
+          const parsed = JSON.parse(content);
+          if (parsed && parsed.marketDescription) {
+            return res.status(200).json(parsed);
+          }
         }
       }
     } catch (err) {
@@ -130,8 +166,8 @@ Precio NIO: C$${priceNio}`;
   }
 
   return res.status(200).json({
-    marketTitle: title.slice(0, 80),
-    marketDescription: `${title}\n\n${description}\n\n💵 Precio: $${priceUsd} (C$ ${priceNio})\n📦 Entrega inmediata disponible.`,
-    categorySuggestion: "Varios"
+    marketTitle: title.slice(0, 75),
+    marketDescription: buildFallbackMarketplaceCopy(title, description),
+    categorySuggestion: "Videojuegos y Consolas"
   });
 };

@@ -7,8 +7,8 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <link rel="stylesheet" href="./styles.css?v=2.9.39">
-  <link rel="stylesheet" href="./css/modals/preorder.css?v=2.9.39">
+  <link rel="stylesheet" href="./styles.css?v=2.9.41">
+  <link rel="stylesheet" href="./css/modals/preorder.css?v=2.9.41">
   
   <!-- Limpieza inmediata de cachés viejos residuales antes de cargar módulos -->
   <script>
@@ -263,9 +263,18 @@
       <!-- Formulario Registro -->
       <form id="form-client-reg" onsubmit="event.preventDefault(); submitClientRegister();" autocomplete="on" style="display: none;">
         <h3 style="font-size: 1.15rem; font-weight: 900; margin-bottom: 0.35rem; color: var(--dark);">Registro de Nuevo Socio</h3>
-        <p style="color: var(--gray-700); font-size: 0.82rem; margin-bottom: 1.25rem;">
+        <p style="color: var(--gray-700); font-size: 0.82rem; margin-bottom: 0.75rem;">
           Únete a The Wired Club gratis para acumular puntos en cada compra en MeltyDeays.
         </p>
+
+        <!-- Banner Exclusivo: Bono de Bienvenida $5 USD en Puntos -->
+        <div class="welcome-bonus-callout" style="background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%); border: 1.5px dashed #8b5cf6; border-radius: 8px; padding: 0.65rem 0.85rem; margin-bottom: 1.1rem; display: flex; align-items: center; gap: 0.75rem;">
+          <span style="font-size: 1.6rem; line-height: 1;">🎁</span>
+          <div style="font-size: 0.78rem; color: #4c1d95; line-height: 1.35;">
+            <strong style="color: #6d28d9; display: block; font-size: 0.83rem;">¡Bono de Bienvenida: $5 USD en Puntos!</strong>
+            Recibe <strong>+250 WP</strong> por registrarte por primera vez desde este dispositivo para canjear en nuestras ofertas especiales del catálogo.
+          </div>
+        </div>
 
         <div class="form-group" style="margin-bottom: 1rem;">
           <label class="form-label">Nombre y Apellido</label>
@@ -852,6 +861,6 @@
   <div id="toast-container" class="toast-container"></div>
 
   <!-- CONTROLADOR MVVM -->
-  <script type="module" src="./js/app.js?v=2.9.39"></script>
+  <script type="module" src="./js/app.js?v=2.9.41"></script>
 </body>
 </html>

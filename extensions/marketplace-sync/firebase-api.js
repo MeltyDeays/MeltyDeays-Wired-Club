@@ -97,7 +97,8 @@ export async function linkProductToFacebook(productId, fbListingId, fbUrl = null
     "updateMask.fieldPaths=fbUrl",
     "updateMask.fieldPaths=syncStatus",
     "updateMask.fieldPaths=syncSource",
-    "updateMask.fieldPaths=lastSyncedAt"
+    "updateMask.fieldPaths=lastSyncedAt",
+    "updateMask.fieldPaths=lastRelistedAt"
   ];
   const url = `${BASE_URL}/${collection}/${productId}?${maskParams.join("&")}&key=${FIREBASE_CONFIG.apiKey}`;
   const now = new Date().toISOString();
@@ -106,7 +107,8 @@ export async function linkProductToFacebook(productId, fbListingId, fbUrl = null
     fbUrl: { stringValue: fbUrl || `https://www.facebook.com/marketplace/item/${fbListingId}/` },
     syncStatus: { stringValue: "SYNCED_TWIN" },
     syncSource: { stringValue: "twin_matcher" },
-    lastSyncedAt: { timestampValue: now }
+    lastSyncedAt: { timestampValue: now },
+    lastRelistedAt: { timestampValue: now }
   };
 
   try {

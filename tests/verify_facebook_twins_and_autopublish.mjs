@@ -117,8 +117,8 @@ console.log('✅ 7. api/sync-facebook.js verificado.');
 // 8. Verificar cache busters en admin.html e index.html
 const adminHtml = fs.readFileSync(path.join(root, 'admin.html'), 'utf8');
 const indexHtml = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-assert(adminHtml.includes('v=2.9.39'), 'admin.html debe tener cache buster v=2.9.39');
-assert(indexHtml.includes('v=2.9.39'), 'index.html debe tener cache buster v=2.9.39');
-console.log('✅ 8. Cache-busters en admin.html e index.html v=2.9.39 verificados.');
+assert(adminHtml.includes('v=2.9.41'), 'admin.html debe tener cache buster v=2.9.41');
+assert(indexHtml.includes('v=2.9.41'), 'index.html debe tener cache buster v=2.9.41');
+console.log('✅ 8. Cache-busters en admin.html e index.html v=2.9.41 verificados.');
 
 console.log('\n🎉 TODAS LAS PRUEBAS DE VERIFICACIÓN PASARON EXITOSAMENTE (8/8).');

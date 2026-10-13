@@ -6,6 +6,7 @@ import { VoucherModel } from "../models/VoucherModel.js";
 import { TokenModel } from "../models/TokenModel.js";
 import { getStorageKey } from "../config/env.js";
 import { NicaraguanCedulaValidator } from "../utils/NicaraguanCedulaValidator.js";
+import { DeviceFingerprint } from "../utils/DeviceFingerprint.js";
 
 export class CustomerViewModel {
   constructor() {
@@ -355,18 +356,41 @@ export class CustomerViewModel {
       throw new Error(`⚠️ El número [+505 ${fmt}] ya se encuentra registrado${existingName ? ' a nombre de ' + existingName : ''}. Ingresa desde la pestaña 'Ya Soy Socio' con tu PIN.`);
     }
 
+    // Verificación de huella de hardware del dispositivo para bono de bienvenida (Resistente a VPN)
+    const fingerprint = await DeviceFingerprint.getDeviceFingerprint();
+    const claimCheck = await DeviceFingerprint.checkDeviceClaim(fingerprint);
+    const awardWelcomeBonus = !claimCheck.alreadyClaimed;
+    const initialPoints = awardWelcomeBonus ? 250 : 0; // $5 USD en puntos (250 WP)
+
     const newUser = new UserModel({
       uid,
       displayName: name,
       phone: cleanPhone, // Guardamos estrictamente los 8 dígitos canónicos
       pin: securityPin,
-      wiredPoints: 0,
-      lifetimePoints: 0,
+      wiredPoints: initialPoints,
+      lifetimePoints: initialPoints,
       currency: this.preferredCurrency || "USD",
       status: "ACTIVE"
     });
 
     await FirestoreService.saveUser(newUser.toJSON());
+
+    if (awardWelcomeBonus) {
+      FirestoreService.addLedgerEntry(uid, {
+        id: "TX-WELCOME-" + Date.now(),
+        type: "WELCOME_BONUS",
+        delta: 250,
+        balance_after: 250,
+        ref_id: fingerprint,
+        note: "🎁 Bono de Bienvenida ($5 USD en puntos): +250 WP por registro por primera vez en este dispositivo",
+        created_at: new Date().toISOString()
+      });
+      await DeviceFingerprint.recordDeviceClaim(fingerprint, { uid, phone: cleanPhone });
+      newUser._welcomeBonusAwarded = true;
+    } else {
+      newUser._welcomeBonusAwarded = false;
+    }
+
     this.currentUser = newUser;
     localStorage.setItem(getStorageKey("melty_client_uid"), uid);
     await this.refreshUserData();
