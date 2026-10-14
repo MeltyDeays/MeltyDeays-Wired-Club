@@ -76,6 +76,28 @@ assert.equal(targetW / targetH, origW / origH, "La relación de aspecto (aspect 
 assert.equal(scale, 1, "Si la foto ya es HD (1600x1200), la escala debe ser 1 (cero remuestreo)");
 console.log("  ✓ Test 4: Preservación de aspecto original y cero recorte en Canvas HD validada.");
 
+// Test 5: Rechazo estricto de avatares /t39.30808-1/ y decodificación de &amp;
+const mockHtmlWithAvatarAndAmp = `
+  <html>
+    <head>
+      <!-- Avatar de perfil con /t39.30808-1/ que debe ser descartado -->
+      <meta property="og:image" content="https://scontent.xx.fbcdn.net/v/t39.30808-1/avatar.jpg?stp=c0.0&amp;oh=abc&amp;oe=def"/>
+    </head>
+    <body>
+      <script>
+        {"marketplace_listing":{"id":"1198273641889021","listing_photos":{"edges":[{"node":{"image":{"uri":"https:\\/\\/scontent.xx.fbcdn.net\\/v\\/t39.30808-6\\/real_jet_fan.jpg?stp=dst-jpg_s1080x1080&amp;oh=real_token&amp;oe=6AD4F447"}}}]}}}
+      </script>
+    </body>
+  </html>
+`;
+
+const cleanExtracted = extractHighResPhotosFromFacebookHtml(mockHtmlWithAvatarAndAmp, "1198273641889021");
+assert.equal(cleanExtracted.length, 1, "Debe descartar el avatar /t39.30808-1/ y conservar solo la foto /t39.30808-6/");
+assert.ok(cleanExtracted[0].includes("/t39.30808-6/real_jet_fan.jpg"), "Debe ser la foto del producto");
+assert.ok(!cleanExtracted[0].includes("&amp;"), "Debe decodificar los &amp; a & para evitar 403 Forbidden");
+assert.ok(cleanExtracted[0].includes("&oh=real_token"), "El token 'oh' debe ser accesible limpiamente");
+console.log("  ✓ Test 5: Descarte de avatares /t39.30808-1/ y decodificación de &amp; validada.");
+
 console.log("=================================================");
 console.log("TODAS LAS PRUEBAS DE GALERÍA HD Y ASPECTO PASARON AL 100%");
 console.log("=================================================");

@@ -1117,7 +1117,8 @@ async function fetchAllListingPhotosFromFacebook(listingId) {
  */
 function extractHighResPhotosFromFacebookHtml(html, listingId = "") {
   if (!html || typeof html !== "string") return [];
-  const unescaped = html.replaceAll("\\/", "/");
+  // 1. Decodificar barras invertidas y entidades HTML de query strings (&amp; -> &)
+  const unescaped = html.replaceAll("\\/", "/").replaceAll("&amp;", "&");
   const cleanId = String(listingId || "").replace(/\D/g, "");
 
   const photos = [];
@@ -1125,10 +1126,17 @@ function extractHighResPhotosFromFacebookHtml(html, listingId = "") {
 
   function addPhoto(url) {
     if (!url || typeof url !== "string") return;
-    if (url.includes("rsrc.php") || url.includes("static.xx") || url.includes("emoji") || url.includes("avatar")) return;
-    if (!seenUrls.has(url)) {
-      seenUrls.add(url);
-      photos.push(url);
+    let clean = url.replaceAll("&amp;", "&").replace(/["'\\].*$/, "").trim();
+    // REGLA FUNDAMENTAL DE FACEBOOK:
+    // /t39.30808-1/ = Avatares y fotos de perfil (DESCARTAR SIEMPRE)
+    // /t39.30808-6/ = Fotografías de publicaciones y Marketplace (ACEPTAR)
+    if (clean.includes("/t39.30808-1/") || clean.includes("avatar") || clean.includes("profile")) return;
+    if (!clean.includes("/t39.30808-6/")) return;
+    if (clean.includes("rsrc.php") || clean.includes("static.xx") || clean.includes("emoji")) return;
+
+    if (!seenUrls.has(clean)) {
+      seenUrls.add(clean);
+      photos.push(clean);
     }
   }
 
@@ -1139,12 +1147,10 @@ function extractHighResPhotosFromFacebookHtml(html, listingId = "") {
     ...unescaped.matchAll(/<link\s+[^>]*rel=["'](?:image_src|preload)["'][^>]*href=["'](https:\/\/[^"'\s]+)["']/gi)
   ];
   for (const m of ogMatches) {
-    if (m && m[1] && m[1].includes("scontent") && !m[1].includes("c0.0.")) {
-      addPhoto(m[1]);
-    }
+    if (m && m[1]) addPhoto(m[1]);
   }
 
-  // 2. Extracción desde bloque estructurado de Relay / GraphQL
+  // 2. Extracción desde bloques de Relay / GraphQL
   const candidateBlocks = [];
 
   const photoBlockRegexes = [
@@ -1162,37 +1168,22 @@ function extractHighResPhotosFromFacebookHtml(html, listingId = "") {
 
   // Delimitar por cleanId para aislar la publicación principal y descartar 100% las recomendaciones/memes
   if (cleanId) {
-    const idPositions = [];
     let pos = unescaped.indexOf(`"${cleanId}"`);
-    while (pos !== -1) {
-      idPositions.push(pos);
-      pos = unescaped.indexOf(`"${cleanId}"`, pos + 1);
-    }
-    for (const idx of idPositions.slice(0, 3)) {
-      const sliceStart = Math.max(0, idx - 1500);
-      const sliceEnd = Math.min(unescaped.length, idx + 4500);
+    let count = 0;
+    while (pos !== -1 && count < 3) {
+      const sliceStart = Math.max(0, pos - 1500);
+      const sliceEnd = Math.min(unescaped.length, pos + 4500);
       candidateBlocks.push(unescaped.slice(sliceStart, sliceEnd));
+      pos = unescaped.indexOf(`"${cleanId}"`, pos + 1);
+      count++;
     }
   }
 
-  // Extraer URIs de fotos en los bloques candidatos
+  // Extraer todas las URIs de fotos /t39.30808-6/ dentro de los bloques candidatos identificados
   for (const block of candidateBlocks) {
-    const uriMatches = block.matchAll(/"(?:uri|image_uri|large_image_url)":\s*"(https:\/\/[^"\s]+)"/g);
+    const uriMatches = block.matchAll(/(https:\/\/scontent[^\s"'<>]+\/t39\.30808-6\/[^\s"'<>]+)/g);
     for (const m of uriMatches) {
-      const u = m[1];
-      if (u.includes("scontent") && !u.includes("c0.0.")) {
-        addPhoto(u);
-      }
-    }
-  }
-
-  // Si no se hallaron variantes HD sin recorte en los bloques, aceptar variantes directas del ítem
-  if (photos.length === 0) {
-    for (const block of candidateBlocks) {
-      const uriMatches = block.matchAll(/"uri":\s*"(https:\/\/scontent[^"\s]+)"/g);
-      for (const m of uriMatches) {
-        addPhoto(m[1]);
-      }
+      addPhoto(m[1]);
     }
   }
 
@@ -1206,7 +1197,7 @@ function extractHighResPhotosFromFacebookHtml(html, listingId = "") {
     if (u.includes("_n.jpg")) score += 50;
     if (u.includes("s2048") || u.includes("s1440") || u.includes("s1080") || u.includes("p960")) score += 40;
     if (u.includes("p720") || u.includes("dst-jpg")) score += 20;
-    if (u.includes("c0.") || u.includes("c0.0.")) score -= 100;
+    if (u.includes("c0.") || u.includes("c0.0.") || u.includes("c87.")) score -= 100;
     if (u.includes("p100") || u.includes("s150")) score -= 50;
 
     const existing = bestByPhotoId.get(photoId);
@@ -1215,9 +1206,11 @@ function extractHighResPhotosFromFacebookHtml(html, listingId = "") {
     }
   }
 
-  const finalPhotos = Array.from(bestByPhotoId.values())
-    .map(x => x.url)
-    .filter(Boolean);
+  const sortedCandidates = Array.from(bestByPhotoId.values());
+  const uncroppedOnly = sortedCandidates.filter(x => x.score > -50);
+  const pool = uncroppedOnly.length > 0 ? uncroppedOnly : sortedCandidates;
+
+  const finalPhotos = pool.map(x => x.url).filter(Boolean);
 
   // Límite estricto de seguridad: máximo 5 fotos legítimas del producto
   return finalPhotos.slice(0, 5);
@@ -1316,40 +1309,28 @@ async function enhanceImageWithCanvasHD(blob) {
 }
 
 /**
- * Descarga una foto desde Facebook CDN intentando remover recortes cuadrados automáticos (c0.0...)
- * para recuperar la imagen original del dispositivo en alta resolución.
+ * Descarga una foto desde Facebook CDN garantizando que los parámetros de consulta (&amp; -> &)
+ * estén decodificados limpiamente para que la firma de seguridad (oh, oe) sea válida y no devuelva 403.
  */
 async function fetchCleanFbPhotoBlob(url) {
   if (!url || typeof url !== "string") return null;
 
-  if (url.includes("scontent") && url.includes("c0.0.")) {
-    const uncroppedCandidates = [
-      url.replace(/c0\.0\.\d+\.\d+a_p\d+x\d+/, "dst-jpg_s1080x1080"),
-      url.replace(/c0\.0\.\d+\.\d+a_s\d+x\d+/, "dst-jpg_s1080x1080"),
-      url.replace(/c0\.0\.\d+\.\d+a_/, ""),
-      url.replace(/[?&]stp=[^&]+/, "")
-    ];
-    for (const cand of uncroppedCandidates) {
-      try {
-        const res = await fetch(cand);
-        if (res.ok) {
-          const blob = await res.blob();
-          if (blob && blob.size > 20000 && blob.type.includes("image")) {
-            console.log("✓ Haibane: Recorte cuadrado de Facebook CDN neutralizado (Foto HD original recuperada).");
-            return blob;
-          }
-        }
-      } catch {
-        // Continuar con siguiente candidato
-      }
-    }
-  }
+  // 1. Limpieza rigurosa de entidades HTML en URL (&amp; -> &) y caracteres de escape
+  const cleanUrl = url.replaceAll("&amp;", "&").replaceAll("\\/", "/").trim();
 
+  // 2. Descarga con URL limpia manteniendo la firma original de Meta intacta
   try {
-    const res = await fetch(url);
-    if (res.ok) return await res.blob();
+    const res = await fetch(cleanUrl);
+    if (res.ok) {
+      const blob = await res.blob();
+      if (blob && blob.size > 500 && blob.type.includes("image")) {
+        return blob;
+      }
+    } else {
+      console.warn(`Haibane: Respuesta HTTP ${res.status} al descargar foto desde CDN:`, cleanUrl);
+    }
   } catch (err) {
-    console.warn("Haibane: Error al descargar imagen:", err);
+    console.warn("Haibane: Error de red al descargar foto:", err);
   }
   return null;
 }
@@ -2392,13 +2373,13 @@ function initAutoPublishAssistant() {
 
       if (Array.isArray(hdPhotos) && hdPhotos.length > 0) {
         console.log(`✓ Haibane: ${hdPhotos.length} fotos originales en HD y sin recorte recuperadas de Facebook.`);
-        prod.images = hdPhotos.slice(0, 5);
+        prod.images = hdPhotos.map(u => u.replaceAll("&amp;", "&").trim()).slice(0, 5);
       } else if (Array.isArray(prod.fbPhotos) && prod.fbPhotos.length > 0) {
         console.log(`✓ Haibane: Usando ${prod.fbPhotos.length} fotos reales de Facebook preservadas en catálogo.`);
-        prod.images = prod.fbPhotos.slice(0, 5);
+        prod.images = prod.fbPhotos.map(u => u.replaceAll("&amp;", "&").trim()).slice(0, 5);
       } else if (thumbUrl) {
         console.log("✓ Haibane: Usando foto real de publicación de Facebook capturada en escaneo.");
-        prod.images = [thumbUrl];
+        prod.images = [thumbUrl.replaceAll("&amp;", "&").trim()];
       }
     }
 
