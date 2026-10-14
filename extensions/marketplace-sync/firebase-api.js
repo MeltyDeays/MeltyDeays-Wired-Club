@@ -56,6 +56,26 @@ export async function getWebProducts(targetCollection = "rewards_catalog") {
       for (const [k, v] of Object.entries(fields)) {
         parsed[k] = parseFirestoreValue(v);
       }
+      if (parsed.priceUsd === undefined) {
+        if (parsed.price_usd !== undefined) {
+          parsed.priceUsd = Number(parsed.price_usd);
+        } else if (parsed.cashToPayUsd !== undefined || parsed.maxDiscountUsd !== undefined) {
+          parsed.priceUsd = Number(((Number(parsed.cashToPayUsd) || 0) + (Number(parsed.maxDiscountUsd) || 0)).toFixed(2));
+        } else if (parsed.priceNio !== undefined || parsed.price_nio !== undefined) {
+          parsed.priceUsd = Number(((Number(parsed.priceNio || parsed.price_nio) || 0) / 37.0).toFixed(2));
+        } else {
+          parsed.priceUsd = 0;
+        }
+      }
+      if (parsed.priceNio === undefined) {
+        if (parsed.price_nio !== undefined) {
+          parsed.priceNio = Number(parsed.price_nio);
+        } else if (parsed.priceUsd) {
+          parsed.priceNio = Math.round(parsed.priceUsd * 37.0);
+        } else {
+          parsed.priceNio = 0;
+        }
+      }
       return parsed;
     });
   } catch (err) {
@@ -80,6 +100,26 @@ export async function getProductById(productId, targetCollection = "rewards_cata
     for (const [k, v] of Object.entries(fields)) {
       parsed[k] = parseFirestoreValue(v);
     }
+    if (parsed.priceUsd === undefined) {
+      if (parsed.price_usd !== undefined) {
+        parsed.priceUsd = Number(parsed.price_usd);
+      } else if (parsed.cashToPayUsd !== undefined || parsed.maxDiscountUsd !== undefined) {
+        parsed.priceUsd = Number(((Number(parsed.cashToPayUsd) || 0) + (Number(parsed.maxDiscountUsd) || 0)).toFixed(2));
+      } else if (parsed.priceNio !== undefined || parsed.price_nio !== undefined) {
+        parsed.priceUsd = Number(((Number(parsed.priceNio || parsed.price_nio) || 0) / 37.0).toFixed(2));
+      } else {
+        parsed.priceUsd = 0;
+      }
+    }
+    if (parsed.priceNio === undefined) {
+      if (parsed.price_nio !== undefined) {
+        parsed.priceNio = Number(parsed.price_nio);
+      } else if (parsed.priceUsd) {
+        parsed.priceNio = Math.round(parsed.priceUsd * 37.0);
+      } else {
+        parsed.priceNio = 0;
+      }
+    }
     return parsed;
   } catch (err) {
     console.warn(`[Haibane Sync] Error buscando producto ${productId} en ${col}:`, err);
@@ -94,6 +134,7 @@ export async function linkProductToFacebook(productId, fbListingId, fbUrl = null
   const targetCol = collection || "rewards_catalog";
   const maskParams = [
     "updateMask.fieldPaths=facebookListingId",
+    "updateMask.fieldPaths=facebook_listing_id",
     "updateMask.fieldPaths=fbUrl",
     "updateMask.fieldPaths=syncStatus",
     "updateMask.fieldPaths=syncSource",
@@ -104,6 +145,7 @@ export async function linkProductToFacebook(productId, fbListingId, fbUrl = null
   const now = new Date().toISOString();
   const fields = {
     facebookListingId: { stringValue: String(fbListingId) },
+    facebook_listing_id: { stringValue: String(fbListingId) },
     fbUrl: { stringValue: fbUrl || `https://www.facebook.com/marketplace/item/${fbListingId}/` },
     syncStatus: { stringValue: "SYNCED_TWIN" },
     syncSource: { stringValue: "twin_matcher" },
@@ -131,32 +173,72 @@ export async function linkProductToFacebook(productId, fbListingId, fbUrl = null
 
 
 /**
- * Actualiza el precio y estado de sincronización de un producto en Firestore.
+ * Actualiza el precio bimoneda (USD / NIO) y desglose de descuento de un producto en Firestore.
  * @param {string} productId ID del documento en Firestore
  * @param {number} newPriceUsd Nuevo precio en USD
- * @param {string} fbListingId ID de la publicación en Facebook
- * @param {string} collection Nombre de la colección ('rewards' o 'dev_rewards')
+ * @param {number|null} newPriceNio Nuevo precio en NIO
+ * @param {string|null} fbListingId ID de la publicación en Facebook
+ * @param {number} maxDiscountPct Porcentaje de descuento tope (default 10%)
+ * @param {string} collection Nombre de la colección ('rewards_catalog' o 'dev_rewards_catalog')
  */
-export async function updateProductPriceFromFacebook(productId, newPriceUsd, fbListingId = null, collection = "rewards_catalog") {
+export async function updateProductPriceFromFacebook(productId, newPriceUsd, newPriceNio = null, fbListingId = null, maxDiscountPct = 10, collection = "rewards_catalog") {
   const targetCol = collection || "rewards_catalog";
+  const numUsd = Number(Number(newPriceUsd).toFixed(2));
+  const numNio = (newPriceNio !== null && newPriceNio !== undefined && Number(newPriceNio) > 0)
+    ? Math.round(Number(newPriceNio))
+    : Math.round(numUsd * 37.0);
+  const pct = Number(maxDiscountPct) || 10;
+  const maxDiscUsd = Number((numUsd * (pct / 100)).toFixed(2));
+  const cashDueUsd = Number((numUsd - maxDiscUsd).toFixed(2));
+  const ptsCost = Math.max(10, Math.round(maxDiscUsd * 50));
+  const now = new Date().toISOString();
+
   const maskParams = [
     "updateMask.fieldPaths=priceUsd",
+    "updateMask.fieldPaths=price_usd",
+    "updateMask.fieldPaths=priceNio",
+    "updateMask.fieldPaths=price_nio",
+    "updateMask.fieldPaths=rewardType",
+    "updateMask.fieldPaths=reward_type",
+    "updateMask.fieldPaths=maxDiscountPct",
+    "updateMask.fieldPaths=max_discount_pct",
+    "updateMask.fieldPaths=maxDiscountUsd",
+    "updateMask.fieldPaths=max_discount_usd",
+    "updateMask.fieldPaths=cashToPayUsd",
+    "updateMask.fieldPaths=cash_to_pay_usd",
+    "updateMask.fieldPaths=pointsCost",
+    "updateMask.fieldPaths=points_cost",
     "updateMask.fieldPaths=syncSource",
     "updateMask.fieldPaths=lastSyncedAt"
   ];
   if (fbListingId) {
     maskParams.push("updateMask.fieldPaths=facebookListingId");
+    maskParams.push("updateMask.fieldPaths=facebook_listing_id");
   }
 
   const url = `${BASE_URL}/${targetCol}/${productId}?${maskParams.join("&")}&key=${FIREBASE_CONFIG.apiKey}`;
 
   const fields = {
-    priceUsd: { doubleValue: Number(newPriceUsd) },
+    priceUsd: { doubleValue: numUsd },
+    price_usd: { doubleValue: numUsd },
+    priceNio: { integerValue: String(numNio) },
+    price_nio: { integerValue: String(numNio) },
+    rewardType: { stringValue: "PARTIAL_DISCOUNT" },
+    reward_type: { stringValue: "PARTIAL_DISCOUNT" },
+    maxDiscountPct: { integerValue: String(pct) },
+    max_discount_pct: { integerValue: String(pct) },
+    maxDiscountUsd: { doubleValue: maxDiscUsd },
+    max_discount_usd: { doubleValue: maxDiscUsd },
+    cashToPayUsd: { doubleValue: cashDueUsd },
+    cash_to_pay_usd: { doubleValue: cashDueUsd },
+    pointsCost: { integerValue: String(ptsCost) },
+    points_cost: { integerValue: String(ptsCost) },
     syncSource: { stringValue: "facebook" },
-    lastSyncedAt: { timestampValue: new Date().toISOString() }
+    lastSyncedAt: { timestampValue: now }
   };
   if (fbListingId) {
     fields.facebookListingId = { stringValue: String(fbListingId) };
+    fields.facebook_listing_id = { stringValue: String(fbListingId) };
   }
 
   try {
@@ -170,7 +252,7 @@ export async function updateProductPriceFromFacebook(productId, newPriceUsd, fbL
       throw new Error(`HTTP ${res.status} en [${targetCol}]: ${errText}`);
     }
     const updated = await res.json();
-    console.log(`✓ Firestore actualizado desde Facebook [${targetCol}]: Producto ${productId} -> $${newPriceUsd}`);
+    console.log(`✓ Firestore actualizado desde Facebook [${targetCol}]: Producto ${productId} -> $${numUsd} USD / C$ ${numNio} NIO`);
     return updated;
   } catch (err) {
     console.error(`Fallo actualizando producto en [${targetCol}]:`, err);

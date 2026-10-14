@@ -36,6 +36,54 @@ function isBrandVerifiable(title = "", description = "") {
 const ACCESSORY_TITLE_REGEX = /(auricular|audifono|audífono|headset|earphone|headphone|earbuds|mouse|raton|ratón|teclado|keyboard|pad|alfombrilla|fan|soplador|aspiradora|turbina|cable|adaptador|cargador|charger|funda|case|stand|soporte|mando|control|gamepad|grip|powerbank|power\s*bank|bateria|batería|repetidor|extender|hub|dock|limpiador|protector|mica|vidrio)/i;
 const HIGH_END_HARDWARE_REGEX = /(laptop|computadora|notebook|predator|helios|rtx\s*\d+|gtx\s*\d+|radeon|intel\s*(core\s*)?ultra|core\s*i[79]|ryzen\s*[79]|macbook|torre\s*gamer|pc\s*gamer)/i;
 
+function parseMarketplacePrice(text) {
+  if (text === null || text === undefined) return null;
+  if (typeof text === "number") return Number.isFinite(text) ? text : null;
+  const trimmed = String(text).trim();
+  if (!trimmed) return null;
+
+  const match = trimmed.match(/(?:C\$|\$|US\$|NIO)?\s*(\d+(?:[.,]\d+)*)/i);
+  if (!match || !match[1]) return null;
+
+  const rawNumStr = match[1].trim();
+  const isNio = /C\$/i.test(trimmed) || /NIO/i.test(trimmed);
+
+  if (!/[.,]/.test(rawNumStr)) {
+    const n = parseInt(rawNumStr, 10);
+    return isNaN(n) ? null : n;
+  }
+
+  const parts = rawNumStr.split(/[.,]/);
+  if (parts.length === 2 && parts[1].length === 3) {
+    const val = parseInt(parts[0] + parts[1], 10);
+    return isNaN(val) ? null : val;
+  }
+
+  if (parts.length > 2) {
+    const lastPart = parts[parts.length - 1];
+    if (lastPart.length === 3) {
+      return parseInt(parts.join(""), 10);
+    }
+    if (lastPart.length <= 2) {
+      const intPart = parts.slice(0, -1).join("");
+      return parseFloat(`${intPart}.${lastPart}`);
+    }
+  }
+
+  if (isNio) {
+    const val = parseInt(parts.join(""), 10);
+    return isNaN(val) ? null : val;
+  }
+
+  if (parts.length === 2 && parts[1].length <= 2) {
+    return parseFloat(`${parts[0]}.${parts[1]}`);
+  }
+
+  const clean = rawNumStr.replace(/,/g, "");
+  const res = parseFloat(clean);
+  return isNaN(res) ? null : res;
+}
+
 /**
  * Normaliza precios con detección inteligente de moneda (USD / NIO):
  * - Moneda explícita: Si 'currency' es "USD" o contiene "$" (sin "C$").
@@ -46,13 +94,15 @@ const HIGH_END_HARDWARE_REGEX = /(laptop|computadora|notebook|predator|helios|rt
  *   >= 201 => Córdobas (NIO)
  */
 function normalizePriceByThreshold(rawValue, currency = "", title = "", description = "") {
-  if (typeof rawValue === "string") {
-    if (rawValue.includes("C$") && !currency) {
+  let val = 0;
+  if (typeof rawValue === "number") {
+    val = Number.isFinite(rawValue) ? rawValue : 0;
+  } else {
+    if (String(rawValue).includes("C$") && !currency) {
       currency = "NIO";
     }
-    rawValue = rawValue.replace(/[^0-9.]/g, "");
+    val = parseMarketplacePrice(rawValue) || 0;
   }
-  const val = parseFloat(rawValue) || 0;
   if (val <= 0) return { priceUsd: 0, priceNio: 0, currency: "USD", raw: 0 };
 
   const cleanCurr = String(currency || "").toUpperCase().trim();

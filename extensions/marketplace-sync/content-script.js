@@ -53,36 +53,107 @@ function normalizeTitle(str) {
     .trim();
 }
 
-/**
- * Calcula similitud léxica entre dos títulos (0.0 a 1.0)
- */
-function computeTitleSimilarity(strA, strB) {
-  const normA = normalizeTitle(strA);
-  const normB = normalizeTitle(strB);
-  if (!normA || !normB) return 0;
-  if (normA === normB) return 1.0;
-  if (normA.includes(normB) || normB.includes(normA)) return 0.9;
+const STOPWORDS = new Set([
+  "para", "con", "del", "las", "los", "una", "uno", "por", "que", "nuevo", "nueva",
+  "caja", "en", "de", "el", "la", "y", "o", "un", "edicion", "edition", "original",
+  "oficial", "garantia", "retirar", "tienda", "gaming", "gamer", "bestia"
+]);
 
-  const wordsA = new Set(normA.split(" ").filter(w => w.length > 2));
-  const wordsB = new Set(normB.split(" ").filter(w => w.length > 2));
-  if (wordsA.size === 0 || wordsB.size === 0) return 0;
-
-  let intersection = 0;
-  for (const w of wordsA) {
-    if (wordsB.has(w)) intersection++;
-  }
-  const union = new Set([...wordsA, ...wordsB]).size;
-  return union > 0 ? (intersection / union) : 0;
+function getDistinctiveTokens(title) {
+  const norm = normalizeTitle(title);
+  return norm.split(/\s+/).filter(w => w.length >= 2 && !STOPWORDS.has(w));
 }
 
 /**
- * Extrae valor numérico de un texto de precio (ej: "$25", "US$ 25.00", "C$ 950")
+ * Calcula similitud léxica y coincidencia semántica de modelo entre dos títulos (0.0 a 1.0)
  */
+function computeProductMatchScore(titleA, titleB) {
+  const normA = normalizeTitle(titleA);
+  const normB = normalizeTitle(titleB);
+  if (!normA || !normB) return 0;
+  if (normA === normB) return 1.0;
+  if (normA.includes(normB) || normB.includes(normA)) return 0.95;
+
+  const tokensA = getDistinctiveTokens(titleA);
+  const tokensB = getDistinctiveTokens(titleB);
+  if (tokensA.length === 0 || tokensB.length === 0) return 0;
+
+  const setB = new Set(tokensB);
+  let common = 0;
+  for (const t of tokensA) {
+    if (setB.has(t)) common++;
+  }
+
+  const minLen = Math.min(tokensA.length, tokensB.length);
+  const overlap = minLen > 0 ? (common / minLen) : 0;
+  const unionLen = new Set([...tokensA, ...tokensB]).size;
+  const jaccard = unionLen > 0 ? (common / unionLen) : 0;
+
+  const strongTokensA = tokensA.filter(t => /\d/.test(t) || t.length >= 5);
+  const strongCommon = strongTokensA.filter(t => setB.has(t)).length;
+  const hasStrongMatch = strongCommon >= 2 || (strongTokensA.length > 0 && strongCommon === strongTokensA.length);
+
+  return Math.max(overlap, jaccard, hasStrongMatch ? 0.85 : 0);
+}
+
+function computeTitleSimilarity(strA, strB) {
+  return computeProductMatchScore(strA, strB);
+}
+
+/**
+ * Extrae valor numérico real descartando precios tachados y resolviendo miles latinos.
+ * Soporta "C$850 C$1.000" -> 850, "C$1.350" -> 1350, "$25.50" -> 25.5, "$1100" -> 1100
+ */
+function parseMarketplacePrice(text) {
+  if (text === null || text === undefined) return null;
+  if (typeof text === "number") return Number.isFinite(text) ? text : null;
+  const trimmed = String(text).trim();
+  if (!trimmed) return null;
+
+  const match = trimmed.match(/(?:C\$|\$|US\$|NIO)?\s*(\d+(?:[.,]\d+)*)/i);
+  if (!match || !match[1]) return null;
+
+  const rawNumStr = match[1].trim();
+  const isNio = /C\$/i.test(trimmed) || /NIO/i.test(trimmed);
+
+  if (!/[.,]/.test(rawNumStr)) {
+    const n = parseInt(rawNumStr, 10);
+    return isNaN(n) ? null : n;
+  }
+
+  const parts = rawNumStr.split(/[.,]/);
+  if (parts.length === 2 && parts[1].length === 3) {
+    const val = parseInt(parts[0] + parts[1], 10);
+    return isNaN(val) ? null : val;
+  }
+
+  if (parts.length > 2) {
+    const lastPart = parts[parts.length - 1];
+    if (lastPart.length === 3) {
+      return parseInt(parts.join(""), 10);
+    }
+    if (lastPart.length <= 2) {
+      const intPart = parts.slice(0, -1).join("");
+      return parseFloat(`${intPart}.${lastPart}`);
+    }
+  }
+
+  if (isNio) {
+    const val = parseInt(parts.join(""), 10);
+    return isNaN(val) ? null : val;
+  }
+
+  if (parts.length === 2 && parts[1].length <= 2) {
+    return parseFloat(`${parts[0]}.${parts[1]}`);
+  }
+
+  const clean = rawNumStr.replace(/,/g, "");
+  const res = parseFloat(clean);
+  return isNaN(res) ? null : res;
+}
+
 function parsePriceFromText(text) {
-  if (!text) return null;
-  const clean = text.replace(/[^0-9.]/g, "");
-  const num = parseFloat(clean);
-  return isNaN(num) ? null : num;
+  return parseMarketplacePrice(text);
 }
 
 /**
@@ -127,15 +198,9 @@ function loadCatalogProducts(callback) {
  */
 function extractCleanPrice(rawText) {
   if (!rawText) return "";
-  const m = rawText.match(/(?:C\$|\$|US\$)\s*\d{1,3}(?:[.,]\d{3})*(?:\.\d{1,2})?|\b\d{1,3}(?:[.,]\d{3})*(?:\.\d{1,2})?\s*(?:NIO|USD)\b/i);
+  const m = rawText.match(/(?:C\$|\$|US\$|NIO)?\s*\d+(?:[.,]\d+)*/i);
   if (m) {
     return m[0].trim();
-  }
-  const fallback = rawText.match(/\b\d{2,}(?:[.,]\d{3})*\b/);
-  if (fallback) {
-    if (rawText.includes("C$")) return `C$ ${fallback[0]}`;
-    if (rawText.includes("$")) return `$ ${fallback[0]}`;
-    return fallback[0];
   }
   return rawText.trim();
 }
@@ -323,21 +388,27 @@ function getScannableListings(allowDuplicates = false) {
     // Buscar ID de publicación exclusivo de Marketplace
     let fbListingId = defaultId;
     if (!fbListingId) {
-      const allLinks = Array.from(container.querySelectorAll("a[href]"));
+      const allLinks = [container, ...Array.from(container.querySelectorAll("a[href]")), container.closest("a[href]")].filter(Boolean);
       for (const a of allLinks) {
-        const href = a.getAttribute("href") || "";
+        const href = a.getAttribute?.("href") || "";
         const m = href.match(/(?:listing_id=|marketplace\/item\/|\/item\/|\/items\/|item_id=)(\d{10,})/i);
         if (m && m[1]) {
           fbListingId = m[1];
           break;
         }
       }
+      if (!fbListingId && container.innerHTML) {
+        const htmlMatch = container.innerHTML.match(/(?:listing_id=|marketplace\/item\/|\/item\/|\/items\/|item_id=)(\d{10,})/i);
+        if (htmlMatch && htmlMatch[1]) {
+          fbListingId = htmlMatch[1];
+        }
+      }
     }
 
-    // Resolver con gemelos web en Firestore
+    // Resolver con gemelos web en Firestore si ya fue enlazado previamente
     if (!fbListingId && Array.isArray(cachedWebProducts)) {
       const match = cachedWebProducts.find(p => 
-        computeTitleSimilarity(p.title, fbTitle) >= 0.50 ||
+        computeProductMatchScore(p.title, fbTitle) >= 0.70 ||
         (p.title && fbTitle.toLowerCase().includes(p.title.toLowerCase().slice(0, 12))) ||
         (fbTitle && p.title.toLowerCase().includes(fbTitle.toLowerCase().slice(0, 12)))
       );
@@ -970,7 +1041,7 @@ async function cleanAllOldDuplicates() {
  * FASE 1: Enlace Preventivo y Anti-Duplicados
  * Escanea las publicaciones en pantalla y las empareja con el catálogo web sin duplicar.
  */
-function linkExistingMarketplaceTwins() {
+async function linkExistingMarketplaceTwins() {
   const info = document.getElementById("haibane-sync-info");
   if (info) info.textContent = "Escaneando publicaciones para enlazar gemelos...";
 
@@ -989,70 +1060,63 @@ function linkExistingMarketplaceTwins() {
   let newlyLinked = 0;
   let alreadyLinked = 0;
 
-  listings.forEach(({ element, fbListingId, fbTitle, lines, priceLine }) => {
-    const rawPrice = parsePriceFromText(priceLine);
+  for (const item of listings) {
+    const { fbListingId, fbTitle, lines } = item;
 
     // 1. Verificar si ya está enlazado directamente
     const existingTwin = cachedWebProducts.find(p => fbListingId && String(p.facebookListingId) === String(fbListingId));
     if (existingTwin) {
       alreadyLinked++;
-      return;
+      continue;
     }
 
-    // 2. Matching difuso preventivo (evitar duplicaciones)
+    // 2. Matching por similitud de producto (desacoplado de discrepancias de precio previo)
     let bestMatch = null;
-    let highestSim = 0;
+    let highestScore = 0;
 
     for (const prod of cachedWebProducts) {
       // Si ya tiene otro ID de Facebook distinto, no asociar
       if (prod.facebookListingId && fbListingId && String(prod.facebookListingId) !== String(fbListingId)) continue;
 
-      const sim = computeTitleSimilarity(prod.title, fbTitle);
-      if (sim > highestSim && sim >= 0.70) {
-        // Verificar compatibilidad de precio si existe
-        if (rawPrice !== null && prod.priceUsd) {
-          const normFbUsd = rawPrice > 200 ? Number((rawPrice / 37.0).toFixed(2)) : rawPrice;
-          const diffPct = Math.abs(normFbUsd - prod.priceUsd) / prod.priceUsd;
-          if (diffPct <= 0.35) { // Tolerancia del 35% por redondeos o promociones
-            highestSim = sim;
-            bestMatch = prod;
-          }
-        } else {
-          highestSim = sim;
-          bestMatch = prod;
-        }
+      const score = Math.max(
+        computeProductMatchScore(prod.title, fbTitle || ""),
+        ...lines.map(l => computeProductMatchScore(prod.title, l))
+      );
+
+      if (score > highestScore && score >= 0.70) {
+        highestScore = score;
+        bestMatch = prod;
       }
     }
 
     if (bestMatch && fbListingId) {
       console.log(`🔗 Emparejamiento Gemelo Detectado: Web "${bestMatch.title}" <==> FB "${fbTitle}" (#${fbListingId})`);
-      safeSendMessage({
-        action: "LINK_PRODUCT_TO_FB",
-        productId: bestMatch.id,
-        fbListingId: fbListingId,
-        fbUrl: `https://www.facebook.com/marketplace/item/${fbListingId}/`,
-        collection: bestMatch._collection || activeSyncCollection || "rewards_catalog"
-      }, (res) => {
-        if (res && res.success) {
-          bestMatch.facebookListingId = fbListingId;
-          newlyLinked++;
-          if (info) info.textContent = `✓ Enlazado: "${bestMatch.title}" con FB #${fbListingId}`;
-        }
+      const res = await new Promise(resolve => {
+        safeSendMessage({
+          action: "LINK_PRODUCT_TO_FB",
+          productId: bestMatch.id,
+          fbListingId: fbListingId,
+          fbUrl: `https://www.facebook.com/marketplace/item/${fbListingId}/`,
+          collection: bestMatch._collection || activeSyncCollection || "rewards_catalog"
+        }, resolve);
       });
-    }
-  });
-
-  setTimeout(() => {
-    if (info) {
-      if (newlyLinked > 0) {
-        info.textContent = `✓ ${newlyLinked} nuevo(s) gemelo(s) enlazado(s). (${alreadyLinked} ya estaban al día).`;
-      } else {
-        info.textContent = alreadyLinked > 0 
-          ? `✓ ${alreadyLinked} gemelos confirmados (${listings.length} detectados en pantalla).` 
-          : `✓ ${listings.length} publicaciones activas detectadas en Facebook.`;
+      if (res && res.success) {
+        bestMatch.facebookListingId = fbListingId;
+        newlyLinked++;
+        if (info) info.textContent = `✓ Enlazado: "${bestMatch.title}" con FB #${fbListingId}`;
       }
     }
-  }, 1000);
+  }
+
+  if (info) {
+    if (newlyLinked > 0) {
+      info.textContent = `✓ ${newlyLinked} nuevo(s) gemelo(s) enlazado(s). (${alreadyLinked} ya estaban al día).`;
+    } else {
+      info.textContent = alreadyLinked > 0 
+        ? `✓ ${alreadyLinked} gemelos confirmados (${listings.length} detectados en pantalla).` 
+        : `✓ ${listings.length} publicaciones activas detectadas en Facebook.`;
+    }
+  }
 }
 
 /**
@@ -1078,7 +1142,7 @@ function checkOrphanWebProducts() {
  * Audita las publicaciones visibles en la pantalla de Marketplace.
  * Detecta si se cambiaron precios desde el teléfono y actualiza Firestore.
  */
-function auditMarketplaceListings() {
+async function auditMarketplaceListings() {
   const info = document.getElementById("haibane-sync-info");
   if (info) info.textContent = "Escaneando precios y estado en pantalla...";
 
@@ -1090,16 +1154,20 @@ function auditMarketplaceListings() {
     return;
   }
 
-  listings.forEach(({ fbListingId, lines, priceLine }) => {
-    const rawPrice = parsePriceFromText(priceLine);
+  const HIGH_END_REGEX = /(laptop|computadora|notebook|predator|helios|rtx\s*\d+|gtx\s*\d+|radeon|intel\s*(core\s*)?ultra|core\s*i[79]|ryzen\s*[79]|macbook|torre\s*gamer|pc\s*gamer)/i;
+  const ACCESSORY_REGEX = /(auricular|audifono|audífono|headset|earphone|headphone|earbuds|mouse|raton|ratón|teclado|keyboard|pad|alfombrilla|fan|soplador|aspiradora|turbina|cable|adaptador|cargador|charger|funda|case|stand|soporte|mando|control|gamepad|grip|powerbank|power\s*bank|bateria|batería|repetidor|extender|hub|dock|limpiador|protector|mica|vidrio)/i;
+
+  for (const { fbListingId, fbTitle, lines, priceLine, textContent } of listings) {
+    const rawPrice = parseMarketplacePrice(priceLine || textContent);
+    if (rawPrice === null || rawPrice <= 0) continue;
 
     for (const prod of cachedWebProducts) {
-      const isDirectTwin = fbListingId && String(prod.facebookListingId) === String(fbListingId);
-      const isMatch = isDirectTwin || lines.some(line => {
-        const normLine = normalizeTitle(line);
-        const normProdTitle = normalizeTitle(prod.title);
-        return normLine.includes(normProdTitle) || (normProdTitle.length > 5 && normLine.includes(normProdTitle.slice(0, 15)));
-      });
+      const isDirectTwin = Boolean(fbListingId && prod.facebookListingId && String(prod.facebookListingId) === String(fbListingId));
+      const matchScore = Math.max(
+        computeProductMatchScore(prod.title, fbTitle || ""),
+        ...lines.map(l => computeProductMatchScore(prod.title, l))
+      );
+      const isMatch = isDirectTwin || matchScore >= 0.70;
 
       if (isMatch) {
         const isSoldOnFb = lines.some(l => {
@@ -1109,53 +1177,76 @@ function auditMarketplaceListings() {
 
         if (isSoldOnFb && prod.status !== "SOLD_OUT") {
           console.log(`✦ "${prod.title}" marcada como VENDIDA en Facebook. Sincronizando...`);
-          safeSendMessage({
-            action: "MARK_SOLD_IN_FIRESTORE",
-            productId: prod.id,
-            collection: prod._collection
-          }, (res) => {
-            if (res && res.success) {
-              prod.status = "SOLD_OUT";
-              updatedCount++;
-              if (info) info.textContent = `✓ "${prod.title}" marcado como AGOTADO (regla 12h)`;
-            }
+          const res = await new Promise(resolve => {
+            safeSendMessage({
+              action: "MARK_SOLD_IN_FIRESTORE",
+              productId: prod.id,
+              collection: prod._collection || activeSyncCollection
+            }, resolve);
           });
-        } else if (rawPrice !== null && prod.priceUsd !== undefined) {
-          let normalizedFbUsd = rawPrice;
-          if (rawPrice > 200) {
-            normalizedFbUsd = Number((rawPrice / 37.0).toFixed(2));
+          if (res && res.success) {
+            prod.status = "SOLD_OUT";
+            updatedCount++;
+            if (info) info.textContent = `✓ "${prod.title}" marcado como AGOTADO (regla 12h)`;
+          }
+        } else {
+          // Normalización bimoneda de precios canónicos de Facebook
+          const isAccessory = ACCESSORY_REGEX.test(prod.title || fbTitle || "");
+          const isHighEnd = !isAccessory && HIGH_END_REGEX.test(prod.title || fbTitle || "");
+
+          let newUsd = 0;
+          let newNio = 0;
+
+          if (isHighEnd && rawPrice >= 250 && rawPrice < 5000) {
+            // Hardware de alto valor publicado en Dólares ($1,100 USD -> C$ 40,700 NIO)
+            newUsd = Number(rawPrice.toFixed(2));
+            newNio = Math.round(newUsd * 37.0);
+          } else if (isHighEnd && rawPrice >= 5000) {
+            newNio = Math.round(rawPrice);
+            newUsd = Number((newNio / 37.0).toFixed(2));
+          } else {
+            // Catálogo general publicado en Córdobas (C$ 850, C$ 1350, C$ 650, etc.)
+            newNio = Math.round(rawPrice);
+            newUsd = Number((newNio / 37.0).toFixed(2));
           }
 
-          const diff = Math.abs(normalizedFbUsd - prod.priceUsd);
-          if (diff >= 0.5) {
-            console.log(`✦ Precio actualizado en FB para "${prod.title}": Web=$${prod.priceUsd} vs FB=$${normalizedFbUsd}`);
-            safeSendMessage({
-              action: "SYNC_PRICE_TO_FIRESTORE",
-              productId: prod.id,
-              newPrice: normalizedFbUsd,
-              fbListingId: fbListingId,
-              collection: prod._collection
-            }, (res) => {
-              if (res && res.success) {
-                prod.priceUsd = normalizedFbUsd;
-                updatedCount++;
-                if (info) info.textContent = `✓ Actualizado "${prod.title}" a $${normalizedFbUsd}`;
-              }
+          const currentNio = Number(prod.priceNio || Math.round((prod.priceUsd || 0) * 37.0));
+          const currentUsd = Number(prod.priceUsd || (currentNio / 37.0));
+          const diffNio = Math.abs(newNio - currentNio);
+          const diffUsd = Math.abs(newUsd - currentUsd);
+
+          if (diffNio >= 5 || diffUsd >= 0.20) {
+            console.log(`✦ Desfase detectado para "${prod.title}": Web=C$${currentNio} ($${currentUsd}) vs FB=C$${newNio} ($${newUsd})`);
+            const res = await new Promise(resolve => {
+              safeSendMessage({
+                action: "SYNC_PRICE_TO_FIRESTORE",
+                productId: prod.id,
+                newPriceUsd: newUsd,
+                newPriceNio: newNio,
+                fbListingId: fbListingId || prod.facebookListingId || "",
+                maxDiscountPct: prod.maxDiscountPct !== undefined ? prod.maxDiscountPct : 10,
+                collection: prod._collection || activeSyncCollection
+              }, resolve);
             });
+            if (res && res.success) {
+              prod.priceUsd = newUsd;
+              prod.priceNio = newNio;
+              if (fbListingId) prod.facebookListingId = fbListingId;
+              updatedCount++;
+              if (info) info.textContent = `✓ Actualizado "${prod.title}" -> C$ ${newNio.toLocaleString()} ($${newUsd} USD)`;
+            }
           }
         }
-        break;
+        break; // Coincidencia procesada para esta publicación
       }
     }
-  });
+  }
 
-  setTimeout(() => {
-    if (info) {
-      info.textContent = updatedCount > 0 
-        ? `✓ ${updatedCount} precio(s)/estado(s) sincronizado(s).` 
-        : `Todo sincronizado (${listings.length} publicaciones en pantalla).`;
-    }
-  }, 1200);
+  if (info) {
+    info.textContent = updatedCount > 0 
+      ? `✓ ${updatedCount} precio(s)/estado(s) sincronizado(s) con éxito.` 
+      : `Todo sincronizado (${listings.length} publicaciones analizadas).`;
+  }
 }
 
 /**

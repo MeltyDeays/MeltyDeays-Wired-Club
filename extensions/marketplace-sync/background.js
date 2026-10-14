@@ -123,10 +123,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 
   if (request.action === "SYNC_PRICE_TO_FIRESTORE") {
-    const { productId, newPrice, fbListingId, collection } = request;
+    const { productId, newPrice, newPriceUsd, newPriceNio, fbListingId, maxDiscountPct, collection } = request;
+    const finalUsd = newPriceUsd !== undefined ? newPriceUsd : newPrice;
+    const finalNio = newPriceNio !== undefined ? newPriceNio : Math.round(Number(finalUsd) * 37.0);
+    const finalPct = maxDiscountPct !== undefined ? maxDiscountPct : 10;
     chrome.storage?.local?.get(["targetCollection"], (stored) => {
       const col = collection || stored?.targetCollection || "rewards_catalog";
-      updateProductPriceFromFacebook(productId, newPrice, fbListingId, col)
+      updateProductPriceFromFacebook(productId, finalUsd, finalNio, fbListingId, finalPct, col)
         .then(result => sendResponse({ success: true, result }))
         .catch(error => sendResponse({ success: false, error: error.message }));
     });

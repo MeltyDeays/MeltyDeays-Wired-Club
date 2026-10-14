@@ -6,6 +6,61 @@ export const ACCESSORY_TITLE_REGEX = /(auricular|audifono|audífono|headset|earp
 const HIGH_END_HARDWARE_REGEX = /(laptop|computadora|notebook|predator|helios|rtx\s*\d+|gtx\s*\d+|radeon|intel\s*(core\s*)?ultra|core\s*i[79]|ryzen\s*[79]|macbook|torre\s*gamer|pc\s*gamer)/i;
 
 /**
+ * Extrae valor numérico real descartando precios tachados y resolviendo miles latinos.
+ * Soporta "C$850 C$1.000" -> 850, "C$1.350" -> 1350, "$25.50" -> 25.5, "$1100" -> 1100
+ *
+ * @param {string|number} text
+ * @returns {number|null}
+ */
+export function parseMarketplacePrice(text) {
+  if (text === null || text === undefined) return null;
+  if (typeof text === "number") return Number.isFinite(text) ? text : null;
+  const trimmed = String(text).trim();
+  if (!trimmed) return null;
+
+  const match = trimmed.match(/(?:C\$|\$|US\$|NIO)?\s*(\d+(?:[.,]\d+)*)/i);
+  if (!match || !match[1]) return null;
+
+  const rawNumStr = match[1].trim();
+  const isNio = /C\$/i.test(trimmed) || /NIO/i.test(trimmed);
+
+  if (!/[.,]/.test(rawNumStr)) {
+    const n = parseInt(rawNumStr, 10);
+    return isNaN(n) ? null : n;
+  }
+
+  const parts = rawNumStr.split(/[.,]/);
+  if (parts.length === 2 && parts[1].length === 3) {
+    const val = parseInt(parts[0] + parts[1], 10);
+    return isNaN(val) ? null : val;
+  }
+
+  if (parts.length > 2) {
+    const lastPart = parts[parts.length - 1];
+    if (lastPart.length === 3) {
+      return parseInt(parts.join(""), 10);
+    }
+    if (lastPart.length <= 2) {
+      const intPart = parts.slice(0, -1).join("");
+      return parseFloat(`${intPart}.${lastPart}`);
+    }
+  }
+
+  if (isNio) {
+    const val = parseInt(parts.join(""), 10);
+    return isNaN(val) ? null : val;
+  }
+
+  if (parts.length === 2 && parts[1].length <= 2) {
+    return parseFloat(`${parts[0]}.${parts[1]}`);
+  }
+
+  const clean = rawNumStr.replace(/,/g, "");
+  const res = parseFloat(clean);
+  return isNaN(res) ? null : res;
+}
+
+/**
  * Normaliza precios con detección inteligente de moneda (USD / NIO):
  * - Moneda explícita: Si 'currency' es "USD" o contiene "$" (sin "C$").
  * - Inferencia por categoría técnica: Laptops, GPUs RTX, Intel Core Ultra y hardware de alto valor
@@ -21,14 +76,15 @@ const HIGH_END_HARDWARE_REGEX = /(laptop|computadora|notebook|predator|helios|rt
  * @returns {{ priceUsd: number, priceNio: number, currency: 'USD' | 'NIO', raw: number }}
  */
 export function normalizePriceByThreshold(rawValue, currency = "", title = "", description = "") {
-  if (typeof rawValue === "string") {
-    // Si viene texto con símbolo de córdobas 'C$'
-    if (rawValue.includes("C$") && !currency) {
+  let val = 0;
+  if (typeof rawValue === "number") {
+    val = Number.isFinite(rawValue) ? rawValue : 0;
+  } else {
+    if (String(rawValue).includes("C$") && !currency) {
       currency = "NIO";
     }
-    rawValue = rawValue.replace(/[^0-9.]/g, "");
+    val = parseMarketplacePrice(rawValue) || 0;
   }
-  const val = parseFloat(rawValue) || 0;
 
   if (val <= 0) {
     return { priceUsd: 0, priceNio: 0, currency: "USD", raw: 0 };
