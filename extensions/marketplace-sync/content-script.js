@@ -172,12 +172,51 @@ function getScannableListings() {
     );
   }
 
+  function isListingAvailable(textContent, lines) {
+    if (!textContent) return false;
+    const lower = textContent.toLowerCase();
+
+    // 1. Si el botón dice "marcar como disponible", la publicación actualmente ESTÁ VENDIDA / AGOTADA
+    if (lower.includes("marcar como disponible") || lower.includes("mark as available")) {
+      return false;
+    }
+
+    // 2. Si alguna línea de estado indica vendido o agotado
+    for (const line of lines) {
+      const l = line.toLowerCase().trim();
+      if (/^(vendido|agotado|sold|out of stock)(\s*·|\s*$)/i.test(l)) {
+        return false;
+      }
+      if (l === "vendido fuera de facebook" || l === "vendido en facebook") {
+        return false;
+      }
+    }
+
+    // 3. Confirmar que tenga indicador de disponible/activo o que tenga botón para marcarlo como vendido/agotado
+    const hasAvailableIndicator = lines.some(line => {
+      const l = line.toLowerCase().trim();
+      return /^(disponible|activo|en stock|in stock|active|available)(\s*·|\s*$)/i.test(l) ||
+             l.includes("marcar como agotado") ||
+             l.includes("marcar como vendido") ||
+             l.includes("mark as sold") ||
+             l.includes("mark as out of stock");
+    });
+
+    return hasAvailableIndicator;
+  }
+
   function extractListingDataFromElement(container, defaultId = null) {
     if (!container) return null;
     const textContent = container.innerText || "";
     if (textContent.length < 15 || textContent.length > 3000) return null;
 
     const rawLines = textContent.split("\n").map(l => l.trim()).filter(Boolean);
+
+    // FILTRO VITAL: Solo procesar publicaciones disponibles en stock (descartar vendidas y agotadas)
+    if (!isListingAvailable(textContent, rawLines)) {
+      return null;
+    }
+
     const rawPriceLine = rawLines.find(l => l.includes("$") || l.includes("C$") || l.includes("NIO") || /^\d{2,}\.?\d{0,3}$/.test(l)) || "";
     const priceLine = extractCleanPrice(rawPriceLine);
 
@@ -234,10 +273,10 @@ function getScannableListings() {
   }
 
   // 1. MÉTODO PRIORITARIO: Detección por botones de acción de fila individual ("Promocionar" o "Marcar como...")
+  // Búsqueda flexible que tolera iconos unicode ✔, spans anidados y variaciones de texto
   const actionButtons = Array.from(document.querySelectorAll('div[role="button"], button, span, div')).filter(el => {
-    if (el.children.length > 2) return false;
     const txt = (el.innerText || el.getAttribute("aria-label") || "").trim().toLowerCase();
-    return txt === "promocionar" || txt.startsWith("marcar como") || txt === "boost listing" || txt.startsWith("mark as");
+    return txt.includes("marcar como") || txt.includes("mark as") || txt.includes("promocionar") || txt.includes("boost");
   });
 
   const processedCards = new Set();
