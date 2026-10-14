@@ -290,7 +290,7 @@ function getScannableListings() {
       curr = curr.parentElement;
       if (!curr) break;
 
-      const txt = curr.innerText || "";
+      const txt = curr.textContent || curr.innerText || "";
       const hasPrice = txt.includes("$") || txt.includes("C$") || txt.includes("NIO");
       const hasMeta = txt.includes("publicado") || txt.includes("clics") || txt.includes("marcar como") || txt.includes("promocionar") || txt.includes("disponible") || txt.includes("activo");
 
@@ -307,7 +307,7 @@ function getScannableListings() {
 
   // ESTRATEGIA 2: Fallback por Botones de Acción de Fila
   const actionButtons = Array.from(document.querySelectorAll('div[role="button"], button')).filter(el => {
-    const txt = (el.innerText || el.getAttribute("aria-label") || "").trim().toLowerCase();
+    const txt = (el.textContent || el.innerText || el.getAttribute("aria-label") || "").trim().toLowerCase();
     return txt.includes("marcar como") || txt.includes("mark as") || txt.includes("promocionar") || txt.includes("boost");
   });
 
@@ -317,7 +317,7 @@ function getScannableListings() {
       curr = curr.parentElement;
       if (!curr) break;
 
-      const txt = curr.innerText || "";
+      const txt = curr.textContent || curr.innerText || "";
       const hasPrice = txt.includes("$") || txt.includes("C$") || txt.includes("NIO");
       const hasImg = Boolean(curr.querySelector("img"));
 
@@ -388,7 +388,7 @@ async function deleteListingFromSellingPage(targetId, targetTitle) {
     while (curr && curr !== document.body) {
       curr = curr.parentElement;
       if (!curr) break;
-      const txt = curr.innerText || "";
+      const txt = curr.textContent || curr.innerText || "";
       const hasPrice = txt.includes("$") || txt.includes("C$") || txt.includes("NIO");
       const hasMeta = txt.includes("publicado") || txt.includes("clics") || txt.includes("marcar como") || txt.includes("promocionar") || txt.includes("disponible") || txt.includes("revisando");
 
@@ -1568,7 +1568,7 @@ function detectProductBrand(product) {
     .replace(/\b(para|for|compatible(\s+con)?|diseñado\s+para|soporte\s+para|funda\s+para|estuche\s+para)\s+[a-z0-9\-\s]+/gi, "")
     .trim();
 
-  // Catálogo de marcas oficiales con capitalización de fábrica
+  // Catálogo de marcas oficiales con capitalización de fábrica precompilado
   const BRAND_MAP = [
     { regex: /\b(tp-?link)\b/i, name: "TP-Link" },
     { regex: /\b(gamesir)\b/i, name: "GameSir" },
@@ -3274,17 +3274,24 @@ function checkPageAndInit() {
 
 checkPageAndInit();
 setTimeout(checkPageAndInit, 800);
-setTimeout(checkPageAndInit, 2000);
 
 let lastKnownUrl = window.location.href;
+const handleUrlChange = () => {
+  if (!isExtensionValid()) return;
+  if (window.location.href !== lastKnownUrl) {
+    lastKnownUrl = window.location.href;
+    checkPageAndInit();
+  }
+};
+
+window.addEventListener("popstate", handleUrlChange);
+window.addEventListener("hashchange", handleUrlChange);
+
 const urlWatcherInterval = setInterval(() => {
   if (!isExtensionValid()) {
     clearInterval(urlWatcherInterval);
     return;
   }
-  if (window.location.href !== lastKnownUrl) {
-    lastKnownUrl = window.location.href;
-    checkPageAndInit();
-  }
-}, 800);
+  handleUrlChange();
+}, 1500);
 

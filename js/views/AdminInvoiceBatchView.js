@@ -2650,14 +2650,8 @@ export function isBrandVerifiable(title = "", description = "") {
     .replace(/\b(para|for|compatible(\s+con)?|diseñado\s+para|soporte\s+para|funda\s+para|estuche\s+para)\s+[a-z0-9\-\s]+/gi, "")
     .trim();
 
-  const KNOWN_BRANDS = [
-    "acer", "predator", "helios", "gamesir", "anker", "powercore",
-    "tp-link", "tplink", "asus", "lenovo", "dell", "hp", "apple",
-    "sony", "nintendo", "xbox", "logitech", "razer", "samsung", "xiaomi"
-  ];
-  
-  // La marca debe estar explícitamente como marca principal en el TÍTULO del producto
-  return KNOWN_BRANDS.some(b => new RegExp(`\\b${b}\\b`, "i").test(cleanTitle));
+  const KNOWN_BRANDS_REGEX = /\b(acer|predator|helios|gamesir|anker|powercore|tp-?link|asus|lenovo|dell|hp|apple|sony|nintendo|xbox|logitech|razer|samsung|xiaomi)\b/i;
+  return KNOWN_BRANDS_REGEX.test(cleanTitle);
 }
 
 export const FB_MOLD_PRESETS = {};

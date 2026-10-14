@@ -21,6 +21,8 @@ function getRandomGroqKey() {
 
 const PLACEHOLDER_IMG_REGEX = /(brak[-_]?zdj|no[-_]?image|placeholder|sin[-_]?foto|image[-_]?not[-_]?found|default[-_]?image|not[-_]?available|sin[-_]?imagen|missing[-_]?image|preview[-_]?unavailable|no[-_]?photo|brakfoto)/i;
 
+const KNOWN_BRANDS_REGEX = /\b(acer|predator|helios|gamesir|anker|powercore|tp-?link|asus|lenovo|dell|hp|apple|sony|nintendo|xbox|logitech|razer|samsung|xiaomi)\b/i;
+
 function isBrandVerifiable(title = "", description = "") {
   const rawTitle = (title || "").toLowerCase();
   // Limpiar menciones de compatibilidad en el título (ej: "para Nintendo Switch", "compatible con Xbox", etc.)
@@ -28,14 +30,7 @@ function isBrandVerifiable(title = "", description = "") {
     .replace(/\b(para|for|compatible(\s+con)?|diseñado\s+para|soporte\s+para|funda\s+para|estuche\s+para)\s+[a-z0-9\-\s]+/gi, "")
     .trim();
 
-  const KNOWN_BRANDS = [
-    "acer", "predator", "helios", "gamesir", "anker", "powercore",
-    "tp-link", "tplink", "asus", "lenovo", "dell", "hp", "apple",
-    "sony", "nintendo", "xbox", "logitech", "razer", "samsung", "xiaomi"
-  ];
-  
-  // La marca debe estar explícitamente como marca principal en el TÍTULO del producto
-  return KNOWN_BRANDS.some(b => new RegExp(`\\b${b}\\b`, "i").test(cleanTitle));
+  return KNOWN_BRANDS_REGEX.test(cleanTitle);
 }
 
 const HIGH_END_HARDWARE_REGEX = /(laptop|computadora|notebook|predator|helios|rtx\s*\d+|gtx\s*\d+|radeon|intel\s*(core\s*)?ultra|core\s*i[79]|ryzen\s*[79]|macbook|torre\s*gamer|pc\s*gamer)/i;
