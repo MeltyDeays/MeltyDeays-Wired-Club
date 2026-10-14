@@ -575,15 +575,28 @@ function renderManualRelistListings(listings) {
     return;
   }
 
+  // Preservar casillas que el usuario haya desmarcado manualmente
+  const previouslyUnchecked = new Set();
+  container.querySelectorAll(".chk-relist-item:not(:checked)").forEach(chk => {
+    previouslyUnchecked.add(parseInt(chk.dataset.idx, 10));
+  });
+
+  const chkPreferReal = document.getElementById("chk-prefer-real-photos");
+  const preferRealPhotos = chkPreferReal ? chkPreferReal.checked : true;
+
   container.innerHTML = activeScannedListings.map((item, idx) => {
     const isLinked = Boolean(item.twinId || item.isTwinLinked);
     const displayPrice = item.priceLine || (item.twinPriceNio ? `C$ ${item.twinPriceNio}` : "-");
-    const thumbUrl = item.thumb || "";
+    // Prioridad a la imagen real de Facebook, incluso si no existe en la web
+    const thumbUrl = preferRealPhotos 
+      ? (item.fbThumb || item.thumb || item.webThumb || "") 
+      : (item.webThumb || item.fbThumb || item.thumb || "");
+    const isChecked = !previouslyUnchecked.has(idx);
 
     return `
       <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px; background: #090d16; border: 1px solid #1e293b; border-radius: 4px; padding: 4px 6px;">
         <div style="display: flex; align-items: center; gap: 6px; min-width: 0; flex: 1;">
-          <input type="checkbox" id="chk-relist-${idx}" class="chk-relist-item" data-idx="${idx}" checked style="accent-color: #0284c7; cursor: pointer; transform: scale(1.05);" />
+          <input type="checkbox" id="chk-relist-${idx}" class="chk-relist-item" data-idx="${idx}" ${isChecked ? "checked" : ""} style="accent-color: #0284c7; cursor: pointer; transform: scale(1.05);" />
           <div style="width: 28px; height: 28px; border-radius: 4px; overflow: hidden; background: #020617; border: 1px solid #334155; flex-shrink: 0; display: flex; align-items: center; justify-content: center;">
             ${thumbUrl ? `<img src="${thumbUrl}" alt="${item.fbTitle}" referrerpolicy="no-referrer" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.onerror=null; this.parentElement.innerHTML='📦';" />` : `<span style="font-size: 11px;">📦</span>`}
           </div>
@@ -595,7 +608,7 @@ function renderManualRelistListings(listings) {
               <span style="color: #38bdf8; font-family: monospace; font-weight: 700;">${displayPrice}</span>
               ${isLinked
                 ? `<span style="font-size: 8px; background: rgba(16,185,129,0.2); color: #34d399; padding: 0 4px; border-radius: 3px; border: 1px solid rgba(16,185,129,0.3);">✓ Gemelo Web</span>`
-                : `<span style="font-size: 8px; background: rgba(245,158,11,0.2); color: #fbbf24; padding: 0 4px; border-radius: 3px; border: 1px solid rgba(245,158,11,0.3);">⚠️ Sin Gemelo</span>`
+                : `<span style="font-size: 8px; background: rgba(245,158,11,0.2); color: #fbbf24; padding: 0 4px; border-radius: 3px; border: 1px solid rgba(245,158,11,0.3);">⚠️ Solo en FB</span>`
               }
             </div>
           </div>
@@ -710,7 +723,7 @@ document.getElementById("btn-execute-manual-relist")?.addEventListener("click", 
   const queue = selectedItems.map(item => {
     const targetId = item.twinId || (item.fbListingId ? `fb_${item.fbListingId}` : null);
     const cleanPriceDigits = item.priceLine ? item.priceLine.replace(/[^0-9]/g, "") : "";
-    const chosenThumb = (preferRealPhotos && item.fbThumb) ? item.fbThumb : (item.webThumb || item.thumb || item.fbThumb || "");
+    const chosenThumb = (preferRealPhotos && item.fbThumb) ? item.fbThumb : (item.fbThumb || item.thumb || item.webThumb || "");
     return {
       productId: targetId,
       oldListingId: item.fbListingId || "",
@@ -728,6 +741,7 @@ document.getElementById("btn-execute-manual-relist")?.addEventListener("click", 
 
   log(`🚀 Iniciando lote de renovación con IA (${queue.length} publicaciones)...`);
 
+  // Despacho de lote START_BATCH_RELIST (compatible con RELIST_EXPIRED_PRODUCT individual)
   chrome.runtime.sendMessage({
     action: "START_BATCH_RELIST",
     queue: queue
@@ -738,6 +752,13 @@ document.getElementById("btn-execute-manual-relist")?.addEventListener("click", 
       log(`⚠️ Error iniciando lote: ${res?.error || "Desconocido"}`);
     }
   });
+});
+
+// Reactividad: alternar miniaturas al cambiar el checkbox de fotos reales
+document.getElementById("chk-prefer-real-photos")?.addEventListener("change", () => {
+  if (activeScannedListings.length > 0) {
+    renderManualRelistListings(activeScannedListings);
+  }
 });
 
 // Botón: Limpieza masiva de duplicados antiguos en pantalla

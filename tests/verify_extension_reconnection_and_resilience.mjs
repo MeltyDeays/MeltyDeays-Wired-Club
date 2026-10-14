@@ -27,9 +27,9 @@ assert(contentScript.includes("safeSendMessage("), "content-script.js debe defin
 assert(contentScript.includes("clearInterval(urlWatcherInterval)"), "content-script.js debe limpiar urlWatcherInterval al invalidarse el contexto");
 console.log("  ✓ Test 3: Auto-terminación de timers y supresión de 'Extension context invalidated' validada.");
 
-// Test 4: Priorización de imagen oficial en miniaturas
-assert(contentScript.includes("const thumb = (twin && twin.imageUrl) ? twin.imageUrl : fbImg;"), "content-script.js debe preferir twin.imageUrl sobre miniaturas de CDN de FB");
-console.log("  ✓ Test 4: Priorización de imágenes oficiales del catálogo web validada.");
+// Test 4: Priorización de fotos reales de Facebook en miniaturas escaneadas
+assert(contentScript.includes("const thumb = fbImg || webImg;") || contentScript.includes("fbThumb: fbImg"), "content-script.js debe priorizar la foto real física de Facebook (fbImg) en miniaturas escaneadas");
+console.log("  ✓ Test 4: Priorización de fotos reales de Facebook en escaneo validada.");
 
 console.log("=================================================");
 console.log("TODAS LAS PRUEBAS DE BLINDAJE PASARON AL 100%");

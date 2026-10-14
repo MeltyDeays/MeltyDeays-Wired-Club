@@ -385,6 +385,7 @@ function render(model) {
 }
 
 let renderScheduled = false;
+let pendingRenderModel = null;
 function resolvePendingDeepLink(model) {
   if (typeof window === "undefined") return;
   const pendingId = window._pendingSpecsModalProductId;

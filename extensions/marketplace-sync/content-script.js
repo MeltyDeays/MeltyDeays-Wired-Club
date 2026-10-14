@@ -200,6 +200,85 @@ function isListingAvailable(textContent, lines) {
   return hasAvailableIndicator;
 }
 
+/**
+ * Extrae de forma exhaustiva la URL de la imagen real del producto en Facebook Marketplace.
+ * Prioriza CDN de Facebook (scontent / fbcdn) y descarta iconos, emojis o avatares.
+ */
+function extractFacebookProductImageUrl(container, preferredImg = null) {
+  const getSrcFromImg = (img) => {
+    if (!img) return "";
+    if (img.srcset) {
+      const candidates = img.srcset.split(",").map(s => s.trim().split(" ")[0]).filter(Boolean);
+      if (candidates.length > 0) return candidates[candidates.length - 1];
+    }
+    return img.currentSrc || img.src || img.getAttribute?.("data-src") || img.getAttribute?.("data-orig-src") || "";
+  };
+
+  const isGarbage = (src, alt = "") => {
+    if (!src || typeof src !== "string") return true;
+    const s = src.toLowerCase();
+    const a = (alt || "").toLowerCase();
+    if (s.includes("emoji") || s.includes("static.xx") || s.includes("rsrc.php") || s.includes("/rsrc/")) return true;
+    if (a.includes("perfil") || a.includes("profile") || a.includes("avatar")) return true;
+    return false;
+  };
+
+  if (preferredImg) {
+    const src = getSrcFromImg(preferredImg);
+    if (src && !isGarbage(src, preferredImg.alt)) return src;
+  }
+
+  if (!container) return "";
+
+  if (container.tagName === "IMG") {
+    const src = getSrcFromImg(container);
+    if (src && !isGarbage(src, container.alt)) return src;
+  }
+
+  const allImgs = Array.from(container.querySelectorAll("img")).filter(img => {
+    const src = getSrcFromImg(img);
+    if (isGarbage(src, img.alt)) return false;
+    const w = img.offsetWidth || img.naturalWidth || 0;
+    const h = img.offsetHeight || img.naturalHeight || 0;
+    if (w > 0 && h > 0 && (w < 40 || h < 40)) return false;
+    return true;
+  });
+
+  if (allImgs.length > 0) {
+    const fbCdn = allImgs.filter(img => {
+      const s = getSrcFromImg(img);
+      return s.includes("scontent") || s.includes("fbcdn.net");
+    });
+    const pool = fbCdn.length > 0 ? fbCdn : allImgs;
+    pool.sort((a, b) => {
+      const areaA = (a.offsetWidth || a.naturalWidth || 100) * (a.offsetHeight || a.naturalHeight || 100);
+      const areaB = (b.offsetWidth || b.naturalWidth || 100) * (b.offsetHeight || b.naturalHeight || 100);
+      return areaB - areaA;
+    });
+    const best = getSrcFromImg(pool[0]);
+    if (best) return best;
+  }
+
+  const svgImgs = Array.from(container.querySelectorAll("image"));
+  for (const simg of svgImgs) {
+    const href = simg.getAttribute("href") || simg.getAttribute("xlink:href") || "";
+    if (href && (href.includes("scontent") || href.includes("fbcdn.net")) && !isGarbage(href)) {
+      return href;
+    }
+  }
+
+  const bgEls = Array.from(container.querySelectorAll('[style*="background-image"], [style*="background:"]'));
+  for (const el of bgEls) {
+    const styleBg = el.style?.backgroundImage || el.style?.background || "";
+    const m = styleBg.match(/url\(["']?(https?:\/\/[^"')]+)["']?\)/i);
+    if (m && m[1] && (m[1].includes("scontent") || m[1].includes("fbcdn.net")) && !isGarbage(m[1])) {
+      return m[1];
+    }
+  }
+
+  return "";
+}
+
 function getScannableListings() {
   const listings = [];
   const seenTitles = new Set();
@@ -258,6 +337,7 @@ function getScannableListings() {
     if (fbListingId) seenIds.add(fbListingId);
 
     const imgEl = container.querySelector("img");
+    const fbImg = extractFacebookProductImageUrl(container, imgEl);
 
     return {
       element: container,
@@ -267,7 +347,8 @@ function getScannableListings() {
       textContent,
       lines: rawLines,
       priceLine,
-      imgEl
+      imgEl,
+      fbImg
     };
   }
 
@@ -298,7 +379,11 @@ function getScannableListings() {
         if (!processedCards.has(curr)) {
           processedCards.add(curr);
           const data = extractListingDataFromElement(curr);
-          if (data) listings.push(data);
+          if (data) {
+            data.imgEl = img;
+            data.fbImg = extractFacebookProductImageUrl(curr, img) || data.fbImg;
+            listings.push(data);
+          }
         }
         break; // Detener ascenso en la tarjeta de fila individual
       }
@@ -325,7 +410,11 @@ function getScannableListings() {
         if (!processedCards.has(curr)) {
           processedCards.add(curr);
           const data = extractListingDataFromElement(curr);
-          if (data) listings.push(data);
+          if (data) {
+            data.imgEl = curr.querySelector("img");
+            data.fbImg = extractFacebookProductImageUrl(curr, data.imgEl) || data.fbImg;
+            listings.push(data);
+          }
         }
         break;
       }
@@ -339,6 +428,8 @@ function getScannableListings() {
     if (dialogTxt.includes("Tu publicación") || dialogTxt.includes("Editar publicación") || dialogTxt.includes("Eliminar publicación")) {
       const data = extractListingDataFromElement(dialog);
       if (data && !seenTitles.has(normalizeTitle(data.fbTitle))) {
+        data.imgEl = dialog.querySelector("img");
+        data.fbImg = extractFacebookProductImageUrl(dialog, data.imgEl) || data.fbImg;
         listings.push(data);
       }
     }
@@ -355,7 +446,11 @@ function getScannableListings() {
     if (parent && !processedCards.has(parent)) {
       processedCards.add(parent);
       const data = extractListingDataFromElement(parent, fbListingId);
-      if (data) listings.push(data);
+      if (data) {
+        data.imgEl = parent.querySelector("img");
+        data.fbImg = extractFacebookProductImageUrl(parent, data.imgEl) || data.fbImg;
+        listings.push(data);
+      }
     }
   }
 
@@ -2068,13 +2163,26 @@ function initAutoPublishAssistant() {
     if (loaded) return;
     loaded = true;
     if (!prod) {
-      console.warn("No se pudo obtener el producto para auto-publicar:", haibaneId);
-      return;
+      if (haibaneId && haibaneId.startsWith("fb_")) {
+        const urlTitle = urlParams.get("title") || "Artículo en Venta";
+        prod = {
+          id: haibaneId,
+          title: urlTitle,
+          priceNio: Number(overridePrice) || 0,
+          images: thumbUrl ? [thumbUrl] : [],
+          description: `Artículo verificado disponible para entrega inmediata en Juigalpa.\n• Estado: Excelente\n• Garantía física y revisión presencial`,
+          category: "electronics",
+          _collection: "products"
+        };
+      } else {
+        console.warn("No se pudo obtener el producto para auto-publicar:", haibaneId);
+        return;
+      }
     }
     if (overridePrice && !isNaN(Number(overridePrice)) && Number(overridePrice) > 0) {
       prod.priceNio = Number(overridePrice);
     }
-    if (preferRealPhotos && thumbUrl) {
+    if ((preferRealPhotos || !prod.images || prod.images.length === 0) && thumbUrl) {
       prod.images = [thumbUrl];
     }
     injectPublishAssistantBanner(prod);
@@ -3056,18 +3164,10 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
               (p.title && l.fbTitle && (l.fbTitle.toLowerCase().includes(p.title.toLowerCase().slice(0, 15)) || p.title.toLowerCase().includes(l.fbTitle.toLowerCase().slice(0, 15))))
             );
 
-            const imgEl = l.imgEl || l.element?.querySelector("img");
-            let fbImg = "";
-            if (imgEl) {
-              if (imgEl.srcset) {
-                const candidates = imgEl.srcset.split(",").map(s => s.trim().split(" ")[0]).filter(Boolean);
-                fbImg = candidates[candidates.length - 1] || imgEl.currentSrc || imgEl.src || "";
-              } else {
-                fbImg = imgEl.currentSrc || imgEl.src || imgEl.getAttribute("data-src") || "";
-              }
-            }
+            const fbImg = l.fbImg || extractFacebookProductImageUrl(l.element, l.imgEl);
             const webImg = (twin && twin.imageUrl) ? twin.imageUrl : "";
-            const thumb = webImg || fbImg;
+            // Prioridad absoluta a la foto real física capturada en Facebook
+            const thumb = fbImg || webImg;
             const canonicalFbId = l.fbListingId || (twin?.facebookListingId ? String(twin.facebookListingId) : null);
 
             return {
