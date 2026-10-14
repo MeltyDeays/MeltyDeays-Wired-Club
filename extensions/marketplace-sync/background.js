@@ -112,10 +112,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 
   if (request.action === "RELIST_EXPIRED_PRODUCT") {
-    const { productId, oldListingId, overridePrice } = request;
+    const { productId, oldListingId, overridePrice, preferRealPhotos, thumb, title } = request;
     const priceParam = (overridePrice && !isNaN(Number(overridePrice))) ? `&override_price=${encodeURIComponent(overridePrice)}` : "";
+    const preferParam = preferRealPhotos ? `&prefer_real_photos=true` : "";
+    const thumbParam = thumb ? `&thumb_url=${encodeURIComponent(thumb)}` : "";
+    const titleParam = title ? `&title=${encodeURIComponent(title)}` : "";
     chrome.tabs.create({
-      url: `https://www.facebook.com/marketplace/create/item?haibane_id=${encodeURIComponent(productId)}&auto_relist=true&old_listing_id=${encodeURIComponent(oldListingId || "")}${priceParam}`
+      url: `https://www.facebook.com/marketplace/create/item?haibane_id=${encodeURIComponent(productId)}&auto_relist=true&old_listing_id=${encodeURIComponent(oldListingId || "")}${priceParam}${preferParam}${thumbParam}${titleParam}`
     }, (tab) => {
       sendResponse({ success: true, tabId: tab.id });
     });

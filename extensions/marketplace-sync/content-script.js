@@ -1118,15 +1118,15 @@ function extractHighResPhotosFromFacebookHtml(html) {
   const unescaped = html.replaceAll("\\/", "/");
   const photos = [];
 
-  // 1. Portada principal OpenGraph
+  // 1. Portada principal OpenGraph (exclusiva del ítem publicado en <head>)
   const ogMatch = unescaped.match(/<meta\s+property="og:image"\s+content="(https:\/\/[^"\s]+)"/i) ||
                   unescaped.match(/<meta\s+content="(https:\/\/[^"\s]+)"\s+property="og:image"/i);
   if (ogMatch && ogMatch[1] && !ogMatch[1].includes("static.xx") && !ogMatch[1].includes("rsrc.php")) {
     photos.push(ogMatch[1]);
   }
 
-  // 2. Detección estructurada en JSON de listing_photos o viewer_image
-  const listingPhotosRegex = /"(?:listing_photos|viewer_image|photos)":\s*\[(.*?)\]/s;
+  // 2. Detección estructurada en JSON de listing_photos o viewer_image exclusivamente del producto
+  const listingPhotosRegex = /"(?:listing_photos|viewer_image)":\s*\[(.*?)\]/s;
   const match = unescaped.match(listingPhotosRegex);
   if (match && match[1]) {
     const uriMatches = match[1].matchAll(/"uri":\s*"(https:\/\/[^"\s]+)"/g);
@@ -1138,46 +1138,16 @@ function extractHighResPhotosFromFacebookHtml(html) {
     }
   }
 
-  // 3. Extracción profunda por URLs de scontent t39.30808-6 (imágenes reales subidas por usuarios)
-  const allUrls = unescaped.matchAll(/(https:\/\/scontent[^\s"'<>]+\/t39\.30808-6\/[^\s"'<>]+)/g);
-  const byPhotoId = new Map();
-  for (const u of allUrls) {
-    let url = u[1];
-    url = url.replace(/["'\\].*$/, ""); // Limpieza de cola
-    if (url.includes("rsrc.php") || url.includes("emoji.php") || url.includes("static.xx") || url.includes("profile") || url.includes("avatar")) {
-      continue;
-    }
-
-    const idMatch = url.match(/\/t39\.30808-6\/(\d+)_/);
-    const photoId = idMatch ? idMatch[1] : url;
-
-    let score = 0;
-    if (url.includes("_n.jpg")) score += 50;
-    if (url.includes("p960") || url.includes("s1080") || url.includes("p720") || url.includes("s1440") || url.includes("s2048")) score += 40;
-    // Penalizar fuertemente recortes automáticos de miniaturas
-    if (url.includes("c0.") || url.includes("c0.0.")) score -= 100;
-    if (url.includes("p100") || url.includes("s150") || url.includes("p160") || url.includes("s50")) score -= 50;
-
-    const existing = byPhotoId.get(photoId);
-    if (!existing || score > existing.score) {
-      byPhotoId.set(photoId, { url, score });
-    }
-  }
-
-  for (const item of byPhotoId.values()) {
-    if (item.score > -50 && !photos.includes(item.url)) {
-      photos.push(item.url);
-    }
-  }
-
-  return photos;
+  // Límite estricto de seguridad: jamás devolver más de 5 fotos para evitar colapsar Marketplace
+  return Array.from(new Set(photos)).slice(0, 5);
 }
 
 /**
  * Remasteriza y mejora la resolución/nitidez de una imagen usando Canvas HD.
- * 1. Escala con interpolación bicúbica de alta calidad a un mínimo de 1080px.
- * 2. Aplica filtro Unsharp Mask de micro-contraste para compensar la compresión previa de Meta.
- * 3. Exporta a JPEG con calidad 0.95.
+ * 1. Mantiene estrictamente la relación de aspecto original (cero recorte).
+ * 2. Si la imagen es menor a 900px, escala suavemente hasta un máximo seguro de 2.0x.
+ * 3. Aplica filtro Unsharp Mask de micro-contraste para compensar la compresión previa de Meta.
+ * 4. Exporta a JPEG con calidad 0.95 sin alterar la memoria.
  */
 async function enhanceImageWithCanvasHD(blob) {
   if (!blob || !blob.type || !blob.type.includes("image")) return blob;
@@ -1192,11 +1162,10 @@ async function enhanceImageWithCanvasHD(blob) {
           const origH = img.naturalHeight || img.height;
           if (origW < 10 || origH < 10) return resolve(blob);
 
-          const targetMinDim = 1080;
           const maxDim = Math.max(origW, origH);
           let scale = 1;
-          if (maxDim < targetMinDim) {
-            scale = targetMinDim / maxDim;
+          if (maxDim < 900) {
+            scale = Math.min(2.0, 900 / maxDim);
           }
 
           const targetW = Math.round(origW * scale);
@@ -1218,7 +1187,7 @@ async function enhanceImageWithCanvasHD(blob) {
             const copy = new Uint8ClampedArray(data);
             const w = targetW;
             const h = targetH;
-            const weight = 0.20; // Enfoque de bordes y micro-contraste
+            const weight = 0.15; // Micro-enfoque sutil y seguro
 
             for (let y = 1; y < h - 1; y++) {
               const row = y * w * 4;
@@ -1297,14 +1266,16 @@ async function injectProductPhotosToForm(photoUrls, productId = "") {
     return false;
   }
 
-  // Deduplicación estricta de URLs
-  const uniqueUrls = Array.from(new Set(photoUrls.filter(Boolean)));
+  // Deduplicación estricta de URLs limitadas a un máximo seguro de 5 fotos de producto
+  const uniqueUrls = Array.from(new Set(photoUrls.filter(Boolean))).slice(0, 5);
 
-  // Generar y agregar slide con código QR oficial al final de la galería (solo 1 vez)
+  // Generar y agregar slide con código QR oficial al final de la galería (solo 1 vez, si hay cupo)
   try {
-    const qrSlide = await generateQrCardDataUrl();
-    if (qrSlide && !uniqueUrls.includes(qrSlide)) {
-      uniqueUrls.push(qrSlide);
+    if (uniqueUrls.length < 8) {
+      const qrSlide = await generateQrCardDataUrl();
+      if (qrSlide && !uniqueUrls.includes(qrSlide)) {
+        uniqueUrls.push(qrSlide);
+      }
     }
   } catch (err) {
     console.warn("Aviso: No se pudo generar slide QR:", err);
@@ -2302,13 +2273,18 @@ function initAutoPublishAssistant() {
 
       if (Array.isArray(hdPhotos) && hdPhotos.length > 0) {
         console.log(`✓ Haibane: ${hdPhotos.length} fotos originales en HD y sin recorte recuperadas de Facebook.`);
-        prod.images = hdPhotos;
+        prod.images = hdPhotos.slice(0, 5);
       } else if (Array.isArray(prod.fbPhotos) && prod.fbPhotos.length > 0) {
         console.log(`✓ Haibane: Usando ${prod.fbPhotos.length} fotos reales de Facebook preservadas en catálogo.`);
-        prod.images = prod.fbPhotos;
-      } else if (thumbUrl && (!prod.images || prod.images.length === 0)) {
+        prod.images = prod.fbPhotos.slice(0, 5);
+      } else if (thumbUrl) {
+        console.log("✓ Haibane: Usando foto real de publicación de Facebook capturada en escaneo.");
         prod.images = [thumbUrl];
       }
+    }
+
+    if (Array.isArray(prod.images)) {
+      prod.images = prod.images.slice(0, 5);
     }
     injectPublishAssistantBanner(prod);
     if (isBatch) {

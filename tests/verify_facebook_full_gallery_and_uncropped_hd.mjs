@@ -38,39 +38,41 @@ assert.ok(Array.isArray(extractedPhotos), "Debe devolver un arreglo");
 assert.equal(extractedPhotos.length, 3, "Debe extraer las 3 fotos reales completas de la galería");
 console.log(`  ✓ Test 2: Galería de 3 fotos completas extraídas sin omisión: ${extractedPhotos.length} fotos encontradas.`);
 
-// Test 3: Filtrado de recortes cuadrados de miniaturas (c0.0.100.100a) y preferencia por alta resolución (_n.jpg)
-const mockHtmlWithThumbs = `
+// Test 3: Protección anti-inyección: Rechazo estricto de fotos sueltas de feed/memes y límite máximo de 5 fotos
+const mockHtmlWithRandomFeedMemes = `
   <html>
-    <script type="application/json">
-      "https:\\/\\/scontent.fmga3-2.fna.fbcdn.net\\/v\\/t39.30808-6\\/5001_thumb_s.jpg?stp=c0.0.100.100a_p100x100"
-      "https:\\/\\/scontent.fmga3-2.fna.fbcdn.net\\/v\\/t39.30808-6\\/5001_full_n.jpg?stp=dst-jpg_s1080x1080"
-      "https:\\/\\/scontent.fmga3-2.fna.fbcdn.net\\/v\\/t39.30808-6\\/5002_cropped.jpg?stp=c0.0.150.150a_s150x150"
-      "https:\\/\\/scontent.fmga3-2.fna.fbcdn.net\\/v\\/t39.30808-6\\/5002_full_n.jpg?stp=dst-jpg_p960x960"
-    </script>
+    <head>
+      <meta property="og:image" content="https://scontent.fmga3-2.fna.fbcdn.net/v/t39.30808-6/item_main_real_photo.jpg"/>
+    </head>
+    <body>
+      <!-- 70 fotos de memes y recomendaciones ajenas que no pertenecen a listing_photos -->
+      ${Array.from({ length: 70 }, (_, i) => `
+        <div class="feed-recommendation">
+          <img src="https://scontent.fmga3-2.fna.fbcdn.net/v/t39.30808-6/random_meme_${i}.jpg"/>
+        </div>
+      `).join("\n")}
+    </body>
   </html>
 `;
 
-const cleanHighRes = extractHighResPhotosFromFacebookHtml(mockHtmlWithThumbs);
-assert.equal(cleanHighRes.length, 2, "Debe consolidar las 2 fotos únicas eligiendo la versión sin recorte");
-assert.ok(!cleanHighRes[0].includes("c0.0."), "La foto 1 no debe tener recorte c0.0.");
-assert.ok(cleanHighRes[0].includes("1080"), "La foto 1 debe ser la versión 1080px");
-assert.ok(!cleanHighRes[1].includes("c0.0."), "La foto 2 no debe tener recorte c0.0.");
-assert.ok(cleanHighRes[1].includes("960"), "La foto 2 debe ser la versión 960px");
-console.log("  ✓ Test 3: Filtrado de recortes cuadrados y selección de versiones HD nativas validada.");
+const isolatedPhotos = extractHighResPhotosFromFacebookHtml(mockHtmlWithRandomFeedMemes);
+assert.equal(isolatedPhotos.length, 1, "Solo debe extraer la foto legítima de og:image e ignorar las 70 fotos de memes del feed");
+assert.equal(isolatedPhotos[0], "https://scontent.fmga3-2.fna.fbcdn.net/v/t39.30808-6/item_main_real_photo.jpg");
+assert.ok(isolatedPhotos.length <= 5, "La cantidad jamás debe sobrepasar el límite seguro de 5 fotos");
+console.log("  ✓ Test 3: Protección anti-inyección validada: 70 fotos ajenas de memes/feed ignoradas al 100%.");
 
-// Test 4: Verificación de preservación de aspecto en Canvas HD
+// Test 4: Verificación de preservación de aspecto y escalado seguro en Canvas HD
 const origW = 1600;
 const origH = 1200;
-const targetMinDim = 1080;
 const maxDim = Math.max(origW, origH);
 let scale = 1;
-if (maxDim < targetMinDim) {
-  scale = targetMinDim / maxDim;
+if (maxDim < 900) {
+  scale = Math.min(2.0, 900 / maxDim);
 }
 const targetW = Math.round(origW * scale);
 const targetH = Math.round(origH * scale);
 assert.equal(targetW / targetH, origW / origH, "La relación de aspecto (aspect ratio) debe ser exactamente igual");
-assert.equal(scale, 1, "Si la foto ya es HD (1600x1200), la escala debe ser 1 (sin degradación por remuestreo)");
+assert.equal(scale, 1, "Si la foto ya es HD (1600x1200), la escala debe ser 1 (cero remuestreo)");
 console.log("  ✓ Test 4: Preservación de aspecto original y cero recorte en Canvas HD validada.");
 
 console.log("=================================================");
