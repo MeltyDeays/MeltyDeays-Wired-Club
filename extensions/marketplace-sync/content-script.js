@@ -105,70 +105,173 @@ function loadCatalogProducts(callback) {
  * Extrae de forma exhaustiva las publicaciones visibles en /marketplace/you/selling o feeds de Marketplace.
  * Soporta tanto enlaces nativos (/marketplace/item/) como tarjetas visuales de React.
  */
+/**
+ * Extrae de forma exhaustiva las publicaciones visibles en /marketplace/you/selling o feeds de Marketplace.
+ * Soporta tanto la vista de lista completa (todas las publicaciones) como el modal individual.
+ */
 function getScannableListings() {
   const listings = [];
-  const seenIds = new Set();
   const seenTitles = new Set();
+  const seenIds = new Set();
 
-  // 1. Enlaces con ID de publicación
-  const links = Array.from(document.querySelectorAll('a[href*="/marketplace/item/"], a[href*="/marketplace/you/selling/"], a[href*="/item/"]'));
-  for (const a of links) {
-    const href = a.getAttribute("href") || "";
-    const idMatch = href.match(/(?:\/item\/|\/selling\/)?(\d{10,})/);
-    const fbListingId = idMatch ? idMatch[1] : null;
-    const parent = a.closest('div[role="article"]') || a.closest('div[role="row"]') || a.closest('div[role="listitem"]') || a.parentElement?.parentElement || a.parentElement;
-    const textContent = (parent ? parent.innerText : a.innerText) || "";
-    const lines = textContent.split("\n").map(l => l.trim()).filter(Boolean);
-    const priceLine = lines.find(l => l.includes("$") || l.includes("C$") || /^\d+(\.\d+)?$/.test(l));
-    const titleCandidates = lines.filter(l => l !== priceLine && !l.toLowerCase().includes("vendid") && !l.toLowerCase().includes("agotad") && !l.toLowerCase().includes("revisando") && l.length > 3);
-    const fbTitle = titleCandidates[0] || "";
+  function isNoiseLine(line) {
+    if (!line) return true;
+    const l = line.toLowerCase().trim();
+    if (l.length < 3) return true;
+    if (l.includes("$") || l.includes("c$") || l.includes("nio")) return true;
+    if (/^\d+(\.\d+)?$/.test(l)) return true;
+    return (
+      l.includes("marcar como") ||
+      l.includes("mark as") ||
+      l.includes("promocionar") ||
+      l.includes("boost") ||
+      l.includes("compartir") ||
+      l.includes("share") ||
+      l.includes("publicado") ||
+      l.includes("publicada") ||
+      l.includes("clics en") ||
+      l.includes("activo") ||
+      l.includes("disponible") ||
+      l.includes("agotado") ||
+      l.includes("vendido") ||
+      l.includes("revisando") ||
+      l.includes("sugerencia") ||
+      l.includes("renovar") ||
+      l.includes("mensajes") ||
+      l.includes("comentarios") ||
+      l.includes("estadísticas") ||
+      l.includes("editar publicación") ||
+      l.includes("eliminar publicación") ||
+      l.includes("tu publicación") ||
+      l.includes("más opciones")
+    );
+  }
 
-    if (fbListingId && !seenIds.has(fbListingId)) {
-      seenIds.add(fbListingId);
-      if (fbTitle) seenTitles.add(fbTitle.toLowerCase());
-      listings.push({
-        element: parent,
-        link: a,
-        fbListingId,
-        fbTitle,
-        textContent,
-        lines,
-        priceLine
-      });
+  function extractListingDataFromElement(container, defaultId = null) {
+    if (!container) return null;
+    const textContent = container.innerText || "";
+    if (textContent.length < 15 || textContent.length > 3000) return null;
+
+    const rawLines = textContent.split("\n").map(l => l.trim()).filter(Boolean);
+    const priceLine = rawLines.find(l => l.includes("$") || l.includes("C$") || l.includes("NIO") || /^\d{2,}\.?\d{0,3}$/.test(l)) || "";
+
+    // Extraer candidatos a título descartando ruido
+    const titleCandidates = rawLines.filter(l => !isNoiseLine(l));
+    let fbTitle = titleCandidates[0] || "";
+    if (!fbTitle || fbTitle.length < 4) return null;
+
+    const normKey = normalizeTitle(fbTitle);
+    if (seenTitles.has(normKey)) return null;
+
+    // Buscar ID de publicación
+    let fbListingId = defaultId;
+    if (!fbListingId) {
+      const allLinks = Array.from(container.querySelectorAll("a[href]"));
+      for (const a of allLinks) {
+        const href = a.getAttribute("href") || "";
+        const m = href.match(/(?:listing_id=|item\/|selling\/|\/items\/|item_id=)(\d{10,})/i) || href.match(/(\d{10,})/);
+        if (m && m[1]) {
+          fbListingId = m[1];
+          break;
+        }
+      }
+    }
+
+    // Si aún no hay ID, buscar si coincide con algún producto de Firestore
+    if (!fbListingId && Array.isArray(cachedWebProducts)) {
+      const match = cachedWebProducts.find(p => 
+        computeTitleSimilarity(p.title, fbTitle) >= 0.60 ||
+        (p.title && fbTitle.toLowerCase().includes(p.title.toLowerCase().slice(0, 15)))
+      );
+      if (match && match.facebookListingId) {
+        fbListingId = String(match.facebookListingId);
+      }
+    }
+
+    if (fbListingId && seenIds.has(fbListingId)) return null;
+
+    seenTitles.add(normKey);
+    if (fbListingId) seenIds.add(fbListingId);
+
+    const imgEl = container.querySelector("img");
+
+    return {
+      element: container,
+      link: container.querySelector("a"),
+      fbListingId,
+      fbTitle,
+      textContent,
+      lines: rawLines,
+      priceLine,
+      imgEl
+    };
+  }
+
+  // 1. MÉTODO PRIORITARIO: Detección por botones de acción de Marketplace ("Promocionar" o "Marcar como...")
+  // Cada tarjeta de producto en /marketplace/you/selling contiene estos botones únicos
+  const actionButtons = Array.from(document.querySelectorAll('div[role="button"], button, span, div')).filter(el => {
+    if (el.children.length > 2) return false;
+    const txt = (el.innerText || el.getAttribute("aria-label") || "").trim().toLowerCase();
+    return txt === "promocionar" || txt.startsWith("marcar como") || txt === "boost listing" || txt.startsWith("mark as");
+  });
+
+  const processedCards = new Set();
+
+  for (const btn of actionButtons) {
+    let curr = btn;
+    let bestCard = null;
+
+    while (curr && curr !== document.body) {
+      curr = curr.parentElement;
+      if (!curr) break;
+
+      const txt = curr.innerText || "";
+      const hasPrice = txt.includes("$") || txt.includes("C$") || txt.includes("NIO");
+      const hasImg = Boolean(curr.querySelector("img"));
+
+      if (hasPrice && hasImg && txt.length < 2000) {
+        const parentTxt = curr.parentElement?.innerText || "";
+        const promoMatches = (parentTxt.match(/promocionar|marcar como|boost/gi) || []).length;
+        if (promoMatches > 1) {
+          bestCard = curr;
+          break;
+        } else {
+          bestCard = curr;
+        }
+      }
+    }
+
+    if (bestCard && !processedCards.has(bestCard)) {
+      processedCards.add(bestCard);
+      const data = extractListingDataFromElement(bestCard);
+      if (data) listings.push(data);
     }
   }
 
-  // 2. Tarjetas visuales de productos en /you/selling cuando Facebook usa divs con onClick sin enlaces <a> directos
-  const candidateRows = Array.from(document.querySelectorAll('div[role="article"], div[role="row"], div[role="listitem"]'));
-  for (const r of candidateRows) {
-    const textContent = (r.innerText || "");
-    if (textContent.length > 600) continue;
-    const lines = textContent.split("\n").map(l => l.trim()).filter(Boolean);
-    const priceLine = lines.find(l => l.includes("$") || l.includes("C$") || l.includes("NIO"));
-    const hasAction = lines.some(l => {
-      const low = l.toLowerCase();
-      return low.includes("compartir") || low.includes("promocionar") || low.includes("marcar como") || low.includes("disponible") || low.includes("revisando");
-    });
-
-    if (priceLine && hasAction) {
-      const titleCandidates = lines.filter(l => l !== priceLine && !l.toLowerCase().includes("vendid") && !l.toLowerCase().includes("agotad") && !l.toLowerCase().includes("revisando") && !l.toLowerCase().includes("disponible") && !l.toLowerCase().includes("compartir") && !l.toLowerCase().includes("promocionar") && l.length > 3);
-      const fbTitle = titleCandidates[0] || "";
-      if (fbTitle && !seenTitles.has(fbTitle.toLowerCase())) {
-        seenTitles.add(fbTitle.toLowerCase());
-        const innerA = r.querySelector('a');
-        const href = innerA?.getAttribute("href") || "";
-        const idMatch = href.match(/(\d{10,})/);
-        const fbListingId = idMatch ? idMatch[1] : null;
-        listings.push({
-          element: r,
-          link: innerA,
-          fbListingId,
-          fbTitle,
-          textContent,
-          lines,
-          priceLine
-        });
+  // 2. MÉTODO MODAL: Si hay un modal "Tu publicación" abierto (div[role="dialog"])
+  const dialog = document.querySelector('div[role="dialog"]');
+  if (dialog) {
+    const dialogTxt = dialog.innerText || "";
+    if (dialogTxt.includes("Tu publicación") || dialogTxt.includes("Editar publicación") || dialogTxt.includes("Eliminar publicación")) {
+      const data = extractListingDataFromElement(dialog);
+      if (data && !seenTitles.has(normalizeTitle(data.fbTitle))) {
+        listings.push(data);
       }
+    }
+  }
+
+  // 3. MÉTODO COMPLEMENTARIO: Enlaces tradicionales (/marketplace/item/, /selling/)
+  const links = Array.from(document.querySelectorAll('a[href*="/marketplace/item/"], a[href*="/marketplace/you/selling"], a[href*="/item/"], a[href*="listing_id="]'));
+  for (const a of links) {
+    const href = a.getAttribute("href") || "";
+    const idMatch = href.match(/(?:listing_id=|item\/|selling\/|\/items\/|item_id=)(\d{10,})/i) || href.match(/(\d{10,})/);
+    const fbListingId = idMatch ? idMatch[1] : null;
+
+    const parent = a.closest('div[role="article"]') || a.closest('div[role="row"]') || a.closest('div[role="listitem"]') || a.parentElement?.parentElement || a.parentElement;
+    if (parent && !processedCards.has(parent)) {
+      processedCards.add(parent);
+      const data = extractListingDataFromElement(parent, fbListingId);
+      if (data) listings.push(data);
     }
   }
 
@@ -2416,22 +2519,23 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     (async () => {
       try {
         const isSellingPage = window.location.href.includes("/marketplace/you/selling");
-        const listings = getScannableListings();
 
-        loadCatalogProducts((products) => {
-          const prods = (Array.isArray(products) && products.length > 0) ? products : cachedWebProducts;
+        const processListings = (prods) => {
+          const listings = getScannableListings();
           const items = listings.map(l => {
             const twin = prods.find(p => 
-              (p.facebookListingId && String(p.facebookListingId) === String(l.fbListingId)) ||
-              computeTitleSimilarity(p.title, l.fbTitle) >= 0.65
+              (p.facebookListingId && l.fbListingId && String(p.facebookListingId) === String(l.fbListingId)) ||
+              computeTitleSimilarity(p.title, l.fbTitle) >= 0.60 ||
+              (p.title && l.fbTitle && (l.fbTitle.toLowerCase().includes(p.title.toLowerCase().slice(0, 15)) || p.title.toLowerCase().includes(l.fbTitle.toLowerCase().slice(0, 15))))
             );
 
-            const imgEl = l.element?.querySelector("img");
+            const imgEl = l.imgEl || l.element?.querySelector("img");
             const fbImg = imgEl ? (imgEl.src || imgEl.getAttribute("data-src") || "") : "";
             const thumb = (twin && twin.imageUrl) ? twin.imageUrl : fbImg;
+            const canonicalFbId = l.fbListingId || (twin?.facebookListingId ? String(twin.facebookListingId) : null);
 
             return {
-              fbListingId: l.fbListingId,
+              fbListingId: canonicalFbId,
               fbTitle: l.fbTitle,
               priceLine: l.priceLine || (twin ? `C$ ${twin.priceNio || Math.round((twin.priceUsd || 0) * 37)}` : ""),
               thumb: thumb,
@@ -2449,7 +2553,16 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
             listings: items,
             count: items.length
           });
-        });
+        };
+
+        if (Array.isArray(cachedWebProducts) && cachedWebProducts.length > 0) {
+          processListings(cachedWebProducts);
+        } else {
+          loadCatalogProducts((products) => {
+            const prods = (Array.isArray(products) && products.length > 0) ? products : cachedWebProducts;
+            processListings(prods);
+          });
+        }
       } catch (err) {
         sendResponse({ success: false, error: err.message, listings: [] });
       }
