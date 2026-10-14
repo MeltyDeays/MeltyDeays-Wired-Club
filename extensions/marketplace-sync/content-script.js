@@ -1,6 +1,23 @@
 /* Content Script inyectado en Facebook Marketplace (Haibane Sync Engine) */
 console.log("✦ Haibane Marketplace Sync activo en la pestaña.");
 
+function isExtensionValid() {
+  return typeof chrome !== "undefined" && Boolean(chrome.runtime && chrome.runtime.id);
+}
+
+function safeSendMessage(message, callback) {
+  if (!isExtensionValid()) return;
+  try {
+    chrome.runtime.sendMessage(message, (response) => {
+      const err = chrome.runtime.lastError;
+      if (err) return;
+      if (typeof callback === "function") callback(response);
+    });
+  } catch (e) {
+    // Contexto de extensión invalidado por recarga
+  }
+}
+
 let cachedWebProducts = [];
 
 // Helper para React Controlled Inputs
@@ -70,7 +87,7 @@ function parsePriceFromText(text) {
  * Consulta la lista de productos del catálogo web desde Firestore
  */
 function loadCatalogProducts(callback) {
-  chrome.runtime.sendMessage({ action: "GET_CATALOG_PRODUCTS" }, (response) => {
+  safeSendMessage({ action: "GET_CATALOG_PRODUCTS" }, (response) => {
     if (response && response.success) {
       cachedWebProducts = response.products || [];
       const info = document.getElementById("haibane-sync-info");
@@ -218,7 +235,7 @@ function linkExistingMarketplaceTwins() {
 
     if (bestMatch && fbListingId) {
       console.log(`🔗 Emparejamiento Gemelo Detectado: Web "${bestMatch.title}" <==> FB "${fbTitle}" (#${fbListingId})`);
-      chrome.runtime.sendMessage({
+      safeSendMessage({
         action: "LINK_PRODUCT_TO_FB",
         productId: bestMatch.id,
         fbListingId: fbListingId,
@@ -259,7 +276,7 @@ function checkOrphanWebProducts() {
   }
   const target = orphans[0];
   if (confirm(`Tienes ${orphans.length} producto(s) en la web sin publicar en Facebook.\n\n¿Deseas abrir el creador asistido para "${target.title}"?`)) {
-    chrome.runtime.sendMessage({
+    safeSendMessage({
       action: "OPEN_FB_CREATE_TAB",
       productId: target.id
     });
@@ -301,7 +318,7 @@ function auditMarketplaceListings() {
 
         if (isSoldOnFb && prod.status !== "SOLD_OUT") {
           console.log(`✦ "${prod.title}" marcada como VENDIDA en Facebook. Sincronizando...`);
-          chrome.runtime.sendMessage({
+          safeSendMessage({
             action: "MARK_SOLD_IN_FIRESTORE",
             productId: prod.id,
             collection: prod._collection
@@ -321,7 +338,7 @@ function auditMarketplaceListings() {
           const diff = Math.abs(normalizedFbUsd - prod.priceUsd);
           if (diff >= 0.5) {
             console.log(`✦ Precio actualizado en FB para "${prod.title}": Web=$${prod.priceUsd} vs FB=$${normalizedFbUsd}`);
-            chrome.runtime.sendMessage({
+            safeSendMessage({
               action: "SYNC_PRICE_TO_FIRESTORE",
               productId: prod.id,
               newPrice: normalizedFbUsd,
@@ -410,7 +427,7 @@ function exportMarketplaceListingsToWeb() {
 
   if (info) info.textContent = `Enviando ${foundListings.length} a la web con IA...`;
 
-  chrome.runtime.sendMessage({
+  safeSendMessage({
     action: "EXPORT_LISTINGS_TO_WEB",
     listings: foundListings
   }, (res) => {
@@ -1585,6 +1602,10 @@ function injectPublishAssistantBanner(product) {
 function watchForPublishCompletion(productId, collection) {
   let attempts = 0;
   const interval = setInterval(() => {
+    if (!isExtensionValid()) {
+      clearInterval(interval);
+      return;
+    }
     attempts++;
     const href = window.location.href;
     const match = href.match(/\/marketplace\/item\/(\d+)/);
@@ -1592,7 +1613,7 @@ function watchForPublishCompletion(productId, collection) {
       clearInterval(interval);
       const newListingId = match[1];
       console.log(`✓ Detectada publicación creada: ID #${newListingId}. Vinculando Gemelo...`);
-      chrome.runtime.sendMessage({
+      safeSendMessage({
         action: "LINK_PRODUCT_TO_FB",
         productId: productId,
         fbListingId: newListingId,
@@ -2113,7 +2134,7 @@ async function runAutoRelistCycle(maxDays = 7) {
     if (info) info.textContent = `🔄 Re-publicando: "${target.title}" (> ${maxDays}d sin ventas)...`;
 
     // 1. Desvincular/Eliminar publicación antigua en Marketplace
-    chrome.runtime.sendMessage({
+    safeSendMessage({
       action: "RELIST_EXPIRED_PRODUCT",
       productId: target.id,
       oldListingId: target.facebookListingId
@@ -2406,7 +2427,8 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
             );
 
             const imgEl = l.element?.querySelector("img");
-            const thumb = imgEl ? (imgEl.src || imgEl.getAttribute("data-src") || "") : (twin?.imageUrl || "");
+            const fbImg = imgEl ? (imgEl.src || imgEl.getAttribute("data-src") || "") : "";
+            const thumb = (twin && twin.imageUrl) ? twin.imageUrl : fbImg;
 
             return {
               fbListingId: l.fbListingId,
@@ -2554,6 +2576,7 @@ function autoSyncGroupsFromPage() {
 
 // Inicialización robusta para SPA (Facebook React Navigation)
 function checkPageAndInit() {
+  if (!isExtensionValid()) return;
   if (window.location.href.includes("/marketplace/create/item") || window.location.href.includes("step=audience")) {
     initAutoPublishAssistant();
     setupGroupSharingObserver();
@@ -2576,7 +2599,11 @@ setTimeout(checkPageAndInit, 800);
 setTimeout(checkPageAndInit, 2000);
 
 let lastKnownUrl = window.location.href;
-setInterval(() => {
+const urlWatcherInterval = setInterval(() => {
+  if (!isExtensionValid()) {
+    clearInterval(urlWatcherInterval);
+    return;
+  }
   if (window.location.href !== lastKnownUrl) {
     lastKnownUrl = window.location.href;
     checkPageAndInit();

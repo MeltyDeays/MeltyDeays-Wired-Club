@@ -8,6 +8,55 @@ function log(msg) {
   }
 }
 
+/**
+ * Envío resiliente de mensajes a la pestaña activa con auto-reconexión e inyección dinámica
+ * Previene el error: 'Could not establish connection. Receiving end does not exist.'
+ */
+function sendTabMessageWithAutoReconnect(tabId, message, onResponse) {
+  chrome.tabs.sendMessage(tabId, message, (res) => {
+    const err = chrome.runtime.lastError;
+    if (!err) {
+      if (typeof onResponse === "function") onResponse(res);
+      return;
+    }
+
+    const errMsg = err.message || "";
+    const isDisconnected = errMsg.includes("Could not establish connection") || errMsg.includes("Receiving end does not exist");
+
+    if (isDisconnected && chrome.scripting) {
+      log("🔄 Reconectando extensión con Facebook...");
+      chrome.scripting.executeScript({
+        target: { tabId },
+        files: ["content-script.js"]
+      }, () => {
+        const injectErr = chrome.runtime.lastError;
+        if (injectErr) {
+          log("⚠️ Pestaña desincronizada. Por favor recarga Facebook (F5) para activar la extensión.");
+          return;
+        }
+
+        setTimeout(() => {
+          chrome.tabs.sendMessage(tabId, message, (retryRes) => {
+            const retryErr = chrome.runtime.lastError;
+            if (retryErr) {
+              log("⚠️ Conexión perdida. Recarga la pestaña de Facebook (F5) para activar la extensión.");
+            } else {
+              if (typeof onResponse === "function") onResponse(retryRes);
+            }
+          });
+        }, 300);
+      });
+      return;
+    }
+
+    if (isDisconnected) {
+      log("⚠️ Extensión actualizada. Recarga la pestaña de Facebook (F5) para reconectar.");
+    } else {
+      log(`⚠️ Aviso: ${errMsg}`);
+    }
+  });
+}
+
 // Botón: Enlazar Gemelos con Tienda Web (Anti-Duplicados)
 document.getElementById("btn-link-twins")?.addEventListener("click", async () => {
   log("🔍 Buscando tus publicaciones en Facebook para enlazarlas con la web...");
@@ -15,11 +64,7 @@ document.getElementById("btn-link-twins")?.addEventListener("click", async () =>
     const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
     const currentTab = tabs[0];
     if (currentTab && currentTab.url && currentTab.url.includes("facebook.com/marketplace")) {
-      chrome.tabs.sendMessage(currentTab.id, { action: "LINK_TWINS" }, (res) => {
-        if (chrome.runtime.lastError) {
-          log(`⚠️ Aviso: ${chrome.runtime.lastError.message}`);
-          return;
-        }
+      sendTabMessageWithAutoReconnect(currentTab.id, { action: "LINK_TWINS" }, (res) => {
         log(res?.message || "✓ Enlace de gemelos completado con éxito.");
       });
     } else {
@@ -37,11 +82,7 @@ document.getElementById("btn-audit")?.addEventListener("click", async () => {
     const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
     const currentTab = tabs[0];
     if (currentTab && currentTab.url && currentTab.url.includes("facebook.com/marketplace")) {
-      chrome.tabs.sendMessage(currentTab.id, { action: "AUDIT_LISTINGS" }, (res) => {
-        if (chrome.runtime.lastError) {
-          log(`⚠️ Aviso: ${chrome.runtime.lastError.message}`);
-          return;
-        }
+      sendTabMessageWithAutoReconnect(currentTab.id, { action: "AUDIT_LISTINGS" }, (res) => {
         log(res?.message || "✓ Auditoría finalizada correctamente.");
       });
     } else {
@@ -416,8 +457,8 @@ document.getElementById("btn-scan-groups")?.addEventListener("click", async () =
     const fbTabs = await chrome.tabs.query({ url: "*://*.facebook.com/*" });
     if (fbTabs.length > 0) {
       const activeFbTab = fbTabs.find(t => t.active) || fbTabs[0];
-      chrome.tabs.sendMessage(activeFbTab.id, { action: "SCAN_MY_GROUPS" }, (res) => {
-        if (!chrome.runtime.lastError && res && res.groups && res.groups.length > 0) {
+      sendTabMessageWithAutoReconnect(activeFbTab.id, { action: "SCAN_MY_GROUPS" }, (res) => {
+        if (res && res.groups && res.groups.length > 0) {
           chrome.storage?.local?.get(["selectedGroupNames"], (d) => {
             renderGroupsChecklist(res.groups, d?.selectedGroupNames || []);
             log(`✓ ${res.groups.length} grupos detectados listos para organizar.`);
@@ -452,11 +493,7 @@ document.getElementById("btn-run-relist-now")?.addEventListener("click", async (
     const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
     const currentTab = tabs[0];
     if (currentTab && currentTab.url && currentTab.url.includes("facebook.com")) {
-      chrome.tabs.sendMessage(currentTab.id, { action: "RUN_AUTO_RELIST", maxDays: relistDays }, (res) => {
-        if (chrome.runtime.lastError) {
-          log(`⚠️ Aviso: ${chrome.runtime.lastError.message}`);
-          return;
-        }
+      sendTabMessageWithAutoReconnect(currentTab.id, { action: "RUN_AUTO_RELIST", maxDays: relistDays }, (res) => {
         log(`✓ Ciclo de re-publicación con fotos HD y copy IA iniciado.`);
       });
     } else {
@@ -484,16 +521,12 @@ document.getElementById("btn-share-groups-now")?.addEventListener("click", async
       chrome.storage?.local?.get(["selectedGroupNames", "groupSelectionMode"], (d) => {
         const mode = d?.groupSelectionMode || currentGroupMode || "ai";
         const selected = Array.isArray(d?.selectedGroupNames) ? d.selectedGroupNames : [];
-        chrome.tabs.sendMessage(currentTab.id, {
+        sendTabMessageWithAutoReconnect(currentTab.id, {
           action: "AUTO_SHARE_GROUPS",
           mode: mode,
           targetCount: selected.length > 0 ? selected.length : 12,
           selectedNames: selected
         }, (res) => {
-          if (chrome.runtime.lastError) {
-            log(`⚠️ Aviso: ${chrome.runtime.lastError.message}`);
-            return;
-          }
           if (res && res.success) {
             log(`✓ ${res.count || 12} grupos marcados y compartidos con éxito.`);
           } else {
@@ -552,7 +585,7 @@ function renderManualRelistListings(listings) {
         <div style="display: flex; align-items: center; gap: 6px; min-width: 0; flex: 1;">
           <input type="checkbox" id="chk-relist-${idx}" class="chk-relist-item" data-idx="${idx}" checked style="accent-color: #0284c7; cursor: pointer; transform: scale(1.05);" />
           <div style="width: 28px; height: 28px; border-radius: 4px; overflow: hidden; background: #020617; border: 1px solid #334155; flex-shrink: 0; display: flex; align-items: center; justify-content: center;">
-            ${thumbUrl ? `<img src="${thumbUrl}" alt="${item.fbTitle}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.onerror=null; this.parentElement.innerHTML='📦';" />` : `<span style="font-size: 11px;">📦</span>`}
+            ${thumbUrl ? `<img src="${thumbUrl}" alt="${item.fbTitle}" referrerpolicy="no-referrer" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.onerror=null; this.parentElement.innerHTML='📦';" />` : `<span style="font-size: 11px;">📦</span>`}
           </div>
           <div style="min-width: 0; flex: 1;">
             <div style="font-size: 10px; font-weight: 700; color: #f1f5f9; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${item.fbTitle}">
@@ -585,11 +618,7 @@ document.getElementById("btn-scan-relist-listings")?.addEventListener("click", a
     const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
     const currentTab = tabs[0];
     if (currentTab && currentTab.url && currentTab.url.includes("facebook.com")) {
-      chrome.tabs.sendMessage(currentTab.id, { action: "SCAN_MY_LISTINGS" }, (res) => {
-        if (chrome.runtime.lastError) {
-          log(`⚠️ Aviso: ${chrome.runtime.lastError.message}`);
-          return;
-        }
+      sendTabMessageWithAutoReconnect(currentTab.id, { action: "SCAN_MY_LISTINGS" }, (res) => {
         if (res && res.success && Array.isArray(res.listings) && res.listings.length > 0) {
           renderManualRelistListings(res.listings);
           chrome.storage?.local?.set({ lastScannedMarketplaceListings: res.listings });
