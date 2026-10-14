@@ -160,7 +160,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       tabId: null,
       startedAt: Date.now()
     };
-    chrome.storage?.local?.set({ activeRelistBatch: batch }, () => {
+    const pendingDeletions = queue
+      .filter(x => x && (x.oldListingId || x.title))
+      .map(x => ({ oldListingId: x.oldListingId || "", title: x.title, timestamp: Date.now() }));
+
+    chrome.storage?.local?.set({ activeRelistBatch: batch, pendingDeletions }, () => {
       openBatchItemCreation(batch);
       sendResponse({ success: true, count: queue.length });
     });

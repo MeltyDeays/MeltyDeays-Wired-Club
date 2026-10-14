@@ -279,7 +279,7 @@ function extractFacebookProductImageUrl(container, preferredImg = null) {
   return "";
 }
 
-function getScannableListings() {
+function getScannableListings(allowDuplicates = false) {
   const listings = [];
   const seenTitles = new Set();
   const seenIds = new Set();
@@ -305,7 +305,7 @@ function getScannableListings() {
     if (!fbTitle || fbTitle.length < 4) return null;
 
     const normKey = normalizeTitle(fbTitle);
-    if (seenTitles.has(normKey)) return null;
+    if (!allowDuplicates && seenTitles.has(normKey)) return null;
 
     // Buscar ID de publicación exclusivo de Marketplace
     let fbListingId = defaultId;
@@ -333,8 +333,10 @@ function getScannableListings() {
       }
     }
 
-    seenTitles.add(normKey);
-    if (fbListingId) seenIds.add(fbListingId);
+    if (!allowDuplicates) {
+      seenTitles.add(normKey);
+      if (fbListingId) seenIds.add(fbListingId);
+    }
 
     const imgEl = container.querySelector("img");
     const fbImg = extractFacebookProductImageUrl(container, imgEl);
@@ -464,9 +466,47 @@ function getScannableListings() {
  * @param {string} targetTitle Título del producto
  * @returns {Promise<{success: boolean, error?: string}>}
  */
+/**
+ * Localiza y elimina una publicación de Facebook Marketplace en /marketplace/you/selling
+ * usando el menú contextual (...) de la tarjeta de producto y confirmando el modal.
+ * @param {string} targetId ID numérico o fb_ID de la publicación
+ * @param {string} targetTitle Título del producto
+ * @returns {Promise<{success: boolean, error?: string}>}
+ */
 async function deleteListingFromSellingPage(targetId, targetTitle) {
   console.log(`🗑️ Haibane: Iniciando eliminación de publicación: "${targetTitle}" (ID: ${targetId || "N/A"})...`);
 
+  const matchedCards = [];
+  const processed = new Set();
+  const cleanId = targetId ? String(targetId).replace(/^fb_/, "").trim() : "";
+  const normTarget = normalizeTitle(targetTitle || "");
+
+  // Estrategia 1: Anclaje directo por ID en enlaces o atributos del DOM
+  if (cleanId) {
+    const idElements = Array.from(document.querySelectorAll(`a[href*="${cleanId}"], [data-testid*="${cleanId}"]`));
+    for (const el of idElements) {
+      let card = el.closest('div[role="article"], div[role="row"], div[role="listitem"]');
+      if (!card) {
+        let p = el;
+        for (let i = 0; i < 6; i++) {
+          if (!p || p === document.body) break;
+          p = p.parentElement;
+          if (p && (p.textContent || "").includes("$") && p.querySelectorAll('button, div[role="button"]').length > 0) {
+            card = p;
+            break;
+          }
+        }
+      }
+      if (card && !processed.has(card)) {
+        processed.add(card);
+        const txt = card.textContent || "";
+        const isReview = /revisando|revisi[oó]n|under review|pendiente/i.test(txt);
+        matchedCards.push({ element: card, text: txt, isReview, title: targetTitle });
+      }
+    }
+  }
+
+  // Estrategia 2: Anclaje por imágenes y contenedores con precio y estado
   const allImages = Array.from(document.querySelectorAll("img")).filter(img => {
     const w = img.offsetWidth || img.naturalWidth || 80;
     const h = img.offsetHeight || img.naturalHeight || 80;
@@ -474,40 +514,31 @@ async function deleteListingFromSellingPage(targetId, targetTitle) {
     return !src.includes("emoji") && !src.includes("static.xx") && (w >= 40 || h >= 40);
   });
 
-  const matchedCards = [];
-  const processed = new Set();
-  const normTarget = normalizeTitle(targetTitle || "");
-
   for (const img of allImages) {
     let curr = img;
     while (curr && curr !== document.body) {
       curr = curr.parentElement;
       if (!curr) break;
       const txt = curr.textContent || curr.innerText || "";
-      const hasPrice = txt.includes("$") || txt.includes("C$") || txt.includes("NIO");
-      const hasMeta = txt.includes("publicado") || txt.includes("clics") || txt.includes("marcar como") || txt.includes("promocionar") || txt.includes("disponible") || txt.includes("revisando");
+      const hasPrice = txt.includes("$") || txt.includes("C$") || txt.includes("NIO") || /\b\d{2,}\b/.test(txt);
+      const hasMeta = txt.includes("publicad") || txt.includes("clic") || txt.includes("marcar") || txt.includes("promocion") || txt.includes("disponibl") || txt.includes("revisan") || txt.includes("activ") || txt.includes("renov");
 
-      if (hasPrice && hasMeta && txt.length >= 30 && txt.length < 1500) {
+      if (hasPrice && hasMeta && txt.length >= 25 && txt.length < 1800) {
         if (!processed.has(curr)) {
           processed.add(curr);
           const lines = txt.split("\n").map(l => l.trim()).filter(Boolean);
           const titleLine = lines.find(l => !isNoiseLine(l)) || "";
           const normTitle = normalizeTitle(titleLine);
 
-          let hasIdMatch = false;
-          if (targetId) {
-            const cleanId = String(targetId).replace(/^fb_/, "");
-            if (curr.innerHTML.includes(cleanId)) hasIdMatch = true;
-          }
-
-          const hasTitleMatch = normTarget && normTitle && (
+          let hasIdMatch = Boolean(cleanId && curr.innerHTML.includes(cleanId));
+          let hasTitleMatch = normTarget && normTitle && (
             normTitle.includes(normTarget) ||
             normTarget.includes(normTitle) ||
-            computeTitleSimilarity(normTitle, normTarget) >= 0.45
+            computeTitleSimilarity(normTitle, normTarget) >= 0.40
           );
 
           if (hasIdMatch || hasTitleMatch) {
-            const isReview = /revisando|revisi[oó]n|under review/i.test(txt);
+            const isReview = /revisando|revisi[oó]n|under review|pendiente/i.test(txt);
             matchedCards.push({ element: curr, text: txt, isReview, title: titleLine });
           }
         }
@@ -521,10 +552,15 @@ async function deleteListingFromSellingPage(targetId, targetTitle) {
     return { success: false, error: "Tarjeta no encontrada en pantalla" };
   }
 
-  // Priorizar la tarjeta ANTIGUA (la que NO está en revisión ni recién creada)
-  let targetCard = matchedCards.find(c => !c.isReview) || matchedCards[0];
-  const cardEl = targetCard.element;
+  // Priorizar la tarjeta ANTIGUA (la que NO está en revisión; si ninguna está en revisión, la que aparece abajo)
+  let targetCard = matchedCards.find(c => !c.isReview);
+  if (!targetCard && matchedCards.length > 1) {
+    targetCard = matchedCards[matchedCards.length - 1];
+  } else if (!targetCard) {
+    targetCard = matchedCards[0];
+  }
 
+  const cardEl = targetCard.element;
   cardEl.scrollIntoView({ behavior: "smooth", block: "center" });
   await new Promise(r => setTimeout(r, 450));
 
@@ -537,7 +573,7 @@ async function deleteListingFromSellingPage(targetId, targetTitle) {
   });
 
   if (!menuBtn) {
-    // Descartar botones de acción conocidos
+    // Descartar botones de acción conocidos y buscar por svg o 3 puntos
     menuBtn = buttons.find(b => {
       const txt = (b.innerText || "").toLowerCase().trim();
       if (txt.includes("agotado") || txt.includes("vendido") || txt.includes("promocionar") || txt.includes("boost") || txt.includes("disponible") || txt.includes("compartir") || txt.includes("share")) return false;
@@ -556,13 +592,17 @@ async function deleteListingFromSellingPage(targetId, targetTitle) {
   menuBtn.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
   menuBtn.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }));
   menuBtn.click();
-  await new Promise(r => setTimeout(r, 700));
 
-  // Buscar 'Eliminar publicación' en menú emergente
-  const menuItems = Array.from(document.querySelectorAll('div[role="menuitem"], div[role="menu"] div[role="button"], div[role="menu"] span, div[role="menu"] div, div[role="dialog"] div[role="button"], div[role="dialog"] span')).filter(el => {
-    const txt = (el.innerText || el.getAttribute("aria-label") || "").trim().toLowerCase();
-    return (txt.includes("eliminar publicación") || txt.includes("eliminar articulo") || txt.includes("eliminar artículo") || txt.includes("delete listing") || txt === "eliminar publicación") && !txt.includes("cancelar");
-  });
+  // Esperar a que el menú contextual se renderice
+  let menuItems = [];
+  for (let attempt = 0; attempt < 8; attempt++) {
+    await new Promise(r => setTimeout(r, 150));
+    menuItems = Array.from(document.querySelectorAll('div[role="menuitem"], div[role="menu"] div[role="button"], div[role="menu"] span, div[role="menu"] div, div[role="dialog"] div[role="button"], div[role="dialog"] span')).filter(el => {
+      const txt = (el.innerText || el.getAttribute("aria-label") || "").trim().toLowerCase();
+      return (txt.includes("eliminar publicación") || txt.includes("eliminar publicacion") || txt.includes("eliminar articulo") || txt.includes("eliminar artículo") || txt.includes("delete listing") || txt === "eliminar publicación") && !txt.includes("cancelar");
+    });
+    if (menuItems.length > 0) break;
+  }
 
   if (menuItems.length === 0) {
     document.body.click();
@@ -571,31 +611,39 @@ async function deleteListingFromSellingPage(targetId, targetTitle) {
 
   menuItems[0].dispatchEvent(new MouseEvent("click", { bubbles: true }));
   menuItems[0].click();
-  await new Promise(r => setTimeout(r, 850));
 
-  // Confirmar en el modal dialog
-  const dialog = document.querySelector('div[role="dialog"]');
+  // Esperar a que el diálogo modal de confirmación aparezca
+  let dialog = null;
+  for (let attempt = 0; attempt < 10; attempt++) {
+    await new Promise(r => setTimeout(r, 200));
+    dialog = document.querySelector('div[role="dialog"]');
+    if (dialog) break;
+  }
+
   if (dialog) {
+    // Si presenta preguntas / radio buttons ("¿Vendiste este artículo?", etc.)
     const radios = Array.from(dialog.querySelectorAll('input[type="radio"], div[role="radio"], div[role="button"], span')).filter(r => {
       const txt = (r.innerText || r.getAttribute("aria-label") || r.parentElement?.innerText || "").toLowerCase();
-      return txt.includes("no, no") || txt.includes("no lo he") || txt.includes("otro") || txt.includes("prefer");
+      return txt.includes("no, no") || txt.includes("no lo he") || txt.includes("no lo vend") || txt.includes("aún no") || txt.includes("aun no") || txt.includes("no se vend") || txt.includes("otro") || txt.includes("prefer");
     });
     if (radios.length > 0) {
       radios[0].click();
       await new Promise(r => setTimeout(r, 400));
     }
 
+    // Botones de acción modal ("Siguiente", "Continuar", "Eliminar")
     const actionBtns = Array.from(dialog.querySelectorAll('div[role="button"], button')).filter(b => {
       const txt = (b.innerText || b.getAttribute("aria-label") || "").trim().toLowerCase();
-      return (txt === "eliminar" || txt === "delete" || txt === "siguiente" || txt === "next" || txt.includes("eliminar definitivamente")) && !txt.includes("cancelar");
+      return (txt === "eliminar" || txt === "delete" || txt === "siguiente" || txt === "next" || txt === "continuar" || txt.includes("eliminar definitivamente")) && !txt.includes("cancelar");
     });
     if (actionBtns.length > 0) {
       actionBtns[0].click();
-      await new Promise(r => setTimeout(r, 700));
+      await new Promise(r => setTimeout(r, 600));
 
+      // Confirmación final si existe paso 2
       const finalBtn = Array.from(document.querySelectorAll('div[role="dialog"] div[role="button"], div[role="dialog"] button')).find(b => {
         const txt = (b.innerText || b.getAttribute("aria-label") || "").trim().toLowerCase();
-        return (txt === "eliminar" || txt === "delete" || txt.includes("eliminar definitivamente")) && !txt.includes("cancelar");
+        return (txt === "eliminar" || txt === "delete" || txt.includes("eliminar definitivamente") || txt === "confirmar") && !txt.includes("cancelar");
       });
       if (finalBtn) finalBtn.click();
     }
@@ -618,8 +666,32 @@ async function checkActiveBatchOnSellingPage() {
   isBatchSellingCheckActive = true;
 
   try {
-    const data = await chrome.storage?.local?.get(["activeRelistBatch"]);
+    const data = await chrome.storage?.local?.get(["activeRelistBatch", "pendingDeletions"]);
     const batch = data?.activeRelistBatch;
+    const pendingList = Array.isArray(data?.pendingDeletions) ? data.pendingDeletions : [];
+
+    // 1. Limpieza prioritaria de eliminaciones pendientes registradas
+    if (pendingList.length > 0) {
+      showHaibaneToast(`🗑️ Eliminando ${pendingList.length} publicaciones anteriores del lote...`);
+      await new Promise(r => setTimeout(r, 2000));
+      for (const item of pendingList) {
+        showHaibaneToast(`🗑️ Eliminando versión anterior: "${item.title}"...`);
+        try {
+          await deleteListingFromSellingPage(item.oldListingId, item.title);
+        } catch (delErr) {
+          console.warn("Haibane: Aviso en eliminación de publicación previa:", delErr);
+        }
+        await new Promise(r => setTimeout(r, 1200));
+      }
+      await chrome.storage.local.set({ pendingDeletions: [] });
+      showHaibaneToast(`✓ Eliminación de publicaciones anteriores completada.`);
+    }
+
+    // 2. Limpieza de duplicados residuales si la URL lo pide o si viene de un lote completado
+    if (window.location.search.includes("auto_clean_old=true")) {
+      await cleanAllOldDuplicates();
+    }
+
     if (!batch || batch.status !== "PROCESSING" || !Array.isArray(batch.queue)) {
       isBatchSellingCheckActive = false;
       return;
@@ -632,11 +704,8 @@ async function checkActiveBatchOnSellingPage() {
     }
 
     showHaibaneToast(`🗑️ Lote [${batch.currentIndex + 1}/${batch.queue.length}]: Eliminando publicación anterior de "${currentItem.title}"...`);
+    await new Promise(r => setTimeout(r, 2000));
 
-    // Esperar 2.5s a que el feed de Facebook cargue las tarjetas
-    await new Promise(r => setTimeout(r, 2500));
-
-    // Ejecutar eliminación de la tarjeta antigua de forma segura
     try {
       const delRes = await deleteListingFromSellingPage(currentItem.oldListingId, currentItem.title);
       console.log("Haibane: Resultado de eliminación de listing antiguo:", delRes);
@@ -646,7 +715,6 @@ async function checkActiveBatchOnSellingPage() {
 
     await new Promise(r => setTimeout(r, 1200));
 
-    // Avanzar cola SIEMPRE para que el lote no se detenga jamás a la mitad
     const nextIdx = batch.currentIndex + 1;
     if (nextIdx < batch.queue.length) {
       batch.currentIndex = nextIdx;
@@ -658,7 +726,7 @@ async function checkActiveBatchOnSellingPage() {
     } else {
       batch.status = "COMPLETED";
       await chrome.storage.local.set({ activeRelistBatch: null });
-      showHaibaneToast(`🎉 ¡Lote de renovación completado! Se renovaron las ${batch.queue.length} publicaciones con éxito.`);
+      showHaibaneToast(`🎉 ¡Lote de renovación completado! Se renovaron las ${batch.queue.length} publicaciones.`);
     }
   } catch (err) {
     console.warn("Haibane: Error en ciclo de lote en selling page:", err);
@@ -669,40 +737,46 @@ async function checkActiveBatchOnSellingPage() {
 
 /**
  * Detecta y elimina automáticamente todas las publicaciones antiguas que ya tienen
- * una versión renovada en estado "Se está revisando la publicación".
+ * una versión renovada en /marketplace/you/selling.
  */
 async function cleanAllOldDuplicates() {
-  showHaibaneToast("🔍 Buscando publicaciones antiguas duplicadas...");
-  const listings = getScannableListings();
+  showHaibaneToast("🔍 Escaneando publicaciones duplicadas en pantalla...");
+  // allowDuplicates = true para capturar todas las tarjetas incluyendo duplicados
+  const listings = getScannableListings(true);
 
   const groups = new Map();
   for (const item of listings) {
     const key = normalizeTitle(item.fbTitle);
     if (!groups.has(key)) groups.set(key, []);
-    const isReview = /revisando|revisi[oó]n|under review/i.test(item.textContent);
+    const isReview = /revisando|revisi[oó]n|under review|pendiente/i.test(item.textContent);
     groups.get(key).push({ ...item, isReview });
   }
 
   let removedCount = 0;
   for (const [key, items] of groups.entries()) {
     if (items.length > 1) {
-      const oldItems = items.filter(x => !x.isReview);
+      // Si hay ítems marcados en revisión, esos son los nuevos. Los demás son los viejos.
+      let oldItems = items.filter(x => !x.isReview);
+      // Si ninguno tiene texto de revisión (ambos activos), el primero es el nuevo y los siguientes son viejos.
+      if (oldItems.length === items.length) {
+        oldItems = items.slice(1);
+      }
       for (const old of oldItems) {
-        showHaibaneToast(`🗑️ Eliminando duplicado viejo: "${old.fbTitle}"...`);
+        showHaibaneToast(`🗑️ Eliminando duplicado anterior: "${old.fbTitle}"...`);
         try {
           const res = await deleteListingFromSellingPage(old.fbListingId, old.fbTitle);
           if (res && res.success) removedCount++;
         } catch (e) {
           console.warn("Error eliminando duplicado:", e);
         }
-        await new Promise(r => setTimeout(r, 1200));
+        await new Promise(r => setTimeout(r, 1500));
       }
     }
   }
 
   showHaibaneToast(removedCount > 0 
-    ? `✓ Limpieza completa: ${removedCount} publicaciones viejas eliminadas.`
-    : "✓ No se detectaron duplicados antiguos en pantalla.");
+    ? `✓ Limpieza completa: ${removedCount} publicaciones anteriores eliminadas.`
+    : "✓ No se detectaron duplicados anteriores en pantalla.");
   return { success: true, count: removedCount };
 }
 
@@ -2351,10 +2425,14 @@ function injectPublishAssistantHud(product, batchMeta = null) {
         HAIBANE ASISTENTE
        </strong>`;
 
+  const isLastBatchItem = isBatch && ((batchMeta.batchIndex || 0) + 1 >= (batchMeta.batchTotal || 1));
+  const nextBtnLabel = isLastBatchItem ? "🏁 Finalizar y Borrar Anteriores" : "⏭ Siguiente";
+  const nextBtnBg = isLastBatchItem ? "#059669" : "#0284c7";
+
   const actionButtons = isBatch
     ? `
-      <button id="haibane-hud-btn-next" style="flex: 1; background: #0284c7; color: #ffffff; border: none; border-radius: 6px; padding: 6px 10px; font-weight: 700; cursor: pointer; font-size: 11px; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; gap: 5px;" title="Avanzar de inmediato a la siguiente publicación del lote">
-        ⏭ Siguiente
+      <button id="haibane-hud-btn-next" style="flex: 1; background: ${nextBtnBg}; color: #ffffff; border: none; border-radius: 6px; padding: 6px 10px; font-weight: 700; cursor: pointer; font-size: 11px; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; gap: 5px;" title="${isLastBatchItem ? 'Concluir lote y borrar publicaciones anteriores' : 'Avanzar a la siguiente publicación'}">
+        ${nextBtnLabel}
       </button>
       <button id="haibane-btn-do-autofill" style="background: rgba(30, 41, 59, 0.8); color: #94a3b8; border: 1px solid #334155; border-radius: 6px; padding: 6px 10px; font-weight: 700; cursor: pointer; font-size: 11px; transition: all 0.15s ease;" title="Re-inyectar fotos y datos">
         ⚡ Re-inyectar
@@ -2396,8 +2474,30 @@ function injectPublishAssistantHud(product, batchMeta = null) {
 
   document.body.appendChild(hud);
 
-  document.getElementById("haibane-hud-btn-next")?.addEventListener("click", () => {
-    chrome.runtime?.sendMessage({ action: "FORCE_NEXT_BATCH_ITEM" });
+  document.getElementById("haibane-hud-btn-next")?.addEventListener("click", async () => {
+    const targetOldId = batchMeta?.oldListingId || new URLSearchParams(window.location.search).get("old_listing_id") || "";
+    if (targetOldId || product.title) {
+      try {
+        const stored = await chrome.storage?.local?.get(["pendingDeletions"]);
+        const list = Array.isArray(stored?.pendingDeletions) ? stored.pendingDeletions : [];
+        if (!list.some(p => p.oldListingId === targetOldId && p.title === product.title)) {
+          list.push({ oldListingId: targetOldId, title: product.title, timestamp: Date.now() });
+          await chrome.storage?.local?.set({ pendingDeletions: list });
+        }
+      } catch (e) {
+        console.warn("Haibane: Error guardando pendingDeletion:", e);
+      }
+    }
+
+    if (isLastBatchItem) {
+      await chrome.storage?.local?.set({ activeRelistBatch: null });
+      showHaibaneToast("🎉 Lote completado. Abriendo Tus Publicaciones para eliminar versiones anteriores...");
+      setTimeout(() => {
+        window.location.href = "https://www.facebook.com/marketplace/you/selling?auto_clean_old=true";
+      }, 700);
+    } else {
+      chrome.runtime?.sendMessage({ action: "FORCE_NEXT_BATCH_ITEM" });
+    }
   });
 
   document.getElementById("haibane-hud-btn-cancel")?.addEventListener("click", () => {
@@ -3313,6 +3413,9 @@ function injectHaibaneFloatingWidget() {
         <button id="haibane-btn-export-web" style="flex: 1; background: #0284c7; color: #ffffff; border: 1px solid #0369a1; border-radius: 4px; padding: 5px 4px; font-weight: 700; cursor: pointer; font-size: 9.5px;" title="Exporta tus publicaciones hacia el catálogo online">
           ⚡ Exportar a Web
         </button>
+        <button id="haibane-btn-clean-duplicates" style="flex: 1; background: #b91c1c; color: #ffffff; border: 1px solid #dc2626; border-radius: 4px; padding: 5px 4px; font-weight: 800; cursor: pointer; font-size: 9.5px;" title="Elimina las publicaciones duplicadas anteriores preservando la más reciente">
+          🗑️ Borrar Anteriores
+        </button>
       </div>
     </div>
   `;
@@ -3348,6 +3451,13 @@ function injectHaibaneFloatingWidget() {
 
   document.getElementById("haibane-btn-export-web")?.addEventListener("click", () => {
     exportMarketplaceListingsToWeb();
+  });
+
+  document.getElementById("haibane-btn-clean-duplicates")?.addEventListener("click", async () => {
+    const info = document.getElementById("haibane-sync-info");
+    if (info) info.textContent = "⏳ Escaneando y eliminando publicaciones anteriores...";
+    await cleanAllOldDuplicates();
+    if (info) info.textContent = "✓ Limpieza de duplicados finalizada.";
   });
 
   document.getElementById("haibane-btn-minimize")?.addEventListener("click", () => {
