@@ -1069,6 +1069,110 @@ async function generateQrCardDataUrl() {
   });
 }
 
+const _fbListingPhotosCache = new Map();
+
+/**
+ * Obtiene todas las fotografías originales en alta resolución y sin recorte
+ * de una publicación de Facebook Marketplace consultando su página nativa /marketplace/item/<id>/
+ * @param {string} listingId ID numérico de la publicación
+ * @returns {Promise<string[]>} Lista de URLs de fotos HD sin recorte
+ */
+async function fetchAllListingPhotosFromFacebook(listingId) {
+  const cleanId = String(listingId || "").replace(/\D/g, "");
+  if (!cleanId || cleanId.length < 5) return [];
+
+  if (_fbListingPhotosCache.has(cleanId)) {
+    return _fbListingPhotosCache.get(cleanId);
+  }
+
+  try {
+    const res = await fetch(`https://www.facebook.com/marketplace/item/${cleanId}/`, {
+      credentials: "include",
+      headers: {
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+      }
+    });
+    if (!res.ok) {
+      console.warn(`Haibane: Respuesta ${res.status} al consultar fotos de /marketplace/item/${cleanId}/`);
+      return [];
+    }
+    const html = await res.text();
+    const photos = extractHighResPhotosFromFacebookHtml(html);
+    if (photos.length > 0) {
+      _fbListingPhotosCache.set(cleanId, photos);
+    }
+    return photos;
+  } catch (err) {
+    console.warn("Haibane: Error de red al consultar fotos completas en Facebook:", err);
+    return [];
+  }
+}
+
+/**
+ * Extrae URLs de fotos en alta resolución desde el HTML / GraphQL inicial de una publicación de Facebook
+ * @param {string} html Contenido HTML de la página del producto
+ * @returns {string[]} Lista de URLs de imágenes HD ordenadas y deduplicadas
+ */
+function extractHighResPhotosFromFacebookHtml(html) {
+  if (!html || typeof html !== "string") return [];
+  const unescaped = html.replaceAll("\\/", "/");
+  const photos = [];
+
+  // 1. Portada principal OpenGraph
+  const ogMatch = unescaped.match(/<meta\s+property="og:image"\s+content="(https:\/\/[^"\s]+)"/i) ||
+                  unescaped.match(/<meta\s+content="(https:\/\/[^"\s]+)"\s+property="og:image"/i);
+  if (ogMatch && ogMatch[1] && !ogMatch[1].includes("static.xx") && !ogMatch[1].includes("rsrc.php")) {
+    photos.push(ogMatch[1]);
+  }
+
+  // 2. Detección estructurada en JSON de listing_photos o viewer_image
+  const listingPhotosRegex = /"(?:listing_photos|viewer_image|photos)":\s*\[(.*?)\]/s;
+  const match = unescaped.match(listingPhotosRegex);
+  if (match && match[1]) {
+    const uriMatches = match[1].matchAll(/"uri":\s*"(https:\/\/[^"\s]+)"/g);
+    for (const m of uriMatches) {
+      const u = m[1];
+      if (!photos.includes(u) && !u.includes("rsrc.php") && !u.includes("static.xx") && !u.includes("emoji")) {
+        photos.push(u);
+      }
+    }
+  }
+
+  // 3. Extracción profunda por URLs de scontent t39.30808-6 (imágenes reales subidas por usuarios)
+  const allUrls = unescaped.matchAll(/(https:\/\/scontent[^\s"'<>]+\/t39\.30808-6\/[^\s"'<>]+)/g);
+  const byPhotoId = new Map();
+  for (const u of allUrls) {
+    let url = u[1];
+    url = url.replace(/["'\\].*$/, ""); // Limpieza de cola
+    if (url.includes("rsrc.php") || url.includes("emoji.php") || url.includes("static.xx") || url.includes("profile") || url.includes("avatar")) {
+      continue;
+    }
+
+    const idMatch = url.match(/\/t39\.30808-6\/(\d+)_/);
+    const photoId = idMatch ? idMatch[1] : url;
+
+    let score = 0;
+    if (url.includes("_n.jpg")) score += 50;
+    if (url.includes("p960") || url.includes("s1080") || url.includes("p720") || url.includes("s1440") || url.includes("s2048")) score += 40;
+    // Penalizar fuertemente recortes automáticos de miniaturas
+    if (url.includes("c0.") || url.includes("c0.0.")) score -= 100;
+    if (url.includes("p100") || url.includes("s150") || url.includes("p160") || url.includes("s50")) score -= 50;
+
+    const existing = byPhotoId.get(photoId);
+    if (!existing || score > existing.score) {
+      byPhotoId.set(photoId, { url, score });
+    }
+  }
+
+  for (const item of byPhotoId.values()) {
+    if (item.score > -50 && !photos.includes(item.url)) {
+      photos.push(item.url);
+    }
+  }
+
+  return photos;
+}
+
 /**
  * Remasteriza y mejora la resolución/nitidez de una imagen usando Canvas HD.
  * 1. Escala con interpolación bicúbica de alta calidad a un mínimo de 1080px.
@@ -2158,8 +2262,13 @@ function initAutoPublishAssistant() {
   }
   assistantInitializedForUrl = currentSignature;
 
+  // Descarga anticipada de la galería completa en alta resolución desde Facebook
+  const fbPhotosPromise = (preferRealPhotos && oldListingId)
+    ? fetchAllListingPhotosFromFacebook(oldListingId)
+    : Promise.resolve([]);
+
   let loaded = false;
-  function onProductLoaded(prod) {
+  async function onProductLoaded(prod) {
     if (loaded) return;
     loaded = true;
     if (!prod) {
@@ -2182,8 +2291,24 @@ function initAutoPublishAssistant() {
     if (overridePrice && !isNaN(Number(overridePrice)) && Number(overridePrice) > 0) {
       prod.priceNio = Number(overridePrice);
     }
-    if ((preferRealPhotos || !prod.images || prod.images.length === 0) && thumbUrl) {
-      prod.images = [thumbUrl];
+
+    if (preferRealPhotos) {
+      let hdPhotos = [];
+      try {
+        hdPhotos = await fbPhotosPromise;
+      } catch (err) {
+        console.warn("Aviso al esperar fotos HD de Facebook:", err);
+      }
+
+      if (Array.isArray(hdPhotos) && hdPhotos.length > 0) {
+        console.log(`✓ Haibane: ${hdPhotos.length} fotos originales en HD y sin recorte recuperadas de Facebook.`);
+        prod.images = hdPhotos;
+      } else if (Array.isArray(prod.fbPhotos) && prod.fbPhotos.length > 0) {
+        console.log(`✓ Haibane: Usando ${prod.fbPhotos.length} fotos reales de Facebook preservadas en catálogo.`);
+        prod.images = prod.fbPhotos;
+      } else if (thumbUrl && (!prod.images || prod.images.length === 0)) {
+        prod.images = [thumbUrl];
+      }
     }
     injectPublishAssistantBanner(prod);
     if (isBatch) {
