@@ -2163,8 +2163,8 @@
           </div>
           <div class="prod-img-upload-row" style="display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap; width: 100%; box-sizing: border-box; margin-bottom: 0.45rem;">
             <input type="file" id="prod-file-input" accept="image/*" multiple style="display: none;" onchange="handleProductImageFile(this)">
-            <button type="button" class="btn-secondary" style="font-size: 0.73rem; padding: 0.3rem 0.6rem; font-weight: 800; background: #ecfdf5; color: #065f46; border-color: #059669; height: 32px; flex: 1 1 auto; min-width: 0; justify-content: center;" onclick="document.getElementById('prod-file-input').click()">
-              📁 + Subir Fotos (PC)
+            <button type="button" id="btn-upload-product-images" class="btn-secondary" style="font-size: 0.73rem; padding: 0.3rem 0.6rem; font-weight: 800; background: #ecfdf5; color: #065f46; border-color: #059669; height: 32px; flex: 1 1 auto; min-width: 0; justify-content: center;" onclick="document.getElementById('prod-file-input').click()">
+              📁 + Subir Fotos
             </button>
             <button type="button" class="btn-secondary" style="font-size: 0.72rem; padding: 0.3rem 0.55rem; color: #dc2626; height: 32px; flex: 0 0 auto; display: none;" onclick="clearProductImageUpload()" id="btn-clear-all-images">
               🗑️ Quitar Todas

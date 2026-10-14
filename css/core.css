@@ -695,3 +695,36 @@ html.modal-open .admin-bottom-dock {
 .toast.success { border-color: #10b981; border-left-width: 5px; }
 .toast.error { border-color: var(--accent); border-left-width: 5px; }
 .toast.info { border-color: #0ea5e9; border-left-width: 5px; }
+
+/* TOASTS COMPACTOS Y RESPONSIVOS PARA MÓVIL (ADMIN Y CLIENTE) */
+@media (max-width: 768px) {
+  .toast-container {
+    top: max(12px, env(safe-area-inset-top, 12px));
+    bottom: auto;
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    width: calc(100% - 24px);
+    max-width: 380px;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .toast {
+    padding: 0.45rem 0.85rem;
+    font-size: 0.74rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+    width: fit-content;
+    max-width: 100%;
+    border-left-width: 4px;
+    cursor: pointer;
+    line-height: 1.25;
+  }
+
+  @keyframes toastSlideIn {
+    from { transform: translateY(-16px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+}
+

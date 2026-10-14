@@ -256,7 +256,7 @@ export function attachPhoneMask(inputEl) {
   });
 }
 
-export function showToast(message, type = "info") {
+export function showToast(message, type = "info", options = {}) {
   let container = document.getElementById("toast-container");
   if (!container) {
     container = document.createElement("div");
@@ -264,17 +264,63 @@ export function showToast(message, type = "info") {
     container.className = "toast-container";
     document.body.appendChild(container);
   }
+
+  const toastId = typeof options === "string" ? options : options?.id;
+  const domId = toastId ? `toast-${toastId}` : null;
+  const duration = (options && typeof options === "object" && options.duration) ? options.duration : 3200;
+
+  const hasEmoji = /^(\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff])/i.test(message.trim());
+  const prefix = hasEmoji ? "" : `<span style="font-weight:900; font-size:0.95rem; margin-right:4px;">•</span>`;
+
+  // Si se provee un ID, reutilizar el toast existente en el lugar (evita spam de toasts apilados)
+  if (domId) {
+    const existing = document.getElementById(domId) || container.querySelector(`[data-toast-id="${toastId}"]`);
+    if (existing) {
+      existing.className = "toast " + type;
+      existing.innerHTML = `${prefix}<span class="toast-text">${message}</span>`;
+      if (existing._dismissTimer) clearTimeout(existing._dismissTimer);
+      existing._dismissTimer = setTimeout(() => {
+        existing.style.opacity = "0";
+        existing.style.transform = window.innerWidth <= 768 ? "translateY(-10px)" : "translateY(10px)";
+        setTimeout(() => existing.remove(), 250);
+      }, duration);
+      return existing;
+    }
+  }
+
+  // Limitar estrictamente a máximo 2 toasts simultáneos para no saturar la pantalla móvil
+  const MAX_TOASTS = 2;
+  while (container.children && container.children.length >= MAX_TOASTS) {
+    const oldest = container.firstElementChild || container.children[0];
+    if (oldest) {
+      if (oldest._dismissTimer) clearTimeout(oldest._dismissTimer);
+      oldest.remove();
+    } else {
+      break;
+    }
+  }
+
   const toast = document.createElement("div");
   toast.className = "toast " + type;
-  const hasEmoji = /^(\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff])/i.test(message.trim());
-  const prefix = hasEmoji ? "" : `<span style="font-weight:900; font-size:1rem; margin-right:4px;">•</span>`;
-  toast.innerHTML = `${prefix}<span>${message}</span>`;
+  if (domId) toast.id = domId;
+  if (toastId) toast.setAttribute("data-toast-id", toastId);
+  toast.innerHTML = `${prefix}<span class="toast-text">${message}</span>`;
+
+  // Tap para descartar al instante
+  toast.onclick = () => {
+    if (toast._dismissTimer) clearTimeout(toast._dismissTimer);
+    toast.remove();
+  };
+
   container.appendChild(toast);
-  setTimeout(() => {
+
+  toast._dismissTimer = setTimeout(() => {
     toast.style.opacity = "0";
-    toast.style.transform = "translateY(10px)";
-    setTimeout(() => toast.remove(), 300);
-  }, 3500);
+    toast.style.transform = window.innerWidth <= 768 ? "translateY(-10px)" : "translateY(10px)";
+    setTimeout(() => toast.remove(), 250);
+  }, duration);
+
+  return toast;
 }
 
 let savedScrollY = 0;

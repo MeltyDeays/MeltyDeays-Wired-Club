@@ -217,9 +217,18 @@ export function attachPhoneMask(inputEl) {
 }
 
 // SISTEMA TOAST MODERNO (CERO ALERTAS MOLESTAS DE NAVEGADOR)
-export function showToast(message, type = "info") {
-  const container = document.getElementById("toast-container");
-  if (!container) return;
+export function showToast(message, type = "info", options = {}) {
+  let container = document.getElementById("toast-container");
+  if (!container) {
+    container = document.createElement("div");
+    container.id = "toast-container";
+    container.className = "toast-container";
+    document.body.appendChild(container);
+  }
+
+  const toastId = typeof options === "string" ? options : options?.id;
+  const domId = toastId ? `toast-${toastId}` : null;
+  const duration = (options && typeof options === "object" && options.duration) ? options.duration : 3200;
 
   const icons = {
     success: "✓",
@@ -227,16 +236,55 @@ export function showToast(message, type = "info") {
     info: "⚡"
   };
 
+  // Reutilizar toast existente por ID si se proporciona
+  if (domId) {
+    const existing = document.getElementById(domId) || container.querySelector(`[data-toast-id="${toastId}"]`);
+    if (existing) {
+      existing.className = "toast " + type;
+      existing.innerHTML = `<span style="font-weight:900; font-size:0.95rem;">${icons[type] || '•'}</span><span class="toast-text">${message}</span>`;
+      if (existing._dismissTimer) clearTimeout(existing._dismissTimer);
+      existing._dismissTimer = setTimeout(() => {
+        existing.style.opacity = "0";
+        existing.style.transform = window.innerWidth <= 768 ? "translateY(-10px)" : "translateY(10px)";
+        setTimeout(() => existing.remove(), 250);
+      }, duration);
+      return existing;
+    }
+  }
+
+  // Limitar a máximo 2 toasts simultáneos en pantalla para no saturar en móvil
+  const MAX_TOASTS = 2;
+  while (container.children && container.children.length >= MAX_TOASTS) {
+    const oldest = container.firstElementChild || container.children[0];
+    if (oldest) {
+      if (oldest._dismissTimer) clearTimeout(oldest._dismissTimer);
+      oldest.remove();
+    } else {
+      break;
+    }
+  }
+
   const toast = document.createElement("div");
   toast.className = "toast " + type;
-  toast.innerHTML = `<span style="font-weight:900; font-size:1rem;">${icons[type] || '•'}</span><span>${message}</span>`;
+  if (domId) toast.id = domId;
+  if (toastId) toast.setAttribute("data-toast-id", toastId);
+  toast.innerHTML = `<span style="font-weight:900; font-size:0.95rem;">${icons[type] || '•'}</span><span class="toast-text">${message}</span>`;
+
+  // Tap para descartar al instante en móvil
+  toast.onclick = () => {
+    if (toast._dismissTimer) clearTimeout(toast._dismissTimer);
+    toast.remove();
+  };
+
   container.appendChild(toast);
 
-  setTimeout(() => {
+  toast._dismissTimer = setTimeout(() => {
     toast.style.opacity = "0";
-    toast.style.transform = "translateY(10px)";
-    setTimeout(() => toast.remove(), 300);
-  }, 3500);
+    toast.style.transform = window.innerWidth <= 768 ? "translateY(-10px)" : "translateY(10px)";
+    setTimeout(() => toast.remove(), 250);
+  }, duration);
+
+  return toast;
 }
 
 export function switchTab(tabId) {

@@ -844,9 +844,15 @@ export async function executePurgeAllDb() {
 }
 
 let currentProductImages = [];
+let isProcessingProductImages = false;
 
 export async function handleProductImageFile(input) {
-  if (!input.files || input.files.length === 0) return;
+  if (isProcessingProductImages) {
+    showToast("⏳ Ya se están procesando fotos. Por favor espera.", "info", { id: "img-upload-status" });
+    return;
+  }
+  if (!input || !input.files || input.files.length === 0) return;
+
   const files = Array.from(input.files).filter(f => f.type.startsWith("image/"));
 
   if (files.length === 0) {
@@ -856,71 +862,92 @@ export async function handleProductImageFile(input) {
 
   const aiToggle = document.getElementById("toggle-ai-white-bg");
   const aiEnabled = aiToggle ? aiToggle.checked : true;
+  const uploadBtn = document.getElementById("btn-upload-product-images");
+  const origBtnText = uploadBtn ? uploadBtn.innerHTML : "";
 
-  showToast(aiEnabled ? `Procesando ${files.length} foto(s) con IA (Fondo Blanco 1:1)...` : `Optimizando ${files.length} imagen(es)...`, "info");
+  isProcessingProductImages = true;
+  if (uploadBtn) {
+    uploadBtn.disabled = true;
+    uploadBtn.innerHTML = `⏳ Procesando ${files.length} foto(s)...`;
+  }
+  input.disabled = true;
 
-  for (let i = 0; i < files.length; i++) {
-    const file = files[i];
-    try {
-      if (aiEnabled) {
-        const processedDataUrl = await processImageWithAiWhiteBg(file, {
-          onProgress: (msg) => showToast(`Foto ${i + 1}/${files.length}: ${msg}`, "info")
-        });
-        currentProductImages.push(processedDataUrl);
-      } else {
-        const base64Data = await new Promise((resolve) => {
-          const reader = new FileReader();
-          reader.onload = (e) => {
-            const img = new Image();
-            img.onload = () => {
-              const maxDim = 800;
-              let width = img.width;
-              let height = img.height;
-              if (width > maxDim || height > maxDim) {
-                if (width > height) {
-                  height = Math.round((height * maxDim) / width);
-                  width = maxDim;
-                } else {
-                  width = Math.round((width * maxDim) / height);
-                  height = maxDim;
+  const toastId = "img-upload-status";
+  showToast(aiEnabled ? `Procesando ${files.length} foto(s) con IA...` : `Optimizando ${files.length} imagen(es)...`, "info", { id: toastId, duration: 60000 });
+
+  try {
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      try {
+        if (aiEnabled) {
+          const processedDataUrl = await processImageWithAiWhiteBg(file, {
+            onProgress: (msg) => showToast(`Foto ${i + 1}/${files.length}: ${msg}`, "info", { id: toastId, duration: 60000 })
+          });
+          currentProductImages.push(processedDataUrl);
+        } else {
+          showToast(`Foto ${i + 1}/${files.length}: Comprimiendo...`, "info", { id: toastId, duration: 60000 });
+          const base64Data = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+              const img = new Image();
+              img.onload = () => {
+                const maxDim = 800;
+                let width = img.width;
+                let height = img.height;
+                if (width > maxDim || height > maxDim) {
+                  if (width > height) {
+                    height = Math.round((height * maxDim) / width);
+                    width = maxDim;
+                  } else {
+                    width = Math.round((width * maxDim) / height);
+                    height = maxDim;
+                  }
                 }
-              }
-              const canvas = document.createElement("canvas");
-              canvas.width = width;
-              canvas.height = height;
-              const ctx = canvas.getContext("2d");
-              ctx.drawImage(img, 0, 0, width, height);
-              resolve(canvas.toDataURL("image/jpeg", 0.78));
+                const canvas = document.createElement("canvas");
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext("2d");
+                ctx.drawImage(img, 0, 0, width, height);
+                resolve(canvas.toDataURL("image/jpeg", 0.78));
+              };
+              img.src = e.target.result;
             };
-            img.src = e.target.result;
-          };
-          reader.readAsDataURL(file);
-        });
-        currentProductImages.push(base64Data);
+            reader.readAsDataURL(file);
+          });
+          currentProductImages.push(base64Data);
+        }
+      } catch (err) {
+        console.warn(`Fallo procesando imagen ${i + 1}:`, err);
       }
-    } catch (err) {
-      console.warn("Fallo procesando imagen:", err);
+    }
+
+    renderProductImagesPreview();
+    showToast(`✓ ${files.length} foto(s) agregada(s)${aiEnabled ? ' con Fondo Blanco 1:1' : ''}.`, "success", { id: toastId, duration: 3500 });
+  } finally {
+    isProcessingProductImages = false;
+    input.disabled = false;
+    input.value = "";
+    if (uploadBtn) {
+      uploadBtn.disabled = false;
+      uploadBtn.innerHTML = origBtnText;
     }
   }
-
-  renderProductImagesPreview();
-  showToast(`✓ ${files.length} foto(s) agregada(s)${aiEnabled ? ' con Fondo Blanco 1:1' : ''}.`, "success");
-  input.value = "";
 }
 
 export async function cleanProductImageWithAi(index) {
   if (index < 0 || index >= currentProductImages.length) return;
   const original = currentProductImages[index];
-  showToast("Iniciando procesamiento IA (Fondo Blanco 1:1)...", "info");
+  const toastId = "img-clean-single-" + index;
+  showToast("Iniciando procesamiento IA (Fondo Blanco 1:1)...", "info", { id: toastId, duration: 60000 });
   try {
     const cleaned = await processImageWithAiWhiteBg(original, {
-      onProgress: (msg) => showToast(msg, "info")
+      onProgress: (msg) => showToast(msg, "info", { id: toastId, duration: 60000 })
     });
     currentProductImages[index] = cleaned;
     renderProductImagesPreview();
-    showToast("✓ Fondo blanco 1:1 aplicado exitosamente.", "success");
+    showToast("✓ Fondo blanco 1:1 aplicado exitosamente.", "success", { id: toastId, duration: 3500 });
   } catch (err) {
-    showToast("⚠️ Fallo en procesamiento IA, se mantiene imagen actual.", "error");
+    showToast("⚠️ Fallo en procesamiento IA, se mantiene imagen actual.", "error", { id: toastId, duration: 4000 });
   }
 }
 
