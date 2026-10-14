@@ -681,10 +681,12 @@ document.getElementById("btn-execute-manual-relist")?.addEventListener("click", 
 
     log(`[${i + 1}/${selectedItems.length}] Renovando con IA: "${item.fbTitle}"... Fotos HD, precio web y grupos listos.`);
 
+    const cleanPriceDigits = item.priceLine ? item.priceLine.replace(/[^0-9]/g, "") : "";
     chrome.runtime.sendMessage({
       action: "RELIST_EXPIRED_PRODUCT",
       productId: targetId,
-      oldListingId: item.fbListingId || ""
+      oldListingId: item.fbListingId || "",
+      overridePrice: cleanPriceDigits || ""
     });
 
     // Pequeño delay entre aperturas para no saturar el navegador si son varias

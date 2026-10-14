@@ -109,6 +109,24 @@ function loadCatalogProducts(callback) {
  * Extrae de forma exhaustiva las publicaciones visibles en /marketplace/you/selling o feeds de Marketplace.
  * Soporta tanto la vista de lista completa (todas las publicaciones) como el modal individual.
  */
+/**
+ * Extrae y normaliza el precio activo de una publicación descartando precios anteriores/tachados.
+ */
+function extractCleanPrice(rawText) {
+  if (!rawText) return "";
+  const m = rawText.match(/(?:C\$|\$|US\$)\s*\d{1,3}(?:[.,]\d{3})*(?:\.\d{1,2})?|\b\d{1,3}(?:[.,]\d{3})*(?:\.\d{1,2})?\s*(?:NIO|USD)\b/i);
+  if (m) {
+    return m[0].trim();
+  }
+  const fallback = rawText.match(/\b\d{2,}(?:[.,]\d{3})*\b/);
+  if (fallback) {
+    if (rawText.includes("C$")) return `C$ ${fallback[0]}`;
+    if (rawText.includes("$")) return `$ ${fallback[0]}`;
+    return fallback[0];
+  }
+  return rawText.trim();
+}
+
 function getScannableListings() {
   const listings = [];
   const seenTitles = new Set();
@@ -129,6 +147,8 @@ function getScannableListings() {
       l.includes("share") ||
       l.includes("publicado") ||
       l.includes("publicada") ||
+      l.includes("publicaciones") ||
+      l.includes("publicacion") ||
       l.includes("clics en") ||
       l.includes("activo") ||
       l.includes("disponible") ||
@@ -140,10 +160,15 @@ function getScannableListings() {
       l.includes("mensajes") ||
       l.includes("comentarios") ||
       l.includes("estadísticas") ||
-      l.includes("editar publicación") ||
-      l.includes("eliminar publicación") ||
-      l.includes("tu publicación") ||
-      l.includes("más opciones")
+      l.includes("estadisticas") ||
+      l.includes("editar") ||
+      l.includes("eliminar") ||
+      l.includes("más información") ||
+      l.includes("mas informacion") ||
+      l.includes("vendedores") ||
+      l.includes("mantén") ||
+      l.includes("manten") ||
+      l.includes("buscar en")
     );
   }
 
@@ -153,7 +178,8 @@ function getScannableListings() {
     if (textContent.length < 15 || textContent.length > 3000) return null;
 
     const rawLines = textContent.split("\n").map(l => l.trim()).filter(Boolean);
-    const priceLine = rawLines.find(l => l.includes("$") || l.includes("C$") || l.includes("NIO") || /^\d{2,}\.?\d{0,3}$/.test(l)) || "";
+    const rawPriceLine = rawLines.find(l => l.includes("$") || l.includes("C$") || l.includes("NIO") || /^\d{2,}\.?\d{0,3}$/.test(l)) || "";
+    const priceLine = extractCleanPrice(rawPriceLine);
 
     // Extraer candidatos a título descartando ruido
     const titleCandidates = rawLines.filter(l => !isNoiseLine(l));
@@ -169,7 +195,7 @@ function getScannableListings() {
       const allLinks = Array.from(container.querySelectorAll("a[href]"));
       for (const a of allLinks) {
         const href = a.getAttribute("href") || "";
-        const m = href.match(/(?:listing_id=|item\/|selling\/|\/items\/|item_id=)(\d{10,})/i) || href.match(/(\d{10,})/);
+        const m = href.match(/(?:listing_id=|item\/|\/items\/|item_id=)(\d{10,})/i) || href.match(/(\d{10,})/);
         if (m && m[1]) {
           fbListingId = m[1];
           break;
@@ -180,8 +206,8 @@ function getScannableListings() {
     // Si aún no hay ID, buscar si coincide con algún producto de Firestore
     if (!fbListingId && Array.isArray(cachedWebProducts)) {
       const match = cachedWebProducts.find(p => 
-        computeTitleSimilarity(p.title, fbTitle) >= 0.60 ||
-        (p.title && fbTitle.toLowerCase().includes(p.title.toLowerCase().slice(0, 15)))
+        computeTitleSimilarity(p.title, fbTitle) >= 0.55 ||
+        (p.title && fbTitle.toLowerCase().includes(p.title.toLowerCase().slice(0, 12)))
       );
       if (match && match.facebookListingId) {
         fbListingId = String(match.facebookListingId);
@@ -207,8 +233,7 @@ function getScannableListings() {
     };
   }
 
-  // 1. MÉTODO PRIORITARIO: Detección por botones de acción de Marketplace ("Promocionar" o "Marcar como...")
-  // Cada tarjeta de producto en /marketplace/you/selling contiene estos botones únicos
+  // 1. MÉTODO PRIORITARIO: Detección por botones de acción de fila individual ("Promocionar" o "Marcar como...")
   const actionButtons = Array.from(document.querySelectorAll('div[role="button"], button, span, div')).filter(el => {
     if (el.children.length > 2) return false;
     const txt = (el.innerText || el.getAttribute("aria-label") || "").trim().toLowerCase();
@@ -226,18 +251,19 @@ function getScannableListings() {
       if (!curr) break;
 
       const txt = curr.innerText || "";
+      const promoMatches = (txt.match(/promocionar|boost/gi) || []).length;
+      const markMatches = (txt.match(/marcar como|mark as/gi) || []).length;
+
+      // DETENCIÓN ESTRICTA: Si este contenedor contiene más de 1 acción, ya es la tabla completa
+      if (promoMatches > 1 || markMatches > 1) {
+        break;
+      }
+
       const hasPrice = txt.includes("$") || txt.includes("C$") || txt.includes("NIO");
       const hasImg = Boolean(curr.querySelector("img"));
 
-      if (hasPrice && hasImg && txt.length < 2000) {
-        const parentTxt = curr.parentElement?.innerText || "";
-        const promoMatches = (parentTxt.match(/promocionar|marcar como|boost/gi) || []).length;
-        if (promoMatches > 1) {
-          bestCard = curr;
-          break;
-        } else {
-          bestCard = curr;
-        }
+      if (hasPrice && hasImg && txt.length < 2500) {
+        bestCard = curr;
       }
     }
 
@@ -260,11 +286,11 @@ function getScannableListings() {
     }
   }
 
-  // 3. MÉTODO COMPLEMENTARIO: Enlaces tradicionales (/marketplace/item/, /selling/)
-  const links = Array.from(document.querySelectorAll('a[href*="/marketplace/item/"], a[href*="/marketplace/you/selling"], a[href*="/item/"], a[href*="listing_id="]'));
+  // 3. MÉTODO COMPLEMENTARIO: Enlaces individuales directos (/marketplace/item/)
+  const links = Array.from(document.querySelectorAll('a[href*="/marketplace/item/"], a[href*="/item/"], a[href*="listing_id="]'));
   for (const a of links) {
     const href = a.getAttribute("href") || "";
-    const idMatch = href.match(/(?:listing_id=|item\/|selling\/|\/items\/|item_id=)(\d{10,})/i) || href.match(/(\d{10,})/);
+    const idMatch = href.match(/(?:listing_id=|item\/|\/items\/|item_id=)(\d{10,})/i) || href.match(/(\d{10,})/);
     const fbListingId = idMatch ? idMatch[1] : null;
 
     const parent = a.closest('div[role="article"]') || a.closest('div[role="row"]') || a.closest('div[role="listitem"]') || a.parentElement?.parentElement || a.parentElement;
@@ -1562,6 +1588,7 @@ function triggerAutoFillPipeline(product) {
 function initAutoPublishAssistant() {
   const urlParams = new URLSearchParams(window.location.search);
   const haibaneId = urlParams.get("haibane_id");
+  const overridePrice = urlParams.get("override_price");
   if (!haibaneId) return;
 
   const currentSignature = `${window.location.pathname}?haibane_id=${haibaneId}`;
@@ -1577,6 +1604,9 @@ function initAutoPublishAssistant() {
     if (!prod) {
       console.warn("No se pudo obtener el producto para auto-publicar:", haibaneId);
       return;
+    }
+    if (overridePrice && !isNaN(Number(overridePrice)) && Number(overridePrice) > 0) {
+      prod.priceNio = Number(overridePrice);
     }
     injectPublishAssistantBanner(prod);
     triggerAutoFillPipeline(prod);
