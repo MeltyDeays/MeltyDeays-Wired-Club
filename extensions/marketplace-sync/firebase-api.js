@@ -34,46 +34,22 @@ function parseFirestoreValue(valObj) {
 }
 
 /**
- * Obtiene todos los productos del catálogo web consultando colecciones activas.
+ * Obtiene todos los productos del catálogo web consultando la colección activa.
+ * Entorno Producción: 'rewards_catalog'
+ * Entorno Pruebas/Sandbox: 'dev_rewards_catalog'
  */
-export async function getWebProducts(targetCollection = null) {
-  const collectionsToTry = targetCollection ? [targetCollection] : ["dev_rewards_catalog", "rewards_catalog", "rewards"];
-  for (const col of collectionsToTry) {
-    const url = `${BASE_URL}/${col}?key=${FIREBASE_CONFIG.apiKey}&pageSize=100`;
-    try {
-      const res = await fetch(url);
-      if (!res.ok) continue;
-      const data = await res.json();
-      const documents = data.documents || [];
-      if (documents.length > 0) {
-        return documents.map(doc => {
-          const docId = doc.name.split("/").pop();
-          const fields = doc.fields || {};
-          const parsed = { id: docId, _collection: col };
-          for (const [k, v] of Object.entries(fields)) {
-            parsed[k] = parseFirestoreValue(v);
-          }
-          return parsed;
-        });
-      }
-    } catch (err) {
-      console.warn(`Error consultando colección ${col}:`, err);
+export async function getWebProducts(targetCollection = "rewards_catalog") {
+  const col = targetCollection || "rewards_catalog";
+  const url = `${BASE_URL}/${col}?key=${FIREBASE_CONFIG.apiKey}&pageSize=100`;
+  try {
+    const res = await fetch(url);
+    if (!res.ok) {
+      console.warn(`[Haibane Sync] Colección ${col} respondió con estado ${res.status}`);
+      return [];
     }
-  }
-  return [];
-}
-
-/**
- * Obtiene un producto individual por ID buscando en las colecciones del catálogo.
- */
-export async function getProductById(productId, targetCollection = null) {
-  const collectionsToTry = targetCollection ? [targetCollection] : ["dev_rewards_catalog", "rewards_catalog", "rewards"];
-  for (const col of collectionsToTry) {
-    const url = `${BASE_URL}/${col}/${productId}?key=${FIREBASE_CONFIG.apiKey}`;
-    try {
-      const res = await fetch(url);
-      if (!res.ok) continue;
-      const doc = await res.json();
+    const data = await res.json();
+    const documents = data.documents || [];
+    return documents.map(doc => {
       const docId = doc.name.split("/").pop();
       const fields = doc.fields || {};
       const parsed = { id: docId, _collection: col };
@@ -81,17 +57,41 @@ export async function getProductById(productId, targetCollection = null) {
         parsed[k] = parseFirestoreValue(v);
       }
       return parsed;
-    } catch (err) {
-      console.warn(`Error buscando producto ${productId} en ${col}:`, err);
-    }
+    });
+  } catch (err) {
+    console.warn(`[Haibane Sync] Error consultando colección ${col}:`, err);
+    return [];
   }
-  return null;
+}
+
+/**
+ * Obtiene un producto individual por ID buscando en la colección activa.
+ */
+export async function getProductById(productId, targetCollection = "rewards_catalog") {
+  const col = targetCollection || "rewards_catalog";
+  const url = `${BASE_URL}/${col}/${productId}?key=${FIREBASE_CONFIG.apiKey}`;
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const doc = await res.json();
+    const docId = doc.name.split("/").pop();
+    const fields = doc.fields || {};
+    const parsed = { id: docId, _collection: col };
+    for (const [k, v] of Object.entries(fields)) {
+      parsed[k] = parseFirestoreValue(v);
+    }
+    return parsed;
+  } catch (err) {
+    console.warn(`[Haibane Sync] Error buscando producto ${productId} en ${col}:`, err);
+    return null;
+  }
 }
 
 /**
  * Enlaza un producto web existente con su publicación gemela en Facebook.
  */
-export async function linkProductToFacebook(productId, fbListingId, fbUrl = null, collection = "dev_rewards_catalog") {
+export async function linkProductToFacebook(productId, fbListingId, fbUrl = null, collection = "rewards_catalog") {
+  const targetCol = collection || "rewards_catalog";
   const maskParams = [
     "updateMask.fieldPaths=facebookListingId",
     "updateMask.fieldPaths=fbUrl",
@@ -100,7 +100,7 @@ export async function linkProductToFacebook(productId, fbListingId, fbUrl = null
     "updateMask.fieldPaths=lastSyncedAt",
     "updateMask.fieldPaths=lastRelistedAt"
   ];
-  const url = `${BASE_URL}/${collection}/${productId}?${maskParams.join("&")}&key=${FIREBASE_CONFIG.apiKey}`;
+  const url = `${BASE_URL}/${targetCol}/${productId}?${maskParams.join("&")}&key=${FIREBASE_CONFIG.apiKey}`;
   const now = new Date().toISOString();
   const fields = {
     facebookListingId: { stringValue: String(fbListingId) },
@@ -118,17 +118,13 @@ export async function linkProductToFacebook(productId, fbListingId, fbUrl = null
       body: JSON.stringify({ fields })
     });
     if (!res.ok) {
-      // Intentar en rewards_catalog si dev_rewards_catalog no existe
-      if (collection !== "rewards_catalog") {
-        return await linkProductToFacebook(productId, fbListingId, fbUrl, "rewards_catalog");
-      }
       const errText = await res.text();
-      throw new Error(`HTTP ${res.status}: ${errText}`);
+      throw new Error(`HTTP ${res.status} en [${targetCol}]: ${errText}`);
     }
-    console.log(`✓ Enlace Gemelo exitoso: Producto ${productId} vinculado a Facebook Listing #${fbListingId}`);
+    console.log(`✓ Enlace Gemelo exitoso en [${targetCol}]: Producto ${productId} vinculado a FB #${fbListingId}`);
     return await res.json();
   } catch (err) {
-    console.error("Error al enlazar producto con Facebook:", err);
+    console.error(`[Haibane Sync] Error al enlazar producto en ${targetCol}:`, err);
     throw err;
   }
 }
@@ -141,7 +137,8 @@ export async function linkProductToFacebook(productId, fbListingId, fbUrl = null
  * @param {string} fbListingId ID de la publicación en Facebook
  * @param {string} collection Nombre de la colección ('rewards' o 'dev_rewards')
  */
-export async function updateProductPriceFromFacebook(productId, newPriceUsd, fbListingId = null, collection = "rewards") {
+export async function updateProductPriceFromFacebook(productId, newPriceUsd, fbListingId = null, collection = "rewards_catalog") {
+  const targetCol = collection || "rewards_catalog";
   const maskParams = [
     "updateMask.fieldPaths=priceUsd",
     "updateMask.fieldPaths=syncSource",
@@ -151,7 +148,7 @@ export async function updateProductPriceFromFacebook(productId, newPriceUsd, fbL
     maskParams.push("updateMask.fieldPaths=facebookListingId");
   }
 
-  const url = `${BASE_URL}/${collection}/${productId}?${maskParams.join("&")}&key=${FIREBASE_CONFIG.apiKey}`;
+  const url = `${BASE_URL}/${targetCol}/${productId}?${maskParams.join("&")}&key=${FIREBASE_CONFIG.apiKey}`;
 
   const fields = {
     priceUsd: { doubleValue: Number(newPriceUsd) },
@@ -170,13 +167,13 @@ export async function updateProductPriceFromFacebook(productId, newPriceUsd, fbL
     });
     if (!res.ok) {
       const errText = await res.text();
-      throw new Error(`HTTP ${res.status}: ${errText}`);
+      throw new Error(`HTTP ${res.status} en [${targetCol}]: ${errText}`);
     }
     const updated = await res.json();
-    console.log(`✓ Firestore actualizado desde Facebook: Producto ${productId} -> $${newPriceUsd}`);
+    console.log(`✓ Firestore actualizado desde Facebook [${targetCol}]: Producto ${productId} -> $${newPriceUsd}`);
     return updated;
   } catch (err) {
-    console.error("Fallo actualizando producto en Firestore:", err);
+    console.error(`Fallo actualizando producto en [${targetCol}]:`, err);
     throw err;
   }
 }
@@ -184,7 +181,8 @@ export async function updateProductPriceFromFacebook(productId, newPriceUsd, fbL
 /**
  * Marca un producto como SOLD_OUT en Firestore (activa caducidad visual a 12h)
  */
-export async function markProductSoldFromFacebook(productId, collection = "rewards") {
+export async function markProductSoldFromFacebook(productId, collection = "rewards_catalog") {
+  const targetCol = collection || "rewards_catalog";
   const maskParams = [
     "updateMask.fieldPaths=status",
     "updateMask.fieldPaths=stock",
@@ -194,7 +192,7 @@ export async function markProductSoldFromFacebook(productId, collection = "rewar
     "updateMask.fieldPaths=syncSource",
     "updateMask.fieldPaths=lastSyncedAt"
   ];
-  const url = `${BASE_URL}/${collection}/${productId}?${maskParams.join("&")}&key=${FIREBASE_CONFIG.apiKey}`;
+  const url = `${BASE_URL}/${targetCol}/${productId}?${maskParams.join("&")}&key=${FIREBASE_CONFIG.apiKey}`;
   const now = new Date().toISOString();
   const fields = {
     status: { stringValue: "SOLD_OUT" },

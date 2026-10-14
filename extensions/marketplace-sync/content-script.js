@@ -19,6 +19,8 @@ function safeSendMessage(message, callback) {
 }
 
 let cachedWebProducts = [];
+let activeSyncEnv = "PROD";
+let activeSyncCollection = "rewards_catalog";
 
 // Helper para React Controlled Inputs
 function setNativeInputValue(element, value) {
@@ -90,12 +92,23 @@ function loadCatalogProducts(callback) {
   safeSendMessage({ action: "GET_CATALOG_PRODUCTS" }, (response) => {
     if (response && response.success) {
       cachedWebProducts = response.products || [];
+      activeSyncEnv = response.env || "PROD";
+      activeSyncCollection = response.collection || "rewards_catalog";
       const info = document.getElementById("haibane-sync-info");
+      const badge = document.getElementById("haibane-env-badge");
+      if (badge) {
+        const isProd = activeSyncEnv === "PROD";
+        badge.textContent = isProd ? "PROD" : "SANDBOX";
+        badge.style.background = isProd ? "rgba(16,185,129,0.2)" : "rgba(245,158,11,0.2)";
+        badge.style.color = isProd ? "#34d399" : "#fbbf24";
+        badge.style.borderColor = isProd ? "#059669" : "#d97706";
+        badge.title = `Conectado a Firestore: ${activeSyncCollection}`;
+      }
       if (info) {
         const linkedCount = cachedWebProducts.filter(p => p.facebookListingId).length;
-        info.textContent = `${cachedWebProducts.length} prod. web (${linkedCount} gemelos enlazados).`;
+        info.textContent = `[${activeSyncEnv}] ${cachedWebProducts.length} prod. web (${linkedCount} gemelos).`;
       }
-      console.log(`✦ ${cachedWebProducts.length} productos sincronizados desde Firestore.`);
+      console.log(`✦ [Haibane ${activeSyncEnv}] ${cachedWebProducts.length} productos sincronizados desde ${activeSyncCollection}.`);
       if (typeof callback === "function") callback(cachedWebProducts);
     }
   });
@@ -1018,7 +1031,7 @@ function linkExistingMarketplaceTwins() {
         productId: bestMatch.id,
         fbListingId: fbListingId,
         fbUrl: `https://www.facebook.com/marketplace/item/${fbListingId}/`,
-        collection: bestMatch._collection || "dev_rewards_catalog"
+        collection: bestMatch._collection || activeSyncCollection || "rewards_catalog"
       }, (res) => {
         if (res && res.success) {
           bestMatch.facebookListingId = fbListingId;
@@ -1707,23 +1720,22 @@ function parseFirestoreValue(valObj) {
 
 async function fetchProductDirectFromFirestore(productId) {
   const apiKey = "AIzaSyCzoNf4_dMiwcb_H9Ob_kQ-bvRCn97Pyig";
-  const collections = ["dev_rewards_catalog", "rewards_catalog", "rewards"];
-  for (const col of collections) {
-    try {
-      const url = `https://firestore.googleapis.com/v1/projects/lain-wired-club/databases/(default)/documents/${col}/${productId}?key=${apiKey}`;
-      const res = await fetch(url);
-      if (!res.ok) continue;
-      const doc = await res.json();
-      const docId = doc.name.split("/").pop();
-      const fields = doc.fields || {};
-      const parsed = { id: docId, _collection: col };
-      for (const [k, v] of Object.entries(fields)) {
-        parsed[k] = parseFirestoreValue(v);
-      }
-      return parsed;
-    } catch (e) {}
+  const col = activeSyncCollection || "rewards_catalog";
+  try {
+    const url = `https://firestore.googleapis.com/v1/projects/lain-wired-club/databases/(default)/documents/${col}/${productId}?key=${apiKey}`;
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const doc = await res.json();
+    const docId = doc.name.split("/").pop();
+    const fields = doc.fields || {};
+    const parsed = { id: docId, _collection: col };
+    for (const [k, v] of Object.entries(fields)) {
+      parsed[k] = parseFirestoreValue(v);
+    }
+    return parsed;
+  } catch (e) {
+    return null;
   }
-  return null;
 }
 
 function findFacebookMarketplaceInputs() {
@@ -2942,7 +2954,7 @@ function watchForPublishCompletion(productId, collection) {
         productId: productId,
         fbListingId: newListingId,
         fbUrl: href,
-        collection: collection || "dev_rewards_catalog"
+        collection: collection || activeSyncCollection || "rewards_catalog"
       }, () => {
         showHaibaneToast(`✓ Publicación gemela sellada (#${newListingId}). Sincronizado con la web.`);
       });
@@ -3627,6 +3639,7 @@ function injectHaibaneFloatingWidget() {
       <div style="display: flex; align-items: center; gap: 6px;">
         <span style="width: 7px; height: 7px; border-radius: 50%; background: #10b981; box-shadow: 0 0 5px #10b981; display: inline-block;"></span>
         <span style="font-weight: 800; color: #c084fc; font-size: 11px;">✦ Haibane Sync</span>
+        <span id="haibane-env-badge" style="font-size: 8px; font-weight: 800; padding: 1px 5px; border-radius: 4px; background: ${activeSyncEnv === 'PROD' ? 'rgba(16,185,129,0.2)' : 'rgba(245,158,11,0.2)'}; color: ${activeSyncEnv === 'PROD' ? '#34d399' : '#fbbf24'}; border: 1px solid ${activeSyncEnv === 'PROD' ? '#059669' : '#d97706'};" title="Colección: ${activeSyncCollection}">${activeSyncEnv === 'PROD' ? 'PROD' : 'SANDBOX'}</span>
       </div>
       <button id="haibane-btn-minimize" style="background: transparent; color: #64748b; border: none; cursor: pointer; font-size: 13px; padding: 0 4px; line-height: 1;" title="Minimizar panel">✕</button>
     </div>
@@ -3709,6 +3722,16 @@ function injectHaibaneFloatingWidget() {
 
 // Escuchar peticiones del background service worker o popup
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+  if (msg.action === "ENV_CHANGED") {
+    activeSyncEnv = msg.env || "PROD";
+    activeSyncCollection = msg.collection || "rewards_catalog";
+    loadCatalogProducts(() => {
+      showHaibaneToast(`🔄 Entorno conmutado a ${activeSyncEnv} (${activeSyncCollection})`);
+    });
+    sendResponse({ success: true, env: activeSyncEnv, collection: activeSyncCollection });
+    return true;
+  }
+
   if (msg.action === "AUDIT_LISTINGS") {
     (async () => {
       try {

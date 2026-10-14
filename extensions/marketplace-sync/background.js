@@ -62,42 +62,85 @@ function openBatchItemCreation(batch) {
 
 // Manejador de mensajes internos
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.action === "GET_SYNC_ENV") {
+    chrome.storage?.local?.get(["haibaneSyncEnv", "targetCollection"], (d) => {
+      sendResponse({
+        success: true,
+        env: d?.haibaneSyncEnv || "PROD",
+        collection: d?.targetCollection || "rewards_catalog"
+      });
+    });
+    return true;
+  }
+
+  if (request.action === "SET_SYNC_ENV") {
+    const isProd = request.env === "PROD";
+    const newCol = isProd ? "rewards_catalog" : "dev_rewards_catalog";
+    const newEnv = isProd ? "PROD" : "DEV";
+    chrome.storage?.local?.set({ haibaneSyncEnv: newEnv, targetCollection: newCol }, () => {
+      console.log(`[Haibane Sync] Entorno conmutado a ${newEnv} (${newCol})`);
+      chrome.tabs.query({ url: "https://www.facebook.com/marketplace/*" }).then(tabs => {
+        for (const tab of tabs) {
+          chrome.tabs.sendMessage(tab.id, { action: "ENV_CHANGED", env: newEnv, collection: newCol }).catch(() => {});
+        }
+      }).catch(() => {});
+      sendResponse({ success: true, env: newEnv, collection: newCol });
+    });
+    return true;
+  }
+
   if (request.action === "GET_CATALOG_PRODUCTS") {
-    getWebProducts(request.collection)
-      .then(products => sendResponse({ success: true, products }))
-      .catch(error => sendResponse({ success: false, error: error.message }));
+    chrome.storage?.local?.get(["targetCollection", "haibaneSyncEnv"], (stored) => {
+      const col = request.collection || stored?.targetCollection || "rewards_catalog";
+      const env = stored?.haibaneSyncEnv || (col.startsWith("dev_") ? "DEV" : "PROD");
+      getWebProducts(col)
+        .then(products => sendResponse({ success: true, products, collection: col, env }))
+        .catch(error => sendResponse({ success: false, error: error.message }));
+    });
     return true; // Respuesta asíncrona
   }
 
   if (request.action === "GET_PRODUCT_BY_ID") {
-    const { productId } = request;
-    getProductById(productId)
-      .then(product => sendResponse({ success: true, product }))
-      .catch(error => sendResponse({ success: false, error: error.message }));
+    const { productId, collection } = request;
+    chrome.storage?.local?.get(["targetCollection"], (stored) => {
+      const col = collection || stored?.targetCollection || "rewards_catalog";
+      getProductById(productId, col)
+        .then(product => sendResponse({ success: true, product }))
+        .catch(error => sendResponse({ success: false, error: error.message }));
+    });
     return true;
   }
 
   if (request.action === "LINK_PRODUCT_TO_FB") {
     const { productId, fbListingId, fbUrl, collection } = request;
-    linkProductToFacebook(productId, fbListingId, fbUrl, collection)
-      .then(result => sendResponse({ success: true, result }))
-      .catch(error => sendResponse({ success: false, error: error.message }));
+    chrome.storage?.local?.get(["targetCollection"], (stored) => {
+      const col = collection || stored?.targetCollection || "rewards_catalog";
+      linkProductToFacebook(productId, fbListingId, fbUrl, col)
+        .then(result => sendResponse({ success: true, result }))
+        .catch(error => sendResponse({ success: false, error: error.message }));
+    });
     return true;
   }
 
   if (request.action === "SYNC_PRICE_TO_FIRESTORE") {
     const { productId, newPrice, fbListingId, collection } = request;
-    updateProductPriceFromFacebook(productId, newPrice, fbListingId, collection)
-      .then(result => sendResponse({ success: true, result }))
-      .catch(error => sendResponse({ success: false, error: error.message }));
+    chrome.storage?.local?.get(["targetCollection"], (stored) => {
+      const col = collection || stored?.targetCollection || "rewards_catalog";
+      updateProductPriceFromFacebook(productId, newPrice, fbListingId, col)
+        .then(result => sendResponse({ success: true, result }))
+        .catch(error => sendResponse({ success: false, error: error.message }));
+    });
     return true;
   }
 
   if (request.action === "MARK_SOLD_IN_FIRESTORE") {
     const { productId, collection } = request;
-    markProductSoldFromFacebook(productId, collection)
-      .then(result => sendResponse({ success: true, result }))
-      .catch(error => sendResponse({ success: false, error: error.message }));
+    chrome.storage?.local?.get(["targetCollection"], (stored) => {
+      const col = collection || stored?.targetCollection || "rewards_catalog";
+      markProductSoldFromFacebook(productId, col)
+        .then(result => sendResponse({ success: true, result }))
+        .catch(error => sendResponse({ success: false, error: error.message }));
+    });
     return true;
   }
 

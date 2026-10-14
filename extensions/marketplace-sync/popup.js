@@ -8,6 +8,73 @@ function log(msg) {
   }
 }
 
+// ==========================================
+// CONTROL DE ENTORNO AISLADO (PROD VS SANDBOX)
+// ==========================================
+function updateEnvUI(env) {
+  const pill = document.getElementById("env-status-pill");
+  const btnProd = document.getElementById("btn-env-prod");
+  const btnDev = document.getElementById("btn-env-dev");
+  const isProd = env === "PROD";
+
+  if (pill) {
+    pill.textContent = isProd ? "🟢 PRODUCCIÓN" : "🟡 SANDBOX DEV";
+    pill.style.background = isProd ? "rgba(16,185,129,0.2)" : "rgba(245,158,11,0.2)";
+    pill.style.color = isProd ? "#34d399" : "#fbbf24";
+    pill.style.borderColor = isProd ? "#059669" : "#d97706";
+  }
+
+  if (btnProd) {
+    btnProd.style.background = isProd ? "#065f46" : "#1e293b";
+    btnProd.style.borderColor = isProd ? "#10b981" : "#334155";
+    btnProd.style.color = isProd ? "#ffffff" : "#94a3b8";
+    btnProd.style.fontWeight = isProd ? "800" : "normal";
+  }
+
+  if (btnDev) {
+    btnDev.style.background = !isProd ? "#854d0e" : "#1e293b";
+    btnDev.style.borderColor = !isProd ? "#f59e0b" : "#334155";
+    btnDev.style.color = !isProd ? "#ffffff" : "#94a3b8";
+    btnDev.style.fontWeight = !isProd ? "800" : "normal";
+  }
+}
+
+chrome.runtime.sendMessage({ action: "GET_SYNC_ENV" }, (res) => {
+  if (res && res.success) {
+    updateEnvUI(res.env);
+  } else {
+    updateEnvUI("PROD");
+  }
+});
+
+document.getElementById("btn-env-prod")?.addEventListener("click", () => {
+  chrome.runtime.sendMessage({ action: "SET_SYNC_ENV", env: "PROD" }, () => {
+    updateEnvUI("PROD");
+    log("🟢 Entorno conmutado a PRODUCCIÓN (rewards_catalog).");
+    try {
+      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        if (tabs[0]?.id) {
+          chrome.tabs.sendMessage(tabs[0].id, { action: "ENV_CHANGED", env: "PROD", collection: "rewards_catalog" }).catch(() => {});
+        }
+      });
+    } catch (e) {}
+  });
+});
+
+document.getElementById("btn-env-dev")?.addEventListener("click", () => {
+  chrome.runtime.sendMessage({ action: "SET_SYNC_ENV", env: "DEV" }, () => {
+    updateEnvUI("DEV");
+    log("🟡 Entorno conmutado a SANDBOX DEV (dev_rewards_catalog).");
+    try {
+      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        if (tabs[0]?.id) {
+          chrome.tabs.sendMessage(tabs[0].id, { action: "ENV_CHANGED", env: "DEV", collection: "dev_rewards_catalog" }).catch(() => {});
+        }
+      });
+    } catch (e) {}
+  });
+});
+
 /**
  * Envío resiliente de mensajes a la pestaña activa con auto-reconexión e inyección dinámica
  * Previene el error: 'Could not establish connection. Receiving end does not exist.'

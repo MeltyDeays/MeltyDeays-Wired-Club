@@ -10,7 +10,7 @@ const root = process.cwd();
 const contentScript = fs.readFileSync(path.join(root, "extensions/marketplace-sync/content-script.js"), "utf8");
 
 // Extraer la función formatCatchyMarketplaceTitle
-const fnMatch = contentScript.match(/function formatCatchyMarketplaceTitle\(rawTitle = "", category = "", description = ""\) \{([\s\S]*?)\n\}\n\nfunction triggerAutoFillPipeline/);
+const fnMatch = contentScript.match(/function formatCatchyMarketplaceTitle\(rawTitle = "", category = "", description = ""\) \{([\s\S]*?)\r?\n\}\r?\n\r?\nfunction triggerAutoFillPipeline/);
 assert(fnMatch, "formatCatchyMarketplaceTitle debe estar definida en content-script.js");
 
 const formatCatchyMarketplaceTitle = new Function("rawTitle", "category", "description", fnMatch[1]);
