@@ -12,13 +12,14 @@ const contentScript = fs.readFileSync(path.join(root, "extensions/marketplace-sy
 // Test 1: Verificar existencia de funciones de extracción y caché en content-script.js
 assert.ok(contentScript.includes("fetchAllListingPhotosFromFacebook"), "content-script.js debe definir fetchAllListingPhotosFromFacebook");
 assert.ok(contentScript.includes("extractHighResPhotosFromFacebookHtml"), "content-script.js debe definir extractHighResPhotosFromFacebookHtml");
+assert.ok(contentScript.includes("fetchCleanFbPhotoBlob"), "content-script.js debe definir fetchCleanFbPhotoBlob para des-recortar miniaturas");
 assert.ok(contentScript.includes("_fbListingPhotosCache"), "content-script.js debe incluir caché de fotos para optimización");
-console.log("  ✓ Test 1: Funciones de extracción de galería completa HD registradas en content-script.js.");
+console.log("  ✓ Test 1: Funciones de extracción de galería completa HD y des-recorte registradas en content-script.js.");
 
 // Extraer extractHighResPhotosFromFacebookHtml dinámicamente para probarla directamente
 const fnMatch = contentScript.match(/function extractHighResPhotosFromFacebookHtml\([\s\S]*?\n\}/);
 assert.ok(fnMatch, "No se pudo aislar extractHighResPhotosFromFacebookHtml");
-const extractHighResPhotosFromFacebookHtml = new Function("html", `${fnMatch[0]}; return extractHighResPhotosFromFacebookHtml(html);`);
+const extractHighResPhotosFromFacebookHtml = new Function("html", "listingId", `${fnMatch[0]}; return extractHighResPhotosFromFacebookHtml(html, listingId);`);
 
 // Test 2: Extracción estructurada desde listing_photos con múltiples fotos sin recorte
 const mockMarketplaceHtml = `

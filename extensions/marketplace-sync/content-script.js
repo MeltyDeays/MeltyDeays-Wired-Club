@@ -1097,7 +1097,7 @@ async function fetchAllListingPhotosFromFacebook(listingId) {
       return [];
     }
     const html = await res.text();
-    const photos = extractHighResPhotosFromFacebookHtml(html);
+    const photos = extractHighResPhotosFromFacebookHtml(html, cleanId);
     if (photos.length > 0) {
       _fbListingPhotosCache.set(cleanId, photos);
     }
@@ -1109,37 +1109,118 @@ async function fetchAllListingPhotosFromFacebook(listingId) {
 }
 
 /**
- * Extrae URLs de fotos en alta resolución desde el HTML / GraphQL inicial de una publicación de Facebook
+ * Extrae URLs de fotos en alta resolución desde el HTML / GraphQL inicial de una publicación de Facebook.
+ * Soporta estructuras Relay connection (edges/node), primary_listing_photo y aislamiento por ID numérico.
  * @param {string} html Contenido HTML de la página del producto
- * @returns {string[]} Lista de URLs de imágenes HD ordenadas y deduplicadas
+ * @param {string} [listingId] ID numérico de la publicación para delimitar el contexto
+ * @returns {string[]} Lista de URLs de imágenes HD ordenadas y deduplicadas (máximo 5)
  */
-function extractHighResPhotosFromFacebookHtml(html) {
+function extractHighResPhotosFromFacebookHtml(html, listingId = "") {
   if (!html || typeof html !== "string") return [];
   const unescaped = html.replaceAll("\\/", "/");
-  const photos = [];
+  const cleanId = String(listingId || "").replace(/\D/g, "");
 
-  // 1. Portada principal OpenGraph (exclusiva del ítem publicado en <head>)
-  const ogMatch = unescaped.match(/<meta\s+property="og:image"\s+content="(https:\/\/[^"\s]+)"/i) ||
-                  unescaped.match(/<meta\s+content="(https:\/\/[^"\s]+)"\s+property="og:image"/i);
-  if (ogMatch && ogMatch[1] && !ogMatch[1].includes("static.xx") && !ogMatch[1].includes("rsrc.php")) {
-    photos.push(ogMatch[1]);
+  const photos = [];
+  const seenUrls = new Set();
+
+  function addPhoto(url) {
+    if (!url || typeof url !== "string") return;
+    if (url.includes("rsrc.php") || url.includes("static.xx") || url.includes("emoji") || url.includes("avatar")) return;
+    if (!seenUrls.has(url)) {
+      seenUrls.add(url);
+      photos.push(url);
+    }
   }
 
-  // 2. Detección estructurada en JSON de listing_photos o viewer_image exclusivamente del producto
-  const listingPhotosRegex = /"(?:listing_photos|viewer_image)":\s*\[(.*?)\]/s;
-  const match = unescaped.match(listingPhotosRegex);
-  if (match && match[1]) {
-    const uriMatches = match[1].matchAll(/"uri":\s*"(https:\/\/[^"\s]+)"/g);
+  // 1. Portada principal OpenGraph / Meta / Link
+  const ogMatches = [
+    ...unescaped.matchAll(/<meta\s+[^>]*property=["'](?:og:image|image)["'][^>]*content=["'](https:\/\/[^"'\s]+)["']/gi),
+    ...unescaped.matchAll(/<meta\s+[^>]*content=["'](https:\/\/[^"'\s]+)["'][^>]*property=["'](?:og:image|image)["']/gi),
+    ...unescaped.matchAll(/<link\s+[^>]*rel=["'](?:image_src|preload)["'][^>]*href=["'](https:\/\/[^"'\s]+)["']/gi)
+  ];
+  for (const m of ogMatches) {
+    if (m && m[1] && m[1].includes("scontent") && !m[1].includes("c0.0.")) {
+      addPhoto(m[1]);
+    }
+  }
+
+  // 2. Extracción desde bloque estructurado de Relay / GraphQL
+  const candidateBlocks = [];
+
+  const photoBlockRegexes = [
+    /"listing_photos":\s*(\{[^}]*"edges":\s*\[[\s\S]*?\]\s*\}|\{[\s\S]*?"nodes":\s*\[[\s\S]*?\]\s*\}|\[[\s\S]*?\])/g,
+    /"primary_listing_photo":\s*(\{[^}]*"image":\s*\{[\s\S]*?\}\s*\})/g,
+    /"viewer_image":\s*(\{[^}]*"uri":\s*"https:[^"]+?"\s*\})/g
+  ];
+
+  for (const rx of photoBlockRegexes) {
+    const matches = unescaped.matchAll(rx);
+    for (const m of matches) {
+      if (m && m[1]) candidateBlocks.push(m[1]);
+    }
+  }
+
+  // Delimitar por cleanId para aislar la publicación principal y descartar 100% las recomendaciones/memes
+  if (cleanId) {
+    const idPositions = [];
+    let pos = unescaped.indexOf(`"${cleanId}"`);
+    while (pos !== -1) {
+      idPositions.push(pos);
+      pos = unescaped.indexOf(`"${cleanId}"`, pos + 1);
+    }
+    for (const idx of idPositions.slice(0, 3)) {
+      const sliceStart = Math.max(0, idx - 1500);
+      const sliceEnd = Math.min(unescaped.length, idx + 4500);
+      candidateBlocks.push(unescaped.slice(sliceStart, sliceEnd));
+    }
+  }
+
+  // Extraer URIs de fotos en los bloques candidatos
+  for (const block of candidateBlocks) {
+    const uriMatches = block.matchAll(/"(?:uri|image_uri|large_image_url)":\s*"(https:\/\/[^"\s]+)"/g);
     for (const m of uriMatches) {
       const u = m[1];
-      if (!photos.includes(u) && !u.includes("rsrc.php") && !u.includes("static.xx") && !u.includes("emoji")) {
-        photos.push(u);
+      if (u.includes("scontent") && !u.includes("c0.0.")) {
+        addPhoto(u);
       }
     }
   }
 
-  // Límite estricto de seguridad: jamás devolver más de 5 fotos para evitar colapsar Marketplace
-  return Array.from(new Set(photos)).slice(0, 5);
+  // Si no se hallaron variantes HD sin recorte en los bloques, aceptar variantes directas del ítem
+  if (photos.length === 0) {
+    for (const block of candidateBlocks) {
+      const uriMatches = block.matchAll(/"uri":\s*"(https:\/\/scontent[^"\s]+)"/g);
+      for (const m of uriMatches) {
+        addPhoto(m[1]);
+      }
+    }
+  }
+
+  // 3. Agrupación por ID de foto y preferencia de máxima resolución sin recorte
+  const bestByPhotoId = new Map();
+  for (const u of photos) {
+    const idMatch = u.match(/\/t39\.30808-6\/(\d+)_/);
+    const photoId = idMatch ? idMatch[1] : u;
+
+    let score = 0;
+    if (u.includes("_n.jpg")) score += 50;
+    if (u.includes("s2048") || u.includes("s1440") || u.includes("s1080") || u.includes("p960")) score += 40;
+    if (u.includes("p720") || u.includes("dst-jpg")) score += 20;
+    if (u.includes("c0.") || u.includes("c0.0.")) score -= 100;
+    if (u.includes("p100") || u.includes("s150")) score -= 50;
+
+    const existing = bestByPhotoId.get(photoId);
+    if (!existing || score > existing.score) {
+      bestByPhotoId.set(photoId, { url: u, score });
+    }
+  }
+
+  const finalPhotos = Array.from(bestByPhotoId.values())
+    .map(x => x.url)
+    .filter(Boolean);
+
+  // Límite estricto de seguridad: máximo 5 fotos legítimas del producto
+  return finalPhotos.slice(0, 5);
 }
 
 /**
@@ -1235,6 +1316,45 @@ async function enhanceImageWithCanvasHD(blob) {
 }
 
 /**
+ * Descarga una foto desde Facebook CDN intentando remover recortes cuadrados automáticos (c0.0...)
+ * para recuperar la imagen original del dispositivo en alta resolución.
+ */
+async function fetchCleanFbPhotoBlob(url) {
+  if (!url || typeof url !== "string") return null;
+
+  if (url.includes("scontent") && url.includes("c0.0.")) {
+    const uncroppedCandidates = [
+      url.replace(/c0\.0\.\d+\.\d+a_p\d+x\d+/, "dst-jpg_s1080x1080"),
+      url.replace(/c0\.0\.\d+\.\d+a_s\d+x\d+/, "dst-jpg_s1080x1080"),
+      url.replace(/c0\.0\.\d+\.\d+a_/, ""),
+      url.replace(/[?&]stp=[^&]+/, "")
+    ];
+    for (const cand of uncroppedCandidates) {
+      try {
+        const res = await fetch(cand);
+        if (res.ok) {
+          const blob = await res.blob();
+          if (blob && blob.size > 20000 && blob.type.includes("image")) {
+            console.log("✓ Haibane: Recorte cuadrado de Facebook CDN neutralizado (Foto HD original recuperada).");
+            return blob;
+          }
+        }
+      } catch {
+        // Continuar con siguiente candidato
+      }
+    }
+  }
+
+  try {
+    const res = await fetch(url);
+    if (res.ok) return await res.blob();
+  } catch (err) {
+    console.warn("Haibane: Error al descargar imagen:", err);
+  }
+  return null;
+}
+
+/**
  * Inyecta fotografías de alta resolución en el formulario nativo de Marketplace evitando duplicados
  */
 async function injectProductPhotosToForm(photoUrls, productId = "") {
@@ -1290,8 +1410,7 @@ async function injectProductPhotosToForm(photoUrls, productId = "") {
       if (url.startsWith("data:")) {
         blob = dataUrlToBlob(url);
       } else {
-        const res = await fetch(url);
-        blob = await res.blob();
+        blob = await fetchCleanFbPhotoBlob(url);
       }
       if (blob) {
         if (!url.startsWith("data:")) {
