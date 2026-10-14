@@ -637,42 +637,125 @@ export async function executeProfilePinUpdate() {
   }
 }
 
+function getCatalogProductsList() {
+  if (vm && Array.isArray(vm.catalog) && vm.catalog.length > 0) {
+    return vm.catalog;
+  }
+  try {
+    const snap = FirestoreService.getSnapshot();
+    if (snap && snap.rewards) {
+      return Object.values(snap.rewards);
+    }
+  } catch (e) {}
+  return [];
+}
+
 function getComputedUserNotifications(user) {
   const readList = JSON.parse(localStorage.getItem("melty_read_notifications") || "[]");
   const pts = user ? (user.wiredPoints || 0) : 0;
+  const products = getCatalogProductsList();
   
-  const notifs = [
-    {
-      id: "notif-pts-discount",
-      icon: "🏷️",
-      title: "Descuentos Disponibles",
-      desc: pts > 0 ? `Tienes ${pts.toLocaleString()} Wired Points listos para aplicar hasta un 57% de descuento en el catálogo.` : "Acumula puntos en tus compras para canjear descuentos exclusivos.",
-      time: "Hoy",
-      targetRewardId: "REW-DEMO-03",
-      badgeText: "57% OFF",
-      read: readList.includes("notif-pts-discount")
-    },
-    {
-      id: "notif-new-items",
-      icon: "🎁",
-      title: "Nuevos Artículos Demo",
-      desc: "Mando Hall Effect GameSir Nova Lite y Teclado Mecánico Gasket 65% ya disponibles en el club.",
-      time: "Ayer",
-      targetRewardId: "REW-DEMO-04",
-      badgeText: "NUEVO",
-      read: readList.includes("notif-new-items")
-    },
-    {
-      id: "notif-pass-status",
+  const notifs = [];
+
+  // Filtrar productos del catálogo activos (no agotados)
+  const activeProducts = products.filter(p => p.status !== "SOLD_OUT" && p.rewardType !== "INCOMING");
+
+  // 1. PRODUCTOS EN CAMINO / PREVENTA (INCOMING)
+  const incomingProds = products.filter(p => p.rewardType === "INCOMING" || p.status === "INCOMING");
+  incomingProds.forEach(prod => {
+    const notifId = `notif-incoming-${prod.id}`;
+    notifs.push({
+      id: notifId,
+      icon: "📦",
+      title: "Próximamente en Camino",
+      desc: `"${prod.title}" viene en camino al club. ¡Prepara tus puntos para reservarlo!`,
+      time: "En camino",
+      targetRewardId: prod.id,
+      badgeText: "PREVENTA",
+      read: readList.includes(notifId)
+    });
+  });
+
+  // 2. NUEVOS PRODUCTOS REALES EN CATÁLOGO
+  if (activeProducts.length > 0) {
+    const recentProds = activeProducts.slice(-2).reverse();
+    recentProds.forEach(prod => {
+      const notifId = `notif-new-${prod.id}`;
+      notifs.push({
+        id: notifId,
+        icon: "🎁",
+        title: "Nuevo en Catálogo",
+        desc: `"${prod.title}" ya disponible para canje en The Wired Club.`,
+        time: "Nuevo",
+        targetRewardId: prod.id,
+        badgeText: "NUEVO",
+        read: readList.includes(notifId)
+      });
+    });
+  }
+
+  // 3. CAMBIOS DE PRECIO / DESCUENTOS DISPONIBLES CON PUNTOS
+  if (activeProducts.length > 0) {
+    const bestDiscountProd = [...activeProducts].sort((a, b) => (b.maxDiscountPct || 0) - (a.maxDiscountPct || 0))[0];
+    const maxDiscount = bestDiscountProd.maxDiscountPct || 50;
+
+    if (pts > 0) {
+      const notifId = `notif-pts-discount-${bestDiscountProd.id}`;
+      notifs.push({
+        id: notifId,
+        icon: "🏷️",
+        title: "Descuento con tus Puntos",
+        desc: `Tienes ${pts.toLocaleString()} Wired Points listos para aplicar hasta un ${maxDiscount}% de descuento en "${bestDiscountProd.title}".`,
+        time: "Hoy",
+        targetRewardId: bestDiscountProd.id,
+        badgeText: `${maxDiscount}% OFF`,
+        read: readList.includes(notifId)
+      });
+    } else {
+      const notifId = `notif-pts-explore-${bestDiscountProd.id}`;
+      notifs.push({
+        id: notifId,
+        icon: "🏷️",
+        title: "Descuentos Disponibles",
+        desc: `Acumula puntos en tus compras para canjear hasta un ${maxDiscount}% de descuento en artículos como "${bestDiscountProd.title}".`,
+        time: "Hoy",
+        targetRewardId: bestDiscountProd.id,
+        badgeText: `${maxDiscount}% OFF`,
+        read: readList.includes(notifId)
+      });
+    }
+  }
+
+  // 4. COMBOS Y AHORRO ESPECIAL
+  const comboProds = products.filter(p => p.rewardType === "COMBO" || (typeof p.isCombo === "function" && p.isCombo()));
+  comboProds.forEach(prod => {
+    const notifId = `notif-combo-${prod.id}`;
+    notifs.push({
+      id: notifId,
+      icon: "⚡",
+      title: "Combo Especial Gaming",
+      desc: `"${prod.title}" disponible en paquete con precio y ahorro especial.`,
+      time: "Oferta",
+      targetRewardId: prod.id,
+      badgeText: "COMBO",
+      read: readList.includes(notifId)
+    });
+  });
+
+  // 5. ESTADO DE CYBERPASS DEL SOCIO
+  if (user && user.displayName) {
+    const notifId = `notif-pass-${user.uid || user.phone || "active"}`;
+    notifs.push({
+      id: notifId,
       icon: "⚡",
       title: "CyberPass Activo",
-      desc: `Socio ${user?.displayName || 'Socio'} (${user?.tier || 'NAVI_USER'}) verificado en The Wired Club.`,
+      desc: `Socio ${user.displayName} (${user.tier || 'NAVI_USER'}) verificado en The Wired Club.`,
       time: "Reciente",
       targetRewardId: null,
       badgeText: "ACTIVO",
-      read: readList.includes("notif-pass-status")
-    }
-  ];
+      read: readList.includes(notifId)
+    });
+  }
 
   return notifs;
 }
@@ -738,10 +821,14 @@ export async function requestChromePushPermission() {
   const res = await PushNotificationService.requestPermission();
   if (res === "granted") {
     showToast("✓ ¡Avisos de Google Chrome activados con éxito!", "success");
+    const products = getCatalogProductsList();
+    const targetProd = products.find(r => r.status !== "SOLD_OUT") || products[0];
     await PushNotificationService.sendNotification({
       title: "⚡ MeltyDeays · The Wired Club",
-      body: "🎉 ¡Avisos en Chrome activados! Te avisaremos de nuevos productos y descuentos gaming en tu teléfono.",
-      rewardId: "REW-DEMO-03"
+      body: targetProd 
+        ? `🎉 ¡Avisos en Chrome activados! Recibirás alertas inmediatas sobre novedades como "${targetProd.title}" y cambios de precio.`
+        : "🎉 ¡Avisos en Chrome activados! Te avisaremos de nuevos productos y descuentos gaming en tu teléfono.",
+      rewardId: targetProd?.id || null
     });
     renderProfileDrawer();
   } else if (res === "denied") {
@@ -750,10 +837,14 @@ export async function requestChromePushPermission() {
 }
 
 export async function testChromePushNotification() {
+  const products = getCatalogProductsList();
+  const targetProd = products.find(r => r.status !== "SOLD_OUT") || products[0];
   const sent = await PushNotificationService.sendNotification({
     title: "🔥 ¡Novedades MeltyDeays!",
-    body: "🎮 Mouse Gamer Óptico RGB y Teclado 65% con hasta 57% OFF disponibles en The Wired Club.",
-    rewardId: "REW-DEMO-03"
+    body: targetProd
+      ? `🎮 "${targetProd.title}" con hasta ${targetProd.maxDiscountPct || 50}% OFF disponible en The Wired Club.`
+      : "🎮 Nuevos artículos y descuentos disponibles en The Wired Club.",
+    rewardId: targetProd?.id || null
   });
   if (sent) {
     showToast("✓ Aviso enviado a tu teléfono vía Google Chrome", "success");
