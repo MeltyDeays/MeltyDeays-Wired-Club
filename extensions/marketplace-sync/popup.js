@@ -710,11 +710,12 @@ document.getElementById("btn-execute-manual-relist")?.addEventListener("click", 
   const queue = selectedItems.map(item => {
     const targetId = item.twinId || (item.fbListingId ? `fb_${item.fbListingId}` : null);
     const cleanPriceDigits = item.priceLine ? item.priceLine.replace(/[^0-9]/g, "") : "";
+    const chosenThumb = (preferRealPhotos && item.fbThumb) ? item.fbThumb : (item.webThumb || item.thumb || item.fbThumb || "");
     return {
       productId: targetId,
       oldListingId: item.fbListingId || "",
       title: item.fbTitle || "",
-      thumb: item.thumb || "",
+      thumb: chosenThumb,
       preferRealPhotos: preferRealPhotos,
       overridePrice: cleanPriceDigits || ""
     };

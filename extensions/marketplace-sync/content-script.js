@@ -975,6 +975,98 @@ async function generateQrCardDataUrl() {
 }
 
 /**
+ * Remasteriza y mejora la resolución/nitidez de una imagen usando Canvas HD.
+ * 1. Escala con interpolación bicúbica de alta calidad a un mínimo de 1080px.
+ * 2. Aplica filtro Unsharp Mask de micro-contraste para compensar la compresión previa de Meta.
+ * 3. Exporta a JPEG con calidad 0.95.
+ */
+async function enhanceImageWithCanvasHD(blob) {
+  if (!blob || !blob.type || !blob.type.includes("image")) return blob;
+  return new Promise((resolve) => {
+    try {
+      const img = new Image();
+      const url = URL.createObjectURL(blob);
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        try {
+          const origW = img.naturalWidth || img.width;
+          const origH = img.naturalHeight || img.height;
+          if (origW < 10 || origH < 10) return resolve(blob);
+
+          const targetMinDim = 1080;
+          const maxDim = Math.max(origW, origH);
+          let scale = 1;
+          if (maxDim < targetMinDim) {
+            scale = targetMinDim / maxDim;
+          }
+
+          const targetW = Math.round(origW * scale);
+          const targetH = Math.round(origH * scale);
+
+          const canvas = document.createElement("canvas");
+          canvas.width = targetW;
+          canvas.height = targetH;
+          const ctx = canvas.getContext("2d", { willReadFrequently: true });
+          if (!ctx) return resolve(blob);
+
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = "high";
+          ctx.drawImage(img, 0, 0, targetW, targetH);
+
+          try {
+            const imgData = ctx.getImageData(0, 0, targetW, targetH);
+            const data = imgData.data;
+            const copy = new Uint8ClampedArray(data);
+            const w = targetW;
+            const h = targetH;
+            const weight = 0.20; // Enfoque de bordes y micro-contraste
+
+            for (let y = 1; y < h - 1; y++) {
+              const row = y * w * 4;
+              const rowAbove = (y - 1) * w * 4;
+              const rowBelow = (y + 1) * w * 4;
+              for (let x = 1; x < w - 1; x++) {
+                const idx = row + (x * 4);
+                for (let c = 0; c < 3; c++) {
+                  const val = copy[idx + c];
+                  const up = copy[rowAbove + (x * 4) + c];
+                  const down = copy[rowBelow + (x * 4) + c];
+                  const left = copy[row + ((x - 1) * 4) + c];
+                  const right = copy[row + ((x + 1) * 4) + c];
+                  const laplacian = (4 * val) - (up + down + left + right);
+                  data[idx + c] = Math.min(255, Math.max(0, val + (weight * laplacian)));
+                }
+              }
+            }
+            ctx.putImageData(imgData, 0, 0);
+          } catch (filterErr) {
+            console.warn("Haibane: Filtro unsharp mask omitido:", filterErr);
+          }
+
+          canvas.toBlob((enhancedBlob) => {
+            if (enhancedBlob && enhancedBlob.size > 1000) {
+              resolve(enhancedBlob);
+            } else {
+              resolve(blob);
+            }
+          }, "image/jpeg", 0.95);
+        } catch (err) {
+          console.warn("Haibane: Fallo en remasterización Canvas HD:", err);
+          resolve(blob);
+        }
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        resolve(blob);
+      };
+      img.src = url;
+    } catch {
+      resolve(blob);
+    }
+  });
+}
+
+/**
  * Inyecta fotografías de alta resolución en el formulario nativo de Marketplace evitando duplicados
  */
 async function injectProductPhotosToForm(photoUrls, productId = "") {
@@ -1032,6 +1124,13 @@ async function injectProductPhotosToForm(photoUrls, productId = "") {
         blob = await res.blob();
       }
       if (blob) {
+        if (!url.startsWith("data:")) {
+          try {
+            blob = await enhanceImageWithCanvasHD(blob);
+          } catch (enhErr) {
+            console.warn("Aviso: Remasterización omitida para foto:", enhErr);
+          }
+        }
         const file = new File([blob], `haibane_hd_${productId || 'item'}_${i}.jpg`, { type: blob.type || "image/jpeg" });
         dt.items.add(file);
       }
@@ -2958,8 +3057,17 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
             );
 
             const imgEl = l.imgEl || l.element?.querySelector("img");
-            const fbImg = imgEl ? (imgEl.src || imgEl.getAttribute("data-src") || "") : "";
-            const thumb = (twin && twin.imageUrl) ? twin.imageUrl : fbImg;
+            let fbImg = "";
+            if (imgEl) {
+              if (imgEl.srcset) {
+                const candidates = imgEl.srcset.split(",").map(s => s.trim().split(" ")[0]).filter(Boolean);
+                fbImg = candidates[candidates.length - 1] || imgEl.currentSrc || imgEl.src || "";
+              } else {
+                fbImg = imgEl.currentSrc || imgEl.src || imgEl.getAttribute("data-src") || "";
+              }
+            }
+            const webImg = (twin && twin.imageUrl) ? twin.imageUrl : "";
+            const thumb = webImg || fbImg;
             const canonicalFbId = l.fbListingId || (twin?.facebookListingId ? String(twin.facebookListingId) : null);
 
             return {
@@ -2967,6 +3075,8 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
               fbTitle: l.fbTitle,
               priceLine: l.priceLine || (twin ? `C$ ${twin.priceNio || Math.round((twin.priceUsd || 0) * 37)}` : ""),
               thumb: thumb,
+              fbThumb: fbImg,
+              webThumb: webImg,
               twinId: twin ? twin.id : null,
               twinTitle: twin ? twin.title : null,
               twinPriceUsd: twin ? twin.priceUsd : null,
