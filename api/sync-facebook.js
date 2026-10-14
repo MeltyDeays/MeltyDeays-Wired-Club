@@ -348,13 +348,30 @@ async function scrapeFacebookProfileListings() {
 
 // Matching inteligente con Groq IA (Llama 3.3)
 async function matchListingWithWebProducts(fbListing, webProducts) {
-  // 1. Verificación directa por ID previo
-  const directMatch = webProducts.find(p => p.facebookListingId === fbListing.listingId);
+  // 1. Verificación directa por ID previo o ID de documento
+  const directMatch = webProducts.find(p => 
+    (p.facebookListingId && String(p.facebookListingId) === String(fbListing.listingId)) ||
+    String(p.id) === `fb_${fbListing.listingId}` ||
+    String(p.reward_id) === `fb_${fbListing.listingId}` ||
+    String(p.id) === String(fbListing.listingId)
+  );
   if (directMatch) {
     return { matched: true, productId: directMatch.id, isNew: false, confidence: 1.0 };
   }
 
-  // 2. Consulta semántica a Groq LLM con regla de precios explícita
+  // 2. Coincidencia por título exacto normalizado
+  const normFbTitle = String(fbListing.title || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+  if (normFbTitle.length > 5) {
+    const exactTitleMatch = webProducts.find(p => {
+      const normWebTitle = String(p.title || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+      return normFbTitle === normWebTitle;
+    });
+    if (exactTitleMatch) {
+      return { matched: true, productId: exactTitleMatch.id, isNew: false, confidence: 0.99 };
+    }
+  }
+
+  // 3. Consulta semántica a Groq LLM con regla de precios explícita
   const productsSummary = webProducts.map(p => `- ID: "${p.id}", Título: "${p.title}", Precio: $${p.priceUsd} USD (C$ ${p.priceNio || Math.round(p.priceUsd * EXCHANGE_RATE_NIO)} NIO)`).join("\n");
   const prompt = `Tienes una publicación de Facebook Marketplace y una lista de productos en nuestro catálogo web.
 Determina si la publicación de Facebook corresponde a algún producto de la lista, o si se trata de un PRODUCTO NUEVO subido desde el teléfono.
@@ -524,7 +541,7 @@ async function createNewProductInFirestore(fbListing, collectionName = "rewards"
     }
   }
 
-  if (!isBrand && !hasSelectedMold) {
+  if (!isBrand && !hasSelectedMold && !fbListing.imageUrl) {
     finalImage = "";
   }
 
@@ -745,7 +762,8 @@ module.exports = async function handler(req, res) {
           // Si sigue activo: verificar cambio de precio o imagen real
           else if (!fbItem.isSold) {
             const priceChanged = fbItem.priceUsd > 0 && Math.abs(webProd.priceUsd - fbItem.priceUsd) >= 0.5;
-            const hasNewRealImage = Boolean(webProd.brandVerified) && fbItem.imageUrl && fbItem.imageUrl !== webProd.imageUrl && !fbItem.imageUrl.includes("unsplash.com");
+            const webProdHasValidImage = Boolean(webProd.imageUrl && !webProd.imageUrl.includes("unsplash.com"));
+            const hasNewRealImage = Boolean(webProd.brandVerified) && fbItem.imageUrl && fbItem.imageUrl !== webProd.imageUrl && !fbItem.imageUrl.includes("unsplash.com") && !webProdHasValidImage;
             const needsIdLink = !webProd.facebookListingId || String(webProd.facebookListingId) !== String(fbItem.listingId);
             if (priceChanged || hasNewRealImage || needsIdLink) {
               await updateProductInFirestore(webProd.id, fbItem.priceUsd || webProd.priceUsd, fbItem.listingId, collection, hasNewRealImage ? fbItem.imageUrl : null, webProd);

@@ -509,3 +509,168 @@ document.getElementById("btn-share-groups-now")?.addEventListener("click", async
   }
 });
 
+/**
+ * =======================================================================
+ * MOTOR DE RENOVACIÓN MANUAL DE PUBLICACIONES SELECCIONADAS CON IA
+ * =======================================================================
+ */
+
+let activeScannedListings = [];
+
+function updateManualRelistCounter() {
+  const container = document.getElementById("manual-relist-container");
+  const lbl = document.getElementById("lbl-relist-selected-count");
+  if (!container || !lbl) return;
+  const checked = container.querySelectorAll(".chk-relist-item:checked").length;
+  lbl.textContent = `${checked} seleccionada(s) para renovar`;
+}
+
+function renderManualRelistListings(listings) {
+  const container = document.getElementById("manual-relist-container");
+  if (!container) return;
+
+  activeScannedListings = Array.isArray(listings) ? listings : [];
+
+  if (activeScannedListings.length === 0) {
+    container.innerHTML = `
+      <div style="color: #64748b; font-size: 9.5px; text-align: center; padding: 10px; line-height: 1.4;">
+        No se detectaron publicaciones activas en pantalla.<br>
+        <span style="color: #38bdf8;">Abre tu panel de ventas (/marketplace/you/selling) y pulsa "Escanear en FB".</span>
+      </div>
+    `;
+    updateManualRelistCounter();
+    return;
+  }
+
+  container.innerHTML = activeScannedListings.map((item, idx) => {
+    const isLinked = Boolean(item.twinId || item.isTwinLinked);
+    const displayPrice = item.priceLine || (item.twinPriceNio ? `C$ ${item.twinPriceNio}` : "-");
+    const thumbUrl = item.thumb || "";
+
+    return `
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px; background: #090d16; border: 1px solid #1e293b; border-radius: 4px; padding: 4px 6px;">
+        <div style="display: flex; align-items: center; gap: 6px; min-width: 0; flex: 1;">
+          <input type="checkbox" id="chk-relist-${idx}" class="chk-relist-item" data-idx="${idx}" checked style="accent-color: #0284c7; cursor: pointer; transform: scale(1.05);" />
+          <div style="width: 28px; height: 28px; border-radius: 4px; overflow: hidden; background: #020617; border: 1px solid #334155; flex-shrink: 0; display: flex; align-items: center; justify-content: center;">
+            ${thumbUrl ? `<img src="${thumbUrl}" alt="${item.fbTitle}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.onerror=null; this.parentElement.innerHTML='📦';" />` : `<span style="font-size: 11px;">📦</span>`}
+          </div>
+          <div style="min-width: 0; flex: 1;">
+            <div style="font-size: 10px; font-weight: 700; color: #f1f5f9; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${item.fbTitle}">
+              ${item.fbTitle || 'Publicación sin título'}
+            </div>
+            <div style="display: flex; align-items: center; gap: 4px; font-size: 9px; margin-top: 1px; flex-wrap: wrap;">
+              <span style="color: #38bdf8; font-family: monospace; font-weight: 700;">${displayPrice}</span>
+              ${isLinked
+                ? `<span style="font-size: 8px; background: rgba(16,185,129,0.2); color: #34d399; padding: 0 4px; border-radius: 3px; border: 1px solid rgba(16,185,129,0.3);">✓ Gemelo Web</span>`
+                : `<span style="font-size: 8px; background: rgba(245,158,11,0.2); color: #fbbf24; padding: 0 4px; border-radius: 3px; border: 1px solid rgba(245,158,11,0.3);">⚠️ Sin Gemelo</span>`
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  container.querySelectorAll(".chk-relist-item").forEach(chk => {
+    chk.addEventListener("change", updateManualRelistCounter);
+  });
+
+  updateManualRelistCounter();
+}
+
+// Botón: Escanear publicaciones en pantalla de Facebook
+document.getElementById("btn-scan-relist-listings")?.addEventListener("click", async () => {
+  log("🔍 Escaneando tus publicaciones en Facebook Marketplace...");
+  try {
+    const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+    const currentTab = tabs[0];
+    if (currentTab && currentTab.url && currentTab.url.includes("facebook.com")) {
+      chrome.tabs.sendMessage(currentTab.id, { action: "SCAN_MY_LISTINGS" }, (res) => {
+        if (chrome.runtime.lastError) {
+          log(`⚠️ Aviso: ${chrome.runtime.lastError.message}`);
+          return;
+        }
+        if (res && res.success && Array.isArray(res.listings) && res.listings.length > 0) {
+          renderManualRelistListings(res.listings);
+          chrome.storage?.local?.set({ lastScannedMarketplaceListings: res.listings });
+          log(`✓ ${res.listings.length} publicaciones encontradas en pantalla listas para renovar.`);
+        } else {
+          // Si no está en /marketplace/you/selling, ofrecer redirigir
+          if (!currentTab.url.includes("/marketplace/you/selling")) {
+            log("Abriendo 'Tus publicaciones' en Facebook (/marketplace/you/selling)...");
+            chrome.tabs.update(currentTab.id, { url: "https://www.facebook.com/marketplace/you/selling", active: true });
+          } else {
+            log("⚠️ No se detectaron productos en pantalla. Baja un poco en la página y vuelve a pulsar Escanear.");
+          }
+        }
+      });
+    } else {
+      log("Abriendo tus publicaciones en Facebook...");
+      chrome.tabs.create({ url: "https://www.facebook.com/marketplace/you/selling", active: true });
+    }
+  } catch (err) {
+    log(`❌ Error: ${err.message}`);
+  }
+});
+
+// Botones Marcar Todas / Ninguna
+document.getElementById("btn-relist-select-all")?.addEventListener("click", () => {
+  const container = document.getElementById("manual-relist-container");
+  container?.querySelectorAll(".chk-relist-item").forEach(c => { c.checked = true; });
+  updateManualRelistCounter();
+});
+
+document.getElementById("btn-relist-select-none")?.addEventListener("click", () => {
+  const container = document.getElementById("manual-relist-container");
+  container?.querySelectorAll(".chk-relist-item").forEach(c => { c.checked = false; });
+  updateManualRelistCounter();
+});
+
+// Botón: Ejecutar renovación manual de las publicaciones seleccionadas
+document.getElementById("btn-execute-manual-relist")?.addEventListener("click", async () => {
+  const container = document.getElementById("manual-relist-container");
+  if (!container) return;
+
+  const checkedBoxes = Array.from(container.querySelectorAll(".chk-relist-item:checked"));
+  if (checkedBoxes.length === 0) {
+    log("⚠️ Selecciona al menos una publicación para renovar con IA.");
+    return;
+  }
+
+  const selectedItems = checkedBoxes.map(chk => {
+    const idx = parseInt(chk.dataset.idx, 10);
+    return activeScannedListings[idx];
+  }).filter(Boolean);
+
+  log(`🚀 Preparando renovación de ${selectedItems.length} publicación(es) con IA...`);
+
+  // Procesar publicaciones seleccionadas de forma asistida
+  for (let i = 0; i < selectedItems.length; i++) {
+    const item = selectedItems[i];
+    const targetId = item.twinId || (item.fbListingId ? `fb_${item.fbListingId}` : null);
+    if (!targetId) continue;
+
+    log(`[${i + 1}/${selectedItems.length}] Renovando con IA: "${item.fbTitle}"... Fotos HD, precio web y grupos listos.`);
+
+    chrome.runtime.sendMessage({
+      action: "RELIST_EXPIRED_PRODUCT",
+      productId: targetId,
+      oldListingId: item.fbListingId || ""
+    });
+
+    // Pequeño delay entre aperturas para no saturar el navegador si son varias
+    if (i < selectedItems.length - 1) {
+      await new Promise(r => setTimeout(r, 1200));
+    }
+  }
+
+  log(`✓ Pestaña de creación con IA abierta. Revisa la ficha y pulsa Publicar en Facebook.`);
+});
+
+// Cargar publicaciones previamente escaneadas de caché local si existen
+chrome.storage?.local?.get(["lastScannedMarketplaceListings"], (d) => {
+  if (Array.isArray(d?.lastScannedMarketplaceListings) && d.lastScannedMarketplaceListings.length > 0) {
+    renderManualRelistListings(d.lastScannedMarketplaceListings);
+  }
+});
+

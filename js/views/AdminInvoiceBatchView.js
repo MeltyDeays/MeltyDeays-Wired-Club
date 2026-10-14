@@ -2789,6 +2789,50 @@ export const FB_USER_DEFAULT_LISTINGS = [
 
 let fbAssistantActiveListings = [...FB_USER_DEFAULT_LISTINGS];
 
+export function findMatchingCatalogProduct(fbItem, catalog = []) {
+  if (!fbItem || !Array.isArray(catalog) || catalog.length === 0) return null;
+  const listingId = String(fbItem.listingId || "").trim();
+
+  // 1. Coincidencia directa por facebookListingId o id fb_
+  if (listingId) {
+    const direct = catalog.find(p => {
+      const pFbId = String(p.facebookListingId || "").trim();
+      const pId = String(p.id || p.reward_id || "").trim();
+      return (pFbId && pFbId === listingId) || pId === `fb_${listingId}` || pId === listingId;
+    });
+    if (direct) return direct;
+  }
+
+  // 2. Coincidencia por título normalizado
+  const normTitle = (str) => String(str || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+  const targetNorm = normTitle(fbItem.title);
+  if (targetNorm && targetNorm.length > 5) {
+    const titleMatch = catalog.find(p => {
+      const pNorm = normTitle(p.title);
+      return pNorm === targetNorm || (pNorm.length > 8 && (pNorm.includes(targetNorm) || targetNorm.includes(pNorm)));
+    });
+    if (titleMatch) return titleMatch;
+  }
+
+  return null;
+}
+
+if (typeof window !== "undefined") {
+  window.toggleFbAssistantCheckboxes = function(mode) {
+    fbAssistantActiveListings.forEach((item, idx) => {
+      const chk = document.getElementById(`chk-fb-item-${idx}`);
+      if (!chk) return;
+      if (mode === true) {
+        chk.checked = chk.dataset.isNew === "true";
+      } else if (mode === false) {
+        chk.checked = false;
+      } else if (mode === 'all') {
+        chk.checked = true;
+      }
+    });
+  };
+}
+
 export function openFbSyncAssistantModal(customListings = null) {
   if (Array.isArray(customListings) && customListings.length > 0) {
     fbAssistantActiveListings = customListings;
@@ -2812,24 +2856,48 @@ export function renderFbDetectedListings() {
     return;
   }
 
-  container.innerHTML = fbAssistantActiveListings.map((item, idx) => {
+  const catalog = (window.vm && Array.isArray(window.vm.catalog)) ? window.vm.catalog : (typeof vm !== "undefined" && vm && Array.isArray(vm.catalog) ? vm.catalog : []);
+  
+  let newCount = 0;
+  let inCatalogCount = 0;
+
+  const itemsHtml = fbAssistantActiveListings.map((item, idx) => {
+    const matchedProd = findMatchingCatalogProduct(item, catalog);
+    const alreadyInCatalog = Boolean(matchedProd);
+    if (alreadyInCatalog) {
+      inCatalogCount++;
+    } else {
+      newCount++;
+    }
+
     const isUsd = item.currency === "USD" || (item.rawPrice <= 200 && item.currency !== "NIO");
     const displayPrice = isUsd ? `$${item.priceUsd || item.rawPrice} USD` : `C$${item.priceNio || item.rawPrice}`;
+    const displayImg = (matchedProd && matchedProd.imageUrl && !matchedProd.imageUrl.includes("unsplash.com"))
+      ? matchedProd.imageUrl
+      : (item.imageUrl || "");
+    const isChecked = !alreadyInCatalog; // Solo marcar por defecto los productos nuevos
+
     return `
-      <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; background: #ffffff; border: 1px solid var(--border-color); border-radius: 6px; padding: 0.5rem 0.75rem;">
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; background: ${alreadyInCatalog ? '#f8fafc' : '#ffffff'}; border: 1px solid ${alreadyInCatalog ? '#cbd5e1' : 'var(--border-color)'}; border-radius: 6px; padding: 0.5rem 0.75rem;">
         <div style="display: flex; align-items: center; gap: 0.65rem; min-width: 0; flex: 1;">
-          <input type="checkbox" id="chk-fb-item-${idx}" checked style="accent-color: #0284c7; cursor: pointer; transform: scale(1.1);" />
+          <input type="checkbox" id="chk-fb-item-${idx}" data-is-new="${!alreadyInCatalog}" ${isChecked ? 'checked' : ''} style="accent-color: #0284c7; cursor: pointer; transform: scale(1.1);" />
           <div style="width: 38px; height: 38px; border-radius: 4px; overflow: hidden; background: #f8fafc; border: 1px solid #e2e8f0; flex-shrink: 0; display: flex; align-items: center; justify-content: center;">
-            ${item.imageUrl ? `<img src="${item.imageUrl}" alt="${item.title}" style="width: 100%; height: 100%; object-fit: contain;" onerror="this.onerror=null; this.parentElement.innerHTML='<span style=\\'font-size: 1.2rem;\\'>📦</span>';" />` : `<span style="font-size: 1.2rem;">📦</span>`}
+            ${displayImg ? `<img src="${displayImg}" alt="${item.title}" style="width: 100%; height: 100%; object-fit: contain;" onerror="this.onerror=null; this.parentElement.innerHTML='<span style=\\'font-size: 1.2rem;\\'>📦</span>';" />` : `<span style="font-size: 1.2rem;">📦</span>`}
           </div>
           <div style="min-width: 0; flex: 1;">
-            <div style="font-size: 0.8rem; font-weight: 800; color: var(--gray-800); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${item.title}">
-              ${item.title}
+            <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+              <span style="font-size: 0.8rem; font-weight: 800; color: var(--gray-800); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 320px;" title="${item.title}">
+                ${item.title}
+              </span>
+              ${alreadyInCatalog 
+                ? `<span style="font-size: 0.62rem; background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; padding: 1px 6px; border-radius: 4px; font-weight: 800; font-family: var(--font-mono);">✓ EN CATÁLOGO WEB (#${matchedProd.id || matchedProd.reward_id})</span>`
+                : `<span style="font-size: 0.62rem; background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; padding: 1px 6px; border-radius: 4px; font-weight: 800; font-family: var(--font-mono);">⭐ NUEVO DETECTADO</span>`
+              }
             </div>
-            <div style="font-size: 0.72rem; color: #0284c7; font-family: var(--font-mono); font-weight: 700; display: flex; align-items: center; gap: 0.4rem;">
+            <div style="font-size: 0.72rem; color: #0284c7; font-family: var(--font-mono); font-weight: 700; display: flex; align-items: center; gap: 0.4rem; margin-top: 2px;">
               <span>${displayPrice}</span>
               <span style="color: var(--gray-400);">•</span>
-              <span style="color: var(--gray-500); font-weight: 400;">Fondo blanco + Ficha IA</span>
+              <span style="color: var(--gray-500); font-weight: 400;">${alreadyInCatalog ? 'Imagen fijada en catálogo' : 'Fondo blanco + Ficha IA'}</span>
             </div>
           </div>
         </div>
@@ -2837,6 +2905,23 @@ export function renderFbDetectedListings() {
       </div>
     `;
   }).join("");
+
+  const headerSummaryHtml = `
+    <div style="display: flex; justify-content: space-between; align-items: center; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 0.4rem 0.65rem; font-size: 0.74rem;">
+      <div style="font-weight: 800; color: #1e293b;">
+        <span style="color: #0284c7;">${newCount} nuevo(s) detectado(s)</span>
+        <span style="color: #94a3b8; margin: 0 4px;">•</span>
+        <span style="color: #059669;">${inCatalogCount} ya en catálogo</span>
+      </div>
+      <div style="display: flex; gap: 8px;">
+        <button type="button" onclick="window.toggleFbAssistantCheckboxes(true)" style="background: none; border: none; color: #0284c7; font-weight: 800; font-size: 0.72rem; cursor: pointer; text-decoration: underline;" title="Marcar sólo los productos nuevos no registrados">Solo nuevos</button>
+        <button type="button" onclick="window.toggleFbAssistantCheckboxes('all')" style="background: none; border: none; color: #64748b; font-weight: 700; font-size: 0.72rem; cursor: pointer; text-decoration: underline;">Todos</button>
+        <button type="button" onclick="window.toggleFbAssistantCheckboxes(false)" style="background: none; border: none; color: #94a3b8; font-weight: 700; font-size: 0.72rem; cursor: pointer; text-decoration: underline;">Ninguno</button>
+      </div>
+    </div>
+  `;
+
+  container.innerHTML = headerSummaryHtml + itemsHtml;
 }
 
 export function removeFbAssistantListing(idx) {
@@ -2894,29 +2979,55 @@ export async function importSelectedFacebookListings() {
 
   showToast(`Iniciando importación IA de ${selected.length} publicaciones...`, "info");
 
-  // Buscar fotos oficiales en vivo en la web para marcas reconocidas
+  const catalog = (window.vm && Array.isArray(window.vm.catalog)) ? window.vm.catalog : (typeof vm !== "undefined" && vm && Array.isArray(vm.catalog) ? vm.catalog : []);
+
+  // Preservar fotos existentes en catálogo o buscar fotos oficiales SOLO para ítems sin foto
   for (const item of selected) {
+    const existing = findMatchingCatalogProduct(item, catalog);
+    const existingImg = existing?.imageUrl;
+    const hasValidExistingImg = Boolean(existingImg && !existingImg.includes("unsplash.com"));
+
+    if (existing && hasValidExistingImg) {
+      // Preservar exactamente la imagen y galería existente del producto en catálogo
+      item.imageUrl = existing.imageUrl;
+      item.images = Array.isArray(existing.images) && existing.images.length > 0 ? existing.images : [existing.imageUrl];
+      item.fbPhotos = Array.isArray(existing.fbPhotos) && existing.fbPhotos.length > 0 ? existing.fbPhotos : (item.fbPhotos || []);
+      item.hasSelectedMold = true;
+      item.brandVerified = existing.brandVerified ?? isBrandVerifiable(item.title, item.description);
+      continue;
+    }
+
     const isBrand = isBrandVerifiable(item.title, item.description);
     if (isBrand) {
-      try {
-        const liveImgs = await searchProductImagesFromWeb(item.title, 1);
-        if (liveImgs && liveImgs.length > 0 && liveImgs[0].imageUrl) {
-          item.imageUrl = liveImgs[0].imageUrl;
-          item.images = [liveImgs[0].imageUrl];
-          item.brandVerified = true;
+      // Solo buscar en Bing si el item NO tiene ya una imagen válida (ej: base64 WebP preconfigurada)
+      if (!item.imageUrl || item.imageUrl.includes("unsplash.com")) {
+        try {
+          const liveImgs = await searchProductImagesFromWeb(item.title, 1);
+          if (liveImgs && liveImgs.length > 0 && liveImgs[0].imageUrl) {
+            item.imageUrl = liveImgs[0].imageUrl;
+            item.images = [liveImgs[0].imageUrl];
+            item.brandVerified = true;
+          }
+        } catch (err) {
+          console.warn(`[FB Import] Búsqueda HD web omitida para "${item.title}":`, err.message);
         }
-      } catch (err) {
-        console.warn(`[FB Import] Búsqueda HD web omitida para "${item.title}":`, err.message);
+      } else {
+        item.brandVerified = true;
+        if (!item.images || item.images.length === 0) {
+          item.images = [item.imageUrl];
+        }
       }
     } else {
-      // Genérico chino: preservar fotos reales de Facebook (caja, cuerpo, accesorios) como referencia de inspección
+      // Genérico chino nuevo: si no tiene molde seleccionado, preservar fotos reales de Facebook
       const existingFbPhotos = Array.isArray(item.fbPhotos) && item.fbPhotos.length > 0
         ? item.fbPhotos
         : (Array.isArray(item.images) && item.images.length > 0 ? item.images : (item.imageUrl ? [item.imageUrl] : []));
       item.fbPhotos = [...existingFbPhotos];
-      item.imageUrl = ""; // Requiere selección obligatoria de molde web oficial para la portada
+      if (!item.hasSelectedMold) {
+        item.imageUrl = ""; // Requiere selección obligatoria de molde web oficial para la portada
+        item.hasSelectedMold = false;
+      }
       item.images = [...existingFbPhotos];
-      item.hasSelectedMold = false;
       item.brandVerified = false;
     }
   }
@@ -2957,22 +3068,28 @@ export async function importSelectedFacebookListings() {
         vm.notify();
       }
 
-      // Priorizar abrir automáticamente el producto que requiera selección de molde web
-      const firstGenericNeedingMold = (vm ? vm.catalog : []).find(x => 
-        (x.status === "PENDING_APPROVAL" || x.status === "PENDING_IMAGE") &&
-        !x.brandVerified &&
-        !isBrandVerifiable(x.title, x.description) &&
-        !x.hasSelectedMold
-      );
-      const firstItem = data.report.newProductsCreated?.[0];
-      const targetId = firstGenericNeedingMold 
-        ? (firstGenericNeedingMold.id || firstGenericNeedingMold.reward_id) 
-        : (firstItem?.id || (selected[0] ? `fb_${selected[0].listingId}` : null));
+      // Solo abrir automáticamente el modal de molde/aprobación si hay PRODUCTOS NUEVOS creados en este lote
+      const newlyCreatedList = data.report.newProductsCreated || [];
+      const newlyCreatedIds = new Set(newlyCreatedList.map(p => String(p.id || p.reward_id)));
 
-      if (targetId && typeof openApprovalModal === "function") {
-        setTimeout(() => {
-          openApprovalModal(targetId);
-        }, 350);
+      if (newlyCreatedList.length > 0) {
+        const firstNewGenericNeedingMold = (vm ? vm.catalog : []).find(x => 
+          newlyCreatedIds.has(String(x.id || x.reward_id)) &&
+          (x.status === "PENDING_APPROVAL" || x.status === "PENDING_IMAGE") &&
+          !x.brandVerified &&
+          !isBrandVerifiable(x.title, x.description) &&
+          !x.hasSelectedMold
+        );
+        const firstNewItem = newlyCreatedList[0];
+        const targetId = firstNewGenericNeedingMold 
+          ? (firstNewGenericNeedingMold.id || firstNewGenericNeedingMold.reward_id) 
+          : (firstNewItem?.id || firstNewItem?.reward_id);
+
+        if (targetId && typeof openApprovalModal === "function") {
+          setTimeout(() => {
+            openApprovalModal(targetId);
+          }, 350);
+        }
       }
     } else {
       showToast(`Aviso al importar: ${data.error || "Verifica la respuesta"}`, "warning");

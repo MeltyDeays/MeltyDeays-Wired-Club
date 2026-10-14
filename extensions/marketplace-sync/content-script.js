@@ -988,8 +988,93 @@ function findBrandInput() {
 }
 
 /**
- * Inyecta la marca legítima del producto si fue configurada en la página web.
- * Si es marca china sin mención o producto sin marca, deja el campo vacío.
+ * Detecta si el producto cuenta con una marca formal configurada o mencionada en su título/descripción.
+ * Limpia menciones de compatibilidad ("para Nintendo", "compatible con Xbox", "funda para...")
+ * para no confundir compatibilidad con la marca del fabricante.
+ * Si es genérico, chino o no menciona marca, devuelve "".
+ */
+function detectProductBrand(product) {
+  if (!product) return "";
+
+  // 1. Marca explícita en los campos del catálogo
+  if (product.brand && typeof product.brand === "string" && product.brand.trim()) {
+    return product.brand.trim();
+  }
+  if (product.marca && typeof product.marca === "string" && product.marca.trim()) {
+    return product.marca.trim();
+  }
+  if (product.brandVerified && product.brandName && typeof product.brandName === "string" && product.brandName.trim()) {
+    return product.brandName.trim();
+  }
+
+  // 2. Extracción inteligente desde el título y descripción descartando compatibilidades
+  const rawTitle = String(product.title || "");
+  const rawDesc = String(product.description || product.rawDescription || "");
+
+  // Limpiar compatibilidades del título para evitar falsos positivos
+  const cleanTitle = rawTitle
+    .replace(/\b(para|for|compatible(\s+con)?|diseñado\s+para|soporte\s+para|funda\s+para|estuche\s+para)\s+[a-z0-9\-\s]+/gi, "")
+    .trim();
+
+  // Catálogo de marcas oficiales con capitalización de fábrica
+  const BRAND_MAP = [
+    { regex: /\b(tp-?link)\b/i, name: "TP-Link" },
+    { regex: /\b(gamesir)\b/i, name: "GameSir" },
+    { regex: /\b(acer|predator|helios)\b/i, name: "Acer" },
+    { regex: /\b(anker|soundcore|powercore)\b/i, name: "Anker" },
+    { regex: /\b(logitech|logi)\b/i, name: "Logitech" },
+    { regex: /\b(razer)\b/i, name: "Razer" },
+    { regex: /\b(redragon)\b/i, name: "Redragon" },
+    { regex: /\b(asus|rog|strix)\b/i, name: "Asus" },
+    { regex: /\b(lenovo|legion)\b/i, name: "Lenovo" },
+    { regex: /\b(dell|alienware)\b/i, name: "Dell" },
+    { regex: /\b(hp|omen|victus)\b/i, name: "HP" },
+    { regex: /\b(hyperx)\b/i, name: "HyperX" },
+    { regex: /\b(corsair)\b/i, name: "Corsair" },
+    { regex: /\b(steelseries)\b/i, name: "SteelSeries" },
+    { regex: /\b(sony|dualsense|playstation)\b/i, name: "Sony" },
+    { regex: /\b(microsoft|xbox)\b/i, name: "Microsoft" },
+    { regex: /\b(nintendo|switch)\b/i, name: "Nintendo" },
+    { regex: /\b(samsung|galaxy)\b/i, name: "Samsung" },
+    { regex: /\b(apple|ipad|macbook|iphone)\b/i, name: "Apple" },
+    { regex: /\b(xiaomi|redmi|poco)\b/i, name: "Xiaomi" },
+    { regex: /\b(jbl)\b/i, name: "JBL" },
+    { regex: /\b(ugreen)\b/i, name: "UGREEN" },
+    { regex: /\b(baseus)\b/i, name: "Baseus" },
+    { regex: /\b(fantech)\b/i, name: "Fantech" },
+    { regex: /\b(machkeike)\b/i, name: "Machkeike" },
+    { regex: /\b(glorious)\b/i, name: "Glorious" },
+    { regex: /\b(epomaker)\b/i, name: "Epomaker" },
+    { regex: /\b(keychron)\b/i, name: "Keychron" },
+    { regex: /\b(8bitdo)\b/i, name: "8BitDo" },
+    { regex: /\b(dareu)\b/i, name: "Dareu" },
+    { regex: /\b(thunderobot)\b/i, name: "Thunderobot" },
+    { regex: /\b(ajazz)\b/i, name: "Ajazz" },
+    { regex: /\b(attack shark)\b/i, name: "Attack Shark" },
+    { regex: /\b(flydigi)\b/i, name: "Flydigi" }
+  ];
+
+  // Primero buscar en el título limpio (máxima certeza)
+  for (const b of BRAND_MAP) {
+    if (b.regex.test(cleanTitle)) {
+      return b.name;
+    }
+  }
+
+  // Si no se encontró en el título, verificar si la descripción hace mención explícita a la marca
+  for (const b of BRAND_MAP) {
+    if (b.regex.test(rawDesc)) {
+      return b.name;
+    }
+  }
+
+  // 3. Si no hay marca legítima (es genérico, chino o no especificada)
+  return "";
+}
+
+/**
+ * Inyecta la marca legítima del producto si fue configurada o mencionada en la publicación.
+ * Si es marca china sin mención o producto sin marca, deja el campo completamente vacío.
  */
 async function injectProductBrand(product) {
   const brandInput = findBrandInput();
@@ -998,18 +1083,10 @@ async function injectProductBrand(product) {
     return false;
   }
 
-  // Extraer marca solo si fue configurada legítimamente en la página web
-  let legitimateBrand = "";
-  if (product.brand && typeof product.brand === "string" && product.brand.trim()) {
-    legitimateBrand = product.brand.trim();
-  } else if (product.marca && typeof product.marca === "string" && product.marca.trim()) {
-    legitimateBrand = product.marca.trim();
-  } else if (product.brandVerified && product.brandName) {
-    legitimateBrand = product.brandName.trim();
-  }
+  const legitimateBrand = detectProductBrand(product);
 
   if (legitimateBrand) {
-    console.log(`✓ Haibane: Inyectando marca legítima del catálogo: "${legitimateBrand}"`);
+    console.log(`✓ Haibane: Inyectando marca legítima del producto: "${legitimateBrand}"`);
     brandInput.scrollIntoView({ block: "center", behavior: "instant" });
     brandInput.focus();
     setNativeInputValue(brandInput, legitimateBrand);
@@ -1018,13 +1095,13 @@ async function injectProductBrand(product) {
     await new Promise(r => setTimeout(r, 200));
     return true;
   } else {
-    // Si no tiene marca en web o es china genérica, garantizar que esté vacío (limpiar cualquier residuo)
+    // Si no tiene marca o no se hace mención, garantizar que el campo quede completamente vacío
     if (brandInput.value && brandInput.value !== "") {
       setNativeInputValue(brandInput, "");
       brandInput.dispatchEvent(new Event('input', { bubbles: true }));
       brandInput.dispatchEvent(new Event('change', { bubbles: true }));
-      console.log("✓ Haibane: Campo Marca limpiado a vacío (marca no especificada en web).");
     }
+    console.log("✓ Haibane: Campo Marca dejado vacío (artículo genérico o sin mención de marca).");
     return true;
   }
 }
@@ -2309,6 +2386,50 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         sendResponse({ success: true });
       } catch (err) {
         sendResponse({ success: false, error: err.message });
+      }
+    })();
+    return true;
+  }
+
+  if (msg.action === "SCAN_MY_LISTINGS") {
+    (async () => {
+      try {
+        const isSellingPage = window.location.href.includes("/marketplace/you/selling");
+        const listings = getScannableListings();
+
+        loadCatalogProducts((products) => {
+          const prods = (Array.isArray(products) && products.length > 0) ? products : cachedWebProducts;
+          const items = listings.map(l => {
+            const twin = prods.find(p => 
+              (p.facebookListingId && String(p.facebookListingId) === String(l.fbListingId)) ||
+              computeTitleSimilarity(p.title, l.fbTitle) >= 0.65
+            );
+
+            const imgEl = l.element?.querySelector("img");
+            const thumb = imgEl ? (imgEl.src || imgEl.getAttribute("data-src") || "") : (twin?.imageUrl || "");
+
+            return {
+              fbListingId: l.fbListingId,
+              fbTitle: l.fbTitle,
+              priceLine: l.priceLine || (twin ? `C$ ${twin.priceNio || Math.round((twin.priceUsd || 0) * 37)}` : ""),
+              thumb: thumb,
+              twinId: twin ? twin.id : null,
+              twinTitle: twin ? twin.title : null,
+              twinPriceUsd: twin ? twin.priceUsd : null,
+              twinPriceNio: twin ? (twin.priceNio || Math.round((twin.priceUsd || 0) * 37)) : null,
+              isTwinLinked: Boolean(twin)
+            };
+          });
+
+          sendResponse({
+            success: true,
+            isSellingPage,
+            listings: items,
+            count: items.length
+          });
+        });
+      } catch (err) {
+        sendResponse({ success: false, error: err.message, listings: [] });
       }
     })();
     return true;

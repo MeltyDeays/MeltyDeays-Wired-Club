@@ -338,26 +338,59 @@
 
   <!-- Ciclo de Re-publicación Semanal (Auto-Relist con IA) -->
   <div class="info-card" style="border-color: #3b82f6; margin-bottom: 8px;">
-    <div style="font-weight: 800; color: #60a5fa; margin-bottom: 4px; font-size: 11px;">
-      🔄 RE-PUBLICACIÓN (AUTO-RELIST)
+    <div style="font-weight: 800; color: #60a5fa; margin-bottom: 4px; font-size: 11px; display: flex; justify-content: space-between; align-items: center;">
+      <span>🔄 RE-PUBLICACIÓN CON IA (RELIST)</span>
+      <span style="font-size: 9px; color: #38bdf8; background: rgba(56,189,248,0.15); padding: 1px 6px; border-radius: 4px; border: 1px solid rgba(56,189,248,0.3);">VUELVE AL TOPE</span>
     </div>
     <div style="font-size: 9.5px; color: #94a3b8; margin-bottom: 6px; line-height: 1.35;">
-      Renueva anuncios con más de 7 días sin venderse para que vuelvan al tope de Facebook con fotos HD y copy IA.
+      Renueva publicaciones viejas o con poco alcance para que vuelvan al tope de Marketplace con fotos HD, ficha limpia IA y grupos de Juigalpa.
     </div>
-    <label style="display: flex; align-items: center; gap: 6px; font-size: 10px; color: #cbd5e1; cursor: pointer; margin-bottom: 6px;">
-      <input type="checkbox" id="chk-relist-auto" checked style="accent-color: #3b82f6;">
-      <span>Activar Auto-Relist semanal programado</span>
-    </label>
-    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; background: #020617; padding: 4px 6px; border-radius: 4px; border: 1px solid #1e293b;">
-      <span style="font-size: 9.5px; color: #cbd5e1;">Re-publicar si tiene más de:</span>
-      <div style="display: flex; align-items: center; gap: 4px;">
-        <input type="number" id="num-relist-days" value="7" min="1" max="30" style="width: 38px; background: #0f172a; border: 1px solid #475569; color: #f8fafc; border-radius: 4px; padding: 2px 4px; text-align: center; font-size: 10.5px; font-weight: 700;">
-        <span style="font-size: 9.5px; color: #94a3b8;">días</span>
+
+    <!-- Pestañas / Subsección Manual vs Automática -->
+    <div style="background: rgba(15,23,42,0.8); border: 1px solid #1e293b; border-radius: 6px; padding: 7px 8px; margin-bottom: 6px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+        <span style="font-size: 10px; font-weight: 800; color: #38bdf8;">🎯 ELEGIR PUBLICACIONES A RENOVAR</span>
+        <button id="btn-scan-relist-listings" class="btn" style="padding: 2px 7px; font-size: 9px; background: #0284c7; border-color: #38bdf8; color: #fff;" title="Lee los anuncios abiertos en /marketplace/you/selling">
+          🔍 Escanear en FB
+        </button>
       </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; font-size: 9px; color: #94a3b8;">
+        <span id="lbl-relist-selected-count">0 seleccionadas para renovar</span>
+        <div style="display: flex; gap: 6px;">
+          <button type="button" id="btn-relist-select-all" style="background:none; border:none; color:#38bdf8; cursor:pointer; font-size:9px; padding:0; text-decoration:underline;">Todas</button>
+          <button type="button" id="btn-relist-select-none" style="background:none; border:none; color:#64748b; cursor:pointer; font-size:9px; padding:0; text-decoration:underline;">Ninguna</button>
+        </div>
+      </div>
+
+      <!-- Contenedor interactivo de publicaciones detectadas -->
+      <div id="manual-relist-container" style="max-height: 140px; overflow-y: auto; background: #020617; border: 1px solid #1e293b; border-radius: 5px; padding: 4px; display: flex; flex-direction: column; gap: 4px; margin-bottom: 6px;">
+        <div style="color: #64748b; font-size: 9.5px; text-align: center; padding: 8px;">
+          Abre "Tus publicaciones" en Facebook y pulsa "Escanear en FB" para elegir cuáles renovar.
+        </div>
+      </div>
+
+      <button id="btn-execute-manual-relist" class="btn" style="width: 100%; font-size: 10.5px; padding: 6px 8px; background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); border-color: #38bdf8; font-weight: 800; color: #fff; box-shadow: 0 2px 8px rgba(2,132,199,0.3);" title="Renueva las publicaciones elegidas: usa fotos HD, precio oficial de la tienda, 20 tags SEO con IA y publica en los 12 grupos de Juigalpa">
+        ⚡ RENOVAR CON IA SELECCIONADOS
+      </button>
     </div>
-    <button id="btn-run-relist-now" class="btn" style="width: 100%; font-size: 10px; padding: 5px 8px; background: #1d4ed8; border-color: #2563eb; font-weight: 800;" title="Busca productos viejos y los renueva al instante">
-      ⚡ Renovar Anuncios Viejos Ahora
-    </button>
+
+    <!-- Regla programada opcional de 7 días -->
+    <div style="border-top: 1px dashed #1e293b; padding-top: 6px; margin-top: 4px;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+        <label style="display: flex; align-items: center; gap: 5px; font-size: 9.5px; color: #cbd5e1; cursor: pointer;">
+          <input type="checkbox" id="chk-relist-auto" checked style="accent-color: #3b82f6;">
+          <span>Auto-Relist si tiene más de:</span>
+        </label>
+        <div style="display: flex; align-items: center; gap: 4px;">
+          <input type="number" id="num-relist-days" value="7" min="1" max="30" style="width: 34px; background: #0f172a; border: 1px solid #475569; color: #f8fafc; border-radius: 4px; padding: 1px 3px; text-align: center; font-size: 10px; font-weight: 700;">
+          <span style="font-size: 9px; color: #94a3b8;">días</span>
+        </div>
+      </div>
+      <button id="btn-run-relist-now" class="btn" style="width: 100%; font-size: 9.5px; padding: 4px 6px; background: #1e293b; border-color: #334155; color: #94a3b8;" title="Busca automáticamente anuncios con más de X días y los renueva">
+        🔄 Escaneo Automático por Fecha (&gt; 7 días)
+      </button>
+    </div>
   </div>
 
   <!-- Terminal de Estado / Log -->

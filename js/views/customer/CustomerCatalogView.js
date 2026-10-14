@@ -2125,7 +2125,7 @@ export function renderCatalog(catalog, user) {
               ${comboItems.map((cItem, idx) => `
                 ${idx > 0 ? '<div class="combo-split-divider"></div>' : ''}
                 <div class="combo-split-item" title="${cItem.title}">
-                  <img src="${cItem.imageUrl || ''}" alt="${cItem.title}" class="combo-split-img" loading="lazy" decoding="async" onerror="this.onerror=null; this.src=''; this.parentElement.style.background='#0d131f';">
+                  <img src="${cItem.imageUrl || ''}" alt="${cItem.title}" class="combo-split-img" loading="lazy" decoding="async" onerror="this.onerror=null; this.style.display='none'; this.parentElement.style.background='#0d131f';">
                   <div class="combo-split-item-label">${cItem.title}</div>
                 </div>
               `).join('')}
@@ -2147,7 +2147,7 @@ export function renderCatalog(catalog, user) {
             ` : ''}
             ${mainCover
               ? `
-                <img src="${mainCover}" alt="${item.title}" class="reward-img" loading="lazy" decoding="async" onclick="event.stopPropagation(); openProductSpecsModal('${item.id}')" title="Clic para ver detalles y fotos" onerror="this.onerror=null; this.src=''; this.parentElement.style.background='#0d131f';">
+                <img src="${mainCover}" alt="${item.title}" class="reward-img" loading="lazy" decoding="async" onclick="event.stopPropagation(); openProductSpecsModal('${item.id}')" title="Clic para ver detalles y fotos" onerror="this.onerror=null; this.style.display='none'; this.parentElement.style.background='#0d131f'; this.parentElement.insertAdjacentHTML('afterbegin', '<div style=\\'text-align:center; padding:1.5rem; width:100%;\\'><span style=\\'font-size:2.2rem;\\'>${isIncoming ? '🕊️' : (isPartial ? '🏷️' : '🎁')}</span><div style=\\'font-family:var(--font-mono); font-size:0.68rem; color:#38bdf8; margin-top:4px;\\'>${isIncoming ? 'PREORDER_ITEM' : (isPartial ? 'SALE_DISCOUNT' : 'TECH_REWARD')}</div></div>');">
                 ${!isOut ? `
                   <div class="reward-img-action-overlay" onclick="event.stopPropagation(); openProductSpecsModal('${item.id}')">
                     <div class="reward-img-expand-badge">
