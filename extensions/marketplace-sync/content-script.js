@@ -2262,7 +2262,12 @@ function triggerAutoFillPipeline(product) {
       isAutofillPipelineActive = false;
 
       if (statusEl) {
-        statusEl.innerHTML = `<span style="color:#10b981; font-weight:800;">✓ ¡Publicación completada al 100%! (Fotos + QR, Precio C$ ${roundedPrice.toLocaleString()}, Categoría, Estado, Ficha, 20 Etiquetas y Entrega).</span> Pulsa 'Siguiente' para publicar.`;
+        statusEl.innerHTML = `<span style="color:#10b981; font-weight:700;">✓ Ficha y fotos inyectadas al 100%.</span> Pulsa 'Siguiente'.`;
+      }
+      const nextBtn = document.getElementById("haibane-hud-btn-next");
+      if (nextBtn) {
+        nextBtn.style.background = "#059669";
+        nextBtn.style.boxShadow = "0 0 12px rgba(16, 185, 129, 0.45)";
       }
     } else if (attempts >= maxAttempts) {
       clearInterval(interval);
@@ -2275,48 +2280,106 @@ function triggerAutoFillPipeline(product) {
   }, 350);
 }
 
-function injectBatchHud(batchIndex, batchTotal, itemTitle, oldListingId) {
-  if (document.getElementById("haibane-batch-hud")) return;
+/**
+ * HUD Flotante Unificado para Asistente de Publicación y Lotes IA (/marketplace/create/item)
+ */
+function injectPublishAssistantHud(product, batchMeta = null) {
+  document.getElementById("haibane-publish-hud")?.remove();
+  document.getElementById("haibane-batch-hud")?.remove();
+  document.getElementById("haibane-publish-banner")?.remove();
+
+  if (!product) return;
+
   const hud = document.createElement("div");
-  hud.id = "haibane-batch-hud";
+  hud.id = "haibane-publish-hud";
   hud.style.cssText = `
     position: fixed;
-    top: 14px;
-    right: 18px;
-    background: #090d16;
-    border: 1.5px solid #0284c7;
-    border-radius: 8px;
-    padding: 10px 14px;
+    top: 16px;
+    right: 20px;
+    width: 320px;
+    max-width: calc(100vw - 32px);
+    box-sizing: border-box;
+    background: rgba(11, 17, 32, 0.95);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(56, 189, 248, 0.35);
+    border-radius: 12px;
+    padding: 12px 14px;
     color: #f8fafc;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    font-size: 11px;
-    z-index: 9999999;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.65);
+    font-size: 11.5px;
+    z-index: 2147483647;
+    box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.75), 0 0 18px rgba(56, 189, 248, 0.12);
     display: flex;
     flex-direction: column;
-    gap: 6px;
-    max-width: 330px;
+    gap: 8px;
+    user-select: none;
+    transition: all 0.2s ease;
   `;
-  hud.innerHTML = `
-    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e293b; padding-bottom: 4px;">
-      <strong style="color: #38bdf8; font-size: 11.5px;">⚡ LOTE DE RENOVACIÓN IA</strong>
-      <span style="font-size: 9.5px; background: #0369a1; color: #e0f2fe; padding: 2px 6px; border-radius: 4px; font-weight: 800;">${batchIndex + 1} de ${batchTotal}</span>
-    </div>
-    <div style="color: #f1f5f9; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 11px;" title="${itemTitle || ''}">
-      ${itemTitle || "Publicación"}
-    </div>
-    <div id="haibane-batch-hud-status" style="color: #94a3b8; font-size: 10px; line-height: 1.3;">
-      Inyectando fotos HD, ficha y 12 grupos...
-    </div>
-    <div style="display: flex; gap: 6px; margin-top: 3px;">
-      <button id="haibane-hud-btn-next" style="flex: 1; background: #0284c7; color: #ffffff; border: none; border-radius: 4px; padding: 5px 8px; font-weight: 700; cursor: pointer; font-size: 10px;" title="Avanzar de inmediato a la siguiente publicación">
+
+  const isBatch = !!batchMeta;
+  const priceNio = product.priceNio || Math.round((product.priceUsd || 0) * 37.0);
+  const images = Array.isArray(product.images) && product.images.length > 0 
+    ? product.images 
+    : (product.imageUrl ? [product.imageUrl] : []);
+
+  const headerBadge = isBatch
+    ? `<span style="font-size: 9.5px; background: rgba(2, 132, 199, 0.25); border: 1px solid rgba(56, 189, 248, 0.4); color: #38bdf8; padding: 2px 7px; border-radius: 9999px; font-weight: 800;">${(batchMeta.batchIndex || 0) + 1} de ${batchMeta.batchTotal || 1}</span>`
+    : `<span style="font-size: 9.5px; background: rgba(168, 85, 247, 0.2); border: 1px solid rgba(168, 85, 247, 0.4); color: #d8b4fe; padding: 2px 7px; border-radius: 9999px; font-weight: 800;">GEMELO WEB</span>`;
+
+  const headerTitle = isBatch
+    ? `<strong style="color: #38bdf8; font-size: 11.5px; letter-spacing: 0.3px; display: flex; align-items: center; gap: 6px;">
+        <span style="display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #38bdf8; box-shadow: 0 0 6px #38bdf8;"></span>
+        LOTE DE RENOVACIÓN
+       </strong>`
+    : `<strong style="color: #c084fc; font-size: 11.5px; letter-spacing: 0.3px; display: flex; align-items: center; gap: 6px;">
+        <span style="display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #c084fc; box-shadow: 0 0 6px #c084fc;"></span>
+        HAIBANE ASISTENTE
+       </strong>`;
+
+  const actionButtons = isBatch
+    ? `
+      <button id="haibane-hud-btn-next" style="flex: 1; background: #0284c7; color: #ffffff; border: none; border-radius: 6px; padding: 6px 10px; font-weight: 700; cursor: pointer; font-size: 11px; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; gap: 5px;" title="Avanzar de inmediato a la siguiente publicación del lote">
         ⏭ Siguiente
       </button>
-      <button id="haibane-hud-btn-cancel" style="background: #334155; color: #cbd5e1; border: none; border-radius: 4px; padding: 5px 8px; font-size: 10px; cursor: pointer;" title="Detener el lote de renovación">
-        ✕ Detener
+      <button id="haibane-btn-do-autofill" style="background: rgba(30, 41, 59, 0.8); color: #94a3b8; border: 1px solid #334155; border-radius: 6px; padding: 6px 10px; font-weight: 700; cursor: pointer; font-size: 11px; transition: all 0.15s ease;" title="Re-inyectar fotos y datos">
+        ⚡ Re-inyectar
       </button>
+      <button id="haibane-hud-btn-cancel" style="background: rgba(30, 41, 59, 0.8); color: #f87171; border: 1px solid #334155; border-radius: 6px; padding: 6px 10px; font-weight: 700; cursor: pointer; font-size: 11px;" title="Detener el lote de renovación">
+        ✕
+      </button>
+    `
+    : `
+      <button id="haibane-btn-do-autofill" style="flex: 1; background: #7e22ce; color: #ffffff; border: none; border-radius: 6px; padding: 6px 12px; font-weight: 700; cursor: pointer; font-size: 11px; transition: all 0.2s ease;">
+        ⚡ Re-inyectar Formulario & Fotos
+      </button>
+      <button id="haibane-btn-close-banner" style="background: rgba(30, 41, 59, 0.8); color: #94a3b8; border: 1px solid #334155; border-radius: 6px; padding: 6px 10px; font-weight: 700; cursor: pointer; font-size: 11px;" title="Cerrar panel">
+        ✕
+      </button>
+    `;
+
+  hud.innerHTML = `
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(51, 65, 85, 0.6); padding-bottom: 6px;">
+      ${headerTitle}
+      ${headerBadge}
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 2px;">
+      <div style="color: #f1f5f9; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 11.5px;" title="${product.title || ''}">
+        ${product.title || "Publicación"}
+      </div>
+      <div style="display: flex; justify-content: space-between; align-items: center; font-size: 10.5px; margin-top: 1px;">
+        <span style="color: #38bdf8; font-weight: 700;">C$ ${priceNio.toLocaleString()} <span style="color: #64748b; font-weight: 500;">($${product.priceUsd || 0})</span></span>
+        <span style="color: #94a3b8; background: rgba(30, 41, 59, 0.6); padding: 1px 6px; border-radius: 4px; font-size: 10px;">📷 ${images.length} fotos + QR</span>
+      </div>
+    </div>
+    <div id="haibane-autofill-status" style="font-size: 10.5px; color: #94a3b8; line-height: 1.35; padding: 6px 8px; background: rgba(15, 23, 42, 0.65); border-radius: 6px; border: 1px solid rgba(51, 65, 85, 0.5); min-height: 18px;">
+      <span id="haibane-batch-hud-status">Inyectando fotos HD, ficha y datos...</span>
+    </div>
+    <div style="display: flex; gap: 6px; margin-top: 2px;">
+      ${actionButtons}
     </div>
   `;
+
   document.body.appendChild(hud);
 
   document.getElementById("haibane-hud-btn-next")?.addEventListener("click", () => {
@@ -2327,6 +2390,23 @@ function injectBatchHud(batchIndex, batchTotal, itemTitle, oldListingId) {
     chrome.runtime?.sendMessage({ action: "CANCEL_BATCH_RELIST" });
     hud.remove();
   });
+
+  document.getElementById("haibane-btn-close-banner")?.addEventListener("click", () => {
+    hud.remove();
+  });
+
+  document.getElementById("haibane-btn-do-autofill")?.addEventListener("click", () => {
+    isAutofillPipelineActive = false;
+    isAutofillPipelineCompleted = false;
+    const statusEl = document.getElementById("haibane-autofill-status");
+    if (statusEl) statusEl.textContent = "⏳ Reiniciando inyección de ficha y fotos...";
+    triggerAutoFillPipeline(product);
+    watchForPublishCompletion(product.id, product._collection);
+  });
+}
+
+function injectBatchHud(batchIndex, batchTotal, itemTitle, oldListingId) {
+  injectPublishAssistantHud({ title: itemTitle }, { batchIndex, batchTotal, oldListingId });
 }
 
 /**
@@ -2436,10 +2516,7 @@ function initAutoPublishAssistant() {
     if (Array.isArray(prod.images)) {
       prod.images = prod.images.slice(0, 9);
     }
-    injectPublishAssistantBanner(prod);
-    if (isBatch) {
-      injectBatchHud(batchIndex, batchTotal, prod.title, oldListingId);
-    }
+    injectPublishAssistantHud(prod, isBatch ? { batchIndex, batchTotal, oldListingId } : null);
     triggerAutoFillPipeline(prod);
     watchForPublishCompletion(prod.id, prod._collection);
   }
@@ -2499,69 +2576,7 @@ ${featureBullets}
 }
 
 function injectPublishAssistantBanner(product) {
-  if (document.getElementById("haibane-publish-banner")) return;
-
-  const banner = document.createElement("div");
-  banner.id = "haibane-publish-banner";
-  banner.style.cssText = `
-    position: fixed;
-    top: 70px;
-    right: 25px;
-    z-index: 9999999;
-    background: #0f172a;
-    border: 2px solid #a855f7;
-    border-radius: 8px;
-    padding: 14px 16px;
-    color: #f8fafc;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    font-size: 12px;
-    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
-    max-width: 320px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  `;
-
-  const priceNio = product.priceNio || Math.round((product.priceUsd || 0) * 37.0);
-  const images = Array.isArray(product.images) && product.images.length > 0 
-    ? product.images 
-    : (product.imageUrl ? [product.imageUrl] : []);
-
-  banner.innerHTML = `
-    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; padding-bottom: 6px;">
-      <strong style="color: #c084fc; font-size: 12.5px;">⚡ Haibane Auto-Publish</strong>
-      <span style="font-size: 10px; background: #581c87; color: #f3e8ff; padding: 1px 6px; border-radius: 4px;">GEMELO</span>
-    </div>
-    <div style="font-size: 11.5px; line-height: 1.4;">
-      <div style="font-weight: 800; color: #ffffff;">${product.title}</div>
-      <div style="color: #38bdf8; font-weight: 700; margin-top: 2px;">
-        Precio: C$ ${priceNio.toLocaleString()} NIO ($${product.priceUsd} USD)
-      </div>
-      <div style="color: #94a3b8; font-size: 10.5px;">
-        ${images.length} foto(s) HD disponibles para inyectar.
-      </div>
-    </div>
-    <div style="display: flex; gap: 8px;">
-      <button id="haibane-btn-do-autofill" style="flex: 1; background: #7e22ce; color: #ffffff; border: none; border-radius: 4px; padding: 7px 10px; font-weight: 800; cursor: pointer; font-size: 11px;">
-        ⚡ Inyectar Formulario & Fotos HD
-      </button>
-      <button id="haibane-btn-close-banner" style="background: #334155; color: #cbd5e1; border: none; border-radius: 4px; padding: 7px; cursor: pointer;">✕</button>
-    </div>
-    <div id="haibane-autofill-status" style="font-size: 10.5px; color: #a855f7;"></div>
-  `;
-
-  document.body.appendChild(banner);
-
-  document.getElementById("haibane-btn-close-banner")?.addEventListener("click", () => {
-    banner.remove();
-  });
-
-  document.getElementById("haibane-btn-do-autofill")?.addEventListener("click", () => {
-    isAutofillPipelineActive = false;
-    isAutofillPipelineCompleted = false;
-    triggerAutoFillPipeline(product);
-    watchForPublishCompletion(product.id, product._collection);
-  });
+  injectPublishAssistantHud(product, null);
 }
 
 function watchForPublishCompletion(productId, collection) {
