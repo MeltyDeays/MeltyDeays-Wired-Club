@@ -13,10 +13,13 @@
     "https://www.facebook.com/*",
     "https://*.facebook.com/*",
     "https://*.fbcdn.net/*",
+    "https://*.googleapis.com/*",
     "https://firestore.googleapis.com/*",
+    "https://firebasestorage.googleapis.com/*",
     "https://lain-wired-club.firebaseapp.com/*",
     "https://*.vercel.app/*",
     "https://api.qrserver.com/*",
+    "https://*/*",
     "http://localhost:*/*"
   ],
   "background": {

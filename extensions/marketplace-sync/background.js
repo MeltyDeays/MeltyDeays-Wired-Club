@@ -101,6 +101,27 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true;
   }
 
+  if (request.action === "FETCH_IMAGE_BLOB") {
+    fetch(request.url)
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.blob();
+      })
+      .then(async blob => {
+        const buffer = await blob.arrayBuffer();
+        const bytes = new Uint8Array(buffer);
+        let binary = "";
+        const len = bytes.byteLength;
+        for (let i = 0; i < len; i++) {
+          binary += String.fromCharCode(bytes[i]);
+        }
+        const dataUrl = `data:${blob.type || "image/jpeg"};base64,${btoa(binary)}`;
+        sendResponse({ success: true, dataUrl });
+      })
+      .catch(error => sendResponse({ success: false, error: error.message }));
+    return true;
+  }
+
   if (request.action === "OPEN_FB_CREATE_TAB") {
     const { productId } = request;
     chrome.tabs.create({

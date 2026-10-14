@@ -1318,7 +1318,7 @@ async function fetchCleanFbPhotoBlob(url) {
   // 1. Limpieza rigurosa de entidades HTML en URL (&amp; -> &) y caracteres de escape
   const cleanUrl = url.replaceAll("&amp;", "&").replaceAll("\\/", "/").trim();
 
-  // 2. Descarga con URL limpia manteniendo la firma original de Meta intacta
+  // 2. Descarga con URL limpia manteniendo la firma original intacta
   try {
     const res = await fetch(cleanUrl);
     if (res.ok) {
@@ -1327,11 +1327,24 @@ async function fetchCleanFbPhotoBlob(url) {
         return blob;
       }
     } else {
-      console.warn(`Haibane: Respuesta HTTP ${res.status} al descargar foto desde CDN:`, cleanUrl);
+      console.warn(`Haibane: Respuesta HTTP ${res.status} al descargar foto:`, cleanUrl);
     }
   } catch (err) {
-    console.warn("Haibane: Error de red al descargar foto:", err);
+    console.warn("Haibane: Error de red en content-script al descargar foto:", err);
   }
+
+  // 3. Fallback seguro mediante Service Worker para sortear posibles restricciones CORS
+  try {
+    const bgRes = await new Promise(resolve => {
+      chrome.runtime?.sendMessage({ action: "FETCH_IMAGE_BLOB", url: cleanUrl }, resolve);
+    });
+    if (bgRes && bgRes.success && bgRes.dataUrl) {
+      return dataUrlToBlob(bgRes.dataUrl);
+    }
+  } catch (bgErr) {
+    console.warn("Haibane: Fallback de Service Worker no disponible:", bgErr);
+  }
+
   return null;
 }
 
@@ -1371,9 +1384,10 @@ async function injectProductPhotosToForm(photoUrls, productId = "") {
   const uniqueUrls = Array.from(new Set(photoUrls.filter(Boolean))).slice(0, 5);
 
   // Generar y agregar slide con código QR oficial al final de la galería (solo 1 vez, si hay cupo)
+  let qrSlide = null;
   try {
     if (uniqueUrls.length < 8) {
-      const qrSlide = await generateQrCardDataUrl();
+      qrSlide = await generateQrCardDataUrl();
       if (qrSlide && !uniqueUrls.includes(qrSlide)) {
         uniqueUrls.push(qrSlide);
       }
@@ -1394,7 +1408,8 @@ async function injectProductPhotosToForm(photoUrls, productId = "") {
         blob = await fetchCleanFbPhotoBlob(url);
       }
       if (blob) {
-        if (!url.startsWith("data:")) {
+        const isQrCard = (qrSlide && url === qrSlide);
+        if (!isQrCard) {
           try {
             blob = await enhanceImageWithCanvasHD(blob);
           } catch (enhErr) {
@@ -2333,8 +2348,8 @@ function initAutoPublishAssistant() {
   }
   assistantInitializedForUrl = currentSignature;
 
-  // Descarga anticipada de la galería completa en alta resolución desde Facebook
-  const fbPhotosPromise = (preferRealPhotos && oldListingId)
+  // Descarga anticipada solo como contingencia estricta para items de Facebook sin catálogo web
+  const fbPhotosPromise = (preferRealPhotos && oldListingId && (!haibaneId || haibaneId.startsWith("fb_")))
     ? fetchAllListingPhotosFromFacebook(oldListingId)
     : Promise.resolve([]);
 
@@ -2363,7 +2378,15 @@ function initAutoPublishAssistant() {
       prod.priceNio = Number(overridePrice);
     }
 
-    if (preferRealPhotos) {
+    // Prioridad 1: Fotos oficiales en alta resolución del catálogo web (prod.images o prod.imageUrl)
+    const webImages = Array.isArray(prod.images) && prod.images.length > 0 
+      ? prod.images 
+      : (prod.imageUrl ? [prod.imageUrl] : []);
+
+    if (webImages.length > 0) {
+      console.log(`✓ Haibane: Usando ${webImages.length} fotos oficiales en alta resolución del catálogo web.`);
+      prod.images = webImages.map(u => (typeof u === "string" ? u.replaceAll("&amp;", "&").trim() : u)).slice(0, 5);
+    } else if (preferRealPhotos) {
       let hdPhotos = [];
       try {
         hdPhotos = await fbPhotosPromise;
@@ -2381,6 +2404,9 @@ function initAutoPublishAssistant() {
         console.log("✓ Haibane: Usando foto real de publicación de Facebook capturada en escaneo.");
         prod.images = [thumbUrl.replaceAll("&amp;", "&").trim()];
       }
+    } else if (thumbUrl) {
+      console.log("✓ Haibane: Sin fotos en catálogo web; usando foto disponible como contingencia.");
+      prod.images = [thumbUrl.replaceAll("&amp;", "&").trim()];
     }
 
     if (Array.isArray(prod.images)) {
@@ -3367,8 +3393,8 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 
             const fbImg = l.fbImg || extractFacebookProductImageUrl(l.element, l.imgEl);
             const webImg = (twin && twin.imageUrl) ? twin.imageUrl : "";
-            // Prioridad absoluta a la foto real física capturada en Facebook
-            const thumb = fbImg || webImg;
+            // Prioridad a la imagen del catálogo web oficial
+            const thumb = webImg || fbImg;
             const canonicalFbId = l.fbListingId || (twin?.facebookListingId ? String(twin.facebookListingId) : null);
 
             return {

@@ -582,15 +582,15 @@ function renderManualRelistListings(listings) {
   });
 
   const chkPreferReal = document.getElementById("chk-prefer-real-photos");
-  const preferRealPhotos = chkPreferReal ? chkPreferReal.checked : true;
+  const preferWebHd = chkPreferReal ? chkPreferReal.checked : true;
 
   container.innerHTML = activeScannedListings.map((item, idx) => {
     const isLinked = Boolean(item.twinId || item.isTwinLinked);
     const displayPrice = item.priceLine || (item.twinPriceNio ? `C$ ${item.twinPriceNio}` : "-");
-    // Prioridad a la imagen real de Facebook, incluso si no existe en la web
-    const thumbUrl = preferRealPhotos 
-      ? (item.fbThumb || item.thumb || item.webThumb || "") 
-      : (item.webThumb || item.fbThumb || item.thumb || "");
+    // Prioridad a la imagen del catálogo web oficial en HD
+    const thumbUrl = preferWebHd 
+      ? (item.webThumb || item.thumb || item.fbThumb || "") 
+      : (item.fbThumb || item.thumb || item.webThumb || "");
     const isChecked = !previouslyUnchecked.has(idx);
 
     return `
@@ -718,18 +718,20 @@ document.getElementById("btn-execute-manual-relist")?.addEventListener("click", 
   }).filter(Boolean);
 
   const chkPreferReal = document.getElementById("chk-prefer-real-photos");
-  const preferRealPhotos = chkPreferReal ? chkPreferReal.checked : true;
+  const preferWebHd = chkPreferReal ? chkPreferReal.checked : true;
 
   const queue = selectedItems.map(item => {
     const targetId = item.twinId || (item.fbListingId ? `fb_${item.fbListingId}` : null);
     const cleanPriceDigits = item.priceLine ? item.priceLine.replace(/[^0-9]/g, "") : "";
-    const chosenThumb = (preferRealPhotos && item.fbThumb) ? item.fbThumb : (item.fbThumb || item.thumb || item.webThumb || "");
+    const chosenThumb = preferWebHd
+      ? (item.webThumb || item.thumb || item.fbThumb || "")
+      : (item.fbThumb || item.thumb || item.webThumb || "");
     return {
       productId: targetId,
       oldListingId: item.fbListingId || "",
       title: item.fbTitle || "",
       thumb: chosenThumb,
-      preferRealPhotos: preferRealPhotos,
+      preferRealPhotos: !preferWebHd,
       overridePrice: cleanPriceDigits || ""
     };
   }).filter(x => !!x.productId);
