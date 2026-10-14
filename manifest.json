@@ -1,0 +1,52 @@
+{
+  "id": "/?source=pwa",
+  "name": "MeltyDeays · The Wired Club",
+  "short_name": "Wired Club",
+  "description": "Portal oficial de recompensas, catálogo y terminal NOC de MeltyDeays Nicaragua.",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#070c14",
+  "theme_color": "#0284c7",
+  "lang": "es",
+  "icons": [
+    {
+      "src": "./assets/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./assets/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./assets/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Catálogo de Recompensas",
+      "short_name": "Catálogo",
+      "url": "/?tab=catalog",
+      "description": "Explora periféricos, tecnología y canjes con Wired Points."
+    },
+    {
+      "name": "Terminal NOC (Admin)",
+      "short_name": "NOC Admin",
+      "url": "/admin",
+      "description": "Acceso a terminal de mostrador, facturación y control."
+    }
+  ],
+  "categories": [
+    "shopping",
+    "business",
+    "lifestyle"
+  ]
+}
