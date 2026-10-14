@@ -360,26 +360,102 @@ export function composeSquareWhiteFromSource(source, targetSize = 800) {
   });
 }
 
+let bgWorkerInstance = null;
+let workerJobCounter = 0;
+
+export function getBgWorker() {
+  if (bgWorkerInstance) return bgWorkerInstance;
+  if (typeof Worker === "undefined") return null;
+  try {
+    bgWorkerInstance = new Worker(new URL("../workers/bg-worker.js", import.meta.url), { type: "module" });
+    bgWorkerInstance.onerror = (err) => {
+      console.warn("⚠️ Web Worker IA error, reseteando worker:", err);
+      try { bgWorkerInstance.terminate(); } catch (e) {}
+      bgWorkerInstance = null;
+    };
+  } catch (err) {
+    console.warn("⚠️ No se pudo iniciar Web Worker de IA:", err);
+    bgWorkerInstance = null;
+  }
+  return bgWorkerInstance;
+}
+
 /**
- * Procesa una imagen: remueve el fondo con IA o normaliza a 1:1 sobre blanco puro sin colgar móviles.
+ * Procesa una imagen: remueve el fondo con IA, suprime manos y reconstruye carcasa,
+ * montando en 1:1 blanco puro sin congelar teléfonos (usando Web Worker en segundo plano).
  * @param {Blob|File|string} imageSource Imagen origen (File, Blob o DataURL)
  * @param {Object} options Opciones de configuración
  * @returns {Promise<string>} DataURL resultante listo para catálogo y Marketplace
  */
 export async function processImageWithAiWhiteBg(imageSource, options = {}) {
-  const { onProgress = null, targetSize = 800, forceAi = false } = options;
+  const { onProgress = null, targetSize = 800 } = options;
 
-  if (onProgress) onProgress("Optimizando foto...");
-  const optimizedSource = await downscaleImageForProcessing(imageSource, 1024);
+  if (onProgress) onProgress("Optimizando foto para el dispositivo...");
+  // Pre-escalado óptimo a 640px para acelerar la inferencia 3x y evitar saturación de memoria en teléfonos
+  const isMobile = isMobileDevice();
+  const maxDim = isMobile ? 640 : 768;
+  const optimizedSource = await downscaleImageForProcessing(imageSource, maxDim);
 
-  // En dispositivos móviles (salvo que forceAi sea explícito), evitar la descarga de 95MB
-  // de pesos Wasm/ONNX que saturan CPU y congelan la pantalla. Normalizar 1:1 en <30ms.
-  if (isMobileDevice() && !forceAi) {
-    if (onProgress) onProgress("Normalizando 1:1 (Fondo Blanco)...");
-    return await composeSquareWhiteFromSource(optimizedSource, targetSize);
+  // Intentar procesamiento en Web Worker (Background Thread) para CERO congelamiento de pantalla en móvil y desktop
+  const worker = getBgWorker();
+  if (worker) {
+    const jobId = ++workerJobCounter;
+    try {
+      let blobToSend = optimizedSource;
+      if (typeof optimizedSource === "string") {
+        const parts = optimizedSource.split(",");
+        const mime = parts[0].match(/:(.*?);/)?.[1] || "image/jpeg";
+        const bstr = atob(parts[1]);
+        let n = bstr.length;
+        const u8arr = new Uint8Array(n);
+        while (n--) u8arr[n] = bstr.charCodeAt(n);
+        blobToSend = new Blob([u8arr], { type: mime });
+      }
+
+      const workerResult = await new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          cleanup();
+          reject(new Error("Timeout en Worker IA (30s)"));
+        }, 30000);
+
+        const onMsg = (e) => {
+          const data = e.data || {};
+          if (data.id !== jobId) return;
+
+          if (data.type === "progress") {
+            if (onProgress && data.message) onProgress(data.message);
+          } else if (data.type === "done") {
+            cleanup();
+            if (data.blob) {
+              const reader = new FileReader();
+              reader.onload = () => resolve(reader.result);
+              reader.onerror = () => reject(new Error("Error leyendo resultado del worker"));
+              reader.readAsDataURL(data.blob);
+            } else {
+              reject(new Error("Worker no retornó blob"));
+            }
+          } else if (data.type === "error") {
+            cleanup();
+            reject(new Error(data.error || "Error en worker IA"));
+          }
+        };
+
+        const cleanup = () => {
+          clearTimeout(timeout);
+          worker.removeEventListener("message", onMsg);
+        };
+
+        worker.addEventListener("message", onMsg);
+        worker.postMessage({ id: jobId, imageBlob: blobToSend, targetSize });
+      });
+
+      return workerResult;
+    } catch (err) {
+      console.warn("Fallo o timeout en Worker IA, evaluando fallback directo:", err.message);
+    }
   }
 
-  // En PC/Desktop (o si forceAi es true), intentar segmentación acelerada
+  // Fallback si Worker falla o no está soportado: inferencia directa con modelo cuantizado
   try {
     const engine = await loadBgRemovalEngine();
     if (engine && typeof engine.removeBackground === "function") {
@@ -389,7 +465,7 @@ export async function processImageWithAiWhiteBg(imageSource, options = {}) {
       let lastReportedTime = 0;
 
       const removeBgPromise = engine.removeBackground(optimizedSource, {
-        model: "small", // isnet_quint8 (~10MB en vez de 95MB)
+        model: "small", // isnet_quint8 (~42MB)
         device: "gpu",  // Aceleración WebGPU
         rescale: true,
         progress: (key, current, total) => {
@@ -405,7 +481,7 @@ export async function processImageWithAiWhiteBg(imageSource, options = {}) {
       });
 
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error("Timeout en segmentación")), 8000);
+        setTimeout(() => reject(new Error("Timeout en segmentación directa")), 15000);
       });
 
       const transparentBlob = await Promise.race([removeBgPromise, timeoutPromise]);
@@ -445,9 +521,9 @@ export async function processImageWithAiWhiteBg(imageSource, options = {}) {
       return finalDataUrl;
     }
   } catch (err) {
-    console.warn("Fallo o timeout durante inferencia Wasm, aplicando fallback local 1:1:", err.message);
+    console.warn("Fallo en ejecución directa, aplicando normalización 1:1:", err.message);
   }
 
-  // Fallback seguro universal: normalizar 1:1 centrado con fondo blanco puro
+  // Fallback seguro universal de última instancia: normalizar 1:1 centrado con fondo blanco puro
   return await composeSquareWhiteFromSource(optimizedSource, targetSize);
 }

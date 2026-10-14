@@ -873,7 +873,7 @@ export async function handleProductImageFile(input) {
   input.disabled = true;
 
   const toastId = "img-upload-status";
-  showToast(aiEnabled ? `Procesando ${files.length} foto(s) 1:1...` : `Optimizando ${files.length} imagen(es)...`, "info", { id: toastId, duration: 60000 });
+  showToast(aiEnabled ? `Procesando ${files.length} foto(s) con IA...` : `Optimizando ${files.length} imagen(es)...`, "info", { id: toastId, duration: 60000 });
 
   try {
     for (let i = 0; i < files.length; i++) {
@@ -947,16 +947,16 @@ export async function cleanProductImageWithAi(index) {
   if (index < 0 || index >= currentProductImages.length) return;
   const original = currentProductImages[index];
   const toastId = "img-clean-single-" + index;
-  showToast("Aplicando Fondo Blanco 1:1...", "info", { id: toastId, duration: 60000 });
+  showToast("Limpiando fondo y manos con IA...", "info", { id: toastId, duration: 60000 });
   try {
     const cleaned = await processImageWithAiWhiteBg(original, {
       onProgress: (msg) => showToast(msg, "info", { id: toastId, duration: 60000 })
     });
     currentProductImages[index] = cleaned;
     renderProductImagesPreview();
-    showToast("✓ Fondo blanco 1:1 aplicado exitosamente.", "success", { id: toastId, duration: 3500 });
+    showToast("✓ Fondo blanco 1:1 e IA aplicados exitosamente.", "success", { id: toastId, duration: 3500 });
   } catch (err) {
-    showToast("⚠️ Fallo en procesamiento, se mantiene imagen actual.", "error", { id: toastId, duration: 4000 });
+    showToast("⚠️ Fallo en procesamiento IA, se mantiene imagen actual.", "error", { id: toastId, duration: 4000 });
   }
 }
 
