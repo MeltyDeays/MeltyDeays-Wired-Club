@@ -704,6 +704,9 @@ document.getElementById("btn-execute-manual-relist")?.addEventListener("click", 
     return activeScannedListings[idx];
   }).filter(Boolean);
 
+  const chkPreferReal = document.getElementById("chk-prefer-real-photos");
+  const preferRealPhotos = chkPreferReal ? chkPreferReal.checked : true;
+
   const queue = selectedItems.map(item => {
     const targetId = item.twinId || (item.fbListingId ? `fb_${item.fbListingId}` : null);
     const cleanPriceDigits = item.priceLine ? item.priceLine.replace(/[^0-9]/g, "") : "";
@@ -711,6 +714,8 @@ document.getElementById("btn-execute-manual-relist")?.addEventListener("click", 
       productId: targetId,
       oldListingId: item.fbListingId || "",
       title: item.fbTitle || "",
+      thumb: item.thumb || "",
+      preferRealPhotos: preferRealPhotos,
       overridePrice: cleanPriceDigits || ""
     };
   }).filter(x => !!x.productId);
@@ -732,6 +737,25 @@ document.getElementById("btn-execute-manual-relist")?.addEventListener("click", 
       log(`⚠️ Error iniciando lote: ${res?.error || "Desconocido"}`);
     }
   });
+});
+
+// Botón: Limpieza masiva de duplicados antiguos en pantalla
+document.getElementById("btn-clean-old-duplicates")?.addEventListener("click", async () => {
+  log("🧹 Escaneando y eliminando publicaciones antiguas duplicadas...");
+  const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+  const currentTab = tabs[0];
+  if (currentTab && currentTab.id) {
+    sendTabMessageWithAutoReconnect(currentTab.id, { action: "CLEAN_OLD_DUPLICATES" }, (res) => {
+      if (res && res.success) {
+        log(`✓ Limpieza completada: ${res.count || 0} publicaciones viejas eliminadas.`);
+        setTimeout(() => {
+          document.getElementById("btn-scan-relist-listings")?.click();
+        }, 1500);
+      } else {
+        log(`⚠️ Aviso: ${res?.error || "No se detectaron duplicados para limpiar."}`);
+      }
+    });
+  }
 });
 
 // Cargar publicaciones previamente escaneadas de caché local si existen

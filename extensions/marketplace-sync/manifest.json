@@ -11,6 +11,8 @@
   ],
   "host_permissions": [
     "https://www.facebook.com/*",
+    "https://*.facebook.com/*",
+    "https://*.fbcdn.net/*",
     "https://firestore.googleapis.com/*",
     "https://lain-wired-club.firebaseapp.com/*",
     "https://*.vercel.app/*",

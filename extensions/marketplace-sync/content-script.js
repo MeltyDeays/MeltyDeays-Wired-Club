@@ -127,83 +127,83 @@ function extractCleanPrice(rawText) {
   return rawText.trim();
 }
 
+function isNoiseLine(line) {
+  if (!line) return true;
+  const l = line.toLowerCase().trim();
+  if (l.length < 3) return true;
+  if (l.includes("$") || l.includes("c$") || l.includes("nio")) return true;
+  if (/^\d+(\.\d+)?$/.test(l)) return true;
+  return (
+    l.includes("marcar como") ||
+    l.includes("mark as") ||
+    l.includes("promocionar") ||
+    l.includes("boost") ||
+    l.includes("compartir") ||
+    l.includes("share") ||
+    l.includes("publicado") ||
+    l.includes("publicada") ||
+    l.includes("publicaciones") ||
+    l.includes("publicacion") ||
+    l.includes("clics en") ||
+    l.includes("activo") ||
+    l.includes("disponible") ||
+    l.includes("agotado") ||
+    l.includes("vendido") ||
+    l.includes("revisando") ||
+    l.includes("sugerencia") ||
+    l.includes("renovar") ||
+    l.includes("mensajes") ||
+    l.includes("comentarios") ||
+    l.includes("estadísticas") ||
+    l.includes("estadisticas") ||
+    l.includes("editar") ||
+    l.includes("eliminar") ||
+    l.includes("más información") ||
+    l.includes("mas informacion") ||
+    l.includes("vendedores") ||
+    l.includes("mantén") ||
+    l.includes("manten") ||
+    l.includes("buscar en")
+  );
+}
+
+function isListingAvailable(textContent, lines) {
+  if (!textContent) return false;
+  const lower = textContent.toLowerCase();
+
+  // 1. Si el botón dice "marcar como disponible", la publicación actualmente ESTÁ VENDIDA / AGOTADA
+  if (lower.includes("marcar como disponible") || lower.includes("mark as available")) {
+    return false;
+  }
+
+  // 2. Si alguna línea de estado indica vendido o agotado
+  for (const line of lines) {
+    const l = line.toLowerCase().trim();
+    if (/^(vendido|agotado|sold|out of stock)(\s*·|\s*$)/i.test(l)) {
+      return false;
+    }
+    if (l === "vendido fuera de facebook" || l === "vendido en facebook") {
+      return false;
+    }
+  }
+
+  // 3. Confirmar que tenga indicador de disponible/activo o que tenga botón para marcarlo como vendido/agotado
+  const hasAvailableIndicator = lines.some(line => {
+    const l = line.toLowerCase().trim();
+    return /^(disponible|activo|en stock|in stock|active|available)(\s*·|\s*$)/i.test(l) ||
+           l.includes("marcar como agotado") ||
+           l.includes("marcar como vendido") ||
+           l.includes("mark as sold") ||
+           l.includes("mark as out of stock");
+  });
+
+  return hasAvailableIndicator;
+}
+
 function getScannableListings() {
   const listings = [];
   const seenTitles = new Set();
   const seenIds = new Set();
-
-  function isNoiseLine(line) {
-    if (!line) return true;
-    const l = line.toLowerCase().trim();
-    if (l.length < 3) return true;
-    if (l.includes("$") || l.includes("c$") || l.includes("nio")) return true;
-    if (/^\d+(\.\d+)?$/.test(l)) return true;
-    return (
-      l.includes("marcar como") ||
-      l.includes("mark as") ||
-      l.includes("promocionar") ||
-      l.includes("boost") ||
-      l.includes("compartir") ||
-      l.includes("share") ||
-      l.includes("publicado") ||
-      l.includes("publicada") ||
-      l.includes("publicaciones") ||
-      l.includes("publicacion") ||
-      l.includes("clics en") ||
-      l.includes("activo") ||
-      l.includes("disponible") ||
-      l.includes("agotado") ||
-      l.includes("vendido") ||
-      l.includes("revisando") ||
-      l.includes("sugerencia") ||
-      l.includes("renovar") ||
-      l.includes("mensajes") ||
-      l.includes("comentarios") ||
-      l.includes("estadísticas") ||
-      l.includes("estadisticas") ||
-      l.includes("editar") ||
-      l.includes("eliminar") ||
-      l.includes("más información") ||
-      l.includes("mas informacion") ||
-      l.includes("vendedores") ||
-      l.includes("mantén") ||
-      l.includes("manten") ||
-      l.includes("buscar en")
-    );
-  }
-
-  function isListingAvailable(textContent, lines) {
-    if (!textContent) return false;
-    const lower = textContent.toLowerCase();
-
-    // 1. Si el botón dice "marcar como disponible", la publicación actualmente ESTÁ VENDIDA / AGOTADA
-    if (lower.includes("marcar como disponible") || lower.includes("mark as available")) {
-      return false;
-    }
-
-    // 2. Si alguna línea de estado indica vendido o agotado
-    for (const line of lines) {
-      const l = line.toLowerCase().trim();
-      if (/^(vendido|agotado|sold|out of stock)(\s*·|\s*$)/i.test(l)) {
-        return false;
-      }
-      if (l === "vendido fuera de facebook" || l === "vendido en facebook") {
-        return false;
-      }
-    }
-
-    // 3. Confirmar que tenga indicador de disponible/activo o que tenga botón para marcarlo como vendido/agotado
-    const hasAvailableIndicator = lines.some(line => {
-      const l = line.toLowerCase().trim();
-      return /^(disponible|activo|en stock|in stock|active|available)(\s*·|\s*$)/i.test(l) ||
-             l.includes("marcar como agotado") ||
-             l.includes("marcar como vendido") ||
-             l.includes("mark as sold") ||
-             l.includes("mark as out of stock");
-    });
-
-    return hasAvailableIndicator;
-  }
 
   function extractListingDataFromElement(container, defaultId = null) {
     if (!container) return null;
@@ -442,10 +442,11 @@ async function deleteListingFromSellingPage(targetId, targetTitle) {
   });
 
   if (!menuBtn) {
+    // Descartar botones de acción conocidos
     menuBtn = buttons.find(b => {
-      const txt = (b.innerText || "").toLowerCase();
-      if (txt.includes("agotado") || txt.includes("vendido") || txt.includes("promocionar") || txt.includes("boost") || txt.includes("disponible")) return false;
-      return Boolean(b.querySelector("svg") || b.querySelector("i") || (b.innerText || "").trim() === "...");
+      const txt = (b.innerText || "").toLowerCase().trim();
+      if (txt.includes("agotado") || txt.includes("vendido") || txt.includes("promocionar") || txt.includes("boost") || txt.includes("disponible") || txt.includes("compartir") || txt.includes("share")) return false;
+      return Boolean(b.querySelector("svg") || b.querySelector("i") || txt === "..." || txt === "");
     });
   }
 
@@ -457,15 +458,15 @@ async function deleteListingFromSellingPage(targetId, targetTitle) {
     return { success: false, error: "Botón de menú (...) no localizado en la tarjeta" };
   }
 
+  menuBtn.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+  menuBtn.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }));
   menuBtn.click();
-  await new Promise(r => setTimeout(r, 650));
+  await new Promise(r => setTimeout(r, 700));
 
   // Buscar 'Eliminar publicación' en menú emergente
-  const menuItems = Array.from(document.querySelectorAll('div[role="menuitem"], div[role="button"], span, div')).filter(el => {
-    const inMenu = el.closest('div[role="menu"]') || el.closest('[data-pagelet*="Menu"]') || el.closest('.popover');
-    if (!inMenu) return false;
+  const menuItems = Array.from(document.querySelectorAll('div[role="menuitem"], div[role="menu"] div[role="button"], div[role="menu"] span, div[role="menu"] div, div[role="dialog"] div[role="button"], div[role="dialog"] span')).filter(el => {
     const txt = (el.innerText || el.getAttribute("aria-label") || "").trim().toLowerCase();
-    return (txt.includes("eliminar publicación") || txt.includes("eliminar artículo") || txt.includes("delete listing") || txt === "eliminar") && !txt.includes("cancelar");
+    return (txt.includes("eliminar publicación") || txt.includes("eliminar articulo") || txt.includes("eliminar artículo") || txt.includes("delete listing") || txt === "eliminar publicación") && !txt.includes("cancelar");
   });
 
   if (menuItems.length === 0) {
@@ -473,33 +474,33 @@ async function deleteListingFromSellingPage(targetId, targetTitle) {
     return { success: false, error: "Opción 'Eliminar publicación' no visible en menú" };
   }
 
+  menuItems[0].dispatchEvent(new MouseEvent("click", { bubbles: true }));
   menuItems[0].click();
-  await new Promise(r => setTimeout(r, 800));
+  await new Promise(r => setTimeout(r, 850));
 
   // Confirmar en el modal dialog
   const dialog = document.querySelector('div[role="dialog"]');
   if (dialog) {
-    const radio = Array.from(dialog.querySelectorAll('input[type="radio"], div[role="radio"], div[role="button"]')).find(r => {
+    const radios = Array.from(dialog.querySelectorAll('input[type="radio"], div[role="radio"], div[role="button"], span')).filter(r => {
       const txt = (r.innerText || r.getAttribute("aria-label") || r.parentElement?.innerText || "").toLowerCase();
-      return txt.includes("no") || txt.includes("otro") || txt.includes("prefer");
+      return txt.includes("no, no") || txt.includes("no lo he") || txt.includes("otro") || txt.includes("prefer");
     });
-    if (radio) {
-      radio.click();
-      await new Promise(r => setTimeout(r, 350));
+    if (radios.length > 0) {
+      radios[0].click();
+      await new Promise(r => setTimeout(r, 400));
     }
 
-    const confirmBtn = Array.from(dialog.querySelectorAll('div[role="button"], button')).find(b => {
+    const actionBtns = Array.from(dialog.querySelectorAll('div[role="button"], button')).filter(b => {
       const txt = (b.innerText || b.getAttribute("aria-label") || "").trim().toLowerCase();
-      return (txt === "eliminar" || txt === "delete" || txt === "siguiente" || txt.includes("eliminar definitivamente")) && !txt.includes("cancelar");
+      return (txt === "eliminar" || txt === "delete" || txt === "siguiente" || txt === "next" || txt.includes("eliminar definitivamente")) && !txt.includes("cancelar");
     });
-
-    if (confirmBtn) {
-      confirmBtn.click();
-      await new Promise(r => setTimeout(r, 600));
+    if (actionBtns.length > 0) {
+      actionBtns[0].click();
+      await new Promise(r => setTimeout(r, 700));
 
       const finalBtn = Array.from(document.querySelectorAll('div[role="dialog"] div[role="button"], div[role="dialog"] button')).find(b => {
         const txt = (b.innerText || b.getAttribute("aria-label") || "").trim().toLowerCase();
-        return (txt === "eliminar" || txt === "delete") && !txt.includes("cancelar");
+        return (txt === "eliminar" || txt === "delete" || txt.includes("eliminar definitivamente")) && !txt.includes("cancelar");
       });
       if (finalBtn) finalBtn.click();
     }
@@ -540,13 +541,17 @@ async function checkActiveBatchOnSellingPage() {
     // Esperar 2.5s a que el feed de Facebook cargue las tarjetas
     await new Promise(r => setTimeout(r, 2500));
 
-    // Ejecutar eliminación de la tarjeta antigua en /marketplace/you/selling
-    const delRes = await deleteListingFromSellingPage(currentItem.oldListingId, currentItem.title);
-    console.log("Haibane: Resultado de eliminación de listing antiguo:", delRes);
+    // Ejecutar eliminación de la tarjeta antigua de forma segura
+    try {
+      const delRes = await deleteListingFromSellingPage(currentItem.oldListingId, currentItem.title);
+      console.log("Haibane: Resultado de eliminación de listing antiguo:", delRes);
+    } catch (delErr) {
+      console.warn("Haibane: Aviso en eliminación de publicación previa:", delErr);
+    }
 
     await new Promise(r => setTimeout(r, 1200));
 
-    // Avanzar cola
+    // Avanzar cola SIEMPRE para que el lote no se detenga jamás a la mitad
     const nextIdx = batch.currentIndex + 1;
     if (nextIdx < batch.queue.length) {
       batch.currentIndex = nextIdx;
@@ -565,6 +570,45 @@ async function checkActiveBatchOnSellingPage() {
   } finally {
     isBatchSellingCheckActive = false;
   }
+}
+
+/**
+ * Detecta y elimina automáticamente todas las publicaciones antiguas que ya tienen
+ * una versión renovada en estado "Se está revisando la publicación".
+ */
+async function cleanAllOldDuplicates() {
+  showHaibaneToast("🔍 Buscando publicaciones antiguas duplicadas...");
+  const listings = getScannableListings();
+
+  const groups = new Map();
+  for (const item of listings) {
+    const key = normalizeTitle(item.fbTitle);
+    if (!groups.has(key)) groups.set(key, []);
+    const isReview = /revisando|revisi[oó]n|under review/i.test(item.textContent);
+    groups.get(key).push({ ...item, isReview });
+  }
+
+  let removedCount = 0;
+  for (const [key, items] of groups.entries()) {
+    if (items.length > 1) {
+      const oldItems = items.filter(x => !x.isReview);
+      for (const old of oldItems) {
+        showHaibaneToast(`🗑️ Eliminando duplicado viejo: "${old.fbTitle}"...`);
+        try {
+          const res = await deleteListingFromSellingPage(old.fbListingId, old.fbTitle);
+          if (res && res.success) removedCount++;
+        } catch (e) {
+          console.warn("Error eliminando duplicado:", e);
+        }
+        await new Promise(r => setTimeout(r, 1200));
+      }
+    }
+  }
+
+  showHaibaneToast(removedCount > 0 
+    ? `✓ Limpieza completa: ${removedCount} publicaciones viejas eliminadas.`
+    : "✓ No se detectaron duplicados antiguos en pantalla.");
+  return { success: true, count: removedCount };
 }
 
 /**
@@ -1910,6 +1954,8 @@ function initAutoPublishAssistant() {
   const batchIndex = parseInt(urlParams.get("batch_index") || "0", 10);
   const batchTotal = parseInt(urlParams.get("batch_total") || "1", 10);
   const oldListingId = urlParams.get("old_listing_id") || "";
+  const preferRealPhotos = urlParams.get("prefer_real_photos") === "true";
+  const thumbUrl = urlParams.get("thumb_url");
   if (!haibaneId) return;
 
   const currentSignature = `${window.location.pathname}?haibane_id=${haibaneId}`;
@@ -1928,6 +1974,9 @@ function initAutoPublishAssistant() {
     }
     if (overridePrice && !isNaN(Number(overridePrice)) && Number(overridePrice) > 0) {
       prod.priceNio = Number(overridePrice);
+    }
+    if (preferRealPhotos && thumbUrl) {
+      prod.images = [thumbUrl];
     }
     injectPublishAssistantBanner(prod);
     if (isBatch) {
@@ -2953,6 +3002,18 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     (async () => {
       try {
         const res = await deleteListingFromSellingPage(msg.targetId, msg.targetTitle);
+        sendResponse(res || { success: true });
+      } catch (err) {
+        sendResponse({ success: false, error: err.message });
+      }
+    })();
+    return true;
+  }
+
+  if (msg.action === "CLEAN_OLD_DUPLICATES") {
+    (async () => {
+      try {
+        const res = await cleanAllOldDuplicates();
         sendResponse(res || { success: true });
       } catch (err) {
         sendResponse({ success: false, error: err.message });

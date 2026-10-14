@@ -36,7 +36,9 @@ function openBatchItemCreation(batch) {
   if (!item) return;
 
   const priceParam = (item.overridePrice && !isNaN(Number(item.overridePrice))) ? `&override_price=${encodeURIComponent(item.overridePrice)}` : "";
-  const url = `https://www.facebook.com/marketplace/create/item?haibane_id=${encodeURIComponent(item.productId)}&auto_relist=true&old_listing_id=${encodeURIComponent(item.oldListingId || "")}&batch_active=true&batch_index=${batch.currentIndex}&batch_total=${batch.queue.length}${priceParam}`;
+  const preferParam = item.preferRealPhotos ? `&prefer_real_photos=true` : "";
+  const thumbParam = item.thumb ? `&thumb_url=${encodeURIComponent(item.thumb)}` : "";
+  const url = `https://www.facebook.com/marketplace/create/item?haibane_id=${encodeURIComponent(item.productId)}&auto_relist=true&old_listing_id=${encodeURIComponent(item.oldListingId || "")}&batch_active=true&batch_index=${batch.currentIndex}&batch_total=${batch.queue.length}${priceParam}${preferParam}${thumbParam}`;
 
   if (batch.tabId) {
     chrome.tabs.get(batch.tabId, (tab) => {
