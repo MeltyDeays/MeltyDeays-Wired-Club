@@ -30,6 +30,33 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
   }
 });
 
+function openBatchItemCreation(batch) {
+  if (!batch || !Array.isArray(batch.queue)) return;
+  const item = batch.queue[batch.currentIndex];
+  if (!item) return;
+
+  const priceParam = (item.overridePrice && !isNaN(Number(item.overridePrice))) ? `&override_price=${encodeURIComponent(item.overridePrice)}` : "";
+  const url = `https://www.facebook.com/marketplace/create/item?haibane_id=${encodeURIComponent(item.productId)}&auto_relist=true&old_listing_id=${encodeURIComponent(item.oldListingId || "")}&batch_active=true&batch_index=${batch.currentIndex}&batch_total=${batch.queue.length}${priceParam}`;
+
+  if (batch.tabId) {
+    chrome.tabs.get(batch.tabId, (tab) => {
+      if (chrome.runtime.lastError || !tab) {
+        chrome.tabs.create({ url }, (newTab) => {
+          batch.tabId = newTab.id;
+          chrome.storage?.local?.set({ activeRelistBatch: batch });
+        });
+      } else {
+        chrome.tabs.update(batch.tabId, { url, active: true });
+      }
+    });
+  } else {
+    chrome.tabs.create({ url }, (newTab) => {
+      batch.tabId = newTab.id;
+      chrome.storage?.local?.set({ activeRelistBatch: batch });
+    });
+  }
+}
+
 // Manejador de mensajes internos
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "GET_CATALOG_PRODUCTS") {
@@ -88,6 +115,65 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       url: `https://www.facebook.com/marketplace/create/item?haibane_id=${encodeURIComponent(productId)}&auto_relist=true&old_listing_id=${encodeURIComponent(oldListingId || "")}${priceParam}`
     }, (tab) => {
       sendResponse({ success: true, tabId: tab.id });
+    });
+    return true;
+  }
+
+  if (request.action === "START_BATCH_RELIST") {
+    const { queue } = request;
+    if (!Array.isArray(queue) || queue.length === 0) {
+      sendResponse({ success: false, error: "Cola vacía" });
+      return true;
+    }
+    const batch = {
+      queue,
+      currentIndex: 0,
+      status: "PROCESSING",
+      step: "CREATING",
+      tabId: null,
+      startedAt: Date.now()
+    };
+    chrome.storage?.local?.set({ activeRelistBatch: batch }, () => {
+      openBatchItemCreation(batch);
+      sendResponse({ success: true, count: queue.length });
+    });
+    return true;
+  }
+
+  if (request.action === "PROCESS_NEXT_BATCH_ITEM") {
+    chrome.storage?.local?.get(["activeRelistBatch"], (d) => {
+      const b = d?.activeRelistBatch;
+      if (b && b.status === "PROCESSING") {
+        openBatchItemCreation(b);
+      }
+    });
+    sendResponse({ success: true });
+    return true;
+  }
+
+  if (request.action === "FORCE_NEXT_BATCH_ITEM") {
+    chrome.storage?.local?.get(["activeRelistBatch"], (d) => {
+      const b = d?.activeRelistBatch;
+      if (b && b.status === "PROCESSING") {
+        const nextIdx = (b.currentIndex || 0) + 1;
+        if (nextIdx < b.queue.length) {
+          b.currentIndex = nextIdx;
+          b.step = "CREATING";
+          chrome.storage?.local?.set({ activeRelistBatch: b }, () => {
+            openBatchItemCreation(b);
+          });
+        } else {
+          chrome.storage?.local?.set({ activeRelistBatch: null });
+        }
+      }
+    });
+    sendResponse({ success: true });
+    return true;
+  }
+
+  if (request.action === "CANCEL_BATCH_RELIST") {
+    chrome.storage?.local?.set({ activeRelistBatch: null }, () => {
+      sendResponse({ success: true });
     });
     return true;
   }

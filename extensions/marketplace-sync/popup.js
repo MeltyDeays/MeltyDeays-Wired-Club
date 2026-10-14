@@ -600,12 +600,45 @@ function renderManualRelistListings(listings) {
             </div>
           </div>
         </div>
+        <button type="button" class="btn-delete-listing" data-idx="${idx}" style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.35); color: #f87171; border-radius: 4px; padding: 2px 6px; font-size: 8.5px; cursor: pointer; flex-shrink: 0;" title="Eliminar esta publicación en Facebook">
+          🗑️
+        </button>
       </div>
     `;
   }).join("");
 
   container.querySelectorAll(".chk-relist-item").forEach(chk => {
     chk.addEventListener("change", updateManualRelistCounter);
+  });
+
+  container.querySelectorAll(".btn-delete-listing").forEach(btn => {
+    btn.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      const idx = parseInt(btn.dataset.idx, 10);
+      const item = activeScannedListings[idx];
+      if (!item) return;
+
+      if (!confirm(`¿Eliminar en Facebook Marketplace la publicación "${item.fbTitle}"?`)) return;
+
+      log(`🗑️ Eliminando en Facebook: "${item.fbTitle}"...`);
+      const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+      const currentTab = tabs[0];
+      if (currentTab && currentTab.id) {
+        sendTabMessageWithAutoReconnect(currentTab.id, {
+          action: "DELETE_LISTING_BY_ID_OR_TITLE",
+          targetId: item.fbListingId || "",
+          targetTitle: item.fbTitle || ""
+        }, (res) => {
+          if (res && res.success) {
+            log(`✓ Eliminada en Facebook: "${item.fbTitle}".`);
+            activeScannedListings.splice(idx, 1);
+            renderManualRelistListings(activeScannedListings);
+          } else {
+            log(`⚠️ Error al eliminar: ${res?.error || "Desconocido"}`);
+          }
+        });
+      }
+    });
   });
 
   updateManualRelistCounter();
@@ -671,31 +704,34 @@ document.getElementById("btn-execute-manual-relist")?.addEventListener("click", 
     return activeScannedListings[idx];
   }).filter(Boolean);
 
-  log(`🚀 Preparando renovación de ${selectedItems.length} publicación(es) con IA...`);
-
-  // Procesar publicaciones seleccionadas de forma asistida
-  for (let i = 0; i < selectedItems.length; i++) {
-    const item = selectedItems[i];
+  const queue = selectedItems.map(item => {
     const targetId = item.twinId || (item.fbListingId ? `fb_${item.fbListingId}` : null);
-    if (!targetId) continue;
-
-    log(`[${i + 1}/${selectedItems.length}] Renovando con IA: "${item.fbTitle}"... Fotos HD, precio web y grupos listos.`);
-
     const cleanPriceDigits = item.priceLine ? item.priceLine.replace(/[^0-9]/g, "") : "";
-    chrome.runtime.sendMessage({
-      action: "RELIST_EXPIRED_PRODUCT",
+    return {
       productId: targetId,
       oldListingId: item.fbListingId || "",
+      title: item.fbTitle || "",
       overridePrice: cleanPriceDigits || ""
-    });
+    };
+  }).filter(x => !!x.productId);
 
-    // Pequeño delay entre aperturas para no saturar el navegador si son varias
-    if (i < selectedItems.length - 1) {
-      await new Promise(r => setTimeout(r, 1200));
-    }
+  if (queue.length === 0) {
+    log("⚠️ No se pudieron obtener identificadores válidos para las publicaciones seleccionadas.");
+    return;
   }
 
-  log(`✓ Pestaña de creación con IA abierta. Revisa la ficha y pulsa Publicar en Facebook.`);
+  log(`🚀 Iniciando lote de renovación con IA (${queue.length} publicaciones)...`);
+
+  chrome.runtime.sendMessage({
+    action: "START_BATCH_RELIST",
+    queue: queue
+  }, (res) => {
+    if (res && res.success) {
+      log(`✓ Lote iniciado en segundo plano. Procesando 1 de ${queue.length} publicaciones. Cada una se publicará con IA y su versión vieja se eliminará automáticamente.`);
+    } else {
+      log(`⚠️ Error iniciando lote: ${res?.error || "Desconocido"}`);
+    }
+  });
 });
 
 // Cargar publicaciones previamente escaneadas de caché local si existen

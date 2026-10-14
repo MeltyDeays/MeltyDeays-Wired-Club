@@ -363,6 +363,211 @@ function getScannableListings() {
 }
 
 /**
+ * Localiza y elimina una publicación de Facebook Marketplace en /marketplace/you/selling
+ * usando el menú contextual (...) de la tarjeta de producto y confirmando el modal.
+ * @param {string} targetId ID numérico o fb_ID de la publicación
+ * @param {string} targetTitle Título del producto
+ * @returns {Promise<{success: boolean, error?: string}>}
+ */
+async function deleteListingFromSellingPage(targetId, targetTitle) {
+  console.log(`🗑️ Haibane: Iniciando eliminación de publicación: "${targetTitle}" (ID: ${targetId || "N/A"})...`);
+
+  const allImages = Array.from(document.querySelectorAll("img")).filter(img => {
+    const w = img.offsetWidth || img.naturalWidth || 80;
+    const h = img.offsetHeight || img.naturalHeight || 80;
+    const src = img.src || "";
+    return !src.includes("emoji") && !src.includes("static.xx") && (w >= 40 || h >= 40);
+  });
+
+  const matchedCards = [];
+  const processed = new Set();
+  const normTarget = normalizeTitle(targetTitle || "");
+
+  for (const img of allImages) {
+    let curr = img;
+    while (curr && curr !== document.body) {
+      curr = curr.parentElement;
+      if (!curr) break;
+      const txt = curr.innerText || "";
+      const hasPrice = txt.includes("$") || txt.includes("C$") || txt.includes("NIO");
+      const hasMeta = txt.includes("publicado") || txt.includes("clics") || txt.includes("marcar como") || txt.includes("promocionar") || txt.includes("disponible") || txt.includes("revisando");
+
+      if (hasPrice && hasMeta && txt.length >= 30 && txt.length < 1500) {
+        if (!processed.has(curr)) {
+          processed.add(curr);
+          const lines = txt.split("\n").map(l => l.trim()).filter(Boolean);
+          const titleLine = lines.find(l => !isNoiseLine(l)) || "";
+          const normTitle = normalizeTitle(titleLine);
+
+          let hasIdMatch = false;
+          if (targetId) {
+            const cleanId = String(targetId).replace(/^fb_/, "");
+            if (curr.innerHTML.includes(cleanId)) hasIdMatch = true;
+          }
+
+          const hasTitleMatch = normTarget && normTitle && (
+            normTitle.includes(normTarget) ||
+            normTarget.includes(normTitle) ||
+            computeTitleSimilarity(normTitle, normTarget) >= 0.45
+          );
+
+          if (hasIdMatch || hasTitleMatch) {
+            const isReview = /revisando|revisi[oó]n|under review/i.test(txt);
+            matchedCards.push({ element: curr, text: txt, isReview, title: titleLine });
+          }
+        }
+        break;
+      }
+    }
+  }
+
+  if (matchedCards.length === 0) {
+    console.warn(`Haibane: No se encontró tarjeta para eliminar: "${targetTitle}".`);
+    return { success: false, error: "Tarjeta no encontrada en pantalla" };
+  }
+
+  // Priorizar la tarjeta ANTIGUA (la que NO está en revisión ni recién creada)
+  let targetCard = matchedCards.find(c => !c.isReview) || matchedCards[0];
+  const cardEl = targetCard.element;
+
+  cardEl.scrollIntoView({ behavior: "smooth", block: "center" });
+  await new Promise(r => setTimeout(r, 450));
+
+  // Localizar botón de 3 puntos (...)
+  const buttons = Array.from(cardEl.querySelectorAll('div[role="button"], button'));
+  let menuBtn = buttons.find(b => {
+    const label = (b.getAttribute("aria-label") || "").toLowerCase();
+    const hasPopup = b.getAttribute("aria-haspopup") === "menu" || b.getAttribute("aria-haspopup") === "true";
+    return hasPopup || /m[aá]s|opciones|acciones|administrar|more|actions/i.test(label);
+  });
+
+  if (!menuBtn) {
+    menuBtn = buttons.find(b => {
+      const txt = (b.innerText || "").toLowerCase();
+      if (txt.includes("agotado") || txt.includes("vendido") || txt.includes("promocionar") || txt.includes("boost") || txt.includes("disponible")) return false;
+      return Boolean(b.querySelector("svg") || b.querySelector("i") || (b.innerText || "").trim() === "...");
+    });
+  }
+
+  if (!menuBtn && buttons.length > 0) {
+    menuBtn = buttons[buttons.length - 1];
+  }
+
+  if (!menuBtn) {
+    return { success: false, error: "Botón de menú (...) no localizado en la tarjeta" };
+  }
+
+  menuBtn.click();
+  await new Promise(r => setTimeout(r, 650));
+
+  // Buscar 'Eliminar publicación' en menú emergente
+  const menuItems = Array.from(document.querySelectorAll('div[role="menuitem"], div[role="button"], span, div')).filter(el => {
+    const inMenu = el.closest('div[role="menu"]') || el.closest('[data-pagelet*="Menu"]') || el.closest('.popover');
+    if (!inMenu) return false;
+    const txt = (el.innerText || el.getAttribute("aria-label") || "").trim().toLowerCase();
+    return (txt.includes("eliminar publicación") || txt.includes("eliminar artículo") || txt.includes("delete listing") || txt === "eliminar") && !txt.includes("cancelar");
+  });
+
+  if (menuItems.length === 0) {
+    document.body.click();
+    return { success: false, error: "Opción 'Eliminar publicación' no visible en menú" };
+  }
+
+  menuItems[0].click();
+  await new Promise(r => setTimeout(r, 800));
+
+  // Confirmar en el modal dialog
+  const dialog = document.querySelector('div[role="dialog"]');
+  if (dialog) {
+    const radio = Array.from(dialog.querySelectorAll('input[type="radio"], div[role="radio"], div[role="button"]')).find(r => {
+      const txt = (r.innerText || r.getAttribute("aria-label") || r.parentElement?.innerText || "").toLowerCase();
+      return txt.includes("no") || txt.includes("otro") || txt.includes("prefer");
+    });
+    if (radio) {
+      radio.click();
+      await new Promise(r => setTimeout(r, 350));
+    }
+
+    const confirmBtn = Array.from(dialog.querySelectorAll('div[role="button"], button')).find(b => {
+      const txt = (b.innerText || b.getAttribute("aria-label") || "").trim().toLowerCase();
+      return (txt === "eliminar" || txt === "delete" || txt === "siguiente" || txt.includes("eliminar definitivamente")) && !txt.includes("cancelar");
+    });
+
+    if (confirmBtn) {
+      confirmBtn.click();
+      await new Promise(r => setTimeout(r, 600));
+
+      const finalBtn = Array.from(document.querySelectorAll('div[role="dialog"] div[role="button"], div[role="dialog"] button')).find(b => {
+        const txt = (b.innerText || b.getAttribute("aria-label") || "").trim().toLowerCase();
+        return (txt === "eliminar" || txt === "delete") && !txt.includes("cancelar");
+      });
+      if (finalBtn) finalBtn.click();
+    }
+  }
+
+  showHaibaneToast(`🗑️ Publicación anterior eliminada: "${targetTitle}"`);
+  console.log(`✓ Publicación anterior eliminada con éxito: "${targetTitle}"`);
+  return { success: true };
+}
+
+let isBatchSellingCheckActive = false;
+
+/**
+ * Revisa si hay un lote de renovación activo al ingresar a /marketplace/you/selling
+ * y elimina la publicación antigua del ítem recién renovado antes de avanzar al siguiente.
+ */
+async function checkActiveBatchOnSellingPage() {
+  if (!window.location.href.includes("/marketplace/you/selling")) return;
+  if (isBatchSellingCheckActive) return;
+  isBatchSellingCheckActive = true;
+
+  try {
+    const data = await chrome.storage?.local?.get(["activeRelistBatch"]);
+    const batch = data?.activeRelistBatch;
+    if (!batch || batch.status !== "PROCESSING" || !Array.isArray(batch.queue)) {
+      isBatchSellingCheckActive = false;
+      return;
+    }
+
+    const currentItem = batch.queue[batch.currentIndex];
+    if (!currentItem) {
+      isBatchSellingCheckActive = false;
+      return;
+    }
+
+    showHaibaneToast(`🗑️ Lote [${batch.currentIndex + 1}/${batch.queue.length}]: Eliminando publicación anterior de "${currentItem.title}"...`);
+
+    // Esperar 2.5s a que el feed de Facebook cargue las tarjetas
+    await new Promise(r => setTimeout(r, 2500));
+
+    // Ejecutar eliminación de la tarjeta antigua en /marketplace/you/selling
+    const delRes = await deleteListingFromSellingPage(currentItem.oldListingId, currentItem.title);
+    console.log("Haibane: Resultado de eliminación de listing antiguo:", delRes);
+
+    await new Promise(r => setTimeout(r, 1200));
+
+    // Avanzar cola
+    const nextIdx = batch.currentIndex + 1;
+    if (nextIdx < batch.queue.length) {
+      batch.currentIndex = nextIdx;
+      batch.step = "CREATING";
+      await chrome.storage.local.set({ activeRelistBatch: batch });
+      showHaibaneToast(`🚀 Avanzando a publicación [${nextIdx + 1}/${batch.queue.length}]: "${batch.queue[nextIdx].title}"...`);
+      await new Promise(r => setTimeout(r, 1000));
+      chrome.runtime.sendMessage({ action: "PROCESS_NEXT_BATCH_ITEM" });
+    } else {
+      batch.status = "COMPLETED";
+      await chrome.storage.local.set({ activeRelistBatch: null });
+      showHaibaneToast(`🎉 ¡Lote de renovación completado! Se renovaron las ${batch.queue.length} publicaciones con éxito.`);
+    }
+  } catch (err) {
+    console.warn("Haibane: Error en ciclo de lote en selling page:", err);
+  } finally {
+    isBatchSellingCheckActive = false;
+  }
+}
+
+/**
  * FASE 1: Enlace Preventivo y Anti-Duplicados
  * Escanea las publicaciones en pantalla y las empareja con el catálogo web sin duplicar.
  */
@@ -1640,6 +1845,60 @@ function triggerAutoFillPipeline(product) {
   }, 350);
 }
 
+function injectBatchHud(batchIndex, batchTotal, itemTitle, oldListingId) {
+  if (document.getElementById("haibane-batch-hud")) return;
+  const hud = document.createElement("div");
+  hud.id = "haibane-batch-hud";
+  hud.style.cssText = `
+    position: fixed;
+    top: 14px;
+    right: 18px;
+    background: #090d16;
+    border: 1.5px solid #0284c7;
+    border-radius: 8px;
+    padding: 10px 14px;
+    color: #f8fafc;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 11px;
+    z-index: 9999999;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.65);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-width: 330px;
+  `;
+  hud.innerHTML = `
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e293b; padding-bottom: 4px;">
+      <strong style="color: #38bdf8; font-size: 11.5px;">⚡ LOTE DE RENOVACIÓN IA</strong>
+      <span style="font-size: 9.5px; background: #0369a1; color: #e0f2fe; padding: 2px 6px; border-radius: 4px; font-weight: 800;">${batchIndex + 1} de ${batchTotal}</span>
+    </div>
+    <div style="color: #f1f5f9; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 11px;" title="${itemTitle || ''}">
+      ${itemTitle || "Publicación"}
+    </div>
+    <div id="haibane-batch-hud-status" style="color: #94a3b8; font-size: 10px; line-height: 1.3;">
+      Inyectando fotos HD, ficha y 12 grupos...
+    </div>
+    <div style="display: flex; gap: 6px; margin-top: 3px;">
+      <button id="haibane-hud-btn-next" style="flex: 1; background: #0284c7; color: #ffffff; border: none; border-radius: 4px; padding: 5px 8px; font-weight: 700; cursor: pointer; font-size: 10px;" title="Avanzar de inmediato a la siguiente publicación">
+        ⏭ Siguiente
+      </button>
+      <button id="haibane-hud-btn-cancel" style="background: #334155; color: #cbd5e1; border: none; border-radius: 4px; padding: 5px 8px; font-size: 10px; cursor: pointer;" title="Detener el lote de renovación">
+        ✕ Detener
+      </button>
+    </div>
+  `;
+  document.body.appendChild(hud);
+
+  document.getElementById("haibane-hud-btn-next")?.addEventListener("click", () => {
+    chrome.runtime?.sendMessage({ action: "FORCE_NEXT_BATCH_ITEM" });
+  });
+
+  document.getElementById("haibane-hud-btn-cancel")?.addEventListener("click", () => {
+    chrome.runtime?.sendMessage({ action: "CANCEL_BATCH_RELIST" });
+    hud.remove();
+  });
+}
+
 /**
  * Asistente de Creación Automática Web ➔ Facebook Marketplace (/marketplace/create/item)
  */
@@ -1647,6 +1906,10 @@ function initAutoPublishAssistant() {
   const urlParams = new URLSearchParams(window.location.search);
   const haibaneId = urlParams.get("haibane_id");
   const overridePrice = urlParams.get("override_price");
+  const isBatch = urlParams.get("batch_active") === "true";
+  const batchIndex = parseInt(urlParams.get("batch_index") || "0", 10);
+  const batchTotal = parseInt(urlParams.get("batch_total") || "1", 10);
+  const oldListingId = urlParams.get("old_listing_id") || "";
   if (!haibaneId) return;
 
   const currentSignature = `${window.location.pathname}?haibane_id=${haibaneId}`;
@@ -1667,7 +1930,11 @@ function initAutoPublishAssistant() {
       prod.priceNio = Number(overridePrice);
     }
     injectPublishAssistantBanner(prod);
+    if (isBatch) {
+      injectBatchHud(batchIndex, batchTotal, prod.title, oldListingId);
+    }
     triggerAutoFillPipeline(prod);
+    watchForPublishCompletion(prod.id, prod._collection);
   }
 
   try {
@@ -1813,6 +2080,9 @@ function watchForPublishCompletion(productId, collection) {
       }, () => {
         showHaibaneToast(`✓ Publicación gemela sellada (#${newListingId}). Sincronizado con la web.`);
       });
+    } else if (href.includes("/marketplace/you/selling") && attempts > 1) {
+      clearInterval(interval);
+      console.log(`✓ Detectado retorno a Tus Publicaciones tras creación.`);
     }
     if (attempts > 60) clearInterval(interval); // Dejar de buscar a los 2 minutos
   }, 2000);
@@ -2129,6 +2399,26 @@ async function autoSelectAndShareGroups(targetCount = 12, keywords = [], selecte
     await new Promise(r => setTimeout(r, 350));
     submitBtn.click();
     console.log(`✓ Publicación enviada con éxito a ${selectedCount} grupos de Facebook.`);
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const isBatch = urlParams.get("batch_active") === "true";
+    if (isBatch) {
+      chrome.storage?.local?.get(["activeRelistBatch"], (d) => {
+        const b = d?.activeRelistBatch;
+        if (b && b.status === "PROCESSING") {
+          b.step = "AWAITING_DELETE_OLD";
+          chrome.storage?.local?.set({ activeRelistBatch: b });
+        }
+      });
+      const hudStatus = document.getElementById("haibane-batch-hud-status");
+      if (hudStatus) hudStatus.innerHTML = `<span style="color:#10b981; font-weight:700;">✓ Publicado. Transfiriendo para eliminar versión antigua...</span>`;
+      setTimeout(() => {
+        if (!window.location.href.includes("/marketplace/you/selling")) {
+          window.location.href = "https://www.facebook.com/marketplace/you/selling";
+        }
+      }, 3200);
+    }
+
     return { success: true, count: selectedCount };
   }
 
@@ -2658,6 +2948,18 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     })();
     return true;
   }
+
+  if (msg.action === "DELETE_LISTING_BY_ID_OR_TITLE") {
+    (async () => {
+      try {
+        const res = await deleteListingFromSellingPage(msg.targetId, msg.targetTitle);
+        sendResponse(res || { success: true });
+      } catch (err) {
+        sendResponse({ success: false, error: err.message });
+      }
+    })();
+    return true;
+  }
 });
 
 /**
@@ -2789,6 +3091,9 @@ function checkPageAndInit() {
     }
     injectHaibaneFloatingWidget();
     loadCatalogProducts();
+    if (window.location.href.includes("/marketplace/you/selling")) {
+      checkActiveBatchOnSellingPage();
+    }
   }
   if (window.location.href.includes("/groups")) {
     setTimeout(autoSyncGroupsFromPage, 1500);
