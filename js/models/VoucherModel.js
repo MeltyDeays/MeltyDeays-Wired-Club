@@ -93,6 +93,10 @@ export class VoucherModel {
     return this.status === "CANCELLED" || Boolean(this.cancelledAt);
   }
 
+  isPending() {
+    return !this.isDelivered() && !this.isCancelled() && !this.isExpired();
+  }
+
   isPaidVoucher() {
     return Boolean(this.isPaid || this.status === "PAID" || this.paidAt);
   }

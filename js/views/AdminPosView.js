@@ -358,6 +358,48 @@ export async function verifyVoucherAdmin() {
           <button class="btn-secondary" onclick="closePosResult(); clearPosScanner();">CERRAR FICHA</button>
         `;
       }
+    } else if (typeof voucher.isCancelled === "function" && voucher.isCancelled()) {
+      if (statusEl) {
+        statusEl.className = "noc-pulse-chip";
+        statusEl.style.borderColor = "#fca5a5";
+        statusEl.style.background = "#fee2e2";
+        statusEl.style.color = "#991b1b";
+        statusEl.innerHTML = "❌ VALE CANCELADO";
+      }
+      if (deliveredMeta) deliveredMeta.textContent = "";
+      if (stampEl) {
+        stampEl.className = "dispatch-stamp already-delivered";
+        stampEl.innerHTML = `❌ CANCELADO<div style="font-size:0.68rem; font-weight:800; margin-top:4px;">PUNTOS REEMBOLSADOS</div>`;
+      }
+      if (actionsEl) {
+        actionsEl.innerHTML = `
+          <div style="background:#fee2e2; border:1px solid #f87171; color:#991b1b; padding:0.6rem 0.9rem; border-radius:4px; font-size:0.82rem; font-weight:700; width:100%; margin-bottom:0.5rem;">
+            ⚠️ ATENCIÓN: Este vale fue cancelado por el socio y sus puntos fueron devueltos. Entrega denegada.
+          </div>
+          <button class="btn-secondary" onclick="closePosResult(); clearPosScanner();">CERRAR FICHA</button>
+        `;
+      }
+    } else if (typeof voucher.isExpired === "function" && voucher.isExpired()) {
+      if (statusEl) {
+        statusEl.className = "noc-pulse-chip";
+        statusEl.style.borderColor = "#fecaca";
+        statusEl.style.background = "#fef2f2";
+        statusEl.style.color = "#b91c1c";
+        statusEl.innerHTML = "⚠️ CADUCADO POR FALTA DE PAGO (3D)";
+      }
+      if (deliveredMeta) deliveredMeta.textContent = "";
+      if (stampEl) {
+        stampEl.className = "dispatch-stamp already-delivered";
+        stampEl.innerHTML = `⚠️ CADUCADO<div style="font-size:0.68rem; font-weight:800; margin-top:4px;">PLAZO VENCIDO</div>`;
+      }
+      if (actionsEl) {
+        actionsEl.innerHTML = `
+          <div style="background:#fef2f2; border:1px solid #fecaca; color:#b91c1c; padding:0.6rem 0.9rem; border-radius:4px; font-size:0.82rem; font-weight:700; width:100%; margin-bottom:0.5rem;">
+            ⚠️ ATENCIÓN: El plazo máximo de pago de 3 días ha vencido. Este vale ha caducado.
+          </div>
+          <button class="btn-secondary" onclick="closePosResult(); clearPosScanner();">CERRAR FICHA</button>
+        `;
+      }
     } else {
       const isCommercial = typeof voucher.isCommercial === "function" ? voucher.isCommercial() : (voucher.rewardType === "PARTIAL_DISCOUNT" || (voucher.cashToPayUsd && voucher.cashToPayUsd > 0));
       const isPaid = typeof voucher.isPaidVoucher === "function" ? voucher.isPaidVoucher() : Boolean(voucher.isPaid || voucher.status === "PAID" || voucher.paidAt);

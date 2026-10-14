@@ -619,6 +619,10 @@ export function openEditProductModal(productId) {
     setProductPublicationMode("INCOMING");
     const incPrice = document.getElementById("calc-incoming-price-usd");
     if (incPrice) incPrice.value = (product.priceUsd || 50).toFixed(2);
+    const incPriceNio = document.getElementById("calc-incoming-price-nio");
+    if (incPriceNio) incPriceNio.value = product.priceNio || Math.round((product.priceUsd || 50) * 37.0);
+    const prodPriceNioHidden = document.getElementById("prod-price-nio");
+    if (prodPriceNioHidden) prodPriceNioHidden.value = product.priceNio || Math.round((product.priceUsd || 50) * 37.0);
     if (product.estimatedArrival) {
       const d = new Date(product.estimatedArrival);
       const pad = n => String(n).padStart(2, "0");
@@ -633,19 +637,25 @@ export function openEditProductModal(productId) {
     applyCalculatedIncomingToProduct();
   } else if (isPartial) {
     deactivateComboBuilder();
-    setProductPublicationMode("PARTIAL_DISCOUNT");
     const priceInput = document.getElementById("calc-sale-prod-price-usd");
     if (priceInput) priceInput.value = (product.priceUsd || 0).toFixed(2);
+    const priceNioInput = document.getElementById("calc-sale-prod-price-nio");
+    if (priceNioInput) priceNioInput.value = product.priceNio || Math.round((product.priceUsd || 0) * 37.0);
     const discInput = document.getElementById("calc-sale-prod-discount-pct");
     if (discInput) discInput.value = product.maxDiscountPct || 5;
     const prodPriceHidden = document.getElementById("prod-price-usd");
     if (prodPriceHidden) prodPriceHidden.value = product.priceUsd || 0;
+    const prodPriceNioHidden = document.getElementById("prod-price-nio");
+    if (prodPriceNioHidden) prodPriceNioHidden.value = product.priceNio || Math.round((product.priceUsd || 0) * 37.0);
     const prodMaxPctHidden = document.getElementById("prod-max-discount-pct");
     if (prodMaxPctHidden) prodMaxPctHidden.value = product.maxDiscountPct || 5;
     const prodMaxUsdHidden = document.getElementById("prod-max-discount-usd");
     if (prodMaxUsdHidden) prodMaxUsdHidden.value = product.maxDiscountUsd || 0;
     const prodCashHidden = document.getElementById("prod-cash-to-pay-usd");
     if (prodCashHidden) prodCashHidden.value = product.cashToPayUsd || 0;
+    setProductPublicationMode("PARTIAL_DISCOUNT");
+    recalculateProductDiscount();
+    applyCalculatedDiscountToProduct();
   } else {
     deactivateComboBuilder();
     setProductPublicationMode("FREE_REWARD");
@@ -1036,7 +1046,7 @@ export function previewProductImageFromUrl(url) {
 export async function saveProductAdmin() {
   const title = (document.getElementById("prod-title").value || "").trim();
   const rawCost = document.getElementById("prod-cost")?.value;
-  const pointsCost = parseInt(rawCost, 10);
+  let pointsCost = parseInt(rawCost, 10);
   const stock = parseInt(document.getElementById("prod-stock").value, 10) || 1;
   const description = (document.getElementById("prod-desc").value || "").trim();
 
@@ -1136,6 +1146,7 @@ export async function saveProductAdmin() {
       await FirestoreService.saveReward(reward.toJSON());
       if (vm && typeof vm.refreshData === "function") {
         await vm.refreshData();
+        if (typeof vm.notify === "function") vm.notify();
       }
 
       closeModal("modal-new-product");
@@ -1193,6 +1204,7 @@ export async function saveProductAdmin() {
         isIncoming: true,
         rewardType: "INCOMING",
         priceUsd: calc.regularPrice,
+        priceNio: calc.regularPriceNio || Math.round(calc.regularPrice * 37.0),
         presaleDiscountType: calc.discountType,
         presaleDiscountValue: calc.discountVal,
         presaleDiscountUsd: calc.discountUsd,
@@ -1208,6 +1220,7 @@ export async function saveProductAdmin() {
       await FirestoreService.saveReward(reward.toJSON());
       if (vm && typeof vm.refreshData === "function") {
         await vm.refreshData();
+        if (typeof vm.notify === "function") vm.notify();
       }
 
       closeModal("modal-new-product");
@@ -1220,6 +1233,10 @@ export async function saveProductAdmin() {
       document.getElementById("prod-desc").value = "";
       document.getElementById("prod-reward-type").value = "FREE_REWARD";
       document.getElementById("prod-price-usd").value = "0";
+      const prodPriceNioHidden = document.getElementById("prod-price-nio");
+      if (prodPriceNioHidden) prodPriceNioHidden.value = "0";
+      const incNioInput = document.getElementById("calc-incoming-price-nio");
+      if (incNioInput) incNioInput.value = "1850";
       document.getElementById("prod-max-discount-pct").value = "0";
       document.getElementById("prod-max-discount-usd").value = "0";
       document.getElementById("prod-cash-to-pay-usd").value = "0";
@@ -1240,6 +1257,7 @@ export async function saveProductAdmin() {
   // Modos estándar FREE_REWARD y PARTIAL_DISCOUNT
   let rewardType = activeProductMode === "PARTIAL_DISCOUNT" ? "PARTIAL_DISCOUNT" : "FREE_REWARD";
   let priceUsd = 0;
+  let priceNio = 0;
   let maxDiscountPct = 0;
   let maxDiscountUsd = 0;
   let cashToPayUsd = 0;
@@ -1247,13 +1265,21 @@ export async function saveProductAdmin() {
   if (rewardType === "PARTIAL_DISCOUNT") {
     const calc = recalculateProductDiscount();
     priceUsd = calc.salePrice;
+    priceNio = calc.salePriceNio || (parseFloat(document.getElementById("prod-price-nio")?.value) || 0) || Math.round(priceUsd * 37.0);
     maxDiscountPct = calc.discountPct;
     maxDiscountUsd = calc.maxDiscountUsd;
     cashToPayUsd = calc.cashDue;
+    pointsCost = calc.requiredPoints;
+    const costInput = document.getElementById("prod-cost");
+    if (costInput) costInput.value = pointsCost;
   }
 
-  if (isNaN(pointsCost) || pointsCost <= 0) {
+  if (rewardType === "FREE_REWARD" && (isNaN(pointsCost) || pointsCost <= 0)) {
     showToast("⚠️ Ingresa un costo válido en Wired Points.", "error");
+    return;
+  }
+  if (rewardType === "PARTIAL_DISCOUNT" && isNaN(pointsCost)) {
+    showToast("⚠️ Costo en Wired Points inválido.", "error");
     return;
   }
 
@@ -1262,6 +1288,7 @@ export async function saveProductAdmin() {
       title,
       rewardType,
       priceUsd,
+      priceNio: priceNio || (parseFloat(document.getElementById("prod-price-nio")?.value) || 0) || Math.round(priceUsd * 37.0),
       maxDiscountPct,
       maxDiscountUsd,
       cashToPayUsd,
@@ -1286,6 +1313,10 @@ export async function saveProductAdmin() {
     document.getElementById("prod-desc").value = "";
     document.getElementById("prod-reward-type").value = "FREE_REWARD";
     document.getElementById("prod-price-usd").value = "0";
+    const prodPriceNioHidden = document.getElementById("prod-price-nio");
+    if (prodPriceNioHidden) prodPriceNioHidden.value = "0";
+    const saleNioInput = document.getElementById("calc-sale-prod-price-nio");
+    if (saleNioInput) saleNioInput.value = "1480";
     document.getElementById("prod-max-discount-pct").value = "0";
     document.getElementById("prod-max-discount-usd").value = "0";
     document.getElementById("prod-cash-to-pay-usd").value = "0";
@@ -2703,13 +2734,13 @@ export const FB_USER_DEFAULT_LISTINGS = [
   {
     listingId: "1198273641889023",
     title: "Grip / Power Bank Gaming Anker PowerCore Play 6K",
-    rawPrice: 650,
+    rawPrice: 750,
     currency: "NIO",
-    priceNio: 650,
-    priceUsd: 17.57,
+    priceNio: 750,
+    priceUsd: 20.27,
     maxDiscountPct: 0,
     maxDiscountUsd: 0,
-    cashToPayUsd: 17.57,
+    cashToPayUsd: 20.27,
     pointsCost: 0,
     status: "PENDING_APPROVAL",
     brandVerified: true,
@@ -2722,13 +2753,13 @@ export const FB_USER_DEFAULT_LISTINGS = [
   {
     listingId: "1198273641889024",
     title: "Repetidor TP-LINK RE315 AC1200",
-    rawPrice: 850,
+    rawPrice: 1000,
     currency: "NIO",
-    priceNio: 850,
-    priceUsd: 22.97,
+    priceNio: 1000,
+    priceUsd: 27.03,
     maxDiscountPct: 0,
     maxDiscountUsd: 0,
-    cashToPayUsd: 22.97,
+    cashToPayUsd: 27.03,
     pointsCost: 0,
     status: "PENDING_APPROVAL",
     brandVerified: true,

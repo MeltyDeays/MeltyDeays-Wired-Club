@@ -1,6 +1,8 @@
 /**
  * Vista / Subcontrolador: Calculadora de Puntos y Descuentos para Productos de Catálogo
  */
+import { roundToCleanNio } from "../utils/PriceNormalizer.js";
+
 let showToast = () => {};
 
 export function initAdminCatalogCalculatorView(deps) {
@@ -9,6 +11,83 @@ export function initAdminCatalogCalculatorView(deps) {
 
 let activeSalesTarget = 4; // Meta de 4 compras recurrentes para canjear (Recomendado)
 let activeLoyaltyRatio = 0.025; // 2.5% para compatibilidad
+let activeAdminPriceMode = "USD"; // "USD" | "NIO"
+
+function setAdminPriceInputMode(mode) {
+  activeAdminPriceMode = mode === "NIO" ? "NIO" : "USD";
+  const btnUsd = document.getElementById("btn-admin-price-mode-usd");
+  const btnNio = document.getElementById("btn-admin-price-mode-nio");
+  const isUsd = activeAdminPriceMode === "USD";
+  if (btnUsd) {
+    btnUsd.classList.toggle("active", isUsd);
+    btnUsd.style.background = isUsd ? "#d97706" : "#fffbeb";
+    btnUsd.style.color = isUsd ? "#fff" : "#78350f";
+  }
+  if (btnNio) {
+    btnNio.classList.toggle("active", !isUsd);
+    btnNio.style.background = !isUsd ? "#d97706" : "#fffbeb";
+    btnNio.style.color = !isUsd ? "#fff" : "#78350f";
+  }
+  const inputUsd = document.getElementById("calc-sale-prod-price-usd");
+  const inputNio = document.getElementById("calc-sale-prod-price-nio");
+  if (isUsd && inputUsd) inputUsd.focus();
+  if (!isUsd && inputNio) inputNio.focus();
+}
+
+function onAdminPriceUsdInput() {
+  const inputUsd = document.getElementById("calc-sale-prod-price-usd");
+  const inputNio = document.getElementById("calc-sale-prod-price-nio");
+  const hiddenNio = document.getElementById("prod-price-nio");
+  const usdVal = parseFloat(inputUsd?.value);
+  if (!isNaN(usdVal) && usdVal >= 0) {
+    const nioVal = roundToCleanNio(usdVal * 37.0);
+    if (inputNio) inputNio.value = nioVal;
+    if (hiddenNio) hiddenNio.value = nioVal;
+  }
+  recalculateProductDiscount();
+}
+
+function onAdminPriceNioInput() {
+  const inputUsd = document.getElementById("calc-sale-prod-price-usd");
+  const inputNio = document.getElementById("calc-sale-prod-price-nio");
+  const hiddenNio = document.getElementById("prod-price-nio");
+  const nioVal = parseFloat(inputNio?.value);
+  if (!isNaN(nioVal) && nioVal >= 0) {
+    const usdVal = Number((nioVal / 37.0).toFixed(2));
+    if (inputUsd) inputUsd.value = usdVal.toFixed(2);
+    if (hiddenNio) hiddenNio.value = Math.round(nioVal);
+  }
+  recalculateProductDiscount();
+}
+
+function onAdminIncomingPriceUsdInput() {
+  const inputUsd = document.getElementById("calc-incoming-price-usd");
+  const inputNio = document.getElementById("calc-incoming-price-nio");
+  const hiddenNio = document.getElementById("prod-price-nio");
+  const usdVal = parseFloat(inputUsd?.value);
+  if (!isNaN(usdVal) && usdVal >= 0) {
+    const nioVal = roundToCleanNio(usdVal * 37.0);
+    if (inputNio) inputNio.value = nioVal;
+    if (hiddenNio) hiddenNio.value = nioVal;
+  }
+  recalculateIncomingPresale();
+  applyCalculatedIncomingToProduct();
+}
+
+function onAdminIncomingPriceNioInput() {
+  const inputUsd = document.getElementById("calc-incoming-price-usd");
+  const inputNio = document.getElementById("calc-incoming-price-nio");
+  const hiddenNio = document.getElementById("prod-price-nio");
+  const nioVal = parseFloat(inputNio?.value);
+  if (!isNaN(nioVal) && nioVal >= 0) {
+    const usdVal = Number((nioVal / 37.0).toFixed(2));
+    if (inputUsd) inputUsd.value = usdVal.toFixed(2);
+    if (hiddenNio) hiddenNio.value = Math.round(nioVal);
+  }
+  recalculateIncomingPresale();
+  applyCalculatedIncomingToProduct();
+}
+
 
 function setFreightPreset(rate, modeName) {
   const rateInput = document.getElementById("calc-freight-rate");
@@ -366,10 +445,19 @@ function setIncomingDiscountVal(val) {
 
 function recalculateIncomingPresale() {
   const priceInput = document.getElementById("calc-incoming-price-usd");
+  const priceNioInput = document.getElementById("calc-incoming-price-nio");
   const dtInput = document.getElementById("calc-incoming-arrival-datetime");
   const valInput = document.getElementById("calc-incoming-discount-val");
 
   const regularPrice = Math.max(0, parseFloat(priceInput?.value) || 0);
+  let regularPriceNio = 0;
+  if (priceNioInput && priceNioInput.value !== "") {
+    regularPriceNio = Math.round(parseFloat(priceNioInput.value) || 0);
+  } else {
+    regularPriceNio = roundToCleanNio(regularPrice * 37.0);
+    if (priceNioInput) priceNioInput.value = regularPriceNio;
+  }
+
   const arrivalDatetime = dtInput?.value || "";
   const discountVal = Math.max(0, parseFloat(valInput?.value) || 0);
   const discountType = activeIncomingDiscountType || "PERCENTAGE";
@@ -381,6 +469,7 @@ function recalculateIncomingPresale() {
     discountUsd = Math.min(regularPrice, Number(discountVal.toFixed(2)));
   }
   const presalePrice = Math.max(0, Number((regularPrice - discountUsd).toFixed(2)));
+  const presalePriceNio = Math.max(0, Math.round(presalePrice * 37.0));
 
   // Calcular tiempo restante para preview
   let countdownPreview = "⏱️ Sin fecha programada";
@@ -403,20 +492,22 @@ function recalculateIncomingPresale() {
   const sumFinal = document.getElementById("calc-incoming-summary-final");
   const sumPreview = document.getElementById("calc-incoming-countdown-preview");
 
-  if (sumReg) sumReg.textContent = `$${regularPrice.toFixed(2)} USD`;
+  if (sumReg) sumReg.textContent = `$${regularPrice.toFixed(2)} USD (C$ ${regularPriceNio.toLocaleString()} NIO)`;
   if (sumDisc) {
     const discLabel = discountType === "PERCENTAGE" ? `${discountVal}%` : `$${discountVal.toFixed(2)} USD`;
     sumDisc.textContent = `-$${discountUsd.toFixed(2)} USD (${discLabel})`;
   }
-  if (sumFinal) sumFinal.textContent = `$${presalePrice.toFixed(2)} USD`;
+  if (sumFinal) sumFinal.textContent = `$${presalePrice.toFixed(2)} USD (C$ ${presalePriceNio.toLocaleString()} NIO)`;
   if (sumPreview) sumPreview.textContent = countdownPreview;
 
   return {
     regularPrice,
+    regularPriceNio,
     discountType,
     discountVal,
     discountUsd,
     presalePrice,
+    presalePriceNio,
     arrivalDatetime
   };
 }
@@ -427,6 +518,7 @@ function applyCalculatedIncomingToProduct() {
   const typeInput = document.getElementById("prod-reward-type");
   const isIncInput = document.getElementById("prod-is-incoming");
   const priceInput = document.getElementById("prod-price-usd");
+  const priceNioHidden = document.getElementById("prod-price-nio");
   const arrivalInput = document.getElementById("prod-estimated-arrival");
   const discTypeInput = document.getElementById("prod-presale-discount-type");
   const discValInput = document.getElementById("prod-presale-discount-val");
@@ -437,6 +529,7 @@ function applyCalculatedIncomingToProduct() {
   if (typeInput) typeInput.value = "INCOMING";
   if (isIncInput) isIncInput.value = "true";
   if (priceInput) priceInput.value = calc.regularPrice;
+  if (priceNioHidden) priceNioHidden.value = calc.regularPriceNio;
   if (arrivalInput && calc.arrivalDatetime) {
     arrivalInput.value = new Date(calc.arrivalDatetime).toISOString();
   }
@@ -452,7 +545,7 @@ function applyCalculatedIncomingToProduct() {
     summaryPill.style.background = "#faf5ff";
     summaryPill.style.borderColor = "#c084fc";
     summaryPill.style.color = "#581c87";
-    summaryPill.innerHTML = `灰羽 <strong>PREVENTA EN CAMINO:</strong> Precio Regular <strong>$${calc.regularPrice.toFixed(2)} USD</strong> · Descuento Directo <strong style="color:#059669;">-$${calc.discountUsd.toFixed(2)} USD</strong> · <strong>Cobrar en Preventa: <span style="color:#7e22ce;">$${calc.presalePrice.toFixed(2)} USD (0 WP)</span></strong>`;
+    summaryPill.innerHTML = `灰羽 <strong>PREVENTA EN CAMINO:</strong> Precio Regular <strong>$${calc.regularPrice.toFixed(2)} USD (C$ ${calc.regularPriceNio.toLocaleString()} NIO)</strong> · Descuento Directo <strong style="color:#059669;">-$${calc.discountUsd.toFixed(2)} USD</strong> · <strong>Cobrar en Preventa: <span style="color:#7e22ce;">$${calc.presalePrice.toFixed(2)} USD / C$ ${calc.presalePriceNio.toLocaleString()} NIO (0 WP)</span></strong>`;
   }
 }
 
@@ -484,10 +577,22 @@ function setProductDiscountPreset(pct) {
 
 function recalculateProductDiscount() {
   const priceInput = document.getElementById("calc-sale-prod-price-usd");
+  const priceNioInput = document.getElementById("calc-sale-prod-price-nio");
   const pctInput = document.getElementById("calc-sale-prod-discount-pct");
 
-  const salePrice = Math.max(1, parseFloat(priceInput?.value) || 40);
-  const discountPct = Math.min(100, Math.max(1, parseFloat(pctInput?.value) || 5));
+  const parsedPrice = parseFloat(priceInput?.value);
+  const salePrice = !isNaN(parsedPrice) && parsedPrice >= 0 ? parsedPrice : 0;
+  
+  let salePriceNio = 0;
+  if (priceNioInput && priceNioInput.value !== "") {
+    salePriceNio = Math.round(parseFloat(priceNioInput.value) || 0);
+  } else {
+    salePriceNio = roundToCleanNio(salePrice * 37.0);
+    if (priceNioInput) priceNioInput.value = salePriceNio;
+  }
+
+  const parsedPct = parseFloat(pctInput?.value);
+  const discountPct = !isNaN(parsedPct) ? Math.min(100, Math.max(0, parsedPct)) : 5;
 
   // Tasa de conversión oficial: 1 USD de descuento = 50 WP
   const WP_PER_USD = 50;
@@ -497,23 +602,58 @@ function recalculateProductDiscount() {
   if (requiredPoints % 10 !== 0) {
     requiredPoints = Math.round(requiredPoints / 10) * 10;
   }
-  if (requiredPoints < 10) requiredPoints = 10;
+  if (discountPct > 0 && requiredPoints < 10 && maxDiscountUsd > 0) requiredPoints = 10;
+  if (discountPct === 0 || maxDiscountUsd <= 0) requiredPoints = 0;
 
   const cashDue = Math.max(0, Number((salePrice - maxDiscountUsd).toFixed(2)));
+  const maxDiscountNio = Math.round(salePriceNio * (discountPct / 100));
+  const cashDueNio = Math.max(0, salePriceNio - maxDiscountNio);
 
   const discMaxEl = document.getElementById("calc-disc-max-usd");
+  const discMaxNioEl = document.getElementById("calc-disc-max-nio");
   const cashDueEl = document.getElementById("calc-disc-cash-due");
+  const cashDueNioEl = document.getElementById("calc-disc-cash-nio");
   const suggestedPtsEl = document.getElementById("calc-disc-suggested-points");
 
   if (discMaxEl) discMaxEl.textContent = `-$${maxDiscountUsd.toFixed(2)} USD`;
+  if (discMaxNioEl) discMaxNioEl.textContent = `(-C$ ${maxDiscountNio.toLocaleString()} NIO)`;
   if (cashDueEl) cashDueEl.textContent = `$${cashDue.toFixed(2)} USD`;
+  if (cashDueNioEl) cashDueNioEl.textContent = `(C$ ${cashDueNio.toLocaleString()} NIO)`;
   if (suggestedPtsEl) suggestedPtsEl.textContent = `${requiredPoints.toLocaleString()} WP`;
 
-  return { salePrice, discountPct, maxDiscountUsd, cashDue, requiredPoints };
+  // Sincronizar en tiempo real el formulario y el pill para que no dependa exclusivamente del clic en Aplicar
+  const costInput = document.getElementById("prod-cost");
+  if (costInput && activeProductMode === "PARTIAL_DISCOUNT") {
+    costInput.value = requiredPoints;
+  }
+  const typeInput = document.getElementById("prod-reward-type");
+  const hiddenPrice = document.getElementById("prod-price-usd");
+  const hiddenPriceNio = document.getElementById("prod-price-nio");
+  const hiddenPct = document.getElementById("prod-max-discount-pct");
+  const hiddenDiscUsd = document.getElementById("prod-max-discount-usd");
+  const hiddenCash = document.getElementById("prod-cash-to-pay-usd");
+
+  if (typeInput && activeProductMode === "PARTIAL_DISCOUNT") typeInput.value = "PARTIAL_DISCOUNT";
+  if (hiddenPrice) hiddenPrice.value = salePrice;
+  if (hiddenPriceNio) hiddenPriceNio.value = salePriceNio;
+  if (hiddenPct) hiddenPct.value = discountPct;
+  if (hiddenDiscUsd) hiddenDiscUsd.value = maxDiscountUsd;
+  if (hiddenCash) hiddenCash.value = cashDue;
+
+  const summaryPill = document.getElementById("prod-commercial-summary-pill");
+  if (summaryPill && activeProductMode === "PARTIAL_DISCOUNT") {
+    summaryPill.style.display = "block";
+    summaryPill.style.background = "#fef3c7";
+    summaryPill.style.borderColor = "#f59e0b";
+    summaryPill.style.color = "#92400e";
+    summaryPill.innerHTML = `🏷️ <strong>VENTA TOPADA:</strong> <span id="pill-summary-price">$${salePrice.toFixed(2)} USD / C$ ${salePriceNio.toLocaleString()} NIO</span> · Dcto <span id="pill-summary-pct">${discountPct}%</span> (-<span id="pill-summary-disc">$${maxDiscountUsd.toFixed(2)} USD / C$ ${maxDiscountNio.toLocaleString()} NIO</span> con <span id="pill-summary-wp">${requiredPoints.toLocaleString()} WP</span>) · <strong>Cobrar: <span id="pill-summary-cash" style="color: #dc2626;">$${cashDue.toFixed(2)} USD / C$ ${cashDueNio.toLocaleString()} NIO</span></strong>`;
+  }
+
+  return { salePrice, salePriceNio, discountPct, maxDiscountUsd, maxDiscountNio, cashDue, cashDueNio, requiredPoints };
 }
 
 function applyCalculatedDiscountToProduct() {
-  const { salePrice, discountPct, maxDiscountUsd, cashDue, requiredPoints } = recalculateProductDiscount();
+  const { salePrice, salePriceNio, discountPct, maxDiscountUsd, maxDiscountNio, cashDue, cashDueNio, requiredPoints } = recalculateProductDiscount();
 
   const costInput = document.getElementById("prod-cost");
   if (costInput) {
@@ -529,12 +669,14 @@ function applyCalculatedDiscountToProduct() {
   // Guardar en campos ocultos del formulario
   const typeInput = document.getElementById("prod-reward-type");
   const priceInput = document.getElementById("prod-price-usd");
+  const priceNioInput = document.getElementById("prod-price-nio");
   const pctInput = document.getElementById("prod-max-discount-pct");
   const discUsdInput = document.getElementById("prod-max-discount-usd");
   const cashInput = document.getElementById("prod-cash-to-pay-usd");
 
   if (typeInput) typeInput.value = "PARTIAL_DISCOUNT";
   if (priceInput) priceInput.value = salePrice;
+  if (priceNioInput) priceNioInput.value = salePriceNio;
   if (pctInput) pctInput.value = discountPct;
   if (discUsdInput) discUsdInput.value = maxDiscountUsd;
   if (cashInput) cashInput.value = cashDue;
@@ -546,7 +688,7 @@ function applyCalculatedDiscountToProduct() {
     summaryPill.style.background = "#fef3c7";
     summaryPill.style.borderColor = "#f59e0b";
     summaryPill.style.color = "#92400e";
-    summaryPill.innerHTML = `🏷️ <strong>VENTA TOPADA:</strong> <span id="pill-summary-price">$${salePrice.toFixed(2)} USD</span> · Dcto <span id="pill-summary-pct">${discountPct}%</span> (-<span id="pill-summary-disc">$${maxDiscountUsd.toFixed(2)} USD</span> con <span id="pill-summary-wp">${requiredPoints.toLocaleString()} WP</span>) · <strong>Cobrar: <span id="pill-summary-cash" style="color: #dc2626;">$${cashDue.toFixed(2)} USD</span></strong>`;
+    summaryPill.innerHTML = `🏷️ <strong>VENTA TOPADA:</strong> <span id="pill-summary-price">$${salePrice.toFixed(2)} USD / C$ ${salePriceNio.toLocaleString()} NIO</span> · Dcto <span id="pill-summary-pct">${discountPct}%</span> (-<span id="pill-summary-disc">$${maxDiscountUsd.toFixed(2)} USD / C$ ${maxDiscountNio.toLocaleString()} NIO</span> con <span id="pill-summary-wp">${requiredPoints.toLocaleString()} WP</span>) · <strong>Cobrar: <span id="pill-summary-cash" style="color: #dc2626;">$${cashDue.toFixed(2)} USD / C$ ${cashDueNio.toLocaleString()} NIO</span></strong>`;
   }
 }
 
@@ -565,6 +707,19 @@ function toggleProductCalculatorAccordion() {
 }
 
 if (typeof window !== "undefined") {
+  window.setAdminPriceInputMode = setAdminPriceInputMode;
+  window.onAdminPriceUsdInput = onAdminPriceUsdInput;
+  window.onAdminPriceNioInput = onAdminPriceNioInput;
+  window.onAdminIncomingPriceUsdInput = onAdminIncomingPriceUsdInput;
+  window.onAdminIncomingPriceNioInput = onAdminIncomingPriceNioInput;
+  window.setProductDiscountPreset = setProductDiscountPreset;
+  window.recalculateProductDiscount = recalculateProductDiscount;
+  window.applyCalculatedDiscountToProduct = applyCalculatedDiscountToProduct;
+  window.setIncomingArrivalPreset = setIncomingArrivalPreset;
+  window.setIncomingDiscountType = setIncomingDiscountType;
+  window.setIncomingDiscountVal = setIncomingDiscountVal;
+  window.recalculateIncomingPresale = recalculateIncomingPresale;
+  window.applyCalculatedIncomingToProduct = applyCalculatedIncomingToProduct;
   window.toggleProductCalculatorAccordion = toggleProductCalculatorAccordion;
 }
 
@@ -585,5 +740,10 @@ export {
   setIncomingDiscountVal,
   recalculateIncomingPresale,
   applyCalculatedIncomingToProduct,
-  toggleProductCalculatorAccordion
+  toggleProductCalculatorAccordion,
+  setAdminPriceInputMode,
+  onAdminPriceUsdInput,
+  onAdminPriceNioInput,
+  onAdminIncomingPriceUsdInput,
+  onAdminIncomingPriceNioInput
 };

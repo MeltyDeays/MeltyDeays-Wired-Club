@@ -1,3 +1,5 @@
+import { roundToCleanNio } from "../utils/PriceNormalizer.js";
+
 export function parseProductDescription(rawText) {
   if (!rawText || typeof rawText !== "string" || !rawText.trim()) {
     return {
@@ -94,7 +96,8 @@ export class RewardModel {
   constructor(data = {}) {
     this.id = data.id || data.reward_id || "";
     this.title = data.title || "";
-    const rawType = data.rewardType || data.reward_type;
+    const hasExplicitPrice = (Number(data.priceUsd) > 0 || Number(data.price_usd) > 0);
+    const rawType = data.rewardType || data.reward_type || (hasExplicitPrice ? "PARTIAL_DISCOUNT" : "FREE_REWARD");
     const isIncomingData = Boolean(data.isIncoming || data.is_incoming || data.status === "INCOMING" || rawType === "INCOMING");
 
     const parseNum = (val, fallback = 0) => {
@@ -137,24 +140,23 @@ export class RewardModel {
     this.fbListingId = this.facebookListingId;
 
     // Invariante de auto-reparación aritmética para hardware de alto valor y descuentos
+    const ACCESSORY_TITLE_REGEX = /(auricular|audifono|audífono|headset|earphone|headphone|earbuds|mouse|raton|ratón|teclado|keyboard|pad|alfombrilla|fan|soplador|aspiradora|turbina|cable|adaptador|cargador|charger|funda|case|stand|soporte|mando|control|gamepad|grip|powerbank|power\s*bank|bateria|batería|repetidor|extender|hub|dock|limpiador|protector|mica|vidrio)/i;
     const HIGH_END_HARDWARE_REGEX = /(laptop|computadora|notebook|predator|helios|rtx\s*\d+|gtx\s*\d+|radeon|intel\s*(core\s*)?ultra|core\s*i[79]|ryzen\s*[79]|macbook|torre\s*gamer|pc\s*gamer)/i;
-    const fullText = `${this.title} ${data.description || data.rawDescription || data.raw_description || ""}`;
-    const isHighEnd = HIGH_END_HARDWARE_REGEX.test(fullText);
+    const isAccessory = ACCESSORY_TITLE_REGEX.test(this.title || "");
+    const isHighEnd = !isAccessory && HIGH_END_HARDWARE_REGEX.test(this.title || "");
 
-    // Caso 1: Hardware de alto valor con precio < 250 debido a división errónea de moneda (excluyendo paquetes COMBO)
+    // Caso 1: Hardware de alto valor con precio < 250 debido a división errónea de moneda (excluyendo paquetes COMBO y accesorios)
     if (this.rewardType !== "COMBO" && isHighEnd && this.priceUsd > 0 && this.priceUsd < 250) {
       const rawNio = Number(data.priceNio || data.price_nio || 0);
       if (rawNio >= 250) {
         this.priceUsd = rawNio >= 5000 ? Math.round(rawNio / 37.0) : rawNio;
-      } else if (Math.round(this.priceUsd * 37.0) >= 250) {
-        this.priceUsd = Math.round(this.priceUsd * 37.0);
       }
     }
 
     // Caso 2: En PARTIAL_DISCOUNT, la suma de cashToPayUsd + maxDiscountUsd no puede superar priceUsd
     if (this.rewardType === "PARTIAL_DISCOUNT") {
       const sumBreakdown = Number(((this.cashToPayUsd || 0) + (this.maxDiscountUsd || 0)).toFixed(2));
-      if (sumBreakdown > this.priceUsd && sumBreakdown > 0) {
+      if ((!this.priceUsd || this.priceUsd <= 0) && sumBreakdown > 0) {
         this.priceUsd = sumBreakdown;
       }
       if (this.priceUsd > 0) {
@@ -178,7 +180,7 @@ export class RewardModel {
       }
     }
 
-    this.priceNio = Number(data.priceNio || data.price_nio || Math.round(this.priceUsd * 37.0));
+    this.priceNio = Number(data.priceNio || data.price_nio || roundToCleanNio(this.priceUsd * 37.0));
 
     this.comboData = data.comboData || data.combo_data || null;
     if (this.comboData && !Array.isArray(this.comboData.items)) {

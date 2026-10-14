@@ -304,8 +304,16 @@ export function renderSandboxDbView() {
     totalPointsCirc += (u.pointsBalance || u.wiredPoints || 0);
   });
 
-  const pendingVouchers = (vm.vouchers || []).filter(v => !v.isDelivered()).length;
-  const deliveredVouchers = (vm.vouchers || []).filter(v => v.isDelivered()).length;
+  const isPendingVoucher = (v) => {
+    if (typeof v.isPending === "function") return v.isPending();
+    const delivered = typeof v.isDelivered === "function" ? v.isDelivered() : (v.status === "DELIVERED" || Boolean(v.deliveredAt));
+    const cancelled = typeof v.isCancelled === "function" ? v.isCancelled() : (v.status === "CANCELLED" || Boolean(v.cancelledAt));
+    const expired = typeof v.isExpired === "function" ? v.isExpired() : (v.status === "EXPIRED");
+    return !delivered && !cancelled && !expired;
+  };
+
+  const pendingVouchers = (vm.vouchers || []).filter(isPendingVoucher).length;
+  const deliveredVouchers = (vm.vouchers || []).filter(v => typeof v.isDelivered === "function" ? v.isDelivered() : (v.status === "DELIVERED" || Boolean(v.deliveredAt))).length;
 
   const envBannerHtml = isProd
     ? `
@@ -583,6 +591,7 @@ export function renderSandboxDbView() {
               <button type="button" class="btn-secondary ${sandboxVouchersStatus === 'ALL' ? 'active' : ''}" style="padding: 3px 8px; font-size: 0.72rem;" onclick="setSandboxDraftStatus('ALL')">Todos</button>
               <button type="button" class="btn-secondary ${sandboxVouchersStatus === 'PENDING' ? 'active' : ''}" style="padding: 3px 8px; font-size: 0.72rem;" onclick="setSandboxDraftStatus('PENDING')">⏳ Pendientes</button>
               <button type="button" class="btn-secondary ${sandboxVouchersStatus === 'DELIVERED' ? 'active' : ''}" style="padding: 3px 8px; font-size: 0.72rem;" onclick="setSandboxDraftStatus('DELIVERED')">✓ Despachados</button>
+              <button type="button" class="btn-secondary ${sandboxVouchersStatus === 'CANCELLED' ? 'active' : ''}" style="padding: 3px 8px; font-size: 0.72rem;" onclick="setSandboxDraftStatus('CANCELLED')">❌ Cancelados</button>
             </div>
             <div class="admin-sort-group" style="display: flex; gap: 0.35rem; align-items: center;">
               <span style="font-family: var(--font-mono); font-size: 0.72rem; font-weight: 700; color: var(--gray-500);">ORDENAR:</span>
@@ -833,9 +842,21 @@ function renderDraftTable() {
   } else if (activeDraftTab === "vouchers") {
     let vouchers = [...(vm.vouchers || [])];
     if (sandboxVouchersStatus === "PENDING") {
-      vouchers = vouchers.filter(v => typeof v.isDelivered === "function" ? !v.isDelivered() : v.status !== "DELIVERED");
+      vouchers = vouchers.filter(v => {
+        if (typeof v.isPending === "function") return v.isPending();
+        const delivered = typeof v.isDelivered === "function" ? v.isDelivered() : (v.status === "DELIVERED" || Boolean(v.deliveredAt));
+        const cancelled = typeof v.isCancelled === "function" ? v.isCancelled() : (v.status === "CANCELLED" || Boolean(v.cancelledAt));
+        const expired = typeof v.isExpired === "function" ? v.isExpired() : (v.status === "EXPIRED");
+        return !delivered && !cancelled && !expired;
+      });
     } else if (sandboxVouchersStatus === "DELIVERED") {
-      vouchers = vouchers.filter(v => typeof v.isDelivered === "function" ? v.isDelivered() : v.status === "DELIVERED");
+      vouchers = vouchers.filter(v => typeof v.isDelivered === "function" ? v.isDelivered() : (v.status === "DELIVERED" || Boolean(v.deliveredAt)));
+    } else if (sandboxVouchersStatus === "CANCELLED") {
+      vouchers = vouchers.filter(v => {
+        const cancelled = typeof v.isCancelled === "function" ? v.isCancelled() : (v.status === "CANCELLED" || Boolean(v.cancelledAt));
+        const expired = typeof v.isExpired === "function" ? v.isExpired() : (v.status === "EXPIRED");
+        return cancelled || expired;
+      });
     }
 
     if (q) {

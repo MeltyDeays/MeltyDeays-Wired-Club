@@ -906,6 +906,7 @@
               <button type="button" class="btn-secondary active" id="voucher-filter-ALL" style="padding: 3px 8px; font-size: 0.72rem;" onclick="filterVouchersTable('ALL')">Todos</button>
               <button type="button" class="btn-secondary" id="voucher-filter-PENDING" style="padding: 3px 8px; font-size: 0.72rem;" onclick="filterVouchersTable('PENDING')">⏳ Pendientes</button>
               <button type="button" class="btn-secondary" id="voucher-filter-DELIVERED" style="padding: 3px 8px; font-size: 0.72rem;" onclick="filterVouchersTable('DELIVERED')">✓ Despachados</button>
+              <button type="button" class="btn-secondary" id="voucher-filter-CANCELLED" style="padding: 3px 8px; font-size: 0.72rem;" onclick="filterVouchersTable('CANCELLED')">❌ Cancelados</button>
             </div>
             <div class="admin-sort-group" style="display: flex; gap: 0.35rem; align-items: center;">
               <span style="font-family: var(--font-mono); font-size: 0.72rem; font-weight: 700; color: var(--gray-500);">ORDENAR:</span>
@@ -1945,23 +1946,35 @@
               <div style="font-family: var(--font-mono); font-size: 0.72rem; font-weight: 900; color: #78350f; display: flex; align-items: center; gap: 4px;">
                 <span>🏷️</span> DESCUENTO TOPE EN PUNTOS
               </div>
-              <span class="noc-pulse-chip" style="background: #fef3c7; color: #b45309; border-color: #f59e0b; font-size: 0.62rem; padding: 1px 5px;">
-                <span class="pulse-dot" style="background: #d97706;"></span> PROTEGIDO
-              </span>
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <div class="admin-curr-pill" style="display: inline-flex; border: 1.5px solid #d97706; border-radius: 4px; overflow: hidden; background: #fff;">
+                  <button type="button" id="btn-admin-price-mode-usd" onclick="setAdminPriceInputMode('USD')" class="btn-secondary active" style="padding: 1px 7px; font-size: 0.62rem; font-weight: 900; height: 22px; border: none; border-radius: 0; background: #d97706; color: #fff;">$ USD</button>
+                  <button type="button" id="btn-admin-price-mode-nio" onclick="setAdminPriceInputMode('NIO')" class="btn-secondary" style="padding: 1px 7px; font-size: 0.62rem; font-weight: 900; height: 22px; border: none; border-radius: 0; background: #fffbeb; color: #78350f;">C$ NIO</button>
+                </div>
+                <span class="noc-pulse-chip" style="background: #fef3c7; color: #b45309; border-color: #f59e0b; font-size: 0.62rem; padding: 1px 5px;">
+                  <span class="pulse-dot" style="background: #d97706;"></span> PROTEGIDO
+                </span>
+              </div>
             </div>
 
-            <!-- FILA PRECIO DE VENTA Y TOPE % -->
-            <div class="prod-discount-inputs-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-bottom: 0.45rem;">
+            <!-- FILA PRECIO DE VENTA (BIMONEDA SINCRONIZADA) Y TOPE % -->
+            <div class="prod-discount-inputs-grid" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.45rem; margin-bottom: 0.45rem;">
               <div class="form-group" style="margin-bottom: 0;">
-                <label class="form-label" style="height: 16px; line-height: 16px; font-size: 0.65rem; margin-bottom: 2px; color: #78350f;">💵 PRECIO LISTA ($ USD)</label>
-                <input type="number" id="calc-sale-prod-price-usd" class="form-input" placeholder="40.00" step="1.0" value="40.00" min="1"
+                <label class="form-label" style="height: 16px; line-height: 16px; font-size: 0.65rem; margin-bottom: 2px; color: #78350f;">💵 PRECIO ($ USD)</label>
+                <input type="number" id="calc-sale-prod-price-usd" class="form-input" placeholder="21.62" step="0.01" value="40.00" min="0"
                        style="height: 34px; width: 100%; box-sizing: border-box; font-family: var(--font-mono); font-weight: 900; font-size: 0.95rem; text-align: center; color: #1e1b4b;"
-                       oninput="recalculateProductDiscount()">
+                       oninput="onAdminPriceUsdInput()">
               </div>
               <div class="form-group" style="margin-bottom: 0;">
-                <label class="form-label" style="height: 16px; line-height: 16px; font-size: 0.65rem; margin-bottom: 2px; color: #78350f;">🎯 TOPE MÁXIMO (%)</label>
+                <label class="form-label" style="height: 16px; line-height: 16px; font-size: 0.65rem; margin-bottom: 2px; color: #78350f;">🇳🇮 PRECIO (C$ NIO)</label>
+                <input type="number" id="calc-sale-prod-price-nio" class="form-input" placeholder="800" step="1" value="1480" min="0"
+                       style="height: 34px; width: 100%; box-sizing: border-box; font-family: var(--font-mono); font-weight: 900; font-size: 0.95rem; text-align: center; color: #b45309; background: #fffdf5;"
+                       oninput="onAdminPriceNioInput()">
+              </div>
+              <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" style="height: 16px; line-height: 16px; font-size: 0.65rem; margin-bottom: 2px; color: #78350f;">🎯 TOPE MÁXIMO</label>
                 <div style="display: flex; gap: 3px; align-items: center;">
-                  <input type="number" id="calc-sale-prod-discount-pct" class="form-input" placeholder="5" step="1" value="5" min="1" max="100"
+                  <input type="number" id="calc-sale-prod-discount-pct" class="form-input" placeholder="10" step="1" value="5" min="0" max="100"
                          style="height: 34px; width: 100%; box-sizing: border-box; font-family: var(--font-mono); font-weight: 900; font-size: 0.95rem; text-align: center; color: #b45309;"
                          oninput="recalculateProductDiscount()">
                   <span style="font-family: var(--font-mono); font-weight: 900; color: #78350f; font-size: 0.85rem;">%</span>
@@ -1980,14 +1993,14 @@
               <button type="button" class="btn-secondary" id="btn-disc-preset-30" style="padding: 1px 6px; font-size: 0.65rem; font-weight: 800; height: 24px;" onclick="setProductDiscountPreset(30)">30%</button>
             </div>
 
-            <!-- RESUMEN FINANCIERO DEL DESCUENTO PARCIAL -->
+            <!-- RESUMEN FINANCIERO DEL DESCUENTO PARCIAL BIMONEDA -->
             <div style="background: #ffffff; border: 1.5px solid #d97706; border-radius: 4px; padding: 0.5rem 0.65rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.4rem;">
               <div style="font-family: var(--font-mono); font-size: 0.72rem;">
                 <div style="color: #78350f;">
-                  Ahorro en WP: <strong id="calc-disc-max-usd" style="color: #059669; font-weight: 900;">-$2.00 USD</strong>
+                  Ahorro en WP: <strong id="calc-disc-max-usd" style="color: #059669; font-weight: 900;">-$2.00 USD</strong> <span id="calc-disc-max-nio" style="color: #059669; font-size: 0.68rem; font-weight: 800;">(-C$ 74 NIO)</span>
                 </div>
                 <div style="color: #1e1b4b; font-size: 0.72rem; margin-top: 1px;">
-                  Efectivo Mostrador: <strong id="calc-disc-cash-due" style="color: #dc2626; font-weight: 900;">$38.00 USD</strong>
+                  Efectivo Mostrador: <strong id="calc-disc-cash-due" style="color: #dc2626; font-weight: 900;">$38.00 USD</strong> <span id="calc-disc-cash-nio" style="color: #dc2626; font-size: 0.68rem; font-weight: 800;">(C$ 1,406 NIO)</span>
                 </div>
               </div>
               <div style="display: flex; align-items: center; gap: 0.4rem;">
@@ -2013,15 +2026,23 @@
               </span>
             </div>
 
-            <!-- FILA 1: PRECIO REGULAR Y FECHA/HORA DE LLEGADA -->
-            <div class="prod-incoming-row1-grid" style="display: grid; grid-template-columns: 1fr 1.3fr; gap: 0.5rem; margin-bottom: 0.45rem;">
+            <!-- FILA 1: PRECIO REGULAR (BIMONEDA) Y FECHA/HORA DE LLEGADA -->
+            <div class="prod-incoming-row1-grid" style="display: grid; grid-template-columns: 1fr 1fr 1.3fr; gap: 0.45rem; margin-bottom: 0.45rem;">
               <div class="form-group" style="margin-bottom: 0;">
                 <label class="form-label" style="height: 16px; line-height: 16px; font-size: 0.65rem; margin-bottom: 2px; color: #581c87;">
-                  💵 PRECIO REGULAR ($)
+                  💵 PRECIO ($ USD)
                 </label>
-                <input type="number" id="calc-incoming-price-usd" class="form-input" placeholder="50.00" step="1.0" value="50.00" min="1"
+                <input type="number" id="calc-incoming-price-usd" class="form-input" placeholder="50.00" step="0.01" value="50.00" min="0"
                        style="height: 34px; width: 100%; box-sizing: border-box; font-family: var(--font-mono); font-weight: 900; font-size: 0.95rem; text-align: center; color: #1e1b4b;"
-                       oninput="recalculateIncomingPresale()">
+                       oninput="onAdminIncomingPriceUsdInput()">
+              </div>
+              <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" style="height: 16px; line-height: 16px; font-size: 0.65rem; margin-bottom: 2px; color: #581c87;">
+                  🇳🇮 PRECIO (C$ NIO)
+                </label>
+                <input type="number" id="calc-incoming-price-nio" class="form-input" placeholder="1850" step="1" value="1850" min="0"
+                       style="height: 34px; width: 100%; box-sizing: border-box; font-family: var(--font-mono); font-weight: 900; font-size: 0.95rem; text-align: center; color: #7e22ce; background: #faf5ff;"
+                       oninput="onAdminIncomingPriceNioInput()">
               </div>
               <div class="form-group" style="margin-bottom: 0;">
                 <label class="form-label" style="height: 16px; line-height: 16px; font-size: 0.65rem; margin-bottom: 2px; color: #581c87;">
@@ -2096,6 +2117,7 @@
       <!-- SECCIÓN B: DATOS DEL ARTÍCULO FÍSICO -->
       <input type="hidden" id="prod-reward-type" value="FREE_REWARD">
       <input type="hidden" id="prod-price-usd" value="0">
+      <input type="hidden" id="prod-price-nio" value="0">
       <input type="hidden" id="prod-max-discount-pct" value="0">
       <input type="hidden" id="prod-max-discount-usd" value="0">
       <input type="hidden" id="prod-cash-to-pay-usd" value="0">

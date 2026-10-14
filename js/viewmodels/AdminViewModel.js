@@ -216,6 +216,7 @@ export class AdminViewModel {
       title,
       rewardType: isPartial ? "PARTIAL_DISCOUNT" : "FREE_REWARD",
       priceUsd: isPartial ? (Number(productData.priceUsd) || 0) : 0,
+      priceNio: Number(productData.priceNio) || Math.round((Number(productData.priceUsd) || 0) * 37.0),
       maxDiscountPct: isPartial ? (Number(productData.maxDiscountPct) || 0) : 0,
       maxDiscountUsd: isPartial ? (Number(productData.maxDiscountUsd) || 0) : 0,
       cashToPayUsd: isPartial ? (Number(productData.cashToPayUsd) || 0) : 0,
@@ -223,11 +224,13 @@ export class AdminViewModel {
       stock,
       imageUrl: imgs[0] || (productData.imageUrl || "").trim(),
       images: imgs,
-      description: (productData.description || "").trim()
+      description: (productData.description || "").trim(),
+      facebookListingId: productData.facebookListingId || productData.listingId || ""
     });
 
     await FirestoreService.saveReward(reward.toJSON());
     await this.refreshData();
+    this.notify();
     return reward;
   }
 

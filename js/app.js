@@ -2,6 +2,7 @@
 import { CustomerViewModel } from "./viewmodels/CustomerViewModel.js";
 import { FirestoreService } from "./services/FirestoreService.js";
 import { injectEnvironmentBadge } from "./config/env.js";
+import { roundToCleanNio } from "./utils/PriceNormalizer.js";
 
 import {
   initCustomerViews,
@@ -114,8 +115,8 @@ export const USD_TO_NIO_RATE = 37.0;
 
 export function formatNio(num) {
   const n = Number(num) || 0;
-  // Si los centavos son residuales de conversión (< 0.25 de distancia de un entero), redondear al entero con separador de miles
-  if (Math.abs(n - Math.round(n)) < 0.25) {
+  // En Nicaragua los precios en Córdobas siempre se manejan en enteros limpios
+  if (Math.abs(n - Math.round(n)) < 0.25 || n >= 10) {
     return Math.round(n).toLocaleString("en-US");
   }
   return n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -126,20 +127,35 @@ export function formatUsd(num) {
   return n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-export function formatPrice(amountUsd) {
+export function formatPrice(amountUsd, explicitNio = null, isBasePrice = false) {
   const curr = (vm && vm.preferredCurrency) ? vm.preferredCurrency : "USD";
   const numUsd = Number(amountUsd) || 0;
   if (curr === "NIO") {
-    const valNio = numUsd * USD_TO_NIO_RATE;
+    let valNio = 0;
+    if (explicitNio != null && Number(explicitNio) > 0) {
+      valNio = Number(explicitNio);
+    } else {
+      valNio = numUsd * USD_TO_NIO_RATE;
+      if (isBasePrice) {
+        valNio = roundToCleanNio(valNio);
+      } else {
+        valNio = Math.round(valNio);
+      }
+    }
     return `C$ ${formatNio(valNio)} NIO`;
   }
   return `$${formatUsd(numUsd)} USD`;
 }
 
-export function formatDualPrice(amountUsd) {
+export function formatDualPrice(amountUsd, explicitNio = null, isBasePrice = false) {
   const curr = (vm && vm.preferredCurrency) ? vm.preferredCurrency : "USD";
   const usd = Number(amountUsd) || 0;
-  const nio = usd * USD_TO_NIO_RATE;
+  let nio = 0;
+  if (explicitNio != null && Number(explicitNio) > 0) {
+    nio = Number(explicitNio);
+  } else {
+    nio = isBasePrice ? roundToCleanNio(usd * USD_TO_NIO_RATE) : Math.round(usd * USD_TO_NIO_RATE);
+  }
   const formattedUsd = formatUsd(usd);
   const formattedNio = formatNio(nio);
   if (curr === "NIO") {
@@ -148,10 +164,15 @@ export function formatDualPrice(amountUsd) {
   return `<strong>$${formattedUsd} USD</strong> <span style="font-size:0.75rem; color:#64748b; font-weight:600;">(C$ ${formattedNio} NIO)</span>`;
 }
 
-export function formatDualPricePlain(amountUsd) {
+export function formatDualPricePlain(amountUsd, explicitNio = null, isBasePrice = false) {
   const curr = (vm && vm.preferredCurrency) ? vm.preferredCurrency : "USD";
   const usd = Number(amountUsd) || 0;
-  const nio = usd * USD_TO_NIO_RATE;
+  let nio = 0;
+  if (explicitNio != null && Number(explicitNio) > 0) {
+    nio = Number(explicitNio);
+  } else {
+    nio = isBasePrice ? roundToCleanNio(usd * USD_TO_NIO_RATE) : Math.round(usd * USD_TO_NIO_RATE);
+  }
   const formattedUsd = formatUsd(usd);
   const formattedNio = formatNio(nio);
   if (curr === "NIO") {

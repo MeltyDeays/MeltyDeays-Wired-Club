@@ -33,6 +33,11 @@ import {
   recalculateIncomingPresale,
   applyCalculatedIncomingToProduct,
   toggleProductCalculatorAccordion,
+  setAdminPriceInputMode,
+  onAdminPriceUsdInput,
+  onAdminPriceNioInput,
+  onAdminIncomingPriceUsdInput,
+  onAdminIncomingPriceNioInput,
   // 2. Calculadora de Puntos de Venta
   openSalePointsCalculatorModal,
   setSaleFreightPreset,
@@ -402,8 +407,16 @@ function renderAdmin(model) {
   let totalCirc = 0;
   model.tokens.forEach(t => { if (t.isClaimed()) totalCirc += t.pointsValue; });
 
-  const pendingVouchers = model.vouchers.filter(v => !v.isDelivered()).length;
-  const deliveredVouchers = model.vouchers.filter(v => v.isDelivered()).length;
+  const isPendingVoucher = (v) => {
+    if (typeof v.isPending === "function") return v.isPending();
+    const delivered = typeof v.isDelivered === "function" ? v.isDelivered() : (v.status === "DELIVERED" || Boolean(v.deliveredAt));
+    const cancelled = typeof v.isCancelled === "function" ? v.isCancelled() : (v.status === "CANCELLED" || Boolean(v.cancelledAt));
+    const expired = typeof v.isExpired === "function" ? v.isExpired() : (v.status === "EXPIRED");
+    return !delivered && !cancelled && !expired;
+  };
+
+  const pendingVouchers = model.vouchers.filter(isPendingVoucher).length;
+  const deliveredVouchers = model.vouchers.filter(v => typeof v.isDelivered === "function" ? v.isDelivered() : (v.status === "DELIVERED" || Boolean(v.deliveredAt))).length;
 
   const statCirc = document.getElementById("stat-points-circ");
   if (statCirc) statCirc.textContent = totalCirc.toLocaleString();
@@ -1313,6 +1326,11 @@ document.addEventListener("DOMContentLoaded", () => {
   window.setProductDiscountPreset = setProductDiscountPreset;
   window.recalculateProductDiscount = recalculateProductDiscount;
   window.applyCalculatedDiscountToProduct = applyCalculatedDiscountToProduct;
+  window.setAdminPriceInputMode = setAdminPriceInputMode;
+  window.onAdminPriceUsdInput = onAdminPriceUsdInput;
+  window.onAdminPriceNioInput = onAdminPriceNioInput;
+  window.onAdminIncomingPriceUsdInput = onAdminIncomingPriceUsdInput;
+  window.onAdminIncomingPriceNioInput = onAdminIncomingPriceNioInput;
   window.setIncomingArrivalPreset = setIncomingArrivalPreset;
   window.setIncomingDiscountType = setIncomingDiscountType;
   window.setIncomingDiscountVal = setIncomingDiscountVal;

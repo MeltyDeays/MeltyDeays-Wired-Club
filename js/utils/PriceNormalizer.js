@@ -2,6 +2,7 @@
 
 export const EXCHANGE_RATE_NIO = 37.0;
 
+export const ACCESSORY_TITLE_REGEX = /(auricular|audifono|audífono|headset|earphone|headphone|earbuds|mouse|raton|ratón|teclado|keyboard|pad|alfombrilla|fan|soplador|aspiradora|turbina|cable|adaptador|cargador|charger|funda|case|stand|soporte|mando|control|gamepad|grip|powerbank|power\s*bank|bateria|batería|repetidor|extender|hub|dock|limpiador|protector|mica|vidrio)/i;
 const HIGH_END_HARDWARE_REGEX = /(laptop|computadora|notebook|predator|helios|rtx\s*\d+|gtx\s*\d+|radeon|intel\s*(core\s*)?ultra|core\s*i[79]|ryzen\s*[79]|macbook|torre\s*gamer|pc\s*gamer)/i;
 
 /**
@@ -34,8 +35,8 @@ export function normalizePriceByThreshold(rawValue, currency = "", title = "", d
   }
 
   const cleanCurr = String(currency || "").toUpperCase().trim();
-  const fullText = `${title || ""} ${description || ""}`;
-  const isHighEndHardware = HIGH_END_HARDWARE_REGEX.test(fullText);
+  const isAccessory = ACCESSORY_TITLE_REGEX.test(title || "");
+  const isHighEndHardware = !isAccessory && HIGH_END_HARDWARE_REGEX.test(title || "");
 
   // 1. Detección explícita de Córdobas si el monto es grande (>= 5000) o viene marcado C$/NIO
   if ((cleanCurr === "NIO" || cleanCurr.includes("C$")) && (val >= 5000 || !isHighEndHardware)) {
@@ -101,37 +102,32 @@ export function normalizePriceByThreshold(rawValue, currency = "", title = "", d
     };
   }
 
-  // 5. Si se especificó explícitamente Córdobas
-  if (cleanCurr === "NIO" || cleanCurr.includes("C$")) {
-    const nio = Math.round(val);
-    const usd = Number((nio / EXCHANGE_RATE_NIO).toFixed(2));
-    return {
-      priceUsd: usd,
-      priceNio: nio,
-      currency: "NIO",
-      raw: val
-    };
-  }
+  // 5. En Facebook Marketplace Nicaragua, los productos se publican por defecto en Córdobas (NIO)
+  // Se transforman dividiendo entre 37.0 para obtener el precio oficial en USD
+  const nio = Math.round(val);
+  const usd = Number((nio / EXCHANGE_RATE_NIO).toFixed(2));
+  return {
+    priceUsd: usd,
+    priceNio: nio,
+    currency: "NIO",
+    raw: val
+  };
+}
 
-  // 6. Umbral estándar para periféricos y accesorios
-  if (val <= 200) {
-    const usd = Number(val.toFixed(2));
-    const nio = Math.round(usd * EXCHANGE_RATE_NIO);
-    return {
-      priceUsd: usd,
-      priceNio: nio,
-      currency: "USD",
-      raw: val
-    };
-  } else {
-    const nio = Math.round(val);
-    const usd = Number((nio / EXCHANGE_RATE_NIO).toFixed(2));
-    return {
-      priceUsd: usd,
-      priceNio: nio,
-      currency: "NIO",
-      raw: val
-    };
-  }
+/**
+ * Redondeo estético de precios base en Córdobas (Nicaragua):
+ * Convierte montos con desfase residual a números limpios (ej: 999 -> 1000; 747.4 -> 750; 319.7 -> 320).
+ *
+ * @param {number|string} num Monto en Córdobas
+ * @returns {number}
+ */
+export function roundToCleanNio(num) {
+  const n = Number(num) || 0;
+  if (n <= 0) return 0;
+  const round10 = Math.round(n / 10) * 10;
+  if (Math.abs(n - round10) <= 3.2) return round10;
+  const round5 = Math.round(n / 5) * 5;
+  if (Math.abs(n - round5) <= 2.2) return round5;
+  return Math.round(n);
 }
 

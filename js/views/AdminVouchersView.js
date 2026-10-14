@@ -113,9 +113,21 @@ export function renderVouchersTable(vouchers) {
 
   let filtered = [...(vouchers || [])];
   if (vouchersFilterState === "PENDING") {
-    filtered = filtered.filter(v => typeof v.isDelivered === "function" ? !v.isDelivered() : v.status !== "DELIVERED");
+    filtered = filtered.filter(v => {
+      if (typeof v.isPending === "function") return v.isPending();
+      const delivered = typeof v.isDelivered === "function" ? v.isDelivered() : (v.status === "DELIVERED" || Boolean(v.deliveredAt));
+      const cancelled = typeof v.isCancelled === "function" ? v.isCancelled() : (v.status === "CANCELLED" || Boolean(v.cancelledAt));
+      const expired = typeof v.isExpired === "function" ? v.isExpired() : (v.status === "EXPIRED");
+      return !delivered && !cancelled && !expired;
+    });
   } else if (vouchersFilterState === "DELIVERED") {
-    filtered = filtered.filter(v => typeof v.isDelivered === "function" ? v.isDelivered() : v.status === "DELIVERED");
+    filtered = filtered.filter(v => typeof v.isDelivered === "function" ? v.isDelivered() : (v.status === "DELIVERED" || Boolean(v.deliveredAt)));
+  } else if (vouchersFilterState === "CANCELLED") {
+    filtered = filtered.filter(v => {
+      const cancelled = typeof v.isCancelled === "function" ? v.isCancelled() : (v.status === "CANCELLED" || Boolean(v.cancelledAt));
+      const expired = typeof v.isExpired === "function" ? v.isExpired() : (v.status === "EXPIRED");
+      return cancelled || expired;
+    });
   }
 
   if (vouchersFilterQuery) {
@@ -192,7 +204,7 @@ export function renderVouchersTable(vouchers) {
 
     // Extracción tolerante y búsqueda inteligente del socio en el sistema
     const targetUid = v.userUid || v.user_uid || v.userId || v.user_id || "";
-    const userMatch = (vm.users || []).find(u => u.uid === targetUid || (u.memberCode && u.memberCode === targetUid));
+    const userMatch = (vm && vm.users) ? vm.users.find(u => u.uid === targetUid || (u.memberCode && u.memberCode === targetUid)) : null;
     const clientName = v.userName || v.userDisplayName || v.user_name || (userMatch ? userMatch.displayName : "Socio Wired");
     const clientContact = (userMatch && userMatch.phone) ? userMatch.phone : (v.userPhone || targetUid || "-");
     const cost = Number(v.pointsSpent || v.pointsCost || v.points_spent || (v.reward ? v.reward.pointsCost : 0));
@@ -334,7 +346,7 @@ export function markVoucherPaidAdmin(voucherCode, cashDue = 0) {
 
 export function filterVouchersTable(state) {
   vouchersFilterState = state;
-  const states = ["ALL", "PENDING", "DELIVERED"];
+  const states = ["ALL", "PENDING", "DELIVERED", "CANCELLED"];
   states.forEach(s => {
     const btn = document.getElementById("voucher-filter-" + s);
     if (btn) {

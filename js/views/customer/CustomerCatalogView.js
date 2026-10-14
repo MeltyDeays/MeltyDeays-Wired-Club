@@ -851,8 +851,9 @@ export function updateSpecsModalCalculation(rewardId, pointsApplied) {
   const sliderEl = document.getElementById(`specs-slider-${rewardId}`);
   const ptsLabel = document.getElementById(`specs-slider-val-${rewardId}`);
 
+  const cashDueNio = item.priceNio ? Math.round(item.priceNio * (1 - (appliedPct / 100))) : null;
   if (discEl) discEl.textContent = `-${formatPrice(appliedDiscUsd)} (-${appliedPct}%)`;
-  if (cashEl) cashEl.innerHTML = formatDualPrice(cashToPay);
+  if (cashEl) cashEl.innerHTML = formatDualPrice(cashToPay, cashDueNio);
   if (sliderEl) sliderEl.value = pts;
   if (ptsLabel) ptsLabel.textContent = `${pts} WP aplicados`;
 }
@@ -1410,8 +1411,8 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
           <span class="temu-sale-badge">HASTA -${maxPct}% OFF</span>
         </div>
         <div class="temu-sale-prices-row">
-          <span class="temu-sale-price-curr" id="specs-calc-cash-${item.id}">${formatDualPrice(cashToPayWithPts)}</span>
-          <span class="temu-sale-price-orig">${formatPrice(item.priceUsd)}</span>
+          <span class="temu-sale-price-curr" id="specs-calc-cash-${item.id}">${formatDualPrice(cashToPayWithPts, item.priceNio ? Math.round(item.priceNio * (1 - (appliedPct / 100))) : null)}</span>
+          <span class="temu-sale-price-orig">${formatPrice(item.priceUsd, item.priceNio, true)}</span>
         </div>
         <div class="specs-coin-row" style="font-size: 0.75rem; color: #78350f; font-family: var(--font-mono); font-weight: 700; display: flex; align-items: center; gap: 4px; line-height: 1.2;">
           ${renderWiredCoinSvg()}
@@ -1932,30 +1933,31 @@ export function renderCatalog(catalog, user) {
     let temuCoinPillText = "";
 
     if (isIncoming) {
-      temuPriceMain = formatPrice(presalePrice);
-      temuPriceOrig = formatPrice(item.priceUsd);
+      temuPriceMain = formatPrice(presalePrice, item.presalePriceNio || Math.round(presalePrice * 37));
+      temuPriceOrig = formatPrice(item.priceUsd, item.priceNio, true);
       temuCoinPillText = `🕊️ PREVENTA (-${presaleDiscPct}% DIRECTO)`;
     } else if (isCombo) {
-      temuPriceMain = formatPrice(item.priceUsd);
-      temuPriceOrig = formatPrice(comboSavings.sumUsd);
+      temuPriceMain = formatPrice(item.priceUsd, item.priceNio, true);
+      temuPriceOrig = formatPrice(comboSavings.sumUsd, comboSavings.sumNio, true);
       temuCoinPillText = `✦ COMBO ${comboItems.length} EN 1 (-${comboSavings.savingsPct}%)`;
     } else if (isPartial) {
       if (user && appliedPts > 0) {
-        temuPriceMain = formatPrice(cashToPayWithPts);
-        temuPriceOrig = formatPrice(item.priceUsd);
+        const cashDueNio = item.priceNio ? Math.round(item.priceNio * (1 - (appliedPct / 100))) : Math.round(cashToPayWithPts * 37);
+        temuPriceMain = formatPrice(cashToPayWithPts, cashDueNio);
+        temuPriceOrig = formatPrice(item.priceUsd, item.priceNio, true);
         if (userPts >= maxCapPts) {
           temuCoinPillText = `-${maxPct}% Aplicado (Tope)`;
         } else {
           temuCoinPillText = `-${formattedAppliedPct}% Aplicado · Máx ${maxPct}%`;
         }
       } else {
-        temuPriceMain = formatPrice(item.priceUsd);
+        temuPriceMain = formatPrice(item.priceUsd, item.priceNio, true);
         temuPriceOrig = "";
         temuCoinPillText = `Hasta -${maxPct}% con WP`;
       }
     } else {
       temuPriceMain = "¡GRATIS!";
-      temuPriceOrig = item.priceUsd ? formatPrice(item.priceUsd) : "";
+      temuPriceOrig = item.priceUsd ? formatPrice(item.priceUsd, item.priceNio, true) : "";
       temuCoinPillText = `${item.pointsCost.toLocaleString()} WP (100% Puntos)`;
     }
 

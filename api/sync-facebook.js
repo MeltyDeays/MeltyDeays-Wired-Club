@@ -33,6 +33,7 @@ function isBrandVerifiable(title = "", description = "") {
   return KNOWN_BRANDS_REGEX.test(cleanTitle);
 }
 
+const ACCESSORY_TITLE_REGEX = /(auricular|audifono|audífono|headset|earphone|headphone|earbuds|mouse|raton|ratón|teclado|keyboard|pad|alfombrilla|fan|soplador|aspiradora|turbina|cable|adaptador|cargador|charger|funda|case|stand|soporte|mando|control|gamepad|grip|powerbank|power\s*bank|bateria|batería|repetidor|extender|hub|dock|limpiador|protector|mica|vidrio)/i;
 const HIGH_END_HARDWARE_REGEX = /(laptop|computadora|notebook|predator|helios|rtx\s*\d+|gtx\s*\d+|radeon|intel\s*(core\s*)?ultra|core\s*i[79]|ryzen\s*[79]|macbook|torre\s*gamer|pc\s*gamer)/i;
 
 /**
@@ -55,8 +56,8 @@ function normalizePriceByThreshold(rawValue, currency = "", title = "", descript
   if (val <= 0) return { priceUsd: 0, priceNio: 0, currency: "USD", raw: 0 };
 
   const cleanCurr = String(currency || "").toUpperCase().trim();
-  const fullText = `${title || ""} ${description || ""}`;
-  const isHighEndHardware = HIGH_END_HARDWARE_REGEX.test(fullText);
+  const isAccessory = ACCESSORY_TITLE_REGEX.test(title || "");
+  const isHighEndHardware = !isAccessory && HIGH_END_HARDWARE_REGEX.test(title || "");
 
   // 1. Detección explícita de Córdobas si el monto es grande (>= 5000) o viene marcado C$/NIO
   if ((cleanCurr === "NIO" || cleanCurr.includes("C$")) && (val >= 5000 || !isHighEndHardware)) {
@@ -97,23 +98,11 @@ function normalizePriceByThreshold(rawValue, currency = "", title = "", descript
     return { priceUsd: usd, priceNio: nio, currency: "USD", raw: val };
   }
 
-  // 5. Si se especificó explícitamente Córdobas
-  if (cleanCurr === "NIO" || cleanCurr.includes("C$")) {
-    const nio = Math.round(val);
-    const usd = Number((nio / EXCHANGE_RATE_NIO).toFixed(2));
-    return { priceUsd: usd, priceNio: nio, currency: "NIO", raw: val };
-  }
-
-  // 6. Umbral estándar para periféricos
-  if (val <= 200) {
-    const usd = Number(val.toFixed(2));
-    const nio = Math.round(usd * EXCHANGE_RATE_NIO);
-    return { priceUsd: usd, priceNio: nio, currency: "USD", raw: val };
-  } else {
-    const nio = Math.round(val);
-    const usd = Number((nio / EXCHANGE_RATE_NIO).toFixed(2));
-    return { priceUsd: usd, priceNio: nio, currency: "NIO", raw: val };
-  }
+  // 5. En Facebook Marketplace Nicaragua, los productos se publican por defecto en Córdobas (NIO)
+  // Se transforman dividiendo entre 37.0 para obtener el precio oficial en USD
+  const nio = Math.round(val);
+  const usd = Number((nio / EXCHANGE_RATE_NIO).toFixed(2));
+  return { priceUsd: usd, priceNio: nio, currency: "NIO", raw: val };
 }
 
 /**

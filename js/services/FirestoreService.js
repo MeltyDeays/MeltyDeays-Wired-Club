@@ -947,11 +947,14 @@ export class FirestoreService {
 
     const isPending = (v) => {
       const s = (v.status || "").toUpperCase();
-      return s === "PENDING" || s === "ISSUED" || (!v.redeemed && s !== "DELIVERED" && s !== "REDEEMED");
+      const isCancelled = s === "CANCELLED" || Boolean(v.cancelledAt || v.cancelled_at);
+      const isExpired = s === "EXPIRED";
+      const isDeliv = s === "DELIVERED" || s === "REDEEMED" || v.redeemed === true || Boolean(v.deliveredAt || v.delivered_at);
+      return !isDeliv && !isCancelled && !isExpired;
     };
     const isDelivered = (v) => {
       const s = (v.status || "").toUpperCase();
-      return s === "DELIVERED" || s === "REDEEMED" || v.redeemed === true;
+      return s === "DELIVERED" || s === "REDEEMED" || v.redeemed === true || Boolean(v.deliveredAt || v.delivered_at);
     };
 
     const snap = engine.getSnapshot();
