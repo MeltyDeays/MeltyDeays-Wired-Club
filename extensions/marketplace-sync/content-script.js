@@ -1380,13 +1380,13 @@ async function injectProductPhotosToForm(photoUrls, productId = "") {
     return false;
   }
 
-  // Deduplicación estricta de URLs limitadas a un máximo seguro de 5 fotos de producto
-  const uniqueUrls = Array.from(new Set(photoUrls.filter(Boolean))).slice(0, 5);
+  // Deduplicación estricta de URLs permitiendo hasta 9 fotos de producto para reservar espacio al slide QR (máximo 10 de Facebook)
+  const uniqueUrls = Array.from(new Set(photoUrls.filter(Boolean))).slice(0, 9);
 
-  // Generar y agregar slide con código QR oficial al final de la galería (solo 1 vez, si hay cupo)
+  // Generar y agregar slide con código QR oficial al final de la galería (solo 1 vez, si hay cupo dentro del límite de 10)
   let qrSlide = null;
   try {
-    if (uniqueUrls.length < 8) {
+    if (uniqueUrls.length < 10) {
       qrSlide = await generateQrCardDataUrl();
       if (qrSlide && !uniqueUrls.includes(qrSlide)) {
         uniqueUrls.push(qrSlide);
@@ -1427,6 +1427,8 @@ async function injectProductPhotosToForm(photoUrls, productId = "") {
   if (dt.files.length > 0) {
     fileInput.files = dt.files;
     fileInput.dispatchEvent(new Event("change", { bubbles: true }));
+    fileInput.dispatchEvent(new Event("input", { bubbles: true }));
+    console.log(`✓ Haibane: Inyectadas exitosamente ${dt.files.length} fotos en Facebook Marketplace.`);
     photosInjectedForProduct = productId;
     return true;
   }
@@ -2378,14 +2380,36 @@ function initAutoPublishAssistant() {
       prod.priceNio = Number(overridePrice);
     }
 
-    // Prioridad 1: Fotos oficiales en alta resolución del catálogo web (prod.images o prod.imageUrl)
-    const webImages = Array.isArray(prod.images) && prod.images.length > 0 
-      ? prod.images 
-      : (prod.imageUrl ? [prod.imageUrl] : []);
+    // Prioridad 1: Recopilar exhaustivamente TODAS las fotos oficiales del catálogo web sin omitir ninguna
+    const candidateWebImages = [];
 
-    if (webImages.length > 0) {
-      console.log(`✓ Haibane: Usando ${webImages.length} fotos oficiales en alta resolución del catálogo web.`);
-      prod.images = webImages.map(u => (typeof u === "string" ? u.replaceAll("&amp;", "&").trim() : u)).slice(0, 5);
+    // Portada principal del producto
+    const mainCover = (typeof prod.imageUrl === "string" && prod.imageUrl.trim())
+      ? prod.imageUrl.replaceAll("&amp;", "&").trim()
+      : ((typeof prod.image === "string" && prod.image.trim()) ? prod.image.replaceAll("&amp;", "&").trim() : null);
+
+    if (mainCover) {
+      candidateWebImages.push(mainCover);
+    }
+
+    // Todas las fotos de galería registradas en el catálogo web (images, image_urls, gallery, photos)
+    const rawGalleries = [prod.images, prod.image_urls, prod.gallery, prod.photos];
+    for (const gal of rawGalleries) {
+      if (Array.isArray(gal)) {
+        for (const item of gal) {
+          if (typeof item === "string" && item.trim()) {
+            const clean = item.replaceAll("&amp;", "&").trim();
+            if (!candidateWebImages.includes(clean)) {
+              candidateWebImages.push(clean);
+            }
+          }
+        }
+      }
+    }
+
+    if (candidateWebImages.length > 0) {
+      console.log(`✓ Haibane: Usando ${candidateWebImages.length} fotos oficiales en alta resolución del catálogo web.`);
+      prod.images = candidateWebImages.slice(0, 9);
     } else if (preferRealPhotos) {
       let hdPhotos = [];
       try {
@@ -2396,10 +2420,10 @@ function initAutoPublishAssistant() {
 
       if (Array.isArray(hdPhotos) && hdPhotos.length > 0) {
         console.log(`✓ Haibane: ${hdPhotos.length} fotos originales en HD y sin recorte recuperadas de Facebook.`);
-        prod.images = hdPhotos.map(u => u.replaceAll("&amp;", "&").trim()).slice(0, 5);
+        prod.images = hdPhotos.map(u => u.replaceAll("&amp;", "&").trim()).slice(0, 9);
       } else if (Array.isArray(prod.fbPhotos) && prod.fbPhotos.length > 0) {
         console.log(`✓ Haibane: Usando ${prod.fbPhotos.length} fotos reales de Facebook preservadas en catálogo.`);
-        prod.images = prod.fbPhotos.map(u => u.replaceAll("&amp;", "&").trim()).slice(0, 5);
+        prod.images = prod.fbPhotos.map(u => u.replaceAll("&amp;", "&").trim()).slice(0, 9);
       } else if (thumbUrl) {
         console.log("✓ Haibane: Usando foto real de publicación de Facebook capturada en escaneo.");
         prod.images = [thumbUrl.replaceAll("&amp;", "&").trim()];
@@ -2410,7 +2434,7 @@ function initAutoPublishAssistant() {
     }
 
     if (Array.isArray(prod.images)) {
-      prod.images = prod.images.slice(0, 5);
+      prod.images = prod.images.slice(0, 9);
     }
     injectPublishAssistantBanner(prod);
     if (isBatch) {
