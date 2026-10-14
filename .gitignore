@@ -20,5 +20,7 @@ yarn.lock
 # Local Agent Workspace
 .agents/
 scratch/
+graphify-out/
 
 .env*
+graphify-out/

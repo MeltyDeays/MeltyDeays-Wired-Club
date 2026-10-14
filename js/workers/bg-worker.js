@@ -155,14 +155,24 @@ function composeSquareWhite(canvasSource, size = 800, paddingRatio = 0.08) {
 }
 
 self.onmessage = async (e) => {
-  const { id, imageBlob, targetSize = 800 } = e.data || {};
+  const { type, id, imageBlob, targetSize = 800 } = e.data || {};
+
+  // Precalentamiento del motor en segundo plano al abrir el modal
+  if (type === "init") {
+    try {
+      await loadEngine();
+      self.postMessage({ type: "init_ready" });
+    } catch (e) {}
+    return;
+  }
+
   if (!imageBlob) {
     self.postMessage({ type: "error", id, error: "No imageBlob provided" });
     return;
   }
 
   try {
-    self.postMessage({ type: "progress", id, message: "Iniciando segmentación con IA..." });
+    self.postMessage({ type: "progress", id, message: "Iniciando motor de IA..." });
     const engine = await loadEngine();
     if (!engine || typeof engine.removeBackground !== "function") {
       throw new Error("Motor de segmentación no disponible");
@@ -172,17 +182,20 @@ self.onmessage = async (e) => {
     let lastReportedTime = 0;
 
     const transparentBlob = await engine.removeBackground(imageBlob, {
-      model: "small", // isnet_quint8 cuantizado: ~42MB y 3x más veloz que fp16
-      device: "gpu",  // Intenta aceleración WebGPU
+      model: "small",       // isnet_quint8 cuantizado: ~42MB y 3x más veloz que fp16
+      device: "gpu",        // Aceleración WebGPU con fallback transparente
+      proxyToWorker: false, // Ejecutar directamente en este background worker sin sub-workers anidados
       rescale: true,
       progress: (key, current, total) => {
         if (!total) return;
         const pct = Math.round((current / total) * 100);
         const now = Date.now();
-        if (pct === 100 || (Math.abs(pct - lastReportedPct) >= 15 && now - lastReportedTime > 300)) {
+        if (pct === 100 || (Math.abs(pct - lastReportedPct) >= 10 && now - lastReportedTime > 250)) {
           lastReportedPct = pct;
           lastReportedTime = now;
-          self.postMessage({ type: "progress", id, message: `Segmentando fondo: ${pct}%` });
+          const isDownload = key && (key.includes("fetch") || key.includes("download") || key.includes("onnx") || key.includes("wasm") || !key.includes("compute"));
+          const actionText = isDownload ? `Descargando IA: ${pct}%` : `Segmentando producto: ${pct}%`;
+          self.postMessage({ type: "progress", id, message: actionText });
         }
       }
     });
@@ -206,7 +219,7 @@ self.onmessage = async (e) => {
     const tempCtx = tempCanvas.getContext("2d", { willReadFrequently: true });
     tempCtx.drawImage(bitmap, 0, 0, cvW, cvH);
 
-    self.postMessage({ type: "progress", id, message: "Detectando manos y reconstruyendo..." });
+    self.postMessage({ type: "progress", id, message: "Detectando manos y reconstruyendo chasis..." });
     const handRepaired = inpaintHandOcclusions(tempCanvas);
     if (handRepaired) {
       self.postMessage({ type: "progress", id, message: "✓ Manos eliminadas y carcasa reconstruida." });

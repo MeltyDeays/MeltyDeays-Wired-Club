@@ -380,6 +380,15 @@ export function getBgWorker() {
   return bgWorkerInstance;
 }
 
+export function preloadBgWorker() {
+  try {
+    const worker = getBgWorker();
+    if (worker) {
+      worker.postMessage({ type: "init" });
+    }
+  } catch (e) {}
+}
+
 /**
  * Procesa una imagen: remueve el fondo con IA, suprime manos y reconstruye carcasa,
  * montando en 1:1 blanco puro sin congelar teléfonos (usando Web Worker en segundo plano).
@@ -391,7 +400,7 @@ export async function processImageWithAiWhiteBg(imageSource, options = {}) {
   const { onProgress = null, targetSize = 800 } = options;
 
   if (onProgress) onProgress("Optimizando foto para el dispositivo...");
-  // Pre-escalado óptimo a 640px para acelerar la inferencia 3x y evitar saturación de memoria en teléfonos
+  // Pre-escalado preventivo a 640px para acelerar la inferencia 3x y evitar saturación de memoria en teléfonos
   const isMobile = isMobileDevice();
   const maxDim = isMobile ? 640 : 768;
   const optimizedSource = await downscaleImageForProcessing(imageSource, maxDim);
@@ -413,10 +422,15 @@ export async function processImageWithAiWhiteBg(imageSource, options = {}) {
       }
 
       const workerResult = await new Promise((resolve, reject) => {
+        // Timeout amplio (180s) para redes celulares; si expira, se resetea el worker para el siguiente trabajo
         const timeout = setTimeout(() => {
           cleanup();
-          reject(new Error("Timeout en Worker IA (30s)"));
-        }, 30000);
+          try {
+            worker.terminate();
+            bgWorkerInstance = null;
+          } catch (e) {}
+          reject(new Error("Timeout en Worker IA (180s)"));
+        }, 180000);
 
         const onMsg = (e) => {
           const data = e.data || {};
@@ -436,6 +450,10 @@ export async function processImageWithAiWhiteBg(imageSource, options = {}) {
             }
           } else if (data.type === "error") {
             cleanup();
+            try {
+              worker.terminate();
+              bgWorkerInstance = null;
+            } catch (e) {}
             reject(new Error(data.error || "Error en worker IA"));
           }
         };
@@ -451,15 +469,15 @@ export async function processImageWithAiWhiteBg(imageSource, options = {}) {
 
       return workerResult;
     } catch (err) {
-      console.warn("Fallo o timeout en Worker IA, evaluando fallback directo:", err.message);
+      console.warn("Aviso en Worker IA, evaluando fallback directo:", err.message);
     }
   }
 
-  // Fallback si Worker falla o no está soportado: inferencia directa con modelo cuantizado
+  // Fallback si Worker no está soportado o falla: inferencia directa con modelo cuantizado
   try {
     const engine = await loadBgRemovalEngine();
     if (engine && typeof engine.removeBackground === "function") {
-      if (onProgress) onProgress("Iniciando segmentación con IA...");
+      if (onProgress) onProgress("Iniciando motor de IA...");
 
       let lastReportedPct = -1;
       let lastReportedTime = 0;
@@ -472,16 +490,17 @@ export async function processImageWithAiWhiteBg(imageSource, options = {}) {
           if (!onProgress || !total) return;
           const pct = Math.round((current / total) * 100);
           const now = Date.now();
-          if (pct === 100 || (Math.abs(pct - lastReportedPct) >= 15 && now - lastReportedTime > 300)) {
+          if (pct === 100 || (Math.abs(pct - lastReportedPct) >= 10 && now - lastReportedTime > 250)) {
             lastReportedPct = pct;
             lastReportedTime = now;
-            onProgress(`Segmentando fondo: ${pct}%`);
+            const isDownload = key && (key.includes("fetch") || key.includes("download") || key.includes("onnx") || key.includes("wasm") || !key.includes("compute"));
+            onProgress(isDownload ? `Descargando IA: ${pct}%` : `Segmentando producto: ${pct}%`);
           }
         }
       });
 
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error("Timeout en segmentación directa")), 15000);
+        setTimeout(() => reject(new Error("Timeout en segmentación directa (90s)")), 90000);
       });
 
       const transparentBlob = await Promise.race([removeBgPromise, timeoutPromise]);
@@ -496,7 +515,7 @@ export async function processImageWithAiWhiteBg(imageSource, options = {}) {
 
       let cvW = img.naturalWidth || img.width;
       let cvH = img.naturalHeight || img.height;
-      const maxInpaintDim = 600;
+      const maxInpaintDim = 640;
       if (cvW > maxInpaintDim || cvH > maxInpaintDim) {
         if (cvW > cvH) {
           cvH = Math.round((cvH * maxInpaintDim) / cvW);
@@ -513,7 +532,7 @@ export async function processImageWithAiWhiteBg(imageSource, options = {}) {
       const tempCtx = tempCanvas.getContext("2d", { willReadFrequently: true });
       tempCtx.drawImage(img, 0, 0, cvW, cvH);
 
-      if (onProgress) onProgress("Detectando manos y reconstruyendo...");
+      if (onProgress) onProgress("Detectando manos y reconstruyendo chasis...");
       inpaintHandOcclusionsOnCanvas(tempCanvas);
 
       const finalDataUrl = composeSquareWhiteBackground(tempCanvas, targetSize);

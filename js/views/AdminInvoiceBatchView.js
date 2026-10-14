@@ -11,7 +11,7 @@ import {
 } from "./AdminCatalogCalculatorView.js";
 import { RewardModel } from "../models/RewardModel.js";
 import { isProduction, getEnvironmentInfo, getCollectionName } from "../config/env.js";
-import { processImageWithAiWhiteBg, composeSquareWhiteFromSource } from "../utils/ImageProcessor.js";
+import { processImageWithAiWhiteBg, composeSquareWhiteFromSource, preloadBgWorker } from "../utils/ImageProcessor.js";
 import { cleanCatalogDescription } from "../services/GroqAiService.js";
 import {
   FB_IMG_JET_FAN,
@@ -511,6 +511,7 @@ export function updateComboLiveSummary() {
 }
 
 export function openNewProductModal() {
+  preloadBgWorker();
   const modal = document.getElementById("modal-new-product");
   if (!modal) return;
   const editIdEl = document.getElementById("prod-edit-id");
@@ -593,6 +594,7 @@ export function openNewProductModal() {
 }
 
 export function openEditProductModal(productId) {
+  preloadBgWorker();
   const modal = document.getElementById("modal-new-product");
   if (!modal) return;
   const product = (vm.catalog || []).find(p => p.id === productId);
