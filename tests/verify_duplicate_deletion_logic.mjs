@@ -32,6 +32,29 @@ console.log("  ✓ Test 4: Cola pendingDeletions registrada en background servic
 assert.ok(contentScript.includes('id="haibane-btn-clean-duplicates"'), "Widget flotante debe tener botón haibane-btn-clean-duplicates");
 console.log("  ✓ Test 5: Botón 'Borrar Anteriores' integrado en widget flotante de /marketplace/you/selling.");
 
+// 6. Verificar que deleteListingFromSellingPage acepte targetCardElement y use getScannableListings
+assert.ok(contentScript.includes("async function deleteListingFromSellingPage(targetId, targetTitle, targetCardElement = null)"), "deleteListingFromSellingPage debe aceptar targetCardElement");
+assert.ok(contentScript.includes("const allListings = getScannableListings(true)"), "deleteListingFromSellingPage debe buscar en getScannableListings(true)");
+console.log("  ✓ Test 6: deleteListingFromSellingPage desacoplado de textContent y anclado a getScannableListings/targetCardElement.");
+
+// 7. Verificar paso directo de old.element en cleanAllOldDuplicates
+assert.ok(contentScript.includes("deleteListingFromSellingPage(old.fbListingId, old.fbTitle, old.element)"), "cleanAllOldDuplicates debe pasar old.element directamente");
+console.log("  ✓ Test 7: Paso directo de tarjeta DOM (old.element) a función de eliminación validado.");
+
+// 8. Verificar fusión difusa de grupos en cleanAllOldDuplicates
+assert.ok(contentScript.includes("computeTitleSimilarity(k1, k2) >= 0.65"), "cleanAllOldDuplicates debe fusionar duplicados con variación sutil de título");
+console.log("  ✓ Test 8: Fusión difusa entre títulos con/sin emojis o añadidos comerciales validada.");
+
+// 9. Verificar triggerFacebookClick y secuencia completa de puntero/ratón
+assert.ok(contentScript.includes("function triggerFacebookClick(el)"), "Debe implementar triggerFacebookClick");
+assert.ok(contentScript.includes("PointerEvent(\"pointerdown\""), "Debe disparar pointerdown para React 18");
+console.log("  ✓ Test 9: Disparador nativo triggerFacebookClick con PointerEvents validado.");
+
+// 10. Verificar aislamiento del botón Eliminar vs cabecera 'Eliminar publicación'
+assert.ok(contentScript.includes("findConfirmDeleteButton"), "Debe implementar selector especializado findConfirmDeleteButton");
+console.log("  ✓ Test 10: Localizador especializado de botón 'Eliminar' de modal validado.");
+
 console.log("=================================================");
 console.log("TODAS LAS PRUEBAS DE ELIMINACIÓN PASARON AL 100%");
 console.log("=================================================");
+

@@ -160,11 +160,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       tabId: null,
       startedAt: Date.now()
     };
-    const pendingDeletions = queue
-      .filter(x => x && (x.oldListingId || x.title))
-      .map(x => ({ oldListingId: x.oldListingId || "", title: x.title, timestamp: Date.now() }));
 
-    chrome.storage?.local?.set({ activeRelistBatch: batch, pendingDeletions }, () => {
+    chrome.storage?.local?.set({ activeRelistBatch: batch, pendingDeletions: [] }, () => {
       openBatchItemCreation(batch);
       sendResponse({ success: true, count: queue.length });
     });
@@ -240,6 +237,164 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       .then(res => res.json())
       .then(data => sendResponse({ success: data.success, data }))
       .catch(error => sendResponse({ success: false, error: error.message }));
+    return true;
+  }
+
+  if (request.action === "EXECUTE_CONFIRM_DELETE_IN_MAIN_WORLD") {
+    const tabId = sender.tab?.id;
+    if (!tabId) {
+      sendResponse({ success: false, error: "No sender tab id" });
+      return true;
+    }
+
+    chrome.scripting.executeScript({
+      target: { tabId },
+      world: "MAIN",
+      func: () => {
+        const dialogs = Array.from(document.querySelectorAll('div[role="dialog"], [role="dialog"], [aria-modal="true"]'));
+        const dialog = dialogs.slice().reverse().find(d => {
+          const txt = (d.innerText || d.textContent || "").toLowerCase();
+          return (txt.includes("eliminar") || txt.includes("delete")) && !txt.includes("haibane-floating-widget");
+        }) || dialogs[dialogs.length - 1];
+        if (!dialog) return { success: false, reason: "No dialog found" };
+
+        const allBtns = Array.from(dialog.querySelectorAll('div[role="button"], button, [role="button"], a'));
+
+        // 1. Coincidencia exacta de texto: "eliminar" o "delete"
+        let btn = allBtns.find(b => {
+          const inner = (b.innerText || b.textContent || "").trim().toLowerCase();
+          const aria = (b.getAttribute("aria-label") || "").trim().toLowerCase();
+          if (inner.includes("cancelar") || aria.includes("cancelar") || inner.includes("cerrar") || aria.includes("cerrar")) return false;
+          return inner === "eliminar" || aria === "eliminar" || inner === "delete" || aria === "delete";
+        });
+
+        // 2. Si no es exacto, buscar que termine en "eliminar" o "eliminar definitivamente"
+        if (!btn) {
+          btn = allBtns.find(b => {
+            const inner = (b.innerText || b.textContent || "").trim().toLowerCase();
+            const aria = (b.getAttribute("aria-label") || "").trim().toLowerCase();
+            if (inner.includes("cancelar") || aria.includes("cancelar") || inner.includes("cerrar") || aria.includes("cerrar") || inner.includes("publicaci")) return false;
+            return inner.endsWith("eliminar") || inner.includes("eliminar definitivamente");
+          });
+        }
+
+        // 3. Fallback: El último botón del diálogo que no sea Cancelar ni Cerrar
+        if (!btn) {
+          const candidates = allBtns.filter(b => {
+            const inner = (b.innerText || b.textContent || "").trim().toLowerCase();
+            const aria = (b.getAttribute("aria-label") || "").trim().toLowerCase();
+            return !inner.includes("cancelar") && !aria.includes("cancelar") && !inner.includes("cerrar") && !aria.includes("cerrar") && !inner.includes("publicaci") && (inner.length > 0 || aria.length > 0);
+          });
+          if (candidates.length > 0) btn = candidates[candidates.length - 1];
+        }
+
+        if (!btn) return { success: false, reason: "Confirm button not found" };
+
+        const rect = btn.getBoundingClientRect();
+        const cx = Math.floor(rect.left + rect.width / 2);
+        const cy = Math.floor(rect.top + rect.height / 2);
+
+        // 2. Disparador vía React Props y React Fiber
+        let reactTriggered = false;
+        try {
+          const candidateNodes = [btn, ...Array.from(btn.querySelectorAll('*')), btn.parentElement, btn.parentElement?.parentElement].filter(Boolean);
+          for (const node of candidateNodes) {
+            if (reactTriggered) break;
+            const propsKey = Object.keys(node).find(k => k.startsWith('__reactProps$'));
+            if (propsKey && node[propsKey]) {
+              const p = node[propsKey];
+              const syntheticEvt = {
+                bubbles: true,
+                cancelable: true,
+                defaultPrevented: false,
+                preventDefault: () => {},
+                stopPropagation: () => {},
+                target: node,
+                currentTarget: node,
+                nativeEvent: new MouseEvent('click', { bubbles: true, cancelable: true, view: window, clientX: cx, clientY: cy })
+              };
+              if (typeof p.onClick === 'function') {
+                p.onClick(syntheticEvt);
+                reactTriggered = true;
+                break;
+              }
+              if (typeof p.onPress === 'function') {
+                p.onPress(syntheticEvt);
+                reactTriggered = true;
+                break;
+              }
+            }
+
+            const fiberKey = Object.keys(node).find(k => k.startsWith('__reactFiber$') || k.startsWith('__reactInternalInstance$'));
+            if (fiberKey && node[fiberKey]) {
+              let cur = node[fiberKey];
+              let depth = 0;
+              while (cur && depth < 15 && !reactTriggered) {
+                const mp = cur.memoizedProps;
+                if (mp) {
+                  const syntheticEvt = {
+                    bubbles: true,
+                    cancelable: true,
+                    defaultPrevented: false,
+                    preventDefault: () => {},
+                    stopPropagation: () => {},
+                    target: node,
+                    currentTarget: node,
+                    nativeEvent: new MouseEvent('click', { bubbles: true, cancelable: true, view: window, clientX: cx, clientY: cy })
+                  };
+                  if (typeof mp.onPress === 'function') {
+                    mp.onPress(syntheticEvt);
+                    reactTriggered = true;
+                    break;
+                  }
+                  if (typeof mp.onClick === 'function') {
+                    mp.onClick(syntheticEvt);
+                    reactTriggered = true;
+                    break;
+                  }
+                }
+                cur = cur.return;
+                depth++;
+              }
+            }
+          }
+        } catch (rErr) {
+          console.warn("Haibane: Error en react trigger:", rErr);
+        }
+
+        // 3. Disparador por coordenadas hit-test (document.elementFromPoint) con PointerEvent y MouseEvent
+        try {
+          if (rect.width > 0 && rect.height > 0) {
+            const hitEl = (cx > 0 && cy > 0) ? (document.elementFromPoint(cx, cy) || btn) : btn;
+
+            const pointerOpts = { bubbles: true, cancelable: true, view: window, clientX: cx, clientY: cy, pointerId: 1, pointerType: 'mouse', isPrimary: true };
+            const mouseOpts = { bubbles: true, cancelable: true, view: window, clientX: cx, clientY: cy, button: 0 };
+
+            hitEl.dispatchEvent(new PointerEvent('pointerover', pointerOpts));
+            hitEl.dispatchEvent(new PointerEvent('pointerdown', { ...pointerOpts, buttons: 1 }));
+            hitEl.dispatchEvent(new MouseEvent('mouseover', mouseOpts));
+            hitEl.dispatchEvent(new MouseEvent('mousedown', { ...mouseOpts, buttons: 1 }));
+            hitEl.dispatchEvent(new PointerEvent('pointerup', { ...pointerOpts, buttons: 0 }));
+            hitEl.dispatchEvent(new MouseEvent('mouseup', { ...mouseOpts, buttons: 0 }));
+            hitEl.dispatchEvent(new MouseEvent('click', { ...mouseOpts, buttons: 0 }));
+            if (typeof hitEl.click === 'function') hitEl.click();
+            if (hitEl !== btn && typeof btn.click === 'function') btn.click();
+          }
+        } catch (_) {}
+
+        // 4. Click nativo en el botón y sus hijos
+        try {
+          btn.click();
+          btn.querySelector("span")?.click();
+        } catch (_) {}
+
+        return { success: true, reactTriggered, label: btn.innerText || btn.getAttribute("aria-label") };
+      }
+    }).then(results => {
+      sendResponse({ success: true, result: results?.[0]?.result });
+    }).catch(err => {
+      sendResponse({ success: false, error: err.message });
+    });
     return true;
   }
 });
