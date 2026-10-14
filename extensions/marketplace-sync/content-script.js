@@ -279,6 +279,46 @@ function isListingAvailable(textContent, lines) {
 }
 
 /**
+ * Determina de forma estricta e infalible si una publicación en Marketplace está VENDIDA.
+ * NUNCA clasifica como vendida una publicación que tenga botones de acción ("Marcar como vendido/agotado").
+ */
+function isListingSold(textContent, lines) {
+  if (!textContent) return false;
+  const lower = textContent.toLowerCase();
+
+  // Si tiene botones de publicación activa en Marketplace, NO está vendida bajo ninguna circunstancia
+  if (
+    lower.includes("marcar como vendido") ||
+    lower.includes("marcar como agotado") ||
+    lower.includes("mark as sold") ||
+    lower.includes("mark as out of stock") ||
+    lower.includes("marcar como pendiente") ||
+    lower.includes("mark as pending")
+  ) {
+    return false;
+  }
+
+  // 1. Si el botón dice "marcar como disponible", significa que YA fue marcada como vendida
+  if (lower.includes("marcar como disponible") || lower.includes("mark as available")) {
+    return true;
+  }
+
+  // 2. Líneas explícitas de estado de venta consumada (descartando botones de acción)
+  for (const line of lines) {
+    const l = line.toLowerCase().trim();
+    if (/^(vendido|agotado|sold|out of stock)(\s*·|\s*$)/i.test(l) && !l.includes("marcar como")) {
+      return true;
+    }
+    if (l === "vendido fuera de facebook" || l === "vendido en facebook" || l === "marcado como vendido" || l === "marcado como agotado") {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+
+/**
  * Extrae de forma exhaustiva la URL de la imagen real del producto en Facebook Marketplace.
  * Prioriza CDN de Facebook (scontent / fbcdn) y descarta iconos, emojis o avatares.
  */
@@ -1170,10 +1210,7 @@ async function auditMarketplaceListings() {
       const isMatch = isDirectTwin || matchScore >= 0.70;
 
       if (isMatch) {
-        const isSoldOnFb = lines.some(l => {
-          const lower = l.toLowerCase();
-          return lower.includes("vendid") || lower.includes("agotad") || lower.includes("sold") || lower.includes("marcar como disponible");
-        });
+        const isSoldOnFb = isListingSold(textContent, lines);
 
         if (isSoldOnFb && prod.status !== "SOLD_OUT") {
           console.log(`✦ "${prod.title}" marcada como VENDIDA en Facebook. Sincronizando...`);
@@ -1190,6 +1227,22 @@ async function auditMarketplaceListings() {
             if (info) info.textContent = `✓ "${prod.title}" marcado como AGOTADO (regla 12h)`;
           }
         } else {
+          // Publicación ACTIVA en Facebook: Si en la tienda web estaba erróneamente como SOLD_OUT, restaurarla
+          if (prod.status === "SOLD_OUT") {
+            console.log(`✦ "${prod.title}" está ACTIVA en Facebook. Restaurando a ACTIVE en tienda web...`);
+            const reactRes = await new Promise(resolve => {
+              safeSendMessage({
+                action: "REACTIVATE_PRODUCT_IN_FIRESTORE",
+                productId: prod.id,
+                collection: prod._collection || activeSyncCollection
+              }, resolve);
+            });
+            if (reactRes && reactRes.success) {
+              prod.status = "ACTIVE";
+              updatedCount++;
+              if (info) info.textContent = `✓ "${prod.title}" reactivado a DISPONIBLE`;
+            }
+          }
           // Normalización bimoneda de precios canónicos de Facebook
           const isAccessory = ACCESSORY_REGEX.test(prod.title || fbTitle || "");
           const isHighEnd = !isAccessory && HIGH_END_REGEX.test(prod.title || fbTitle || "");

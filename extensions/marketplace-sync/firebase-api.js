@@ -208,6 +208,7 @@ export async function updateProductPriceFromFacebook(productId, newPriceUsd, new
     "updateMask.fieldPaths=cash_to_pay_usd",
     "updateMask.fieldPaths=pointsCost",
     "updateMask.fieldPaths=points_cost",
+    "updateMask.fieldPaths=status",
     "updateMask.fieldPaths=syncSource",
     "updateMask.fieldPaths=lastSyncedAt"
   ];
@@ -233,6 +234,7 @@ export async function updateProductPriceFromFacebook(productId, newPriceUsd, new
     cash_to_pay_usd: { doubleValue: cashDueUsd },
     pointsCost: { integerValue: String(ptsCost) },
     points_cost: { integerValue: String(ptsCost) },
+    status: { stringValue: "ACTIVE" },
     syncSource: { stringValue: "facebook" },
     lastSyncedAt: { timestampValue: now }
   };
@@ -299,3 +301,40 @@ export async function markProductSoldFromFacebook(productId, collection = "rewar
     throw err;
   }
 }
+
+/**
+ * Reactiva un producto como ACTIVE en Firestore si está disponible en Facebook
+ */
+export async function reactivateProductInFirestore(productId, collection = "rewards_catalog") {
+  const targetCol = collection || "rewards_catalog";
+  const maskParams = [
+    "updateMask.fieldPaths=status",
+    "updateMask.fieldPaths=stock",
+    "updateMask.fieldPaths=soldOutReason",
+    "updateMask.fieldPaths=syncSource",
+    "updateMask.fieldPaths=lastSyncedAt"
+  ];
+  const url = `${BASE_URL}/${targetCol}/${productId}?${maskParams.join("&")}&key=${FIREBASE_CONFIG.apiKey}`;
+  const now = new Date().toISOString();
+  const fields = {
+    status: { stringValue: "ACTIVE" },
+    stock: { integerValue: 1 },
+    soldOutReason: { stringValue: "" },
+    syncSource: { stringValue: "facebook_extension_reactivated" },
+    lastSyncedAt: { timestampValue: now }
+  };
+
+  try {
+    const res = await fetch(url, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ fields })
+    });
+    console.log(`✓ Producto ${productId} reactivado como ACTIVE en [${targetCol}].`);
+    return res.ok;
+  } catch (err) {
+    console.error("Fallo reactivando producto como activo:", err);
+    throw err;
+  }
+}
+

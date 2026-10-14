@@ -1,5 +1,5 @@
 /* Service Worker en segundo plano (Manifest V3) */
-import { getWebProducts, getProductById, linkProductToFacebook, updateProductPriceFromFacebook, markProductSoldFromFacebook } from "./firebase-api.js";
+import { getWebProducts, getProductById, linkProductToFacebook, updateProductPriceFromFacebook, markProductSoldFromFacebook, reactivateProductInFirestore } from "./firebase-api.js";
 
 const SYNC_ALARM_NAME = "HAIBANE_MARKETPLACE_SYNC_ALARM";
 
@@ -141,6 +141,17 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     chrome.storage?.local?.get(["targetCollection"], (stored) => {
       const col = collection || stored?.targetCollection || "rewards_catalog";
       markProductSoldFromFacebook(productId, col)
+        .then(result => sendResponse({ success: true, result }))
+        .catch(error => sendResponse({ success: false, error: error.message }));
+    });
+    return true;
+  }
+
+  if (request.action === "REACTIVATE_PRODUCT_IN_FIRESTORE") {
+    const { productId, collection } = request;
+    chrome.storage?.local?.get(["targetCollection"], (stored) => {
+      const col = collection || stored?.targetCollection || "rewards_catalog";
+      reactivateProductInFirestore(productId, col)
         .then(result => sendResponse({ success: true, result }))
         .catch(error => sendResponse({ success: false, error: error.message }));
     });
