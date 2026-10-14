@@ -35,10 +35,15 @@ const p4 = { title: "Grip / Power Bank Gaming Anker PowerCore 10000" };
 assert.strictEqual(detectProductBrand(p4), "Anker", "Debe extraer Anker del título");
 console.log("  ✓ Test 4: Extracción de Anker desde el título validada.");
 
-// Test 5: Genérico sin marca (Mando Windchaser) -> DEBE SER VACÍO ""
+// Test 5: Mando Windchaser -> DEBE SER "Windchaser"
 const p5 = { title: "Mando Windchaser PLUS Youth Edition", description: "Control inalámbrico multiplataforma" };
-assert.strictEqual(detectProductBrand(p5), "", "Genérico Windchaser debe devolver vacío ''");
-console.log("  ✓ Test 5: Genérico Mando Windchaser devuelve campo vacío ('').");
+assert.strictEqual(detectProductBrand(p5), "Windchaser", "Mando Windchaser debe devolver 'Windchaser'");
+console.log("  ✓ Test 5: Mando Windchaser asigna correctamente marca 'Windchaser'.");
+
+// Test 5b: Mando Windchaser con descripción compatible con Nintendo Switch -> DEBE SER "Windchaser" (NO Nintendo)
+const p5b = { title: "Mando Windchaser PLUS Youth Edition", description: "Compatible con Nintendo Switch, PC, iOS y Android." };
+assert.strictEqual(detectProductBrand(p5b), "Windchaser", "Mando Windchaser debe devolver 'Windchaser' y no confundirse con Nintendo Switch");
+console.log("  ✓ Test 5b: Mando Windchaser no se confunde con 'Nintendo' pese a compatibilidad en descripción.");
 
 // Test 6: Genérico sin marca (Mini Jet Fan) -> DEBE SER VACÍO ""
 const p6 = { title: "Mini Jet Fan 2 en 1 | Soplador Turbo y Aspiradora Portátil", description: "Mini turbina portátil 2 en 1" };
@@ -46,7 +51,7 @@ assert.strictEqual(detectProductBrand(p6), "", "Genérico Mini Jet Fan debe devo
 console.log("  ✓ Test 6: Genérico Mini Jet Fan devuelve campo vacío ('').");
 
 // Test 7: Compatibilidad ("para Nintendo Switch") -> NO debe asignar Nintendo a un accesorio genérico
-const p7 = { title: "Funda de silicón rígida para Nintendo Switch OLED", description: "Protector contra caídas" };
+const p7 = { title: "Funda de silicón rígida para Nintendo Switch OLED", description: "Protector contra caídas compatible con Nintendo Switch" };
 assert.strictEqual(detectProductBrand(p7), "", "Funda para Nintendo Switch debe limpiar compatibilidad y devolver vacío");
 console.log("  ✓ Test 7: Limpiador de compatibilidad descarta marca falsa ('para Nintendo').");
 

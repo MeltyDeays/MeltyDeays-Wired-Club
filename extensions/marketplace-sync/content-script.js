@@ -1859,6 +1859,7 @@ function detectProductBrand(product) {
   const BRAND_MAP = [
     { regex: /\b(tp-?link)\b/i, name: "TP-Link" },
     { regex: /\b(gamesir)\b/i, name: "GameSir" },
+    { regex: /\b(windchaser)\b/i, name: "Windchaser" },
     { regex: /\b(acer|predator|helios)\b/i, name: "Acer" },
     { regex: /\b(anker|soundcore|powercore)\b/i, name: "Anker" },
     { regex: /\b(logitech|logi)\b/i, name: "Logitech" },
@@ -1881,7 +1882,7 @@ function detectProductBrand(product) {
     { regex: /\b(ugreen)\b/i, name: "UGREEN" },
     { regex: /\b(baseus)\b/i, name: "Baseus" },
     { regex: /\b(fantech)\b/i, name: "Fantech" },
-    { regex: /\b(machkeike)\b/i, name: "Machkeike" },
+    { regex: /\b(machenike|machkeike)\b/i, name: "Machenike" },
     { regex: /\b(glorious)\b/i, name: "Glorious" },
     { regex: /\b(epomaker)\b/i, name: "Epomaker" },
     { regex: /\b(keychron)\b/i, name: "Keychron" },
@@ -1890,7 +1891,11 @@ function detectProductBrand(product) {
     { regex: /\b(thunderobot)\b/i, name: "Thunderobot" },
     { regex: /\b(ajazz)\b/i, name: "Ajazz" },
     { regex: /\b(attack shark)\b/i, name: "Attack Shark" },
-    { regex: /\b(flydigi)\b/i, name: "Flydigi" }
+    { regex: /\b(flydigi)\b/i, name: "Flydigi" },
+    { regex: /\b(gulikit)\b/i, name: "GuliKit" },
+    { regex: /\b(dobe)\b/i, name: "Dobe" },
+    { regex: /\b(ipega)\b/i, name: "Ipega" },
+    { regex: /\b(easysmx)\b/i, name: "EasySMX" }
   ];
 
   // Primero buscar en el título limpio (máxima certeza)
@@ -1901,8 +1906,17 @@ function detectProductBrand(product) {
   }
 
   // Si no se encontró en el título, verificar si la descripción hace mención explícita a la marca
+  // Limpiar menciones de compatibilidad en descripción ("compatible con Nintendo Switch", "sirve para PS5", etc.)
+  const cleanDesc = rawDesc
+    .replace(/\b(para|for|compatible(\s+con)?|diseñado\s+para|soporte\s+para|funda\s+para|estuche\s+para|funciona\s+en|sirve\s+para|plataformas?:?)\s+[a-z0-9\-\s,]+/gi, "")
+    .trim();
+
+  // Marcas de ecosistema/consola que NUNCA deben inferirse desde la descripción para evitar falsos positivos
+  const PLATFORM_BRANDS = ["Nintendo", "Sony", "Microsoft", "Apple"];
+
   for (const b of BRAND_MAP) {
-    if (b.regex.test(rawDesc)) {
+    if (PLATFORM_BRANDS.includes(b.name)) continue;
+    if (b.regex.test(cleanDesc)) {
       return b.name;
     }
   }
