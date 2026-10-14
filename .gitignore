@@ -21,3 +21,4 @@ yarn.lock
 .agents/
 scratch/
 
+.env*

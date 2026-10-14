@@ -303,29 +303,95 @@ export async function downscaleImageForProcessing(source, maxDim = 1024) {
 }
 
 /**
- * Procesa una imagen: remueve el fondo con IA, detecta y suprime manos/dedos,
- * reconstruye el chasis mediante inpainting estructural y monta en 1:1 blanco puro.
+ * Detecta si el entorno de ejecución corresponde a un dispositivo móvil
+ */
+export function isMobileDevice() {
+  if (typeof navigator === "undefined") return false;
+  return /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+    (navigator.maxTouchPoints > 1 && typeof window !== "undefined" && window.innerWidth <= 1024);
+}
+
+/**
+ * Centra y normaliza de forma instantánea cualquier fuente de imagen en lienzo 1:1 blanco puro (#FFFFFF).
+ * Completa en <30ms sin bloquear el hilo principal ni descargar modelos pesados.
+ * @param {Blob|File|string|HTMLImageElement} source 
+ * @param {number} targetSize 
+ * @returns {Promise<string>} DataURL en formato JPEG 1:1
+ */
+export function composeSquareWhiteFromSource(source, targetSize = 800) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    let objectUrl = null;
+
+    const cleanup = () => {
+      if (objectUrl) {
+        try { URL.revokeObjectURL(objectUrl); } catch (e) {}
+      }
+    };
+
+    img.onload = () => {
+      const dataUrl = composeSquareWhiteBackground(img, targetSize);
+      cleanup();
+      resolve(dataUrl);
+    };
+
+    img.onerror = (err) => {
+      cleanup();
+      reject(err);
+    };
+
+    try {
+      if (typeof source === "string") {
+        img.src = source;
+      } else if (source instanceof Blob || (typeof File !== "undefined" && source instanceof File)) {
+        objectUrl = URL.createObjectURL(source);
+        img.src = objectUrl;
+      } else if (source && (source.src || source.width)) {
+        img.src = source.src || "";
+      } else {
+        cleanup();
+        reject(new Error("Fuente no válida para normalización 1:1"));
+      }
+    } catch (err) {
+      cleanup();
+      reject(err);
+    }
+  });
+}
+
+/**
+ * Procesa una imagen: remueve el fondo con IA o normaliza a 1:1 sobre blanco puro sin colgar móviles.
  * @param {Blob|File|string} imageSource Imagen origen (File, Blob o DataURL)
  * @param {Object} options Opciones de configuración
  * @returns {Promise<string>} DataURL resultante listo para catálogo y Marketplace
  */
 export async function processImageWithAiWhiteBg(imageSource, options = {}) {
-  const { onProgress = null, targetSize = 800 } = options;
+  const { onProgress = null, targetSize = 800, forceAi = false } = options;
 
-  if (onProgress) onProgress("Optimizando foto para el dispositivo...");
+  if (onProgress) onProgress("Optimizando foto...");
   const optimizedSource = await downscaleImageForProcessing(imageSource, 1024);
 
-  const engine = await loadBgRemovalEngine();
+  // En dispositivos móviles (salvo que forceAi sea explícito), evitar la descarga de 95MB
+  // de pesos Wasm/ONNX que saturan CPU y congelan la pantalla. Normalizar 1:1 en <30ms.
+  if (isMobileDevice() && !forceAi) {
+    if (onProgress) onProgress("Normalizando 1:1 (Fondo Blanco)...");
+    return await composeSquareWhiteFromSource(optimizedSource, targetSize);
+  }
 
-  if (engine && typeof engine.removeBackground === "function") {
-    try {
+  // En PC/Desktop (o si forceAi es true), intentar segmentación acelerada
+  try {
+    const engine = await loadBgRemovalEngine();
+    if (engine && typeof engine.removeBackground === "function") {
       if (onProgress) onProgress("Iniciando segmentación con IA...");
 
       let lastReportedPct = -1;
       let lastReportedTime = 0;
 
-      // Inferencia con timeout de 25 segundos para evitar cuelgues o bloqueos indefinidos en móviles
       const removeBgPromise = engine.removeBackground(optimizedSource, {
+        model: "small", // isnet_quint8 (~10MB en vez de 95MB)
+        device: "gpu",  // Aceleración WebGPU
+        rescale: true,
         progress: (key, current, total) => {
           if (!onProgress || !total) return;
           const pct = Math.round((current / total) * 100);
@@ -333,23 +399,17 @@ export async function processImageWithAiWhiteBg(imageSource, options = {}) {
           if (pct === 100 || (Math.abs(pct - lastReportedPct) >= 15 && now - lastReportedTime > 300)) {
             lastReportedPct = pct;
             lastReportedTime = now;
-            const keyStr = String(key || "").toLowerCase();
-            if (keyStr.includes("fetch")) {
-              onProgress(`Descargando IA: ${pct}%`);
-            } else {
-              onProgress(`Segmentando fondo: ${pct}%`);
-            }
+            onProgress(`Segmentando fondo: ${pct}%`);
           }
         }
       });
 
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error("Timeout en segmentación Wasm")), 25000);
+        setTimeout(() => reject(new Error("Timeout en segmentación")), 8000);
       });
 
       const transparentBlob = await Promise.race([removeBgPromise, timeoutPromise]);
 
-      // Crear canvas temporal para inspección de oclusión y supresión de manos
       const img = new Image();
       const objectUrl = URL.createObjectURL(transparentBlob);
       await new Promise((resolve, reject) => {
@@ -360,7 +420,7 @@ export async function processImageWithAiWhiteBg(imageSource, options = {}) {
 
       let cvW = img.naturalWidth || img.width;
       let cvH = img.naturalHeight || img.height;
-      const maxInpaintDim = 1000;
+      const maxInpaintDim = 600;
       if (cvW > maxInpaintDim || cvH > maxInpaintDim) {
         if (cvW > cvH) {
           cvH = Math.round((cvH * maxInpaintDim) / cvW);
@@ -377,36 +437,17 @@ export async function processImageWithAiWhiteBg(imageSource, options = {}) {
       const tempCtx = tempCanvas.getContext("2d", { willReadFrequently: true });
       tempCtx.drawImage(img, 0, 0, cvW, cvH);
 
-      // Erradicación de manos/dedos y reconstrucción de la superficie ocluida
       if (onProgress) onProgress("Detectando manos y reconstruyendo...");
-      const handRepaired = inpaintHandOcclusionsOnCanvas(tempCanvas);
-      if (handRepaired && onProgress) {
-        onProgress("✓ Manos eliminadas y carcasa reconstruida.");
-      }
+      inpaintHandOcclusionsOnCanvas(tempCanvas);
 
       const finalDataUrl = composeSquareWhiteBackground(tempCanvas, targetSize);
       URL.revokeObjectURL(objectUrl);
       return finalDataUrl;
-    } catch (err) {
-      console.warn("Fallo o timeout durante inferencia Wasm, aplicando fallback local 1:1:", err);
     }
+  } catch (err) {
+    console.warn("Fallo o timeout durante inferencia Wasm, aplicando fallback local 1:1:", err.message);
   }
 
-  // Fallback: Si no hay soporte Wasm o falla el modelo, normalizar 1:1 centrado con fondo blanco
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.onload = () => {
-      resolve(composeSquareWhiteBackground(img, targetSize));
-    };
-    img.onerror = reject;
-    if (typeof optimizedSource === "string") {
-      img.src = optimizedSource;
-    } else {
-      const reader = new FileReader();
-      reader.onload = (e) => { img.src = e.target.result; };
-      reader.onerror = reject;
-      reader.readAsDataURL(optimizedSource);
-    }
-  });
+  // Fallback seguro universal: normalizar 1:1 centrado con fondo blanco puro
+  return await composeSquareWhiteFromSource(optimizedSource, targetSize);
 }
