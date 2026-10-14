@@ -702,7 +702,22 @@ export function setupTestEnvironment(htmlFileName = 'index.html', options = {}) 
       hostname: options.hostname || 'localhost',
       search: options.search || '',
       href: options.href || 'http://localhost/',
-      pathname: '/'
+      pathname: '/',
+      hash: options.hash || ''
+    },
+    history: {
+      replaceState: (state, title, url) => {
+        if (typeof url === 'string') {
+          const hashIdx = url.indexOf('#');
+          win.location.hash = hashIdx >= 0 ? url.substring(hashIdx) : '';
+        }
+      },
+      pushState: (state, title, url) => {
+        if (typeof url === 'string') {
+          const hashIdx = url.indexOf('#');
+          win.location.hash = hashIdx >= 0 ? url.substring(hashIdx) : '';
+        }
+      }
     },
     navigator: {
       userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) E2ETestRunner'

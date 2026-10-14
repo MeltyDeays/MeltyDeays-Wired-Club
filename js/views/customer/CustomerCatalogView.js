@@ -31,6 +31,150 @@ let formatDualPrice = (usd) => {
 let selectedComboOption = "FULL_COMBO";
 let currentlyOpenSpecsId = null;
 let activeCommentsUnsubscribe = null;
+let deepLinkRetryTimer = null;
+let deepLinkAttempts = 0;
+
+export function clearDeepLinkWatcher() {
+  if (deepLinkRetryTimer) {
+    clearInterval(deepLinkRetryTimer);
+    deepLinkRetryTimer = null;
+  }
+  deepLinkAttempts = 0;
+}
+
+export function extractDeepLinkProductId() {
+  if (typeof window === "undefined") return null;
+
+  // 1. Prioridad: window.location.hash (#product-..., #p-..., #item-..., #fb_...)
+  const hash = window.location.hash ? window.location.hash.trim() : "";
+  if (hash) {
+    const hashMatch = hash.match(/^#(?:product|reward|item|p)[-_:](.+)$/i);
+    if (hashMatch && hashMatch[1]) {
+      return decodeURIComponent(hashMatch[1].trim());
+    }
+    if (/^#(?:fb_|[a-zA-Z0-9_-]{6,})/i.test(hash)) {
+      return decodeURIComponent(hash.substring(1).trim());
+    }
+  }
+
+  // 2. Parámetros de query en URL (?openReward=..., ?product=..., ?reward=..., ?p=...)
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const qId = params.get("product") || params.get("openReward") || params.get("reward") || params.get("item") || params.get("p");
+    if (qId && qId.trim()) {
+      return decodeURIComponent(qId.trim());
+    }
+  } catch (e) {}
+
+  return null;
+}
+
+export function findProductInCatalog(targetId, customCatalog = null) {
+  if (!targetId) return null;
+  const rawTarget = String(targetId).trim();
+  if (!rawTarget) return null;
+
+  let cleanId = rawTarget.replace(/^#/, "").trim();
+  cleanId = cleanId.replace(/^(?:product|reward|item|p)[-_:]/i, "").trim();
+
+  const withoutFb = cleanId.replace(/^fb[-_]/i, "").trim();
+  const withFb = cleanId.startsWith("fb_") ? cleanId : `fb_${withoutFb}`;
+
+  const searchPools = [];
+  if (Array.isArray(customCatalog) && customCatalog.length > 0) {
+    searchPools.push(customCatalog);
+  }
+  if (vm && Array.isArray(vm.catalog) && vm.catalog.length > 0) {
+    searchPools.push(vm.catalog);
+  }
+  if (typeof window !== "undefined" && Array.isArray(window._rawCatalog) && window._rawCatalog.length > 0) {
+    searchPools.push(window._rawCatalog);
+  }
+  if (Array.isArray(lastRenderedCatalog) && lastRenderedCatalog.length > 0) {
+    searchPools.push(lastRenderedCatalog);
+  }
+  if (typeof window !== "undefined" && Array.isArray(window._lastRenderedCatalog) && window._lastRenderedCatalog.length > 0) {
+    searchPools.push(window._lastRenderedCatalog);
+  }
+
+  for (const pool of searchPools) {
+    const found = pool.find(r => {
+      if (!r) return false;
+      const rId = String(r.id || r.reward_id || "").trim();
+      const rFb = String(r.facebookListingId || r.facebook_listing_id || r.listingId || "").trim();
+      const rawDocId = String(r.raw?.id || "").trim();
+      const rawFbId = String(r.raw?.facebookListingId || "").trim();
+
+      // 1. Coincidencia directa o con/sin prefijo fb_
+      if (rId && (rId === rawTarget || rId === cleanId || rId === withFb || rId === withoutFb)) return true;
+      if (rFb && (rFb === rawTarget || rFb === cleanId || rFb === withFb || rFb === withoutFb)) return true;
+      if (rawDocId && (rawDocId === rawTarget || rawDocId === cleanId || rawDocId === withFb || rawDocId === withoutFb)) return true;
+      if (rawFbId && (rawFbId === rawTarget || rawFbId === cleanId || rawFbId === withFb || rawFbId === withoutFb)) return true;
+
+      // 2. Coincidencia normalizada sin prefijo fb_
+      const rIdNoFb = rId.replace(/^fb[-_]/i, "");
+      const rFbNoFb = rFb.replace(/^fb[-_]/i, "");
+      if (withoutFb && (rIdNoFb === withoutFb || rFbNoFb === withoutFb)) return true;
+
+      // 3. Coincidencia insensible a mayúsculas
+      if (cleanId && (rId.toLowerCase() === cleanId.toLowerCase() || rFb.toLowerCase() === cleanId.toLowerCase())) return true;
+
+      return false;
+    });
+
+    if (found) return found;
+  }
+
+  return null;
+}
+
+export function startDeepLinkWatcher(targetId) {
+  clearDeepLinkWatcher();
+  if (typeof window === "undefined" || !targetId) return;
+
+  deepLinkRetryTimer = setInterval(() => {
+    deepLinkAttempts++;
+    const item = findProductInCatalog(targetId);
+    const modal = document.getElementById("modal-product-specs");
+    const body = document.getElementById("modal-specs-body");
+    if (item && modal && body) {
+      clearDeepLinkWatcher();
+      openProductSpecsModal(item.id || targetId);
+    } else if (deepLinkAttempts > 60) {
+      clearDeepLinkWatcher();
+    }
+  }, 120);
+}
+
+export function handleCatalogImgError(imgEl, itemId, modeIcon = "🏷️", modeLabel = "WIRED_ITEM") {
+  if (!imgEl) return;
+  imgEl.onerror = null;
+
+  // 1. Intentar con siguiente imagen disponible en el item si existe
+  const item = findProductInCatalog(itemId);
+  if (item) {
+    const images = typeof item.getImages === "function" ? item.getImages() : (item.images || []);
+    const currentSrc = imgEl.src || "";
+    const nextImg = images.find(img => img && img !== currentSrc && !img.includes("fusertech.co.zw") && !img.includes("toolsandtoys.net"));
+    if (nextImg) {
+      imgEl.src = nextImg;
+      return;
+    }
+  }
+
+  // 2. Si no hay más imágenes viables, ocultar imagen rota y mostrar placa retro cyberpunk
+  imgEl.style.display = "none";
+  const parent = imgEl.parentElement;
+  if (parent) {
+    parent.style.background = "#0d131f";
+    parent.insertAdjacentHTML("afterbegin", `
+      <div style="text-align:center; padding:1.5rem; width:100%;">
+        <span style="font-size:2.2rem;">${modeIcon}</span>
+        <div style="font-family:var(--font-mono); font-size:0.68rem; color:#38bdf8; margin-top:4px;">${modeLabel}</div>
+      </div>
+    `);
+  }
+}
 
 export function toggleRewardSpecs(itemId) {
   const drop = document.getElementById("specs-drop-" + itemId);
@@ -647,11 +791,11 @@ export function renderWiredCoinSvg() {
 }
 
 export async function shareProduct(rewardId) {
-  const item = (lastRenderedCatalog || []).find(r => r.id === rewardId) ||
-    (vm?.catalog || []).find(r => r.id === rewardId);
+  const item = findProductInCatalog(rewardId);
   if (!item) return;
 
-  const url = window.location.origin + window.location.pathname + '#product-' + rewardId;
+  const canonicalId = item.id || rewardId;
+  const url = window.location.origin + window.location.pathname + '#product-' + canonicalId;
   const shareData = {
     title: `${item.title} · MeltyDeays Wired Club`,
     text: `¡Mira esta recompensa en The Wired Club! ${item.title} disponible para canjear con Wired Points.`,
@@ -935,25 +1079,26 @@ export async function submitClientCommentReply(rewardId, commentId) {
 }
 
 export function openProductSpecsModal(rewardId, imgIdx = 0) {
-  let item = null;
-  if (vm && vm.catalog) {
-    item = vm.catalog.find(r => r.id === rewardId);
-  }
-  if (!item && lastRenderedCatalog.length > 0) {
-    item = lastRenderedCatalog.find(r => r.id === rewardId);
-  }
-  if (!item && typeof window !== "undefined" && Array.isArray(window._lastRenderedCatalog)) {
-    item = window._lastRenderedCatalog.find(r => r.id === rewardId);
-  }
-  if (!item) return;
-
-  currentSpecsItem = item;
-  currentSpecsImgIndex = Math.max(0, imgIdx);
-
+  const item = findProductInCatalog(rewardId);
   const modal = document.getElementById("modal-product-specs");
   const body = document.getElementById("modal-specs-body");
   const footer = document.getElementById("modal-specs-footer");
-  if (!modal || !body) return;
+
+  if (!item || !modal || !body) {
+    if (typeof window !== "undefined" && rewardId) {
+      window._pendingSpecsModalProductId = rewardId;
+      startDeepLinkWatcher(rewardId);
+    }
+    return;
+  }
+
+  if (typeof window !== "undefined") {
+    window._pendingSpecsModalProductId = null;
+    clearDeepLinkWatcher();
+  }
+
+  currentSpecsItem = item;
+  currentSpecsImgIndex = Math.max(0, imgIdx);
 
   // Restablecer scroll al inicio inmediatamente
   body.scrollTop = 0;
@@ -1020,7 +1165,7 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
         <div class="specs-carousel-stage">
           ${hasMultiple ? `<span id="specs-carousel-counter" class="specs-carousel-counter">[ 0${currentSpecsImgIndex + 1} / 0${productImages.length} ]</span>` : ''}
           ${hasMultiple ? `<button type="button" class="specs-carousel-btn prev" onclick="specsModalPrevImage()" aria-label="Foto anterior">‹</button>` : ''}
-          <img id="specs-carousel-img" src="${mainHeroImg}" alt="${item.title}" decoding="async" onclick="openLightboxFromSpecs()" title="Clic para ver en pantalla completa" onerror="this.onerror=null; this.src=''; this.parentElement.style.background='#0d131f';">
+          <img id="specs-carousel-img" src="${mainHeroImg}" alt="${item.title}" referrerpolicy="no-referrer" decoding="async" onclick="openLightboxFromSpecs()" title="Clic para ver en pantalla completa" onerror="this.onerror=null; this.src=''; this.parentElement.style.background='#0d131f';">
           ${hasMultiple ? `<button type="button" class="specs-carousel-btn next" onclick="specsModalNextImage()" aria-label="Foto siguiente">›</button>` : ''}
           <button type="button" class="specs-carousel-expand-btn" onclick="openLightboxFromSpecs()" title="Ver en pantalla completa">
             <span>⛶</span> <span>AMPLIAR</span>
@@ -1030,7 +1175,7 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
           <div class="specs-carousel-pagination">
             ${productImages.map((src, idx) => `
               <div class="specs-carousel-thumb ${idx === currentSpecsImgIndex ? 'active' : ''}" onclick="setSpecsModalImageIndex(${idx})" title="Frame ${idx + 1}">
-                <img src="${src}" alt="Miniatura ${idx + 1}" loading="lazy" decoding="async">
+                <img src="${src}" alt="Miniatura ${idx + 1}" referrerpolicy="no-referrer" loading="lazy" decoding="async">
               </div>
             `).join("")}
           </div>
@@ -1521,6 +1666,15 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
     fab.style.setProperty("display", "none", "important");
   }
 
+  // Sincronizar hash en la barra de direcciones de forma transparente
+  if (typeof window !== "undefined" && window.history && typeof window.history.replaceState === "function") {
+    const canonicalId = item.id || rewardId;
+    const targetHash = `#product-${canonicalId}`;
+    if (window.location.hash !== targetHash) {
+      window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}${targetHash}`);
+    }
+  }
+
   // Activar soporte de swipe gestual en el carrusel de fotos
   const stageEl = modal.querySelector(".specs-carousel-stage");
   if (stageEl) {
@@ -1554,7 +1708,12 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
   });
 }
 
-export function closeProductSpecsModal() {
+export function closeProductSpecsModal(options = {}) {
+  const updateHash = options && options.updateHash !== false;
+  if (typeof window !== "undefined") {
+    window._pendingSpecsModalProductId = null;
+    clearDeepLinkWatcher();
+  }
   if (typeof activeCommentsUnsubscribe === "function") {
     activeCommentsUnsubscribe();
     activeCommentsUnsubscribe = null;
@@ -1581,6 +1740,19 @@ export function closeProductSpecsModal() {
     if (fab) {
       fab.style.display = "";
       fab.classList.remove("is-hidden");
+    }
+  }
+
+  // Limpiar hash de producto en la barra de URL de forma transparente sin saltos ni recargas
+  if (updateHash && typeof window !== "undefined") {
+    const hash = window.location.hash || "";
+    if (hash.startsWith("#product-") || hash.startsWith("#p-") || hash.startsWith("#item-") || hash.startsWith("#reward-") || /^#fb_/i.test(hash)) {
+      if (window.history && typeof window.history.replaceState === "function") {
+        window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}`);
+      }
+      if (window.location && window.location.hash && (window.location.hash.startsWith("#product-") || window.location.hash.startsWith("#p-") || window.location.hash.startsWith("#item-") || window.location.hash.startsWith("#reward-") || /^#fb_/i.test(window.location.hash))) {
+        window.location.hash = "";
+      }
     }
   }
 }
@@ -1638,23 +1810,32 @@ export function initCustomerCatalogView(deps) {
     if (deps.formatDualPrice) formatDualPrice = deps.formatDualPrice;
   }
 
-  // Soporte deep linking para URLs compartidas (#product-[id])
-  const checkProductHash = () => {
+  // Exponer métodos de ficha técnica y deep-link en window
+  if (typeof window !== "undefined") {
+    window.openProductSpecsModal = openProductSpecsModal;
+    window.closeProductSpecsModal = closeProductSpecsModal;
+    window.findProductInCatalog = findProductInCatalog;
+    window.extractDeepLinkProductId = extractDeepLinkProductId;
+    window.handleCatalogImgError = handleCatalogImgError;
+  }
+
+  // Soporte deep linking para URLs compartidas (#product-[id], ?openReward=...) y navegación del historial
+  const handleProductDeepLink = () => {
     if (typeof window === "undefined") return;
-    const hash = window.location.hash || "";
-    if (hash.startsWith("#product-")) {
-      const prodId = hash.replace("#product-", "").trim();
-      if (prodId) {
-        setTimeout(() => {
-          openProductSpecsModal(prodId);
-        }, 350);
+    const targetProdId = extractDeepLinkProductId();
+    if (targetProdId) {
+      openProductSpecsModal(targetProdId);
+    } else {
+      const modal = document.getElementById("modal-product-specs");
+      if (modal && modal.style.display !== "none" && modal.style.display !== "") {
+        closeProductSpecsModal({ updateHash: false });
       }
     }
   };
 
   if (typeof window !== "undefined") {
-    window.addEventListener("hashchange", checkProductHash);
-    checkProductHash();
+    window.addEventListener("hashchange", handleProductDeepLink);
+    handleProductDeepLink();
   }
 }
 
@@ -1664,6 +1845,9 @@ let currentRedeemReward = null;
 
 export function renderCatalog(catalog, user) {
   const rawList = Array.isArray(catalog) ? catalog : [];
+  if (typeof window !== "undefined") {
+    window._rawCatalog = rawList;
+  }
   const visibleCatalog = rawList.filter(item => {
     if (item.status === "PENDING_APPROVAL" || item.status === "PENDING_IMAGE") {
       return false;
@@ -2125,7 +2309,7 @@ export function renderCatalog(catalog, user) {
               ${comboItems.map((cItem, idx) => `
                 ${idx > 0 ? '<div class="combo-split-divider"></div>' : ''}
                 <div class="combo-split-item" title="${cItem.title}">
-                  <img src="${cItem.imageUrl || ''}" alt="${cItem.title}" class="combo-split-img" loading="lazy" decoding="async" onerror="this.onerror=null; this.style.display='none'; this.parentElement.style.background='#0d131f';">
+                  <img src="${cItem.imageUrl || ''}" alt="${cItem.title}" class="combo-split-img" referrerpolicy="no-referrer" loading="lazy" decoding="async" onerror="this.onerror=null; this.style.display='none'; this.parentElement.style.background='#0d131f';">
                   <div class="combo-split-item-label">${cItem.title}</div>
                 </div>
               `).join('')}
@@ -2147,7 +2331,7 @@ export function renderCatalog(catalog, user) {
             ` : ''}
             ${mainCover
               ? `
-                <img src="${mainCover}" alt="${item.title}" class="reward-img" loading="lazy" decoding="async" onclick="event.stopPropagation(); openProductSpecsModal('${item.id}')" title="Clic para ver detalles y fotos" onerror="this.onerror=null; this.style.display='none'; this.parentElement.style.background='#0d131f'; this.parentElement.insertAdjacentHTML('afterbegin', '<div style=\\'text-align:center; padding:1.5rem; width:100%;\\'><span style=\\'font-size:2.2rem;\\'>${isIncoming ? '🕊️' : (isPartial ? '🏷️' : '🎁')}</span><div style=\\'font-family:var(--font-mono); font-size:0.68rem; color:#38bdf8; margin-top:4px;\\'>${isIncoming ? 'PREORDER_ITEM' : (isPartial ? 'SALE_DISCOUNT' : 'TECH_REWARD')}</div></div>');">
+                <img src="${mainCover}" alt="${item.title}" class="reward-img" referrerpolicy="no-referrer" loading="lazy" decoding="async" onclick="event.stopPropagation(); openProductSpecsModal('${item.id}')" title="Clic para ver detalles y fotos" onerror="handleCatalogImgError(this, '${item.id}', '${isIncoming ? '🕊️' : (isPartial ? '🏷️' : '🎁')}', '${isIncoming ? 'PREORDER_ITEM' : (isPartial ? 'SALE_DISCOUNT' : 'TECH_REWARD')}');">
                 ${!isOut ? `
                   <div class="reward-img-action-overlay" onclick="event.stopPropagation(); openProductSpecsModal('${item.id}')">
                     <div class="reward-img-expand-badge">
@@ -2360,6 +2544,19 @@ export function renderCatalog(catalog, user) {
   }).join("");
 
   setupCatalogCountdowns(visibleCatalog);
+
+  // Auto-apertura reactiva para productos compartidos mediante enlace deep-link (#product-[id])
+  if (typeof window !== "undefined") {
+    const pendingTarget = window._pendingSpecsModalProductId || extractDeepLinkProductId();
+    if (pendingTarget) {
+      const foundItem = findProductInCatalog(pendingTarget, rawList);
+      if (foundItem) {
+        setTimeout(() => {
+          openProductSpecsModal(foundItem.id || pendingTarget);
+        }, 50);
+      }
+    }
+  }
 }
 
 

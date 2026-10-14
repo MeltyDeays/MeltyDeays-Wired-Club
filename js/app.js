@@ -385,7 +385,15 @@ function render(model) {
 }
 
 let renderScheduled = false;
-let pendingRenderModel = null;
+function resolvePendingDeepLink(model) {
+  if (typeof window === "undefined") return;
+  const pendingId = window._pendingSpecsModalProductId;
+  if (pendingId && model && Array.isArray(model.catalog) && model.catalog.length > 0) {
+    if (typeof window.openProductSpecsModal === "function") {
+      window.openProductSpecsModal(pendingId);
+    }
+  }
+}
 
 function batchedRender(model) {
   pendingRenderModel = model;
@@ -395,10 +403,12 @@ function batchedRender(model) {
     requestAnimationFrame(() => {
       renderScheduled = false;
       render(pendingRenderModel);
+      resolvePendingDeepLink(pendingRenderModel);
     });
   } else {
     renderScheduled = false;
     render(pendingRenderModel);
+    resolvePendingDeepLink(pendingRenderModel);
   }
 }
 
@@ -512,16 +522,32 @@ document.addEventListener("DOMContentLoaded", () => {
   // Inicializar Service Worker para Google Chrome (Push & Móvil)
   PushNotificationService.registerServiceWorker();
 
-  // Abrir producto directamente si el usuario tocó una notificación de Chrome con openReward
-  const urlParams = new URLSearchParams(window.location.search);
-  const openRewardId = urlParams.get("openReward");
-  if (openRewardId) {
-    setTimeout(() => {
-      if (typeof window.openProductSpecsModal === "function") {
-        window.openProductSpecsModal(openRewardId);
+  // Soporte universal para Deep Linking (URL Hash #product-..., Query Params ?openReward=... / ?product=...)
+  const handleInitialDeepLink = () => {
+    let targetId = null;
+    if (typeof window.extractDeepLinkProductId === "function") {
+      targetId = window.extractDeepLinkProductId();
+    } else {
+      const urlParams = new URLSearchParams(window.location.search);
+      targetId = urlParams.get("openReward") || urlParams.get("product") || urlParams.get("reward") || urlParams.get("p");
+      if (!targetId && window.location.hash) {
+        const m = window.location.hash.match(/^#(?:product|reward|item|p)[-_:](.+)$/i);
+        if (m && m[1]) targetId = decodeURIComponent(m[1].trim());
+        else if (/^#(?:fb_|[a-zA-Z0-9_-]{6,})/i.test(window.location.hash)) {
+          targetId = decodeURIComponent(window.location.hash.substring(1).trim());
+        }
       }
-    }, 450);
-  }
+    }
+    if (targetId) {
+      if (typeof window.openProductSpecsModal === "function") {
+        window.openProductSpecsModal(targetId);
+      } else {
+        window._pendingSpecsModalProductId = targetId;
+      }
+    }
+  };
+
+  handleInitialDeepLink();
 
   // Badge visual en entorno de pruebas (SANDBOX)
   injectEnvironmentBadge();

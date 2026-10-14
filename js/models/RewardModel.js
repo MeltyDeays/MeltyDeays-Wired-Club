@@ -133,13 +133,16 @@ export class RewardModel {
     this.initialStock = Number(data.initialStock || data.initial_stock || this.stock || 1);
     this.isUnique = Boolean(data.isUnique || data.is_unique || (this.initialStock === 1));
 
+    this.facebookListingId = data.facebookListingId || data.facebook_listing_id || data.listingId || "";
+    this.fbListingId = this.facebookListingId;
+
     // Invariante de auto-reparación aritmética para hardware de alto valor y descuentos
     const HIGH_END_HARDWARE_REGEX = /(laptop|computadora|notebook|predator|helios|rtx\s*\d+|gtx\s*\d+|radeon|intel\s*(core\s*)?ultra|core\s*i[79]|ryzen\s*[79]|macbook|torre\s*gamer|pc\s*gamer)/i;
     const fullText = `${this.title} ${data.description || data.rawDescription || data.raw_description || ""}`;
     const isHighEnd = HIGH_END_HARDWARE_REGEX.test(fullText);
 
-    // Caso 1: Hardware de alto valor con precio < 250 debido a división errónea de moneda
-    if (isHighEnd && this.priceUsd > 0 && this.priceUsd < 250) {
+    // Caso 1: Hardware de alto valor con precio < 250 debido a división errónea de moneda (excluyendo paquetes COMBO)
+    if (this.rewardType !== "COMBO" && isHighEnd && this.priceUsd > 0 && this.priceUsd < 250) {
       const rawNio = Number(data.priceNio || data.price_nio || 0);
       if (rawNio >= 250) {
         this.priceUsd = rawNio >= 5000 ? Math.round(rawNio / 37.0) : rawNio;
@@ -425,6 +428,8 @@ export class RewardModel {
       raw_description: this.rawDescription,
       rawDescription: this.rawDescription,
       category: this.category,
+      facebookListingId: this.facebookListingId,
+      facebook_listing_id: this.facebookListingId,
       updated_at: this.updatedAt,
       updatedAt: this.updatedAt
     };
