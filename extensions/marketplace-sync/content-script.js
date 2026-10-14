@@ -228,13 +228,13 @@ function getScannableListings() {
     const normKey = normalizeTitle(fbTitle);
     if (seenTitles.has(normKey)) return null;
 
-    // Buscar ID de publicación
+    // Buscar ID de publicación exclusivo de Marketplace
     let fbListingId = defaultId;
     if (!fbListingId) {
       const allLinks = Array.from(container.querySelectorAll("a[href]"));
       for (const a of allLinks) {
         const href = a.getAttribute("href") || "";
-        const m = href.match(/(?:listing_id=|item\/|\/items\/|item_id=)(\d{10,})/i) || href.match(/(\d{10,})/);
+        const m = href.match(/(?:listing_id=|marketplace\/item\/|\/item\/|\/items\/|item_id=)(\d{10,})/i);
         if (m && m[1]) {
           fbListingId = m[1];
           break;
@@ -242,18 +242,17 @@ function getScannableListings() {
       }
     }
 
-    // Si aún no hay ID, buscar si coincide con algún producto de Firestore
+    // Resolver con gemelos web en Firestore
     if (!fbListingId && Array.isArray(cachedWebProducts)) {
       const match = cachedWebProducts.find(p => 
-        computeTitleSimilarity(p.title, fbTitle) >= 0.55 ||
-        (p.title && fbTitle.toLowerCase().includes(p.title.toLowerCase().slice(0, 12)))
+        computeTitleSimilarity(p.title, fbTitle) >= 0.50 ||
+        (p.title && fbTitle.toLowerCase().includes(p.title.toLowerCase().slice(0, 12))) ||
+        (fbTitle && p.title.toLowerCase().includes(fbTitle.toLowerCase().slice(0, 12)))
       );
       if (match && match.facebookListingId) {
         fbListingId = String(match.facebookListingId);
       }
     }
-
-    if (fbListingId && seenIds.has(fbListingId)) return null;
 
     seenTitles.add(normKey);
     if (fbListingId) seenIds.add(fbListingId);
@@ -272,48 +271,68 @@ function getScannableListings() {
     };
   }
 
-  // 1. MÉTODO PRIORITARIO: Detección por botones de acción de fila individual ("Promocionar" o "Marcar como...")
-  // Búsqueda flexible que tolera iconos unicode ✔, spans anidados y variaciones de texto
-  const actionButtons = Array.from(document.querySelectorAll('div[role="button"], button, span, div')).filter(el => {
-    const txt = (el.innerText || el.getAttribute("aria-label") || "").trim().toLowerCase();
-    return txt.includes("marcar como") || txt.includes("mark as") || txt.includes("promocionar") || txt.includes("boost");
-  });
-
   const processedCards = new Set();
 
-  for (const btn of actionButtons) {
-    let curr = btn;
-    let bestCard = null;
+  // ESTRATEGIA 1 (INFALIBLE): Anclaje por Fotos de Producto (img)
+  // Cada fila de producto en /marketplace/you/selling contiene su miniatura
+  const allImages = Array.from(document.querySelectorAll("img")).filter(img => {
+    const w = img.offsetWidth || img.naturalWidth || 80;
+    const h = img.offsetHeight || img.naturalHeight || 80;
+    const src = img.src || "";
+    // Descartar avatares de perfil diminutos e iconos de navegación
+    if (src.includes("emoji") || src.includes("static.xx") || (w < 40 && h < 40)) return false;
+    return true;
+  });
 
+  for (const img of allImages) {
+    let curr = img;
     while (curr && curr !== document.body) {
       curr = curr.parentElement;
       if (!curr) break;
 
       const txt = curr.innerText || "";
-      const promoMatches = (txt.match(/promocionar|boost/gi) || []).length;
-      const markMatches = (txt.match(/marcar como|mark as/gi) || []).length;
-
-      // DETENCIÓN ESTRICTA: Si este contenedor contiene más de 1 acción, ya es la tabla completa
-      if (promoMatches > 1 || markMatches > 1) {
-        break;
-      }
-
       const hasPrice = txt.includes("$") || txt.includes("C$") || txt.includes("NIO");
-      const hasImg = Boolean(curr.querySelector("img"));
+      const hasMeta = txt.includes("publicado") || txt.includes("clics") || txt.includes("marcar como") || txt.includes("promocionar") || txt.includes("disponible") || txt.includes("activo");
 
-      if (hasPrice && hasImg && txt.length < 2500) {
-        bestCard = curr;
+      if (hasPrice && hasMeta && txt.length >= 30 && txt.length < 1500) {
+        if (!processedCards.has(curr)) {
+          processedCards.add(curr);
+          const data = extractListingDataFromElement(curr);
+          if (data) listings.push(data);
+        }
+        break; // Detener ascenso en la tarjeta de fila individual
       }
-    }
-
-    if (bestCard && !processedCards.has(bestCard)) {
-      processedCards.add(bestCard);
-      const data = extractListingDataFromElement(bestCard);
-      if (data) listings.push(data);
     }
   }
 
-  // 2. MÉTODO MODAL: Si hay un modal "Tu publicación" abierto (div[role="dialog"])
+  // ESTRATEGIA 2: Fallback por Botones de Acción de Fila
+  const actionButtons = Array.from(document.querySelectorAll('div[role="button"], button')).filter(el => {
+    const txt = (el.innerText || el.getAttribute("aria-label") || "").trim().toLowerCase();
+    return txt.includes("marcar como") || txt.includes("mark as") || txt.includes("promocionar") || txt.includes("boost");
+  });
+
+  for (const btn of actionButtons) {
+    let curr = btn;
+    while (curr && curr !== document.body) {
+      curr = curr.parentElement;
+      if (!curr) break;
+
+      const txt = curr.innerText || "";
+      const hasPrice = txt.includes("$") || txt.includes("C$") || txt.includes("NIO");
+      const hasImg = Boolean(curr.querySelector("img"));
+
+      if (hasPrice && hasImg && txt.length >= 30 && txt.length < 1500) {
+        if (!processedCards.has(curr)) {
+          processedCards.add(curr);
+          const data = extractListingDataFromElement(curr);
+          if (data) listings.push(data);
+        }
+        break;
+      }
+    }
+  }
+
+  // ESTRATEGIA 3: Si hay un modal abierto (div[role="dialog"])
   const dialog = document.querySelector('div[role="dialog"]');
   if (dialog) {
     const dialogTxt = dialog.innerText || "";
@@ -325,11 +344,11 @@ function getScannableListings() {
     }
   }
 
-  // 3. MÉTODO COMPLEMENTARIO: Enlaces individuales directos (/marketplace/item/)
+  // ESTRATEGIA 4: Enlaces individuales directos (/marketplace/item/)
   const links = Array.from(document.querySelectorAll('a[href*="/marketplace/item/"], a[href*="/item/"], a[href*="listing_id="]'));
   for (const a of links) {
     const href = a.getAttribute("href") || "";
-    const idMatch = href.match(/(?:listing_id=|item\/|\/items\/|item_id=)(\d{10,})/i) || href.match(/(\d{10,})/);
+    const idMatch = href.match(/(?:listing_id=|item\/|\/items\/|item_id=)(\d{10,})/i);
     const fbListingId = idMatch ? idMatch[1] : null;
 
     const parent = a.closest('div[role="article"]') || a.closest('div[role="row"]') || a.closest('div[role="listitem"]') || a.parentElement?.parentElement || a.parentElement;
@@ -2591,6 +2610,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 
         const processListings = (prods) => {
           const listings = getScannableListings();
+          console.log(`✦ Haibane Scan: ${listings.length} publicaciones activas detectadas en pantalla.`);
           const items = listings.map(l => {
             const twin = prods.find(p => 
               (p.facebookListingId && l.fbListingId && String(p.facebookListingId) === String(l.fbListingId)) ||
