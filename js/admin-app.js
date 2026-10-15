@@ -3,7 +3,7 @@ import { AdminViewModel } from "./viewmodels/AdminViewModel.js";
 import { InvoiceTemplateService } from "./services/InvoiceTemplateService.js";
 import { FirestoreService } from "./services/FirestoreService.js";
 import { injectEnvironmentBadge, isProduction } from "./config/env.js";
-import { parseProductDescription } from "./models/RewardModel.js";
+import { parseProductDescription, isExpiredFbUrl } from "./models/RewardModel.js";
 import {
   openImageLightbox,
   closeImageLightbox,
@@ -541,19 +541,24 @@ export function getBestProductCover(images, fallbackUrl = "") {
       img.startsWith("data:image") || 
       img.startsWith("blob:") || 
       (!img.includes("fbcdn.net") && !img.includes("scontent."))
-    )
+    ) && !isExpiredFbUrl(img)
   );
-  return safeImg || list[0] || fallbackUrl || "";
+  if (safeImg) return safeImg;
+  const nonExpired = list.find(img => typeof img === "string" && !isExpiredFbUrl(img));
+  if (nonExpired) return nonExpired;
+  if (fallbackUrl && typeof fallbackUrl === "string" && !isExpiredFbUrl(fallbackUrl)) return fallbackUrl;
+  return "";
 }
 
 export function handleAdminCatalogImgError(imgEl, productId) {
   if (!imgEl) return;
   imgEl.onerror = null;
-  const p = (window.adminViewModel?.products || []).find(item => item.id === productId);
+  const catalogList = window.adminViewModel?.catalog || window.adminViewModel?.products || [];
+  const p = catalogList.find(item => item && (item.id === productId || item.reward_id === productId));
   if (p) {
     const images = typeof p.getImages === "function" ? p.getImages() : (Array.isArray(p.images) ? p.images : (p.imageUrl ? [p.imageUrl] : []));
     const currentSrc = imgEl.src || "";
-    const nextImg = images.find(img => img && img !== currentSrc && !img.includes("fbcdn.net") && !img.includes("scontent."));
+    const nextImg = images.find(img => img && img !== currentSrc && !isExpiredFbUrl(img) && !img.includes("fbcdn.net") && !img.includes("scontent."));
     if (nextImg) {
       imgEl.src = nextImg;
       return;
@@ -801,7 +806,8 @@ function renderCatalogTable(catalog) {
 }
 
 export function openProductActionsModal(productId) {
-  const p = (window.adminViewModel?.products || []).find(item => item.id === productId);
+  const catalogList = window.adminViewModel?.catalog || window.adminViewModel?.products || [];
+  const p = catalogList.find(item => item && (item.id === productId || item.reward_id === productId));
   if (!p) {
     if (typeof showToast === "function") showToast("⚠️ Producto no encontrado", "error");
     return;

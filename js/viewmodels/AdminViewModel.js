@@ -17,6 +17,10 @@ export class AdminViewModel {
     this.listeners = [];
   }
 
+  get products() {
+    return this.catalog;
+  }
+
   subscribe(listener) {
     this.listeners.push(listener);
   }

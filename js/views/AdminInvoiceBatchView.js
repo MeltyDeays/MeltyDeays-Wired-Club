@@ -597,7 +597,8 @@ export function openEditProductModal(productId) {
   preloadBgWorker();
   const modal = document.getElementById("modal-new-product");
   if (!modal) return;
-  const product = (vm.catalog || []).find(p => p.id === productId);
+  const catalogList = vm?.catalog || window.adminViewModel?.catalog || [];
+  const product = catalogList.find(p => p && (p.id === productId || p.reward_id === productId));
   if (!product) {
     showToast("⚠️ No se encontró el producto a editar.", "error");
     return;

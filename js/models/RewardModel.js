@@ -1,5 +1,19 @@
 import { roundToCleanNio } from "../utils/PriceNormalizer.js";
 
+/**
+ * Detecta de forma determinista si una URL de CDN de Facebook (fbcdn.net / scontent)
+ * contiene un token 'oe' expirado o ausente que causaría un error 403 Forbidden.
+ */
+export function isExpiredFbUrl(url) {
+  if (!url || typeof url !== "string") return false;
+  if (!url.includes("fbcdn.net") && !url.includes("scontent.")) return false;
+  const match = url.match(/[?&]oe=([a-fA-F0-9]+)/);
+  if (!match || !match[1]) return true;
+  const expSec = parseInt(match[1], 16);
+  if (isNaN(expSec) || expSec * 1000 <= Date.now()) return true;
+  return false;
+}
+
 export function parseProductDescription(rawText) {
   if (!rawText || typeof rawText !== "string" || !rawText.trim()) {
     return {
@@ -228,7 +242,9 @@ export class RewardModel {
       imgs = [singleUrl];
     }
 
-    // Invariante de resiliencia de imagen: Priorizar fotos locales/seguras sobre CDN efímero de Facebook
+    // Invariante de resiliencia de imagen: Descartar URLs expiradas de Facebook y priorizar fotos locales/seguras
+    imgs = imgs.filter(url => !isExpiredFbUrl(url));
+
     if (imgs.length > 1) {
       const safeIdx = imgs.findIndex(img => img && (img.startsWith("data:image") || img.startsWith("blob:") || (!img.includes("fbcdn.net") && !img.includes("scontent."))));
       if (safeIdx > 0) {
@@ -238,8 +254,9 @@ export class RewardModel {
     }
 
     this.images = imgs;
-    const safeSingle = singleUrl && (singleUrl.startsWith("data:image") || singleUrl.startsWith("blob:") || (!singleUrl.includes("fbcdn.net") && !singleUrl.includes("scontent."))) ? singleUrl : "";
-    this.imageUrl = imgs[0] || safeSingle || singleUrl || "";
+    const safeSingle = singleUrl && !isExpiredFbUrl(singleUrl) && (singleUrl.startsWith("data:image") || singleUrl.startsWith("blob:") || (!singleUrl.includes("fbcdn.net") && !singleUrl.includes("scontent."))) ? singleUrl : "";
+    const cleanSingle = singleUrl && !isExpiredFbUrl(singleUrl) ? singleUrl : "";
+    this.imageUrl = imgs[0] || safeSingle || cleanSingle || "";
 
     this.description = data.description || "";
     this.rawDescription = data.rawDescription || data.raw_description || data.description || "";
@@ -249,13 +266,14 @@ export class RewardModel {
 
   getImages() {
     if (Array.isArray(this.images) && this.images.length > 0) {
-      return this.images;
+      const activeImgs = this.images.filter(img => !isExpiredFbUrl(img));
+      if (activeImgs.length > 0) return activeImgs;
     }
     if (this.isCombo()) {
-      const comboImgs = this.getComboItems().map(it => it.imageUrl).filter(Boolean);
+      const comboImgs = this.getComboItems().map(it => it.imageUrl).filter(img => img && !isExpiredFbUrl(img));
       if (comboImgs.length > 0) return comboImgs;
     }
-    if (this.imageUrl) {
+    if (this.imageUrl && !isExpiredFbUrl(this.imageUrl)) {
       return [this.imageUrl];
     }
     return [];

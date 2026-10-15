@@ -1,17 +1,22 @@
 import assert from "node:assert";
 import fs from "node:fs";
 import path from "node:path";
-import { RewardModel } from "../js/models/RewardModel.js";
+import { RewardModel, isExpiredFbUrl } from "../js/models/RewardModel.js";
+import { AdminViewModel } from "../js/viewmodels/AdminViewModel.js";
 
 console.log("╔════════════════════════════════════════════════════════════════════╗");
-console.log("║   TEST SUITE: RESILIENCIA IMÁGENES & GESTIÓN CATÁLOGO MÓVIL v2.9.93 ║");
+console.log("║   TEST SUITE: RESILIENCIA IMÁGENES & GESTIÓN CATÁLOGO MÓVIL v2.9.94 ║");
 console.log("╚════════════════════════════════════════════════════════════════════╝\n");
 
-// 1. Resiliencia de imágenes en RewardModel
-console.log("=== SEC 1: INVARIANTE DE PRIORIDAD DE IMÁGENES LOCALES EN REWARDMODEL ===");
+// 1. Resiliencia de imágenes en RewardModel e isExpiredFbUrl
+console.log("=== SEC 1: INVARIANTE DE PRIORIDAD DE IMÁGENES LOCALES Y FILTRADO EXPIRADAS ===");
 const expiredFb = "https://scontent.fmga11-2.fna.fbcdn.net/v/t45.5328-4/825726775_1135894848771831_n.jpg?oe=6AC326BE";
 const localUpload = "data:image/webp;base64,UklGRiQAAABXRUJQVlA4IBgAAAAwAQCdASoBAAEAAwA0JaQAA3AA/vuUAAA=";
-const secondaryFb = "https://scontent.fmga11-2.fna.fbcdn.net/v/t45.5328-4/825331538_1379223907315711_n.jpg";
+const secondaryFb = "https://scontent.fmga11-2.fna.fbcdn.net/v/t45.5328-4/825331538_1379223907315711_n.jpg?oe=7FFFFFFF";
+
+assert.strictEqual(isExpiredFbUrl(expiredFb), true, "expiredFb debe ser detectado como expirado");
+assert.strictEqual(isExpiredFbUrl(secondaryFb), false, "secondaryFb con fecha futura no debe ser expirado");
+assert.strictEqual(isExpiredFbUrl(localUpload), false, "localUpload en base64 no debe ser expirado");
 
 const product = new RewardModel({
   id: "PROD-TEST-1",
@@ -31,7 +36,18 @@ assert.strictEqual(
   localUpload,
   "imageUrl debe apuntar a la imagen local y no al CDN efímero de Facebook"
 );
-console.log("  ✓ RewardModel prioriza fotos locales sobre CDN de Facebook.");
+assert.ok(
+  !product.images.includes(expiredFb),
+  "Las URLs de Facebook expiradas deben ser filtradas automáticamente"
+);
+console.log("  ✓ RewardModel prioriza fotos locales y descarta URLs expiradas de Facebook.");
+
+// 1.1 Verificación de AdminViewModel getter products
+console.log("\n=== SEC 1.1: COMPATIBILIDAD DUAL ADMINVIEWMODEL (catalog / products) ===");
+const vm = new AdminViewModel();
+vm.catalog = [{ id: "REW-1", title: "Test 1" }];
+assert.strictEqual(vm.products, vm.catalog, "vm.products debe retornar vm.catalog");
+console.log("  ✓ AdminViewModel.products expone correctamente vm.catalog.");
 
 // 2. Verificación de lógica en admin-app.js
 console.log("\n=== SEC 2: RESILIENCIA Y MODAL EN ADMIN-APP.JS ===");
@@ -44,6 +60,7 @@ assert.ok(adminAppCode.includes("export function closeProductActionsModal"), "De
 assert.ok(adminAppCode.includes("window.openProductActionsModal = openProductActionsModal"), "Debe enlazar a window");
 assert.ok(adminAppCode.includes("catalog-mobile-options-btn"), "Debe renderizar botón de opciones móviles en cada fila");
 assert.ok(adminAppCode.includes("handleAdminCatalogImgError(this, '${p.id}')"), "Img debe tener onerror controlado");
+assert.ok(adminAppCode.includes("isExpiredFbUrl"), "admin-app.js debe usar isExpiredFbUrl");
 console.log("  ✓ admin-app.js contiene lógica de resiliencia y modal táctil.");
 
 // 3. Verificación de HTML de admin.html
@@ -55,7 +72,7 @@ assert.ok(adminHtml.includes('id="catalog-modal-product-summary"'), "Debe existi
 assert.ok(adminHtml.includes('id="catalog-modal-actions-list"'), "Debe existir catalog-modal-actions-list");
 assert.ok(adminHtml.includes("catalog-table-responsive"), "Debe tener clase catalog-table-responsive");
 assert.ok(adminHtml.includes("catalog-admin-table"), "Debe tener clase catalog-admin-table");
-assert.ok(adminHtml.includes("admin-app.js?v=2.9.93"), "Debe cache-bustear con versión v=2.9.93");
+assert.ok(adminHtml.includes("admin-app.js?v=2.9.94"), "Debe cache-bustear con versión v=2.9.94");
 console.log("  ✓ admin.html contiene el modal de acciones táctiles y clases de tabla.");
 
 // 4. Verificación de CSS en responsive.css y admin.css
