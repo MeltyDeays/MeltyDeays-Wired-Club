@@ -5,7 +5,7 @@ import { RewardModel, isExpiredFbUrl } from "../js/models/RewardModel.js";
 import { AdminViewModel } from "../js/viewmodels/AdminViewModel.js";
 
 console.log("╔════════════════════════════════════════════════════════════════════╗");
-console.log("║   TEST SUITE: RESILIENCIA IMÁGENES & GESTIÓN CATÁLOGO MÓVIL v2.9.95 ║");
+console.log("║   TEST SUITE: RESILIENCIA IMÁGENES & GESTIÓN CATÁLOGO MÓVIL v2.9.96 ║");
 console.log("╚════════════════════════════════════════════════════════════════════╝\n");
 
 // 1. Resiliencia de imágenes en RewardModel e isExpiredFbUrl
@@ -68,10 +68,16 @@ assert.ok(adminAppCode.includes("export function getBestProductCover"), "Debe ex
 assert.ok(adminAppCode.includes("export function handleAdminCatalogImgError"), "Debe exportar handleAdminCatalogImgError");
 assert.ok(adminAppCode.includes("export function openProductActionsModal"), "Debe exportar openProductActionsModal");
 assert.ok(adminAppCode.includes("export function closeProductActionsModal"), "Debe exportar closeProductActionsModal");
+assert.ok(adminAppCode.includes("export function openAdminProductLightbox"), "Debe exportar openAdminProductLightbox");
 assert.ok(adminAppCode.includes("window.openProductActionsModal = openProductActionsModal"), "Debe enlazar a window");
+assert.ok(adminAppCode.includes("window.openAdminProductLightbox = openAdminProductLightbox"), "Debe enlazar openAdminProductLightbox a window");
+assert.ok(adminAppCode.includes("openAdminProductLightbox('${p.id}')"), "Botón de galería debe llamar a openAdminProductLightbox");
 assert.ok(adminAppCode.includes("catalog-mobile-options-btn"), "Debe renderizar botón de opciones móviles en cada fila");
 assert.ok(adminAppCode.includes("handleAdminCatalogImgError(this, '${p.id}')"), "Img debe tener onerror controlado");
-console.log("  ✓ admin-app.js contiene lógica de resiliencia, enlace a window y modal táctil.");
+
+const customerCatalogCode = fs.readFileSync("js/views/customer/CustomerCatalogView.js", "utf-8");
+assert.ok(customerCatalogCode.includes("window.adminViewModel && Array.isArray(window.adminViewModel.catalog)"), "CustomerCatalogView debe resolver catálogo desde window.adminViewModel");
+console.log("  ✓ admin-app.js y CustomerCatalogView contienen lógica de visor HD y modal táctil.");
 
 // 3. Verificación de HTML de admin.html
 console.log("\n=== SEC 3: ESTRUCTURA HTML MODAL DE ACCIONES Y TABLA RESPONSIVE ===");
@@ -80,10 +86,11 @@ const adminHtml = fs.readFileSync("admin.html", "utf-8");
 assert.ok(adminHtml.includes('id="modal-catalog-item-actions"'), "Debe existir modal-catalog-item-actions en admin.html");
 assert.ok(adminHtml.includes('id="catalog-modal-product-summary"'), "Debe existir catalog-modal-product-summary");
 assert.ok(adminHtml.includes('id="catalog-modal-actions-list"'), "Debe existir catalog-modal-actions-list");
+assert.ok(adminHtml.includes('id="modal-image-lightbox"'), "Debe existir modal-image-lightbox en admin.html");
 assert.ok(adminHtml.includes("catalog-table-responsive"), "Debe tener clase catalog-table-responsive");
 assert.ok(adminHtml.includes("catalog-admin-table"), "Debe tener clase catalog-admin-table");
-assert.ok(adminHtml.includes("admin-app.js?v=2.9.95"), "Debe cache-bustear con versión v=2.9.95");
-console.log("  ✓ admin.html contiene el modal de acciones táctiles y clases de tabla.");
+assert.ok(adminHtml.includes("admin-app.js?v=2.9.96"), "Debe cache-bustear con versión v=2.9.96");
+console.log("  ✓ admin.html contiene el modal de acciones táctiles, visor lightbox y clases de tabla.");
 
 // 4. Verificación de CSS en responsive.css y admin.css
 console.log("\n=== SEC 4: REGLAS CSS MÓVIL Y BOTONES TÁCTILES ===");

@@ -454,16 +454,28 @@ export function openImageLightbox(rewardIdOrImages, index = 0, customTitle = "")
 
   if (Array.isArray(rewardIdOrImages)) {
     images = rewardIdOrImages.filter(Boolean);
+  } else if (rewardIdOrImages && typeof rewardIdOrImages === "object") {
+    const item = rewardIdOrImages;
+    title = item.title || title;
+    images = typeof item.getImages === "function" 
+      ? item.getImages() 
+      : (Array.isArray(item.images) && item.images.length ? item.images : (item.imageUrl ? [item.imageUrl] : []));
   } else if (typeof rewardIdOrImages === "string") {
     let item = null;
     if (vm && vm.catalog) {
-      item = vm.catalog.find(r => r.id === rewardIdOrImages);
+      item = vm.catalog.find(r => r && (r.id === rewardIdOrImages || r.reward_id === rewardIdOrImages));
     }
     if (!item && lastRenderedCatalog.length > 0) {
-      item = lastRenderedCatalog.find(r => r.id === rewardIdOrImages);
+      item = lastRenderedCatalog.find(r => r && (r.id === rewardIdOrImages || r.reward_id === rewardIdOrImages));
     }
     if (!item && typeof window !== "undefined" && Array.isArray(window._lastRenderedCatalog)) {
-      item = window._lastRenderedCatalog.find(r => r.id === rewardIdOrImages);
+      item = window._lastRenderedCatalog.find(r => r && (r.id === rewardIdOrImages || r.reward_id === rewardIdOrImages));
+    }
+    if (!item && typeof window !== "undefined" && window.adminViewModel && Array.isArray(window.adminViewModel.catalog)) {
+      item = window.adminViewModel.catalog.find(r => r && (r.id === rewardIdOrImages || r.reward_id === rewardIdOrImages));
+    }
+    if (!item && typeof window !== "undefined" && window.vm && Array.isArray(window.vm.catalog)) {
+      item = window.vm.catalog.find(r => r && (r.id === rewardIdOrImages || r.reward_id === rewardIdOrImages));
     }
 
     if (item) {
@@ -471,7 +483,7 @@ export function openImageLightbox(rewardIdOrImages, index = 0, customTitle = "")
       images = typeof item.getImages === "function" 
         ? item.getImages() 
         : (Array.isArray(item.images) && item.images.length ? item.images : (item.imageUrl ? [item.imageUrl] : []));
-    } else if (rewardIdOrImages.startsWith("http") || rewardIdOrImages.startsWith("data:image")) {
+    } else if (rewardIdOrImages.startsWith("http") || rewardIdOrImages.startsWith("data:image") || rewardIdOrImages.startsWith("blob:")) {
       images = [rewardIdOrImages];
     }
   }

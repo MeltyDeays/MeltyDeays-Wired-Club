@@ -946,7 +946,7 @@ export function openProductActionsModal(productId) {
   // 4. Ver Galería HD si tiene fotos
   if (pImages.length > 0) {
     actionsHtml += `
-      <button type="button" class="btn-modal-action" onclick="closeProductActionsModal(); openImageLightbox('${p.id}', 0, '${escapedTitle}');" style="background:#f8fafc; color:var(--dark); border:1px solid var(--gray-300);">
+      <button type="button" class="btn-modal-action" onclick="openAdminProductLightbox('${p.id}');" style="background:#f8fafc; color:var(--dark); border:1px solid var(--gray-300);">
         <span style="font-size:1.1rem;">🖼️</span>
         <div style="text-align:left;">
           <div style="font-weight:800; font-size:0.85rem;">Ver Galería HD (${pImages.length} fotos)</div>
@@ -970,6 +970,22 @@ export function openProductActionsModal(productId) {
   actionsListEl.innerHTML = actionsHtml;
   modal.style.display = "flex";
   syncModalScrollLock();
+}
+
+export function openAdminProductLightbox(productId) {
+  closeProductActionsModal();
+  const catalogList = (typeof vm !== "undefined" && vm?.catalog) || window.adminViewModel?.catalog || window.adminViewModel?.products || [];
+  const p = catalogList.find(item => item && (item.id === productId || item.reward_id === productId));
+  if (p) {
+    const images = typeof p.getImages === "function" ? p.getImages() : (Array.isArray(p.images) && p.images.length ? p.images : (p.imageUrl ? [p.imageUrl] : []));
+    if (images.length > 0 && typeof openImageLightbox === "function") {
+      openImageLightbox(images, 0, p.title || "Artículo The Wired Club");
+      return;
+    }
+  }
+  if (typeof openImageLightbox === "function") {
+    openImageLightbox(productId, 0);
+  }
 }
 
 export function closeProductActionsModal() {
@@ -1576,6 +1592,7 @@ document.addEventListener("DOMContentLoaded", () => {
   window.handleAdminCatalogImgError = handleAdminCatalogImgError;
   window.openProductActionsModal = openProductActionsModal;
   window.closeProductActionsModal = closeProductActionsModal;
+  window.openAdminProductLightbox = openAdminProductLightbox;
 
   // Calculadora de Retorno de Catálogo
   window.recalculateRewardPoints = recalculateRewardPoints;
