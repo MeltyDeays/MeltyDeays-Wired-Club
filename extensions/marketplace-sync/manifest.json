@@ -7,8 +7,18 @@
     "storage",
     "alarms",
     "tabs",
-    "scripting"
+    "scripting",
+    "declarativeNetRequest"
   ],
+  "declarative_net_request": {
+    "rule_resources": [
+      {
+        "id": "ruleset_fb_headers",
+        "enabled": true,
+        "path": "rules.json"
+      }
+    ]
+  },
   "host_permissions": [
     "https://www.facebook.com/*",
     "https://*.facebook.com/*",

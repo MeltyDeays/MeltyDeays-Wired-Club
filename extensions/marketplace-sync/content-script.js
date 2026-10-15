@@ -1640,31 +1640,45 @@ async function enhanceImageWithCanvasHD(blob) {
           const origH = img.naturalHeight || img.height;
           if (origW < 10 || origH < 10) return resolve(blob);
 
+          // Facebook Marketplace exige proporción cuadrada 1:1 para evitar barras difuminadas/estiradas gigantes
           const maxDim = Math.max(origW, origH);
-          let scale = 1;
-          if (maxDim < 900) {
-            scale = Math.min(2.0, 900 / maxDim);
-          }
-
-          const targetW = Math.round(origW * scale);
-          const targetH = Math.round(origH * scale);
+          let targetSize = Math.max(900, maxDim);
+          if (targetSize > 1600) targetSize = 1600; // Evitar saturación de memoria en navegador
 
           const canvas = document.createElement("canvas");
-          canvas.width = targetW;
-          canvas.height = targetH;
+          canvas.width = targetSize;
+          canvas.height = targetSize;
           const ctx = canvas.getContext("2d", { willReadFrequently: true });
           if (!ctx) return resolve(blob);
 
+          // Fondo blanco puro estándar para ecommerce (#FFFFFF) que previene el difuminado de Meta
+          ctx.fillStyle = "#FFFFFF";
+          ctx.fillRect(0, 0, targetSize, targetSize);
+
+          // Escala proporcional manteniendo la imagen completa centrada en el cuadrado 1:1
+          const aspect = origW / origH;
+          let drawW = targetSize;
+          let drawH = targetSize;
+          if (aspect > 1) {
+            // Imagen horizontal: ajustar altura proporcionalmente
+            drawH = Math.round(targetSize / aspect);
+          } else if (aspect < 1) {
+            // Imagen vertical: ajustar ancho proporcionalmente
+            drawW = Math.round(targetSize * aspect);
+          }
+          const posX = Math.round((targetSize - drawW) / 2);
+          const posY = Math.round((targetSize - drawH) / 2);
+
           ctx.imageSmoothingEnabled = true;
           ctx.imageSmoothingQuality = "high";
-          ctx.drawImage(img, 0, 0, targetW, targetH);
+          ctx.drawImage(img, posX, posY, drawW, drawH);
 
           try {
-            const imgData = ctx.getImageData(0, 0, targetW, targetH);
+            const imgData = ctx.getImageData(0, 0, targetSize, targetSize);
             const data = imgData.data;
             const copy = new Uint8ClampedArray(data);
-            const w = targetW;
-            const h = targetH;
+            const w = targetSize;
+            const h = targetSize;
             const weight = 0.15; // Micro-enfoque sutil y seguro
 
             for (let y = 1; y < h - 1; y++) {
@@ -2103,7 +2117,31 @@ async function expandAndFillDescription(product) {
   if (descInput) {
     console.log("✓ Campo de descripción localizado:", descInput.tagName);
     descInput.scrollIntoView({ block: "center" });
-    const formattedDesc = formatAiMarketplaceCopy(product);
+
+    let formattedDesc = "";
+    try {
+      const aiResponse = await new Promise((resolve) => {
+        const timeout = setTimeout(() => resolve(null), 3000);
+        safeSendMessage({
+          action: "GENERATE_AI_DESCRIPTION",
+          title: product.title || "",
+          description: product.description || product.rawDescription || ""
+        }, (res) => {
+          clearTimeout(timeout);
+          resolve(res);
+        });
+      });
+      if (aiResponse && aiResponse.success && aiResponse.description) {
+        formattedDesc = aiResponse.description;
+        console.log("✓ Descripción generada con Groq LLM.");
+      }
+    } catch (e) {
+      console.warn("Fallo en solicitud IA, usando motor semántico local:", e);
+    }
+
+    if (!formattedDesc) {
+      formattedDesc = formatAiMarketplaceCopy(product);
+    }
 
     if (descInput.tagName.toLowerCase() === 'textarea') {
       setNativeInputValue(descInput, formattedDesc);
@@ -3041,18 +3079,59 @@ function initAutoPublishAssistant() {
   }, 1200);
 }
 
+function getContextualEmojiForFeature(text) {
+  const t = text.toLowerCase();
+  if (/viento|soplador|turbo|flujo|aspirador|aire|enfriad|disipad|ventilad|fan|disipaci[oó]n|refrigeraci[oó]n/.test(t)) return "🌪️";
+  if (/motor|brushless|rpm|potencia|velocidad|fuerza|watts|vatios/.test(t)) return "⚡";
+  if (/bater[ií]a|mah|recargable|autonom[ií]a|carga|duraci[oó]n|pila/.test(t)) return "🔋";
+  if (/boquilla|magn[eé]tica|filtro|lavable|dep[oó]sito|accesorio|cepillo|im[aá]n/.test(t)) return "🧲";
+  if (/inal[aá]mbrico|bluetooth|wifi|wi-fi|conexi[oó]n|type-c|usb|puerto|cable|dongle/.test(t)) return "🔌";
+  if (/laptop|notebook|computador|pc|teclado|consola|celular|auto|compatible|mantenimiento|playstation|xbox|nintendo/.test(t)) return "💻";
+  if (/linterna|luz|led|ilumina|alumbra|rgb|faro/.test(t)) return "💡";
+  if (/silencio|silencioso|ruido|db|decibelios|sonido/.test(t)) return "🔇";
+  if (/ergon[oó]mico|agarre|diseño|aluminio|port[aá]til|bolsillo|peso|ligero|antideslizante/.test(t)) return "🖐️";
+  if (/2 en 1|3 en 1|multifunci[oó]n|funci[oó]n|vers[aá]til/.test(t)) return "🔄";
+  if (/hall|joystick|gatillo|palanca|anti-drift|drift/.test(t)) return "🕹️";
+  if (/caja|nuevo|sellado|original|accesorios|incluye/.test(t)) return "📦";
+  return "⚡";
+}
+
 /**
- * Formatea la ficha comercial para Facebook Marketplace con iconos, link web, garantía y WhatsApp
+ * Formatea la ficha comercial para Facebook Marketplace con iconos contextuales, link web, garantía y WhatsApp
  */
 function formatAiMarketplaceCopy(product) {
   const raw = product.description || product.rawDescription || "";
   const lines = raw
     .split("\n")
     .map(l => l.trim())
-    .filter(l => l && !l.toLowerCase().includes("precio") && !l.includes("$") && !l.toLowerCase().includes("c$"));
+    .filter(l => {
+      if (!l) return false;
+      const low = l.toLowerCase();
+      // Filtrar precios
+      if (low.includes("precio") || low.includes("$") || low.includes("c$") || low.includes("nio")) return false;
+      // Filtrar WhatsApp / Contacto (se añade en la sección dedicada al final)
+      if (low.includes("whatsapp") || low.includes("contacto:") || low.includes("5843") || low.includes("teléfono") || low.includes("pedidos")) return false;
+      // Filtrar Envíos / Entregas (se añade en la sección dedicada al final)
+      if (low.includes("entrega gratis") || low.includes("cargotrans") || low.includes("envíos a todo") || low.includes("entregas personales") || low.includes("puntos céntricos") || low.includes("entregas y envíos")) return false;
+      // Filtrar Garantía duplicada (se añade en la sección dedicada al final)
+      if (low.includes("30 días de garantía") || low.includes("garantía:") || low.includes("garantía directa") || low.includes("garantía & respaldo") || low.includes("cobertura oficial")) return false;
+      // Filtrar títulos/subencabezados redundantes
+      if (low.includes("características principales:") || low.includes("lo que incluye y características:") || low.includes("the wired club")) return false;
+      return true;
+    });
 
   const featureBullets = lines.length > 0
-    ? lines.map(l => l.startsWith("•") ? l : `• 🚀 ${l}`).join("\n")
+    ? lines.map(line => {
+        // Limpiar viñetas viejas, guiones y emojis genéricos "• 🚀" repetidos
+        let clean = line.replace(/^[•\-\*]\s*(?:🚀\s*)?/g, "").trim();
+        // Preservar si la línea ya inicia con un emoji temático propio
+        const hasInitialEmoji = /^(\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff])/.test(clean);
+        if (hasInitialEmoji) {
+          return `• ${clean}`;
+        }
+        const emoji = getContextualEmojiForFeature(clean);
+        return `• ${emoji} ${clean}`;
+      }).join("\n")
     : `• 🕹️ Condición: Artículo original verificado y garantizado físicamente\n• ⚡ Rendimiento: Alto desempeño y compatibilidad garantizada\n• 📦 Entrega: Disponible para retiro o entrega inmediata`;
 
   const cleanHeaderTitle = formatCatchyMarketplaceTitle(product.title || "", product.category, product.description);
@@ -3072,7 +3151,7 @@ ${featureBullets}
 
 📲 PEDIDOS Y ATENCIÓN DIRECTA:
 • WhatsApp / Teléfono: 5843-8412
-• 📍 Entregas personales en Juigalpa y envíos seguros a toda Nicaragua`;
+• 📍 Entregas personales en Juigalpa y envíos seguros a toda Nicaragua por CargoTrans o buses`;
 }
 
 function injectPublishAssistantBanner(product) {
@@ -3963,7 +4042,9 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
             );
 
             const fbImg = l.fbImg || extractFacebookProductImageUrl(l.element, l.imgEl);
-            const webImg = (twin && twin.imageUrl) ? twin.imageUrl : "";
+            const webImg = (twin && (twin.imageUrl || (Array.isArray(twin.images) && twin.images[0]) || twin.image_url || twin.rewardImageUrl || (Array.isArray(twin.photos) && twin.photos[0]))) 
+              ? (twin.imageUrl || (Array.isArray(twin.images) && twin.images[0]) || twin.image_url || twin.rewardImageUrl || twin.photos[0]) 
+              : "";
             // Prioridad a la imagen del catálogo web oficial
             const thumb = webImg || fbImg;
             const canonicalFbId = l.fbListingId || (twin?.facebookListingId ? String(twin.facebookListingId) : null);

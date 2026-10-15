@@ -533,6 +533,40 @@ function sortCatalogAdmin(order) {
   renderCatalogTable(vm ? vm.catalog : []);
 }
 
+export function getBestProductCover(images, fallbackUrl = "") {
+  const list = Array.isArray(images) ? images.filter(Boolean) : (fallbackUrl ? [fallbackUrl] : []);
+  if (!list.length) return "";
+  const safeImg = list.find(img => 
+    typeof img === "string" && (
+      img.startsWith("data:image") || 
+      img.startsWith("blob:") || 
+      (!img.includes("fbcdn.net") && !img.includes("scontent."))
+    )
+  );
+  return safeImg || list[0] || fallbackUrl || "";
+}
+
+export function handleAdminCatalogImgError(imgEl, productId) {
+  if (!imgEl) return;
+  imgEl.onerror = null;
+  const p = (window.adminViewModel?.products || []).find(item => item.id === productId);
+  if (p) {
+    const images = typeof p.getImages === "function" ? p.getImages() : (Array.isArray(p.images) ? p.images : (p.imageUrl ? [p.imageUrl] : []));
+    const currentSrc = imgEl.src || "";
+    const nextImg = images.find(img => img && img !== currentSrc && !img.includes("fbcdn.net") && !img.includes("scontent."));
+    if (nextImg) {
+      imgEl.src = nextImg;
+      return;
+    }
+  }
+  imgEl.style.display = "none";
+  const parent = imgEl.parentElement;
+  if (parent) {
+    parent.style.background = "#1e293b";
+    parent.innerHTML = `<span style="font-size: 1.2rem; display: flex; align-items: center; justify-content: center; width: 100%; height: 100%;">📦</span>`;
+  }
+}
+
 function renderCatalogTable(catalog) {
   const tbody = document.getElementById("catalog-table-body");
   if (!tbody) return;
@@ -660,12 +694,13 @@ function renderCatalogTable(catalog) {
       : `<div style="font-size:0.8rem; color:var(--gray-700); line-height: 1.4;">${p.description || "-"}</div>`;
 
     const pImages = typeof p.getImages === "function" ? p.getImages() : (Array.isArray(p.images) && p.images.length ? p.images : (p.imageUrl ? [p.imageUrl] : []));
-    const pCover = pImages[0] || p.imageUrl || "";
+    const pCover = getBestProductCover(pImages, p.imageUrl);
+    const bestCoverIndex = pImages.indexOf(pCover) >= 0 ? pImages.indexOf(pCover) : 0;
     const escapedTitle = (p.title || "").replace(/'/g, "\\'");
     const pThumbHtml = pCover
       ? `
-        <div style="position: relative; width: 44px; height: 44px; flex-shrink: 0; cursor: pointer; border-radius: 4px; overflow: hidden; border: 1px solid var(--gray-300); background: #0f172a;" onclick="openImageLightbox('${p.id}', 0, '${escapedTitle}')" title="Clic para ver foto completa">
-          <img src="${pCover}" alt="${p.title}" style="width: 100%; height: 100%; object-fit: cover;">
+        <div style="position: relative; width: 44px; height: 44px; flex-shrink: 0; cursor: pointer; border-radius: 4px; overflow: hidden; border: 1px solid var(--gray-300); background: #0f172a;" onclick="openImageLightbox('${p.id}', ${bestCoverIndex}, '${escapedTitle}')" title="Clic para ver foto completa">
+          <img src="${pCover}" alt="${p.title}" style="width: 100%; height: 100%; object-fit: cover;" onerror="window.handleAdminCatalogImgError && window.handleAdminCatalogImgError(this, '${p.id}')">
           ${pImages.length > 1 ? `<span style="position: absolute; bottom: 0; right: 0; background: rgba(15,23,42,0.92); color: #38bdf8; font-family: var(--font-mono); font-size: 0.55rem; font-weight: 800; padding: 1px 3px; border-radius: 2px 0 0 0; border-top: 1px solid #0284c7; border-left: 1px solid #0284c7;">[0${pImages.length}]</span>` : ''}
         </div>
       `
@@ -694,10 +729,10 @@ function renderCatalogTable(catalog) {
         <td>
           <div style="display: flex; align-items: flex-start; gap: 10px;">
             ${pThumbHtml}
-            <div>
-              <div style="display:flex; align-items:center; gap:6px; margin-bottom:2px;">
+            <div style="flex: 1; min-width: 0;">
+              <div style="display:flex; align-items:center; gap:6px; margin-bottom:2px; flex-wrap:wrap;">
                 ${typeBadge}
-                <strong style="color:var(--dark); cursor:${isPending ? 'pointer' : 'default'};" ${isPending ? `onclick="openApprovalModal('${p.id}')" title="Clic para agregar imágenes reales y gestionar"` : ''}>${p.title}</strong>
+                <strong style="color:var(--dark); cursor:${isPending ? 'pointer' : 'default'}; word-break: break-word;" ${isPending ? `onclick="openApprovalModal('${p.id}')" title="Clic para agregar imágenes reales y gestionar"` : ''}>${p.title}</strong>
               </div>
               <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-bottom:2px;">
                 <span style="font-size:0.72rem; color:var(--gray-500); font-family:var(--font-mono);">${p.id}</span>
@@ -705,6 +740,16 @@ function renderCatalogTable(catalog) {
               </div>
               ${priceInfo}
             </div>
+          </div>
+          <!-- Barra móvil de acciones y estado compacto (Oculta en Desktop) -->
+          <div class="catalog-mobile-row-info">
+            <div class="catalog-mobile-meta">
+              <span class="catalog-mobile-points">${costDisplay}</span>
+              <span class="catalog-mobile-stock">${stockDisplay}</span>
+            </div>
+            <button type="button" class="catalog-mobile-options-btn" onclick="openProductActionsModal('${p.id}')" title="Abrir menú de acciones para ${escapedTitle}">
+              <span>⚡</span> <span>Opciones</span>
+            </button>
           </div>
         </td>
         <td>${costDisplay}</td>
@@ -753,6 +798,175 @@ function renderCatalogTable(catalog) {
       </tr>
     `;
   }).join("");
+}
+
+export function openProductActionsModal(productId) {
+  const p = (window.adminViewModel?.products || []).find(item => item.id === productId);
+  if (!p) {
+    if (typeof showToast === "function") showToast("⚠️ Producto no encontrado", "error");
+    return;
+  }
+  const modal = document.getElementById("modal-catalog-item-actions");
+  const summaryEl = document.getElementById("catalog-modal-product-summary");
+  const actionsListEl = document.getElementById("catalog-modal-actions-list");
+  if (!modal || !summaryEl || !actionsListEl) return;
+
+  const isPending = p.status === "PENDING_APPROVAL" || p.status === "PENDING_IMAGE";
+  const isIncoming = !isPending && (p.status === "INCOMING" || (typeof p.isIncoming === "function" && p.isIncoming()));
+  const isPartial = !isPending && !isIncoming && (p.rewardType === "PARTIAL_DISCOUNT" || (typeof p.isPartialDiscount === "function" && p.isPartialDiscount()));
+  const isSoldOut = !isIncoming && ((p.stock || 0) <= 0 || (typeof p.isSoldOut === "function" && p.isSoldOut()) || p.status === "SOLD_OUT");
+
+  const pImages = typeof p.getImages === "function" ? p.getImages() : (Array.isArray(p.images) && p.images.length ? p.images : (p.imageUrl ? [p.imageUrl] : []));
+  const pCover = getBestProductCover(pImages, p.imageUrl);
+  const escapedTitle = (p.title || "").replace(/'/g, "\\'");
+
+  const thumbHtml = pCover
+    ? `<img src="${pCover}" alt="${p.title}" style="width: 54px; height: 54px; object-fit: cover; border-radius: 6px; border: 1px solid var(--gray-300); flex-shrink: 0;" onerror="window.handleAdminCatalogImgError && window.handleAdminCatalogImgError(this, '${p.id}')">`
+    : `<div style="width: 54px; height: 54px; border-radius: 6px; background: #0f172a; color: #38bdf8; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; flex-shrink: 0;">${isIncoming ? '灰羽' : (isPartial ? '🏷️' : '🎁')}</div>`;
+
+  const stockBadge = isIncoming
+    ? `<span style="color:#7e22ce; font-weight:800; font-size:0.75rem;">⏱️ En Reserva (${p.stock} un.)</span>`
+    : (isSoldOut
+      ? `<span style="color:#dc2626; font-weight:800; font-size:0.75rem;">🔴 Vendido</span>`
+      : `<span style="color:#047857; font-weight:800; font-size:0.75rem;">📦 Stock: ${p.stock} un.</span>`);
+
+  summaryEl.innerHTML = `
+    ${thumbHtml}
+    <div style="flex: 1; min-width: 0;">
+      <div style="font-weight: 800; color: var(--dark); font-size: 0.9rem; line-height: 1.25; margin-bottom: 3px; word-break: break-word;">${p.title}</div>
+      <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-size: 0.75rem; font-family: var(--font-mono);">
+        <span style="color: var(--gray-500);">${p.id}</span>
+        <span>•</span>
+        <span style="font-weight: 800; color: var(--primary);">${(p.pointsCost || 0).toLocaleString()} WP</span>
+        <span>•</span>
+        ${stockBadge}
+      </div>
+      ${p.priceUsd ? `<div style="font-size: 0.72rem; color: var(--gray-600); margin-top: 2px;">Precio: <strong>$${p.priceUsd.toFixed(2)} USD</strong></div>` : ''}
+    </div>
+  `;
+
+  let actionsHtml = "";
+
+  // 1. Botón Editar
+  actionsHtml += `
+    <button type="button" class="btn-modal-action" onclick="closeProductActionsModal(); openEditProductModal('${p.id}');" style="background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe;">
+      <span style="font-size:1.1rem;">✏️</span>
+      <div style="text-align:left;">
+        <div style="font-weight:800; font-size:0.85rem;">Editar Producto</div>
+        <div style="font-size:0.7rem; color:#60a5fa;">Modificar título, fotos, precios, puntos y stock</div>
+      </div>
+    </button>
+  `;
+
+  // 2. Gestión de estado (Luz Verde, Desembarcar, Vendido, Reponer, -1)
+  if (isPending) {
+    actionsHtml += `
+      <button type="button" class="btn-modal-action" onclick="closeProductActionsModal(); openApprovalModal('${p.id}');" style="background:#ecfdf5; color:#047857; border:1px solid #a7f3d0;">
+        <span style="font-size:1.1rem;">🟢</span>
+        <div style="text-align:left;">
+          <div style="font-weight:800; font-size:0.85rem;">Revisión / Luz Verde</div>
+          <div style="font-size:0.7rem; color:#059669;">Elegir molde web y aprobar publicación</div>
+        </div>
+      </button>
+    `;
+  } else if (isIncoming) {
+    actionsHtml += `
+      <button type="button" class="btn-modal-action" onclick="closeProductActionsModal(); handleAdminReleaseIncoming('${p.id}');" style="background:#faf5ff; color:#7e22ce; border:1px solid #d8b4fe;">
+        <span style="font-size:1.1rem;">⚡</span>
+        <div style="text-align:left;">
+          <div style="font-weight:800; font-size:0.85rem;">Desembarcar Preventa</div>
+          <div style="font-size:0.7rem; color:#a855f7;">Pasar a disponible inmediato en inventario</div>
+        </div>
+      </button>
+    `;
+  } else if (!isSoldOut) {
+    actionsHtml += `
+      <button type="button" class="btn-modal-action" onclick="closeProductActionsModal(); handleAdminMarkSold('${p.id}', '${escapedTitle}');" style="background:#fef2f2; color:#dc2626; border:1px solid #fecaca;">
+        <span style="font-size:1.1rem;">🏷️</span>
+        <div style="text-align:left;">
+          <div style="font-weight:800; font-size:0.85rem;">Marcar como Vendido</div>
+          <div style="font-size:0.7rem; color:#f87171;">Ajustar stock a 0 (Agotado)</div>
+        </div>
+      </button>
+    `;
+    if ((p.stock || 0) > 1) {
+      actionsHtml += `
+        <button type="button" class="btn-modal-action" onclick="closeProductActionsModal(); handleAdminDecrementStock('${p.id}', '${escapedTitle}');" style="background:#fffbeb; color:#b45309; border:1px solid #fde68a;">
+          <span style="font-size:1.1rem;">📉</span>
+          <div style="text-align:left;">
+            <div style="font-weight:800; font-size:0.85rem;">Restar 1 Unidad (-1)</div>
+            <div style="font-size:0.7rem; color:#d97706;">Quedarán ${(p.stock || 1) - 1} unidades disponibles</div>
+          </div>
+        </button>
+      `;
+    }
+  } else {
+    actionsHtml += `
+      <button type="button" class="btn-modal-action" onclick="closeProductActionsModal(); handleAdminRestock('${p.id}', 1, '${escapedTitle}');" style="background:#ecfdf5; color:#047857; border:1px solid #a7f3d0;">
+        <span style="font-size:1.1rem;">➕</span>
+        <div style="text-align:left;">
+          <div style="font-weight:800; font-size:0.85rem;">Reponer Stock (+1 un.)</div>
+          <div style="font-size:0.7rem; color:#059669;">Volver a activar producto en catálogo</div>
+        </div>
+      </button>
+    `;
+  }
+
+  // 3. Facebook Marketplace
+  if (!p.facebookListingId && !p.listingId && !isPending) {
+    actionsHtml += `
+      <button type="button" class="btn-modal-action" onclick="closeProductActionsModal(); handlePublishProductToFacebook('${p.id}');" style="background:#faf5ff; color:#7e22ce; border:1px solid #e9d5ff;">
+        <span style="font-size:1.1rem;">📢</span>
+        <div style="text-align:left;">
+          <div style="font-weight:800; font-size:0.85rem;">Publicar en Facebook</div>
+          <div style="font-size:0.7rem; color:#a855f7;">Sincronizar con Marketplace con fotos HD</div>
+        </div>
+      </button>
+    `;
+  } else if (p.facebookListingId || p.listingId) {
+    const fbId = p.facebookListingId || p.listingId;
+    actionsHtml += `
+      <a href="https://www.facebook.com/marketplace/item/${fbId}/" target="_blank" rel="noopener" class="btn-modal-action" style="background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; text-decoration:none;">
+        <span style="font-size:1.1rem;">👥</span>
+        <div style="text-align:left;">
+          <div style="font-weight:800; font-size:0.85rem;">Ver en Facebook Marketplace ↗</div>
+          <div style="font-size:0.7rem; color:#60a5fa;">Publicación vinculada ID #${fbId}</div>
+        </div>
+      </a>
+    `;
+  }
+
+  // 4. Ver Galería HD si tiene fotos
+  if (pImages.length > 0) {
+    actionsHtml += `
+      <button type="button" class="btn-modal-action" onclick="closeProductActionsModal(); openImageLightbox('${p.id}', 0, '${escapedTitle}');" style="background:#f8fafc; color:var(--dark); border:1px solid var(--gray-300);">
+        <span style="font-size:1.1rem;">🖼️</span>
+        <div style="text-align:left;">
+          <div style="font-weight:800; font-size:0.85rem;">Ver Galería HD (${pImages.length} fotos)</div>
+          <div style="font-size:0.7rem; color:var(--gray-500);">Explorar fotos y zoom pantalla completa</div>
+        </div>
+      </button>
+    `;
+  }
+
+  // 5. Eliminar Producto
+  actionsHtml += `
+    <button type="button" class="btn-modal-action" onclick="closeProductActionsModal(); removeProductAdmin('${p.id}');" style="background:#fff1f2; color:#be123c; border:1px solid #fecdd3; margin-top:4px;">
+      <span style="font-size:1.1rem;">🗑️</span>
+      <div style="text-align:left;">
+        <div style="font-weight:800; font-size:0.85rem;">Eliminar Producto</div>
+        <div style="font-size:0.7rem; color:#fb7185;">Remover definitivamente del catálogo</div>
+      </div>
+    </button>
+  `;
+
+  actionsListEl.innerHTML = actionsHtml;
+  modal.style.display = "flex";
+  syncModalScrollLock();
+}
+
+export function closeProductActionsModal() {
+  closeModal("modal-catalog-item-actions");
 }
 
 let tokensFilterQuery = "";
@@ -1351,6 +1565,10 @@ document.addEventListener("DOMContentLoaded", () => {
   window.filterCatalogAdmin = filterCatalogAdmin;
   window.filterCatalogByType = filterCatalogByType;
   window.sortCatalogAdmin = sortCatalogAdmin;
+  window.getBestProductCover = getBestProductCover;
+  window.handleAdminCatalogImgError = handleAdminCatalogImgError;
+  window.openProductActionsModal = openProductActionsModal;
+  window.closeProductActionsModal = closeProductActionsModal;
 
   // Calculadora de Retorno de Catálogo
   window.recalculateRewardPoints = recalculateRewardPoints;

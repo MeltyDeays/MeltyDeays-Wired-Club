@@ -1097,7 +1097,15 @@ export async function saveProductAdmin() {
   }
 
   const images = [...currentProductImages];
-  const imageUrl = images[0] || (pendingUrl && !pendingUrl.includes(" ") ? pendingUrl : "");
+  if (images.length > 1) {
+    const safeIdx = images.findIndex(img => img && (img.startsWith("data:image") || img.startsWith("blob:") || (!img.includes("fbcdn.net") && !img.includes("scontent."))));
+    if (safeIdx > 0) {
+      const [safeItem] = images.splice(safeIdx, 1);
+      images.unshift(safeItem);
+    }
+  }
+  const safeImg = images.find(img => img && (img.startsWith("data:image") || img.startsWith("blob:") || (!img.includes("fbcdn.net") && !img.includes("scontent."))));
+  const imageUrl = safeImg || images[0] || (pendingUrl && !pendingUrl.includes(" ") ? pendingUrl : "");
 
   const activeProductMode = document.getElementById("prod-reward-type")?.value || "FREE_REWARD";
   const editId = (document.getElementById("prod-edit-id")?.value || "").trim();
@@ -4063,8 +4071,17 @@ export async function approveAndPublishProduct(productId) {
     p.title = newTitle;
     p.description = newDesc;
     p.status = "ACTIVE";
-    p.images = [...pendingApprovalImages];
-    p.imageUrl = pendingApprovalImages[0] || "";
+    const finalApprovalImgs = [...pendingApprovalImages];
+    if (finalApprovalImgs.length > 1) {
+      const safeIdx = finalApprovalImgs.findIndex(img => img && (img.startsWith("data:image") || img.startsWith("blob:") || (!img.includes("fbcdn.net") && !img.includes("scontent."))));
+      if (safeIdx > 0) {
+        const [safeItem] = finalApprovalImgs.splice(safeIdx, 1);
+        finalApprovalImgs.unshift(safeItem);
+      }
+    }
+    const safeCover = finalApprovalImgs.find(img => img && (img.startsWith("data:image") || img.startsWith("blob:") || (!img.includes("fbcdn.net") && !img.includes("scontent."))));
+    p.images = finalApprovalImgs;
+    p.imageUrl = safeCover || finalApprovalImgs[0] || "";
     p.hasSelectedMold = true;
     p.updated_at = new Date().toISOString();
 

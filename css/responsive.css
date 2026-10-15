@@ -177,6 +177,102 @@ vercel-live-feedback,
     min-width: 560px !important;
     font-size: 0.75rem !important;
   }
+
+  /* CATÁLOGO ADMIN MÓVIL: TARJETAS COMPACTAS SIN SCROLL LATERAL */
+  .catalog-table-responsive {
+    overflow-x: hidden !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    padding: 0 !important;
+    display: block !important;
+  }
+
+  .catalog-admin-table {
+    display: block !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    border: none !important;
+  }
+
+  .catalog-admin-table thead {
+    display: none !important;
+  }
+
+  .catalog-admin-table tbody {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.65rem !important;
+    width: 100% !important;
+  }
+
+  .catalog-admin-table tr {
+    display: block !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+    background: #ffffff !important;
+    border: 1.5px solid var(--gray-300) !important;
+    border-radius: 8px !important;
+    padding: 0.75rem 0.65rem !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+  }
+
+  .catalog-admin-table td:first-child {
+    display: block !important;
+    width: 100% !important;
+    padding: 0 !important;
+    border: none !important;
+  }
+
+  .catalog-admin-table td:not(:first-child) {
+    display: none !important;
+  }
+
+  .catalog-mobile-row-info {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 8px !important;
+    margin-top: 8px !important;
+    padding-top: 8px !important;
+    border-top: 1px dashed var(--gray-200) !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .catalog-mobile-meta {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    flex-wrap: wrap !important;
+    font-size: 0.78rem !important;
+  }
+
+  .catalog-mobile-options-btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 5px !important;
+    background: #0f172a !important;
+    color: #38bdf8 !important;
+    border: 1.5px solid #0284c7 !important;
+    border-radius: 6px !important;
+    padding: 6px 14px !important;
+    font-family: var(--font-mono) !important;
+    font-size: 0.75rem !important;
+    font-weight: 800 !important;
+    cursor: pointer !important;
+    box-shadow: 0 2px 4px rgba(2, 132, 199, 0.2) !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+    transition: all 0.15s ease !important;
+  }
+
+  .catalog-mobile-options-btn:active {
+    transform: scale(0.96) !important;
+    background: #0284c7 !important;
+    color: #ffffff !important;
+  }
 }
 
 @media (max-width: 640px) {

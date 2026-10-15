@@ -227,8 +227,19 @@ export class RewardModel {
     if (imgs.length === 0 && singleUrl) {
       imgs = [singleUrl];
     }
+
+    // Invariante de resiliencia de imagen: Priorizar fotos locales/seguras sobre CDN efímero de Facebook
+    if (imgs.length > 1) {
+      const safeIdx = imgs.findIndex(img => img && (img.startsWith("data:image") || img.startsWith("blob:") || (!img.includes("fbcdn.net") && !img.includes("scontent."))));
+      if (safeIdx > 0) {
+        const [safeItem] = imgs.splice(safeIdx, 1);
+        imgs.unshift(safeItem);
+      }
+    }
+
     this.images = imgs;
-    this.imageUrl = imgs[0] || singleUrl || "";
+    const safeSingle = singleUrl && (singleUrl.startsWith("data:image") || singleUrl.startsWith("blob:") || (!singleUrl.includes("fbcdn.net") && !singleUrl.includes("scontent."))) ? singleUrl : "";
+    this.imageUrl = imgs[0] || safeSingle || singleUrl || "";
 
     this.description = data.description || "";
     this.rawDescription = data.rawDescription || data.raw_description || data.description || "";

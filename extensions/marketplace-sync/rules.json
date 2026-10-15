@@ -1,0 +1,32 @@
+[
+  {
+    "id": 1,
+    "priority": 1,
+    "action": {
+      "type": "modifyHeaders",
+      "requestHeaders": [
+        { "header": "Referer", "operation": "set", "value": "https://www.facebook.com/" },
+        { "header": "Origin", "operation": "set", "value": "https://www.facebook.com" }
+      ]
+    },
+    "condition": {
+      "urlFilter": "||fbcdn.net",
+      "resourceTypes": ["image", "xmlhttprequest", "other"]
+    }
+  },
+  {
+    "id": 2,
+    "priority": 1,
+    "action": {
+      "type": "modifyHeaders",
+      "requestHeaders": [
+        { "header": "Referer", "operation": "set", "value": "https://www.facebook.com/" },
+        { "header": "Origin", "operation": "set", "value": "https://www.facebook.com" }
+      ]
+    },
+    "condition": {
+      "urlFilter": "||facebook.com",
+      "resourceTypes": ["image", "xmlhttprequest", "other"]
+    }
+  }
+]

@@ -155,7 +155,7 @@ export function handleCatalogImgError(imgEl, itemId, modeIcon = "🏷️", modeL
   if (item) {
     const images = typeof item.getImages === "function" ? item.getImages() : (item.images || []);
     const currentSrc = imgEl.src || "";
-    const nextImg = images.find(img => img && img !== currentSrc && !img.includes("fusertech.co.zw") && !img.includes("toolsandtoys.net"));
+    const nextImg = images.find(img => img && img !== currentSrc && !img.includes("fusertech.co.zw") && !img.includes("toolsandtoys.net") && !img.includes("fbcdn.net") && !img.includes("scontent."));
     if (nextImg) {
       imgEl.src = nextImg;
       return;
@@ -2298,7 +2298,8 @@ export function renderCatalog(catalog, user) {
     const itemImages = typeof item.getImages === "function"
       ? item.getImages()
       : (Array.isArray(item.images) && item.images.length ? item.images : (item.imageUrl ? [item.imageUrl] : []));
-    const mainCover = itemImages[0] || item.imageUrl || "";
+    const safeCover = itemImages.find(img => img && (img.startsWith("data:image") || img.startsWith("blob:") || (!img.includes("fbcdn.net") && !img.includes("scontent."))));
+    const mainCover = safeCover || itemImages[0] || item.imageUrl || "";
     const hasMultipleImgs = itemImages.length > 1;
     const escapedTitle = (item.title || "").replace(/'/g, "\\'");
 

@@ -3,12 +3,60 @@ import { getWebProducts, getProductById, linkProductToFacebook, updateProductPri
 
 const SYNC_ALARM_NAME = "HAIBANE_MARKETPLACE_SYNC_ALARM";
 
-// Inicializar alarma periódica (cada 5 minutos)
+async function setupHeaderRules() {
+  if (!chrome.declarativeNetRequest) return;
+  try {
+    await chrome.declarativeNetRequest.updateDynamicRules({
+      removeRuleIds: [1001, 1002],
+      addRules: [
+        {
+          id: 1001,
+          priority: 1,
+          action: {
+            type: "modifyHeaders",
+            requestHeaders: [
+              { header: "Referer", operation: "set", value: "https://www.facebook.com/" },
+              { header: "Origin", operation: "set", value: "https://www.facebook.com" }
+            ]
+          },
+          condition: {
+            urlFilter: "||fbcdn.net",
+            resourceTypes: ["image", "xmlhttprequest", "other"]
+          }
+        },
+        {
+          id: 1002,
+          priority: 1,
+          action: {
+            type: "modifyHeaders",
+            requestHeaders: [
+              { header: "Referer", operation: "set", value: "https://www.facebook.com/" },
+              { header: "Origin", operation: "set", value: "https://www.facebook.com" }
+            ]
+          },
+          condition: {
+            urlFilter: "||facebook.com",
+            resourceTypes: ["image", "xmlhttprequest", "other"]
+          }
+        }
+      ]
+    });
+  } catch (err) {
+    console.warn("Aviso configurando reglas dinámicas de red:", err);
+  }
+}
+
+// Inicializar alarma periódica (cada 5 minutos) y reglas de red
 chrome.runtime.onInstalled.addListener(() => {
   console.log("Haibane Marketplace Sync instalada.");
+  setupHeaderRules();
   chrome.alarms.create(SYNC_ALARM_NAME, {
     periodInMinutes: 5
   });
+});
+
+chrome.runtime.onStartup?.addListener(() => {
+  setupHeaderRules();
 });
 
 chrome.alarms.onAlarm.addListener(async (alarm) => {
@@ -260,6 +308,90 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     chrome.storage?.local?.set({ activeRelistBatch: null }, () => {
       sendResponse({ success: true });
     });
+    return true;
+  }
+
+  if (request.action === "GENERATE_AI_DESCRIPTION") {
+    (async () => {
+      const { title = "", description = "" } = request;
+      // 1. Intentar primero a través de la API oficial backend sin exponer claves
+      try {
+        const backendRes = await fetch("https://meltydeays-wired-club.vercel.app/api/groq-copy", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "marketplace-listing", title, description })
+        });
+        if (backendRes.ok) {
+          const bData = await backendRes.json();
+          if (bData && bData.marketDescription) {
+            sendResponse({ success: true, description: bData.marketDescription, title: bData.marketTitle });
+            return;
+          }
+        }
+      } catch (err) {
+        console.warn("Fallo llamando endpoint seguro de copy, intentando con llaves configuradas:", err);
+      }
+
+      // 2. Fallback con claves configuradas por el usuario en almacenamiento local de la extensión
+      const stored = await chrome.storage.local.get(["groqApiKey", "groqApiKeys"]);
+      const GROQ_KEYS = [
+        ...(Array.isArray(stored.groqApiKeys) ? stored.groqApiKeys : []),
+        ...(stored.groqApiKey ? [stored.groqApiKey] : [])
+      ].filter(Boolean);
+
+      const systemPrompt = `Eres un copywriter experto en ventas para Facebook Marketplace en Nicaragua (MeltyDeays · The Wired Club).
+Tu objetivo es redactar publicaciones de alta conversión, sumamente atractivas, estéticas y profesionales.
+
+REGLAS ESTRICTAS DE FORMATO Y CONTENIDO:
+1. "marketTitle": Máximo 75 caracteres. Atractivo, incluye palabras clave y estado (Nuevo/Garantía). PROHIBIDO incluir precios en el título.
+2. "marketDescription":
+   - PROHIBIDO TERMINANTEMENTE mencionar precios o montos de dinero en el texto de la descripción.
+   - En "⚡ CARACTERÍSTICAS PRINCIPALES:", CADA viñeta DEBE tener su propio emoji temático adecuado a lo que describe exactamente (ej: 🌪️/💨 para ventilación o sopladores, ⚡ para potencia o motor, 🔋 para batería, 🧲 para boquillas o imanes, 💻 para compatibilidad con PC/laptops, 💡 para linterna, 🔇 para nivel de ruido, 🖐️ para ergonomía, 📦 para empaque).
+   - PROHIBIDO terminantemente repetir el mismo emoji (como 🚀) en todas las líneas. Debe haber variedad y lógica semántica según el producto analizado.
+   - ESTRUCTURA OBLIGATORIA:
+     • Apertura llamativa del producto con icono contextual (ej: 🔥 [Nombre del producto]).
+     • ⚡ CARACTERÍSTICAS PRINCIPALES: Viñetas concisas con especificaciones técnicas reales y sus respectivos emojis temáticos al inicio.
+     • 🛡️ GARANTÍA & RESPALDO: Cobertura oficial MeltyDeays con revisión técnica física en tienda.
+     • 🎁 THE WIRED CLUB (OFERTAS EXCLUSIVAS EN NUESTRA WEB): Invitar a visitar nuestra plataforma web donde tenemos ofertas especiales con descuentos de socios y destacar que al registrarse por primera vez en su dispositivo reciben un Bono de Bienvenida de $5 USD en puntos (250 WP) para canjear en descuentos en artículos seleccionados de nuestro catálogo.
+     • 📲 CONTACTO Y PEDIDOS DIRECTOS: WhatsApp / Teléfono 58438412 (5843-8412) con entrega en Juigalpa y envíos nacionales por CargoTrans o buses.
+
+Responde ÚNICAMENTE un objeto JSON válido con las claves: "marketTitle", "marketDescription", "categorySuggestion".`;
+
+      for (const apiKey of GROQ_KEYS) {
+        try {
+          const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${apiKey}`
+            },
+            body: JSON.stringify({
+              model: "llama-3.3-70b-versatile",
+              temperature: 0.3,
+              response_format: { type: "json_object" },
+              messages: [
+                { role: "system", content: systemPrompt },
+                { role: "user", content: `Producto: ${title}\nDetalles técnicos: ${description}` }
+              ]
+            })
+          });
+          if (res.ok) {
+            const data = await res.json();
+            const content = data.choices?.[0]?.message?.content;
+            if (content) {
+              const parsed = JSON.parse(content);
+              if (parsed && parsed.marketDescription) {
+                sendResponse({ success: true, description: parsed.marketDescription, title: parsed.marketTitle });
+                return;
+              }
+            }
+          }
+        } catch (e) {
+          console.warn("Rotación de clave Groq en background:", e);
+        }
+      }
+      sendResponse({ success: false, error: "Fallo en IA" });
+    })();
     return true;
   }
 

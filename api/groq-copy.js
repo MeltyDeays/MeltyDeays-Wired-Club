@@ -50,7 +50,7 @@ REGLAS ESTRICTAS DE LIMPIEZA:
             "Authorization": `Bearer ${apiKey}`
           },
           body: JSON.stringify({
-            model: "openai/gpt-oss-120b",
+            model: "llama-3.3-70b-versatile",
             temperature: 0.2,
             messages: [
               { role: "system", content: cleanSystemPrompt },
@@ -75,14 +75,48 @@ REGLAS ESTRICTAS DE LIMPIEZA:
   }
 
   // MODO 2: Ficha comercial persuasiva y estética para publicar en Marketplace (Web -> Facebook)
+  function getContextualEmojiForFeature(text) {
+    const t = text.toLowerCase();
+    if (/viento|soplador|turbo|flujo|aspirador|aire|enfriad|disipad|ventilad|fan/.test(t)) return "🌪️";
+    if (/motor|brushless|rpm|potencia|velocidad|fuerza|watts/.test(t)) return "⚡";
+    if (/bater[ií]a|mah|recargable|autonom[ií]a|carga|duraci[oó]n/.test(t)) return "🔋";
+    if (/boquilla|magn[eé]tica|filtro|lavable|dep[oó]sito|accesorio|cepillo/.test(t)) return "🧲";
+    if (/inal[aá]mbrico|bluetooth|wifi|conexi[oó]n|type-c|usb|puerto|cable/.test(t)) return "🔌";
+    if (/laptop|pc|computador|teclado|consola|celular|auto|compatible|mantenimiento/.test(t)) return "💻";
+    if (/linterna|luz|led|ilumina|alumbra|rgb/.test(t)) return "💡";
+    if (/silencio|silencioso|ruido|db|sonido/.test(t)) return "🔇";
+    if (/ergon[oó]mico|agarre|diseño|aluminio|port[aá]til|bolsillo|peso/.test(t)) return "🖐️";
+    if (/2 en 1|multifunci[oó]n|funci[oó]n/.test(t)) return "🔄";
+    if (/caja|nuevo|sellado|original|accesorios/.test(t)) return "📦";
+    return "⚡";
+  }
+
   function buildFallbackMarketplaceCopy(prodTitle, prodDesc) {
     const cleanLines = (prodDesc || "")
       .split("\n")
       .map(l => l.trim())
-      .filter(l => l && !l.toLowerCase().includes("precio") && !l.includes("$") && !l.toLowerCase().includes("c$"));
+      .filter(l => {
+        if (!l) return false;
+        const low = l.toLowerCase();
+        if (low.includes("precio") || low.includes("$") || low.includes("c$")) return false;
+        if (low.includes("whatsapp") || low.includes("contacto:") || low.includes("5843")) return false;
+        if (low.includes("entrega gratis") || low.includes("cargotrans") || low.includes("envíos a todo")) return false;
+        if (low.includes("30 días de garantía") || low.includes("garantía:") || low.includes("garantía directa")) return false;
+        if (low.includes("características principales") || low.includes("lo que incluye y")) return false;
+        return true;
+      });
 
     const featureBullets = cleanLines.length > 0
-      ? cleanLines.map(l => l.startsWith("•") ? l : `• 🚀 ${l}`).join("\n")
+      ? cleanLines.map(line => {
+          let clean = line.replace(/^[•\-\*]\s*(?:🚀\s*)?/g, "").trim();
+          // Si la línea ya tiene un emoji inicial válido, preservarlo
+          const hasInitialEmoji = /^(\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff])/.test(clean);
+          if (hasInitialEmoji) {
+            return `• ${clean}`;
+          }
+          const emoji = getContextualEmojiForFeature(clean);
+          return `• ${emoji} ${clean}`;
+        }).join("\n")
       : `• 🕹️ Condición: Artículo original verificado y garantizado físicamente\n• ⚡ Rendimiento: Alto desempeño y compatibilidad garantizada\n• 📦 Entrega: Disponible para retiro o entrega inmediata`;
 
     return `✨ ${prodTitle}
@@ -98,7 +132,8 @@ ${featureBullets}
 • 💎 Bono de Bienvenida: Recibe $5 USD en puntos (250 WP) al registrarte por primera vez desde tu dispositivo, canjeables por descuentos en artículos seleccionados de nuestro catálogo.
 
 📲 PEDIDOS Y ATENCIÓN DIRECTA:
-• WhatsApp / Teléfono: 5843-8412`;
+• WhatsApp / Teléfono: 5843-8412
+• 📍 Entregas personales en Juigalpa y envíos seguros a toda Nicaragua`;
   }
 
   if (GROQ_KEYS.length === 0) {
@@ -116,13 +151,14 @@ REGLAS ESTRICTAS DE FORMATO Y CONTENIDO:
 1. "marketTitle": Máximo 75 caracteres. Atractivo, incluye palabras clave y estado (Nuevo/Garantía). PROHIBIDO incluir precios en el título.
 2. "marketDescription":
    - PROHIBIDO TERMINANTEMENTE mencionar precios o montos de dinero en el texto de la descripción (el precio se ingresa exclusivamente en la casilla nativa de precio de Marketplace).
-   - Cada apartado y característica DEBE tener un ícono llamativo y temático (⚡, 🎮, 🛡️, 💎, 🎁, 📲, 🚀, 📦). Cero texto plano sin formato.
+   - En "⚡ CARACTERÍSTICAS PRINCIPALES:", CADA viñeta DEBE tener su propio emoji temático adecuado a lo que describe exactamente (ej: 🌪️/💨 para ventilación o sopladores, ⚡ para potencia o motor, 🔋 para batería, 🧲 para boquillas o imanes, 💻 para compatibilidad con PC/laptops, 💡 para linterna, 🔇 para nivel de ruido, 🖐️ para ergonomía, 📦 para empaque).
+   - PROHIBIDO terminantemente repetir el mismo emoji (como 🚀) en todas las líneas. Debe haber variedad y lógica semántica.
    - ESTRUCTURA OBLIGATORIA:
-     • Apertura llamativa del producto con icono (ej: ✨ [Nombre del producto]).
-     • ⚡ CARACTERÍSTICAS PRINCIPALES: Viñetas breves con especificaciones técnicas e iconos temáticos al inicio de cada línea.
+     • Apertura llamativa del producto con icono contextual (ej: 🔥 [Nombre del producto]).
+     • ⚡ CARACTERÍSTICAS PRINCIPALES: Viñetas concisas con especificaciones técnicas reales y sus respectivos emojis temáticos al inicio.
      • 🛡️ GARANTÍA & RESPALDO: Cobertura oficial MeltyDeays con revisión técnica física en tienda.
      • 🎁 THE WIRED CLUB (OFERTAS EXCLUSIVAS EN NUESTRA WEB): Invitar a visitar nuestra plataforma web donde tenemos ofertas especiales con descuentos de socios y destacar que al registrarse por primera vez en su dispositivo reciben un Bono de Bienvenida de $5 USD en puntos (250 WP) para canjear en descuentos en artículos seleccionados de nuestro catálogo.
-     • 📲 CONTACTO Y PEDIDOS DIRECTOS: WhatsApp / Teléfono 58438412 (5843-8412).
+     • 📲 CONTACTO Y PEDIDOS DIRECTOS: WhatsApp / Teléfono 58438412 (5843-8412) con entrega en Juigalpa y envíos nacionales.
 3. "categorySuggestion": Categoría recomendada de Facebook Marketplace.
 
 Responde ÚNICAMENTE un objeto JSON válido con las claves: "marketTitle", "marketDescription", "categorySuggestion".`;
@@ -140,7 +176,7 @@ Detalles técnicos o descripción web: ${description}
           "Authorization": `Bearer ${apiKey}`
         },
         body: JSON.stringify({
-          model: "openai/gpt-oss-120b",
+          model: "llama-3.3-70b-versatile",
           temperature: 0.3,
           response_format: { type: "json_object" },
           messages: [

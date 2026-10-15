@@ -664,8 +664,11 @@ function renderManualRelistListings(listings) {
       <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px; background: #090d16; border: 1px solid #1e293b; border-radius: 4px; padding: 4px 6px;">
         <div style="display: flex; align-items: center; gap: 6px; min-width: 0; flex: 1;">
           <input type="checkbox" id="chk-relist-${idx}" class="chk-relist-item" data-idx="${idx}" ${isChecked ? "checked" : ""} style="accent-color: #0284c7; cursor: pointer; transform: scale(1.05);" />
-          <div style="width: 28px; height: 28px; border-radius: 4px; overflow: hidden; background: #020617; border: 1px solid #334155; flex-shrink: 0; display: flex; align-items: center; justify-content: center;">
-            ${thumbUrl ? `<img src="${thumbUrl}" alt="${item.fbTitle}" referrerpolicy="no-referrer" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.onerror=null; this.parentElement.innerHTML='📦';" />` : `<span style="font-size: 11px;">📦</span>`}
+          <div style="width: 28px; height: 28px; border-radius: 4px; overflow: hidden; background: #020617; border: 1px solid #334155; flex-shrink: 0; display: flex; align-items: center; justify-content: center; position: relative;">
+            ${thumbUrl ? `
+              <img src="${thumbUrl}" alt="${item.fbTitle}" class="relist-thumb-img" style="width: 100%; height: 100%; object-fit: cover;" />
+              <span class="relist-thumb-fallback" style="display: none; font-size: 11px;">📦</span>
+            ` : `<span style="font-size: 11px;">📦</span>`}
           </div>
           <div style="min-width: 0; flex: 1;">
             <div style="font-size: 10px; font-weight: 700; color: #f1f5f9; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${item.fbTitle}">
@@ -686,6 +689,14 @@ function renderManualRelistListings(listings) {
       </div>
     `;
   }).join("");
+
+  container.querySelectorAll(".relist-thumb-img").forEach(img => {
+    img.addEventListener("error", () => {
+      img.style.display = "none";
+      const fallback = img.nextElementSibling;
+      if (fallback) fallback.style.display = "inline";
+    });
+  });
 
   container.querySelectorAll(".chk-relist-item").forEach(chk => {
     chk.addEventListener("change", updateManualRelistCounter);
