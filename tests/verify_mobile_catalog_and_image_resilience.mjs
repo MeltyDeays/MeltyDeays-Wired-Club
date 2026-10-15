@@ -5,7 +5,7 @@ import { RewardModel, isExpiredFbUrl } from "../js/models/RewardModel.js";
 import { AdminViewModel } from "../js/viewmodels/AdminViewModel.js";
 
 console.log("╔════════════════════════════════════════════════════════════════════╗");
-console.log("║   TEST SUITE: RESILIENCIA IMÁGENES & GESTIÓN CATÁLOGO MÓVIL v2.9.96 ║");
+console.log("║   TEST SUITE: RESILIENCIA IMÁGENES & GESTIÓN CATÁLOGO MÓVIL v2.9.97 ║");
 console.log("╚════════════════════════════════════════════════════════════════════╝\n");
 
 // 1. Resiliencia de imágenes en RewardModel e isExpiredFbUrl
@@ -89,7 +89,7 @@ assert.ok(adminHtml.includes('id="catalog-modal-actions-list"'), "Debe existir c
 assert.ok(adminHtml.includes('id="modal-image-lightbox"'), "Debe existir modal-image-lightbox en admin.html");
 assert.ok(adminHtml.includes("catalog-table-responsive"), "Debe tener clase catalog-table-responsive");
 assert.ok(adminHtml.includes("catalog-admin-table"), "Debe tener clase catalog-admin-table");
-assert.ok(adminHtml.includes("admin-app.js?v=2.9.96"), "Debe cache-bustear con versión v=2.9.96");
+assert.ok(adminHtml.includes("admin-app.js?v=2.9.97"), "Debe cache-bustear con versión v=2.9.97");
 console.log("  ✓ admin.html contiene el modal de acciones táctiles, visor lightbox y clases de tabla.");
 
 // 4. Verificación de CSS en responsive.css y admin.css

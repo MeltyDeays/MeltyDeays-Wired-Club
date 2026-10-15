@@ -1,7 +1,7 @@
 /**
  * Vista / Subcontrolador: Catálogo de Recompensas, Calculadora Dinámica de Canje y FX Retro (The Wired Club)
  */
-import { parseProductDescription } from "../../models/RewardModel.js";
+import { parseProductDescription, isExpiredFbUrl } from "../../models/RewardModel.js";
 import { FirestoreService } from "../../services/FirestoreService.js";
 
 let vm = null;
@@ -2311,7 +2311,8 @@ export function renderCatalog(catalog, user) {
       ? item.getImages()
       : (Array.isArray(item.images) && item.images.length ? item.images : (item.imageUrl ? [item.imageUrl] : []));
     const safeCover = itemImages.find(img => img && (img.startsWith("data:image") || img.startsWith("blob:") || (!img.includes("fbcdn.net") && !img.includes("scontent."))));
-    const mainCover = safeCover || itemImages[0] || item.imageUrl || "";
+    const nonExpiredCover = itemImages.find(img => img && !isExpiredFbUrl(img));
+    const mainCover = safeCover || nonExpiredCover || (!isExpiredFbUrl(item.imageUrl) ? item.imageUrl : "") || "";
     const hasMultipleImgs = itemImages.length > 1;
     const escapedTitle = (item.title || "").replace(/'/g, "\\'");
 

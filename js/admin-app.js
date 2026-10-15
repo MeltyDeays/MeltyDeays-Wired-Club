@@ -548,7 +548,10 @@ export function getBestProductCover(images, fallbackUrl = "") {
     )
   );
   if (safeImg) return safeImg;
-  return list[0] || fallbackUrl || "";
+  const nonExpired = list.find(img => typeof img === "string" && !isExpiredFbUrl(img));
+  if (nonExpired) return nonExpired;
+  if (fallbackUrl && typeof fallbackUrl === "string" && !isExpiredFbUrl(fallbackUrl)) return fallbackUrl;
+  return "";
 }
 
 export function handleAdminCatalogImgError(imgEl, productId) {
@@ -977,9 +980,14 @@ export function openAdminProductLightbox(productId) {
   const catalogList = (typeof vm !== "undefined" && vm?.catalog) || window.adminViewModel?.catalog || window.adminViewModel?.products || [];
   const p = catalogList.find(item => item && (item.id === productId || item.reward_id === productId));
   if (p) {
-    const images = typeof p.getImages === "function" ? p.getImages() : (Array.isArray(p.images) && p.images.length ? p.images : (p.imageUrl ? [p.imageUrl] : []));
-    if (images.length > 0 && typeof openImageLightbox === "function") {
-      openImageLightbox(images, 0, p.title || "Artículo The Wired Club");
+    const rawImages = typeof p.getImages === "function" ? p.getImages() : (Array.isArray(p.images) && p.images.length ? p.images : (p.imageUrl ? [p.imageUrl] : []));
+    const validImages = rawImages.filter(img => img && (img.startsWith("data:image") || img.startsWith("blob:") || !isExpiredFbUrl(img)));
+    if (validImages.length > 0 && typeof openImageLightbox === "function") {
+      openImageLightbox(validImages, 0, p.title || "Artículo The Wired Club");
+      return;
+    }
+    if (typeof showToast === "function") {
+      showToast("ℹ️ Las fotos de Facebook de este producto caducaron en sus servidores. Puedes subir fotos nuevas en 'Editar'.", "info");
       return;
     }
   }
