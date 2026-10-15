@@ -5,11 +5,11 @@ import { RewardModel, isExpiredFbUrl } from "../js/models/RewardModel.js";
 import { AdminViewModel } from "../js/viewmodels/AdminViewModel.js";
 
 console.log("╔════════════════════════════════════════════════════════════════════╗");
-console.log("║   TEST SUITE: RESILIENCIA IMÁGENES & GESTIÓN CATÁLOGO MÓVIL v2.9.94 ║");
+console.log("║   TEST SUITE: RESILIENCIA IMÁGENES & GESTIÓN CATÁLOGO MÓVIL v2.9.95 ║");
 console.log("╚════════════════════════════════════════════════════════════════════╝\n");
 
 // 1. Resiliencia de imágenes en RewardModel e isExpiredFbUrl
-console.log("=== SEC 1: INVARIANTE DE PRIORIDAD DE IMÁGENES LOCALES Y FILTRADO EXPIRADAS ===");
+console.log("=== SEC 1: INVARIANTE DE PRIORIDAD DE IMÁGENES LOCALES Y PRESERVACIÓN TOTAL ===");
 const expiredFb = "https://scontent.fmga11-2.fna.fbcdn.net/v/t45.5328-4/825726775_1135894848771831_n.jpg?oe=6AC326BE";
 const localUpload = "data:image/webp;base64,UklGRiQAAABXRUJQVlA4IBgAAAAwAQCdASoBAAEAAwA0JaQAA3AA/vuUAAA=";
 const secondaryFb = "https://scontent.fmga11-2.fna.fbcdn.net/v/t45.5328-4/825331538_1379223907315711_n.jpg?oe=7FFFFFFF";
@@ -37,10 +37,20 @@ assert.strictEqual(
   "imageUrl debe apuntar a la imagen local y no al CDN efímero de Facebook"
 );
 assert.ok(
-  !product.images.includes(expiredFb),
-  "Las URLs de Facebook expiradas deben ser filtradas automáticamente"
+  product.images.includes(expiredFb),
+  "Las fotos originales tomadas por el usuario deben preservarse en images[] sin ser borradas"
 );
-console.log("  ✓ RewardModel prioriza fotos locales y descarta URLs expiradas de Facebook.");
+assert.strictEqual(
+  product.images.length,
+  3,
+  "Todas las fotos del producto deben mantenerse intactas en el modelo"
+);
+assert.strictEqual(
+  product.getImages().length,
+  3,
+  "getImages() debe devolver todas las fotos disponibles del producto"
+);
+console.log("  ✓ RewardModel prioriza fotos locales y preserva 100% de las fotos originales.");
 
 // 1.1 Verificación de AdminViewModel getter products
 console.log("\n=== SEC 1.1: COMPATIBILIDAD DUAL ADMINVIEWMODEL (catalog / products) ===");
@@ -53,6 +63,7 @@ console.log("  ✓ AdminViewModel.products expone correctamente vm.catalog.");
 console.log("\n=== SEC 2: RESILIENCIA Y MODAL EN ADMIN-APP.JS ===");
 const adminAppCode = fs.readFileSync("js/admin-app.js", "utf-8");
 
+assert.ok(adminAppCode.includes("window.adminViewModel = vm;"), "Debe enlazar adminViewModel a window");
 assert.ok(adminAppCode.includes("export function getBestProductCover"), "Debe exportar getBestProductCover");
 assert.ok(adminAppCode.includes("export function handleAdminCatalogImgError"), "Debe exportar handleAdminCatalogImgError");
 assert.ok(adminAppCode.includes("export function openProductActionsModal"), "Debe exportar openProductActionsModal");
@@ -60,8 +71,7 @@ assert.ok(adminAppCode.includes("export function closeProductActionsModal"), "De
 assert.ok(adminAppCode.includes("window.openProductActionsModal = openProductActionsModal"), "Debe enlazar a window");
 assert.ok(adminAppCode.includes("catalog-mobile-options-btn"), "Debe renderizar botón de opciones móviles en cada fila");
 assert.ok(adminAppCode.includes("handleAdminCatalogImgError(this, '${p.id}')"), "Img debe tener onerror controlado");
-assert.ok(adminAppCode.includes("isExpiredFbUrl"), "admin-app.js debe usar isExpiredFbUrl");
-console.log("  ✓ admin-app.js contiene lógica de resiliencia y modal táctil.");
+console.log("  ✓ admin-app.js contiene lógica de resiliencia, enlace a window y modal táctil.");
 
 // 3. Verificación de HTML de admin.html
 console.log("\n=== SEC 3: ESTRUCTURA HTML MODAL DE ACCIONES Y TABLA RESPONSIVE ===");
@@ -72,7 +82,7 @@ assert.ok(adminHtml.includes('id="catalog-modal-product-summary"'), "Debe existi
 assert.ok(adminHtml.includes('id="catalog-modal-actions-list"'), "Debe existir catalog-modal-actions-list");
 assert.ok(adminHtml.includes("catalog-table-responsive"), "Debe tener clase catalog-table-responsive");
 assert.ok(adminHtml.includes("catalog-admin-table"), "Debe tener clase catalog-admin-table");
-assert.ok(adminHtml.includes("admin-app.js?v=2.9.94"), "Debe cache-bustear con versión v=2.9.94");
+assert.ok(adminHtml.includes("admin-app.js?v=2.9.95"), "Debe cache-bustear con versión v=2.9.95");
 console.log("  ✓ admin.html contiene el modal de acciones táctiles y clases de tabla.");
 
 // 4. Verificación de CSS en responsive.css y admin.css

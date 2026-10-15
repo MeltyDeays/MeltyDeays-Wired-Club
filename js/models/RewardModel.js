@@ -242,9 +242,7 @@ export class RewardModel {
       imgs = [singleUrl];
     }
 
-    // Invariante de resiliencia de imagen: Descartar URLs expiradas de Facebook y priorizar fotos locales/seguras
-    imgs = imgs.filter(url => !isExpiredFbUrl(url));
-
+    // Invariante de resiliencia de imagen: Priorizar fotos locales/seguras en la portada sin descartar fotos originales
     if (imgs.length > 1) {
       const safeIdx = imgs.findIndex(img => img && (img.startsWith("data:image") || img.startsWith("blob:") || (!img.includes("fbcdn.net") && !img.includes("scontent."))));
       if (safeIdx > 0) {
@@ -254,9 +252,7 @@ export class RewardModel {
     }
 
     this.images = imgs;
-    const safeSingle = singleUrl && !isExpiredFbUrl(singleUrl) && (singleUrl.startsWith("data:image") || singleUrl.startsWith("blob:") || (!singleUrl.includes("fbcdn.net") && !singleUrl.includes("scontent."))) ? singleUrl : "";
-    const cleanSingle = singleUrl && !isExpiredFbUrl(singleUrl) ? singleUrl : "";
-    this.imageUrl = imgs[0] || safeSingle || cleanSingle || "";
+    this.imageUrl = imgs[0] || singleUrl || "";
 
     this.description = data.description || "";
     this.rawDescription = data.rawDescription || data.raw_description || data.description || "";
@@ -266,14 +262,13 @@ export class RewardModel {
 
   getImages() {
     if (Array.isArray(this.images) && this.images.length > 0) {
-      const activeImgs = this.images.filter(img => !isExpiredFbUrl(img));
-      if (activeImgs.length > 0) return activeImgs;
+      return this.images;
     }
     if (this.isCombo()) {
-      const comboImgs = this.getComboItems().map(it => it.imageUrl).filter(img => img && !isExpiredFbUrl(img));
+      const comboImgs = this.getComboItems().map(it => it.imageUrl).filter(Boolean);
       if (comboImgs.length > 0) return comboImgs;
     }
-    if (this.imageUrl && !isExpiredFbUrl(this.imageUrl)) {
+    if (this.imageUrl) {
       return [this.imageUrl];
     }
     return [];

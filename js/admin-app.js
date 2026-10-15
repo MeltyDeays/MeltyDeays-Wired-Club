@@ -213,6 +213,10 @@ import {
 } from "./views/index.js";
 
 const vm = new AdminViewModel();
+if (typeof window !== "undefined") {
+  window.adminViewModel = vm;
+  window.vm = vm;
+}
 let currentTab = "pos";
 
 // Inicialización de submódulos de vistas desacopladas (Fase 5 MVVM)
@@ -541,24 +545,21 @@ export function getBestProductCover(images, fallbackUrl = "") {
       img.startsWith("data:image") || 
       img.startsWith("blob:") || 
       (!img.includes("fbcdn.net") && !img.includes("scontent."))
-    ) && !isExpiredFbUrl(img)
+    )
   );
   if (safeImg) return safeImg;
-  const nonExpired = list.find(img => typeof img === "string" && !isExpiredFbUrl(img));
-  if (nonExpired) return nonExpired;
-  if (fallbackUrl && typeof fallbackUrl === "string" && !isExpiredFbUrl(fallbackUrl)) return fallbackUrl;
-  return "";
+  return list[0] || fallbackUrl || "";
 }
 
 export function handleAdminCatalogImgError(imgEl, productId) {
   if (!imgEl) return;
   imgEl.onerror = null;
-  const catalogList = window.adminViewModel?.catalog || window.adminViewModel?.products || [];
+  const catalogList = (typeof vm !== "undefined" && vm?.catalog) || window.adminViewModel?.catalog || window.adminViewModel?.products || [];
   const p = catalogList.find(item => item && (item.id === productId || item.reward_id === productId));
   if (p) {
     const images = typeof p.getImages === "function" ? p.getImages() : (Array.isArray(p.images) ? p.images : (p.imageUrl ? [p.imageUrl] : []));
     const currentSrc = imgEl.src || "";
-    const nextImg = images.find(img => img && img !== currentSrc && !isExpiredFbUrl(img) && !img.includes("fbcdn.net") && !img.includes("scontent."));
+    const nextImg = images.find(img => img && img !== currentSrc && (img.startsWith("data:image") || img.startsWith("blob:") || (!img.includes("fbcdn.net") && !img.includes("scontent."))));
     if (nextImg) {
       imgEl.src = nextImg;
       return;
@@ -806,7 +807,7 @@ function renderCatalogTable(catalog) {
 }
 
 export function openProductActionsModal(productId) {
-  const catalogList = window.adminViewModel?.catalog || window.adminViewModel?.products || [];
+  const catalogList = (typeof vm !== "undefined" && vm?.catalog) || window.adminViewModel?.catalog || window.adminViewModel?.products || [];
   const p = catalogList.find(item => item && (item.id === productId || item.reward_id === productId));
   if (!p) {
     if (typeof showToast === "function") showToast("⚠️ Producto no encontrado", "error");
