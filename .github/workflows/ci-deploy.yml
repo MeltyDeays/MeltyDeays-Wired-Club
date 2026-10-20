@@ -1,0 +1,75 @@
+name: CI / CD - Pruebas y Publicación
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Verificación y Pruebas
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clonar repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Ejecutar Suite de Pruebas
+        run: npm test
+
+  publish:
+    name: Publicación y Despliegue
+    needs: [test]
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clonar repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Instalar Vercel CLI
+        run: npm install --global vercel@latest
+
+      - name: Desplegar en Producción (Vercel)
+        if: github.ref == 'refs/heads/main'
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          if [ -z "$VERCEL_TOKEN" ]; then
+            echo "::notice ::VERCEL_TOKEN no está configurado en GitHub Secrets. Si usas la integración directa de Vercel con GitHub, el despliegue automático de Vercel queda validado por el job de pruebas previo."
+          else
+            vercel pull --yes --environment=production --token=$VERCEL_TOKEN
+            vercel build --prod --token=$VERCEL_TOKEN
+            vercel deploy --prebuilt --prod --token=$VERCEL_TOKEN
+          fi
+
+      - name: Desplegar en Preview (Vercel)
+        if: github.ref == 'refs/heads/develop'
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          if [ -z "$VERCEL_TOKEN" ]; then
+            echo "::notice ::VERCEL_TOKEN no está configurado en GitHub Secrets. Si usas la integración directa de Vercel con GitHub, el despliegue automático de Vercel queda validado por el job de pruebas previo."
+          else
+            vercel pull --yes --environment=preview --token=$VERCEL_TOKEN
+            vercel build --token=$VERCEL_TOKEN
+            vercel deploy --prebuilt --token=$VERCEL_TOKEN
+          fi

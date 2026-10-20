@@ -2,6 +2,8 @@
   "name": "lain-wired-club",
   "version": "2.9.97",
   "type": "module",
-  "private": true
+  "private": true,
+  "scripts": {
+    "test": "node scripts/run_ci_tests.mjs"
+  }
 }
-
