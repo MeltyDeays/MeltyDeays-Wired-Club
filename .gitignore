@@ -7,6 +7,12 @@ Thumbs.db
 *.map
 repomix-output.*
 
+# Python artifacts
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
 # Lockfiles y binarios
 package-lock.json
 pnpm-lock.yaml
@@ -17,10 +23,7 @@ yarn.lock
 .env.*
 !.env.example
 
-# Local Agent Workspace
+# Local Agent Workspace & Tools
 .agents/
 scratch/
-graphify-out/
-
-.env*
 graphify-out/
