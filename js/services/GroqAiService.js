@@ -125,9 +125,19 @@ export async function generateComboCombinedDescription(comboTitle, items = []) {
     console.warn("Llamada a /api/groq-copy (combine) no disponible:", err.message);
   }
 
-  // Fallback simple
-  return `Este paquete especial incluye: ${items.map(it => it.title).join(", ")}.
-• Versatilidad: Productos seleccionados por su alta compatibilidad y rendimiento.
-• Valor: Ahorro exclusivo al adquirir el conjunto completo.
-• Garantía: Respaldo oficial para cada artículo del combo.`;
+  // Fallback mejorado: Intenta combinar títulos y descripciones si la IA falla
+  const combinedTitles = items.map(it => it.title).join(", ");
+  const allFeatures = items
+    .flatMap(it => (it.description || "").split("\n"))
+    .map(l => l.trim().replace(/^[•\-\*▸►]\s*/, ""))
+    .filter(l => l.length > 10 && !l.toLowerCase().includes("precio"))
+    .slice(0, 6); // Tomar las primeras 6 características encontradas
+
+  const bullets = allFeatures.length > 0 
+    ? allFeatures.map(f => `• ${f}`).join("\n")
+    : `• Versatilidad: Productos seleccionados por su alta compatibilidad y rendimiento.\n• Valor: Ahorro exclusivo al adquirir el conjunto completo.\n• Garantía: Respaldo oficial para cada artículo del combo.`;
+
+  return `Este paquete especial optimizado combina lo mejor de: ${combinedTitles}.
+
+${bullets}`;
 }

@@ -85,16 +85,16 @@ REGLAS ESTRICTAS DE LIMPIEZA:
       return res.status(200).json({ combinedDescription: fallbackCombined });
     }
 
-    const combineSystemPrompt = `Eres el redactor experto de "MeltyDeays · The Wired Club". 
-Tu tarea es crear una descripción combinada, persuasiva y profesional para un COMBO DE PRODUCTOS.
-Recibirás las descripciones individuales de los artículos que integran el paquete.
+    const combineSystemPrompt = `Eres el redactor técnico y experto en ventas de "MeltyDeays · The Wired Club". 
+Tu tarea es crear una descripción ÚNICA Y SINTETIZADA para un COMBO DE PRODUCTOS (paquete especial).
 
-REGLAS DE ORO:
-1. Crea una introducción breve (máximo 2 líneas) que explique por qué este combo es excelente.
-2. Agrupa las características más importantes de TODOS los productos en una lista de viñetas limpia.
-3. Usa emojis variados y temáticos al inicio de cada viñeta.
-4. Mantén un tono profesional y tecnológico.
-5. Responde ÚNICAMENTE el texto de la descripción final (intro + viñetas), sin saludos.`;
+REGLAS CRÍTICAS DE REDACCIÓN:
+1. SINTETIZA, NO LISTES: No te limites a decir "Producto 1: X, Producto 2: Y". Debes fusionar las ventajas de todos los productos en una sola narrativa coherente.
+2. INTRODUCCIÓN MAESTRA: Comienza con una frase potente que explique el valor del conjunto completo (ej: "La solución definitiva de carga y conectividad para tu ecosistema móvil").
+3. LISTA DE BENEFICIOS FUSIONADOS: Crea una lista de viñetas (bullets) que combine las especificaciones más importantes de TODOS los artículos. Si ambos productos tienen protección, crea una sola viñeta de "Protección Avanzada". Si uno es un cargador y otro un cable, destaca la "Sinergia de Carga Rápida".
+4. EMOJIS SEMÁNTICOS: Usa emojis que representen fielmente cada característica (⚡ para potencia, 🛡️ para seguridad, 🧵 para durabilidad, 📏 para dimensiones, etc.).
+5. MANTÉN EL FORMATO: Responde ÚNICAMENTE el texto final (Intro + Viñetas).
+6. CANTIDAD DE DETALLES: Asegúrate de extraer al menos 6-8 puntos clave si el combo tiene varios productos, cubriendo lo mejor de cada uno de forma técnica y profesional.`;
 
     for (const apiKey of GROQ_KEYS) {
       try {

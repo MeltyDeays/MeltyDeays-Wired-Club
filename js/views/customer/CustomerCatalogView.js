@@ -1399,7 +1399,14 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
                   </div>
                   <div class="combo-item-info-col">
                     <div class="combo-item-title">${idx + 1}. ${cItem.title || 'Artículo del Combo'}</div>
-                    ${cItem.description ? `<div class="combo-item-desc">${cItem.description}</div>` : ''}
+                    ${cItem.description 
+                      ? `
+                        <button type="button" class="combo-item-desc-toggle" id="combo-item-toggle-${item.id}-${idx}" onclick="toggleComboItemDesc('${item.id}', ${idx})">
+                          <span>⊕ Ver detalles</span>
+                        </button>
+                        <div class="combo-item-desc collapsed" id="combo-item-desc-${item.id}-${idx}">${cItem.description}</div>
+                      ` 
+                      : ''}
                   </div>
                 </div>
                 <div class="combo-item-bottom-strip">
@@ -1794,6 +1801,26 @@ export function toggleModalProductSpecs(itemId) {
   }
 }
 
+/**
+ * Alterna la visibilidad de la descripción de un producto dentro de un combo.
+ */
+export function toggleComboItemDesc(comboId, itemIdx) {
+  const descEl = document.getElementById(`combo-item-desc-${comboId}-${itemIdx}`);
+  const btnEl = document.getElementById(`combo-item-toggle-${comboId}-${itemIdx}`);
+  if (!descEl || !btnEl) return;
+
+  const isCollapsed = descEl.classList.contains("collapsed");
+  if (isCollapsed) {
+    descEl.classList.remove("collapsed");
+    btnEl.innerHTML = "<span>⊖ Ocultar detalles</span>";
+    btnEl.classList.add("active");
+  } else {
+    descEl.classList.add("collapsed");
+    btnEl.innerHTML = "<span>⊕ Ver detalles</span>";
+    btnEl.classList.remove("active");
+  }
+}
+
 if (typeof document !== "undefined" && typeof document.addEventListener === "function") {
   document.addEventListener("click", (e) => {
     if (currentlyOpenSpecsId) {
@@ -1830,6 +1857,8 @@ export function initCustomerCatalogView(deps) {
     window.findProductInCatalog = findProductInCatalog;
     window.extractDeepLinkProductId = extractDeepLinkProductId;
     window.handleCatalogImgError = handleCatalogImgError;
+    window.toggleComboItemDesc = toggleComboItemDesc;
+    window.toggleModalProductSpecs = toggleModalProductSpecs;
   }
 
   // Soporte deep linking para URLs compartidas (#product-[id], ?openReward=...) y navegación del historial
