@@ -19,7 +19,7 @@
   height: 100%;
   position: relative;
   overflow: hidden;
-  background: #0f172a;
+  background: #ffffff;
 }
 
 .combo-split-item {
@@ -31,60 +31,92 @@
   align-items: center;
   justify-content: center;
   min-width: 0;
+  background: #ffffff;
+  padding: 20px 4px 16px 4px;
+  box-sizing: border-box;
 }
 
 .combo-split-img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   transition: transform 0.2s ease;
+  filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.08));
 }
 
 .combo-split-item:hover .combo-split-img {
-  transform: scale(1.05);
+  transform: scale(1.06);
 }
 
 .combo-split-divider {
-  width: 2px;
+  width: 1.5px;
   height: 100%;
-  background: #d97706;
-  box-shadow: 0 0 8px rgba(217, 119, 6, 0.6);
+  background: #e2e8f0;
   position: relative;
   z-index: 3;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.combo-split-plus {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #d97706;
+  color: #ffffff;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  line-height: 1;
+  z-index: 4;
 }
 
 .combo-split-item-label {
   position: absolute;
-  bottom: 6px;
-  left: 4px;
-  right: 4px;
-  background: rgba(15, 23, 42, 0.85);
+  bottom: 3px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 6px);
+  max-width: 92%;
+  background: rgba(15, 23, 42, 0.88);
   color: #fef08a;
-  border: 1px solid #d97706;
+  border: 1px solid rgba(217, 119, 6, 0.6);
   font-family: var(--font-mono);
-  font-size: 0.62rem;
+  font-size: 0.52rem;
   font-weight: 800;
-  padding: 1px 4px;
-  border-radius: 2px;
+  padding: 1px 3px;
+  border-radius: 3px;
   text-align: center;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   pointer-events: none;
+  box-sizing: border-box;
+  backdrop-filter: blur(2px);
 }
 
 .combo-badge {
-  background: rgba(15, 23, 42, 0.95);
+  background: rgba(15, 23, 42, 0.92);
   color: #fbbf24;
-  border: 1.5px solid #d97706;
+  border: 1px solid #d97706;
   font-family: var(--font-mono);
-  font-size: 0.68rem;
+  font-size: 0.62rem;
   font-weight: 900;
-  padding: 2.5px 8px;
+  padding: 2px 7px;
   border-radius: 4px;
-  box-shadow: 0 0 10px rgba(217, 119, 6, 0.45);
-  letter-spacing: 0.5px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  letter-spacing: 0.3px;
 }
 
 .btn-combo-acquire {

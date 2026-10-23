@@ -2082,7 +2082,7 @@ export function renderCatalog(catalog, user) {
 
     let modeBadge = "";
     if (isCombo) {
-      modeBadge = `<div class="badge-tag combo-badge" style="position: absolute; top: 8px; left: 8px; z-index: 4;">✦ COMBO ${comboItems.length} EN 1 ✦</div>`;
+      modeBadge = `<div class="badge-tag combo-badge" style="position: absolute; top: 6px; left: 50%; transform: translateX(-50%); z-index: 4; white-space: nowrap;">✦ COMBO ${comboItems.length} EN 1 ✦</div>`;
     } else if (isIncoming) {
       modeBadge = `<div class="badge-tag badge-coming-soon" style="position: absolute; top: 8px; left: 8px; z-index: 2; background: rgba(15, 23, 42, 0.95); color: #38bdf8; border: 1px solid #0284c7; font-family: var(--font-mono); font-size: 0.65rem; font-weight: 800; padding: 2px 6px; border-radius: 3px; box-shadow: 0 0 8px rgba(56, 189, 248, 0.3);">🕊️ LLEGA EN // -${presaleDiscPct}%</div>`;
     } else if (isPartial) {
@@ -2377,7 +2377,7 @@ export function renderCatalog(catalog, user) {
           ${isCombo ? `
             <div class="combo-split-container">
               ${comboItems.map((cItem, idx) => `
-                ${idx > 0 ? '<div class="combo-split-divider"></div>' : ''}
+                ${idx > 0 ? '<div class="combo-split-divider"><span class="combo-split-plus">+</span></div>' : ''}
                 <div class="combo-split-item" title="${cItem.title}">
                   <img src="${cItem.imageUrl || itemImages[idx] || mainCover}" alt="${cItem.title}" class="combo-split-img" referrerpolicy="no-referrer" loading="lazy" decoding="async" onerror="this.onerror=null; this.style.display='none'; this.parentElement.style.background='#0d131f';">
                   <div class="combo-split-item-label">${cItem.title}</div>
