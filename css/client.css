@@ -3231,6 +3231,53 @@
   gap: 8px;
 }
 
+@media (max-width: 640px) {
+  .combo-item-specs-grid {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+  
+  .combo-item-details-inner {
+    padding: 8px;
+    border-radius: 8px;
+  }
+  
+  .combo-item-intro-text {
+    font-size: 0.7rem;
+    margin-bottom: 8px;
+  }
+  
+  .combo-mini-spec-card {
+    padding: 6px 10px;
+  }
+  
+  .combo-mini-spec-val {
+    font-size: 0.68rem;
+  }
+
+  .combo-included-item-card {
+    padding: 6px 8px;
+  }
+
+  .combo-item-top-row {
+    gap: 8px;
+  }
+
+  .combo-item-title {
+    font-size: 0.75rem;
+  }
+
+  .combo-price-tag-label,
+  .combo-price-tag-val {
+    font-size: 0.6rem;
+  }
+  
+  .combo-flexibility-callout {
+    font-size: 0.65rem;
+    padding: 6px 8px;
+  }
+}
+
 .combo-mini-spec-card {
   display: flex;
   flex-direction: column;
