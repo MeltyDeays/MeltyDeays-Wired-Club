@@ -1127,6 +1127,15 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
   const isCombo = (typeof item.isCombo === "function" ? item.isCombo() : (item.rewardType === "COMBO"));
   const comboItems = isCombo ? (typeof item.getComboItems === "function" ? item.getComboItems() : (item.comboData?.items || [])) : [];
   const comboSavings = isCombo && typeof item.getComboSavings === "function" ? item.getComboSavings() : { sumUsd: item.priceUsd || 0, savingsUsd: 0, savingsPct: 0 };
+  const comboIndividualSumUsd = isCombo ? Number(comboItems.reduce((acc, it) => {
+    const p = Number(it.residualPriceUsd !== undefined && it.residualPriceUsd !== null && it.residualPriceUsd !== "" ? it.residualPriceUsd : (it.priceUsd || 0));
+    return acc + (Number.isFinite(p) ? p : 0);
+  }, 0).toFixed(2)) : 0;
+  const comboIndividualSavingsUsd = isCombo ? Math.max(0, Number((comboIndividualSumUsd - (Number(item.priceUsd) || 0)).toFixed(2))) : 0;
+  const comboIndividualSavingsPct = comboIndividualSumUsd > 0 ? Math.round((comboIndividualSavingsUsd / comboIndividualSumUsd) * 100) : 0;
+  const effSpecsSumUsd = comboIndividualSumUsd > 0 ? comboIndividualSumUsd : comboSavings.sumUsd;
+  const effSpecsSavingsUsd = comboIndividualSavingsUsd > 0 ? comboIndividualSavingsUsd : comboSavings.savingsUsd;
+  const effSpecsSavingsPct = comboIndividualSavingsPct > 0 ? comboIndividualSavingsPct : comboSavings.savingsPct;
 
   // Actualizar topbar limpia y balanceada (Volver // Kicker // Cerrar)
   const topbar = (modal.querySelector ? modal.querySelector(".modal-specs-topbar") : null) || document.querySelector(".modal-specs-topbar");
@@ -1349,7 +1358,7 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
         <div class="haibane-specs-header">
           <div class="haibane-specs-title-row">
             <span class="haibane-specs-kanji" style="color: #78350f;">✦ COMBO FLEXIBLE · SERIE 3 ✦</span>
-            <span class="haibane-specs-badge" style="background: #f59e0b; color: #78350f;">-${comboSavings.savingsPct}% AHORRO EN PAQUETE</span>
+            <span class="haibane-specs-badge" style="background: #f59e0b; color: #78350f;">-${effSpecsSavingsPct}% AHORRO EN PAQUETE</span>
           </div>
           <div class="haibane-specs-subtitle" style="color: #92400e;">📦 PAQUETE INTEGRAL (${comboItems.length} PRODUCTOS)</div>
         </div>
@@ -1362,7 +1371,7 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
           </div>
           <div class="haibane-price-orig-block">
             <span class="haibane-orig-label">SUMA INDIVIDUAL</span>
-            <span class="haibane-specs-price-orig" style="text-decoration: line-through; color: #94a3b8;">${formatPrice(comboSavings.sumUsd)}</span>
+            <span class="haibane-specs-price-orig" style="text-decoration: line-through; color: #94a3b8;">${formatPrice(effSpecsSumUsd)}</span>
           </div>
         </div>
 
@@ -1371,8 +1380,8 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
           <div class="savings-primary-line">
             <span class="savings-gem" style="color: #d97706;">✧</span>
             <span class="savings-label">Ahorro en combo:</span>
-            <span class="savings-highlight" style="color: #b45309;">-${formatDualPrice(comboSavings.savingsUsd)}</span>
-            <span class="savings-badge-pill" style="background: #fef3c7; color: #92400e; border: 1px solid #fcd34d;">(-${comboSavings.savingsPct}% OFF)</span>
+            <span class="savings-highlight" style="color: #b45309;">-${formatDualPrice(effSpecsSavingsUsd)}</span>
+            <span class="savings-badge-pill" style="background: #fef3c7; color: #92400e; border: 1px solid #fcd34d;">(-${effSpecsSavingsPct}% OFF)</span>
           </div>
           <div class="savings-secondary-line">
             <span class="savings-shield-icon">🛡️</span>
@@ -1401,9 +1410,9 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
                   </div>
                   <div class="combo-item-info-col">
                     <div class="combo-item-title">${idx + 1}. ${cItem.title || 'Artículo del Combo'}</div>
-                    <div class="combo-item-price-tag">
-                      <span class="combo-price-tag-label">🏷️ Por separado:</span>
-                      <span class="combo-price-tag-val">${formatDualPrice(cItem.priceUsd)}</span>
+                    <div class="combo-item-price-tag" style="display: flex; align-items: baseline; flex-wrap: wrap; gap: 3px 8px; font-size: 0.72rem; font-family: var(--font-mono); margin-top: 3px;">
+                      <span class="combo-price-in-combo" style="color: #b45309; font-weight: 800;">⚡ En combo: ${formatDualPrice(cItem.priceUsd || 0)}</span>
+                      <span class="combo-price-sep" style="color: #64748b; font-weight: 600;">🏷️ Por separado: <strong style="color: #334155; font-weight: 800;">${formatDualPrice(Number(cItem.residualPriceUsd !== undefined && cItem.residualPriceUsd !== null && cItem.residualPriceUsd !== "" ? cItem.residualPriceUsd : (cItem.priceUsd || 0)))}</strong></span>
                     </div>
                   </div>
                   ${cItem.description ? `
@@ -1963,6 +1972,15 @@ export function renderCatalog(catalog, user) {
     const isCombo = (typeof item.isCombo === "function" ? item.isCombo() : (item.rewardType === "COMBO"));
     const comboItems = isCombo ? (typeof item.getComboItems === "function" ? item.getComboItems() : (item.comboData?.items || [])) : [];
     const comboSavings = isCombo && typeof item.getComboSavings === "function" ? item.getComboSavings() : { sumUsd: item.priceUsd || 0, savingsUsd: 0, savingsPct: 0 };
+    const comboIndividualSumUsd = isCombo ? Number(comboItems.reduce((acc, it) => {
+      const p = Number(it.residualPriceUsd !== undefined && it.residualPriceUsd !== null && it.residualPriceUsd !== "" ? it.residualPriceUsd : (it.priceUsd || 0));
+      return acc + (Number.isFinite(p) ? p : 0);
+    }, 0).toFixed(2)) : 0;
+    const comboIndividualSavingsUsd = isCombo ? Math.max(0, Number((comboIndividualSumUsd - (Number(item.priceUsd) || 0)).toFixed(2))) : 0;
+    const comboIndividualSavingsPct = comboIndividualSumUsd > 0 ? Math.round((comboIndividualSavingsUsd / comboIndividualSumUsd) * 100) : 0;
+    const effCardSumUsd = comboIndividualSumUsd > 0 ? comboIndividualSumUsd : comboSavings.sumUsd;
+    const effCardSavingsUsd = comboIndividualSavingsUsd > 0 ? comboIndividualSavingsUsd : comboSavings.savingsUsd;
+    const effCardSavingsPct = comboIndividualSavingsPct > 0 ? comboIndividualSavingsPct : comboSavings.savingsPct;
     const isIncoming = !isCombo && (typeof item.isIncoming === "function" ? item.isIncoming() : (item.status === "INCOMING" || Boolean(item.isIncoming || item.is_incoming))) && !(typeof item.isIncomingExpired === "function" && item.isIncomingExpired());
     const isOut = !isIncoming && (item.stock <= 0 || item.status === "SOLD_OUT");
     const canAfford = user && user.wiredPoints >= item.pointsCost;
@@ -2004,8 +2022,8 @@ export function renderCatalog(catalog, user) {
       temuCoinPillText = `🕊️ PREVENTA (-${presaleDiscPct}% DIRECTO)`;
     } else if (isCombo) {
       temuPriceMain = formatPrice(item.priceUsd, item.priceNio, true);
-      temuPriceOrig = formatPrice(comboSavings.sumUsd, comboSavings.sumNio, true);
-      temuCoinPillText = `✦ COMBO ${comboItems.length} EN 1 (-${comboSavings.savingsPct}%)`;
+      temuPriceOrig = formatPrice(effCardSumUsd, Math.round(effCardSumUsd * 37), true);
+      temuCoinPillText = `✦ COMBO ${comboItems.length} EN 1 (-${effCardSavingsPct}%)`;
     } else if (isPartial) {
       if (user && appliedPts > 0) {
         const cashDueNio = item.priceNio ? Math.round(item.priceNio * (1 - (appliedPct / 100))) : Math.round(cashToPayWithPts * 37);
@@ -2125,11 +2143,11 @@ export function renderCatalog(catalog, user) {
         <div class="reward-pricing-box combo-pricing-box" style="border: 1.5px solid #d97706; background: #fffbeb; padding: 0.5rem 0.65rem; border-radius: 4px; margin-top: 0.5rem;">
           <div class="pricing-row" style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 2px 6px; font-size: 0.72rem; color: #78350f;">
             <span class="pricing-label">Suma individual:</span>
-            <span class="pricing-val" style="text-decoration: line-through; color: #94a3b8; font-variant-numeric: tabular-nums;">${formatPrice(comboSavings.sumUsd)}</span>
+            <span class="pricing-val" style="text-decoration: line-through; color: #94a3b8; font-variant-numeric: tabular-nums;">${formatPrice(effCardSumUsd)}</span>
           </div>
           <div class="pricing-row discount-row" style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 2px 6px; font-size: 0.72rem; color: #b45309; font-weight: 800;">
             <span class="pricing-label">Ahorro en Combo:</span>
-            <span class="pricing-val green" style="color: #d97706; font-variant-numeric: tabular-nums;">-${formatPrice(comboSavings.savingsUsd)} (${comboSavings.savingsPct}% OFF)</span>
+            <span class="pricing-val green" style="color: #d97706; font-variant-numeric: tabular-nums;">-${formatPrice(effCardSavingsUsd)} (${effCardSavingsPct}% OFF)</span>
           </div>
           <div class="pricing-row total-row" style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 2px 6px; font-size: 0.8rem; font-weight: 900; color: #78350f; border-top: 1px dashed #fcd34d; margin-top: 4px; padding-top: 4px;">
             <span class="pricing-label">Precio del Combo:</span>
@@ -2695,6 +2713,14 @@ export function confirmRedeem(rewardId) {
     if (comboList) {
       comboList.scrollTop = 0;
       const comboSavings = (typeof reward.getComboSavings === "function") ? reward.getComboSavings() : { sumUsd: 0, savingsUsd: 0, savingsPct: 0 };
+      const comboIndividualSumUsd = Number(comboItems.reduce((acc, it) => {
+        const p = Number(it.residualPriceUsd !== undefined && it.residualPriceUsd !== null && it.residualPriceUsd !== "" ? it.residualPriceUsd : (it.priceUsd || 0));
+        return acc + (Number.isFinite(p) ? p : 0);
+      }, 0).toFixed(2));
+      const comboIndividualSavingsUsd = Math.max(0, Number((comboIndividualSumUsd - (Number(reward.priceUsd) || 0)).toFixed(2)));
+      const comboIndividualSavingsPct = comboIndividualSumUsd > 0 ? Math.round((comboIndividualSavingsUsd / comboIndividualSumUsd) * 100) : 0;
+      const effRedeemSavingsUsd = comboIndividualSavingsUsd > 0 ? comboIndividualSavingsUsd : comboSavings.savingsUsd;
+      const effRedeemSavingsPct = comboIndividualSavingsPct > 0 ? comboIndividualSavingsPct : comboSavings.savingsPct;
       const fullComboImg = reward.imageUrl || comboItems[0]?.imageUrl;
 
       comboList.innerHTML = `
@@ -2712,7 +2738,7 @@ export function confirmRedeem(rewardId) {
           <div class="combo-opt-bottom-strip">
             <div class="combo-opt-tags-wrap">
               <span class="combo-opt-mode-tag combo">✦ PAQUETE COMPLETO</span>
-              ${comboSavings.savingsUsd > 0 ? `<span class="combo-opt-savings-tag">⚡ Ahorras $${comboSavings.savingsUsd.toFixed(2)} (${comboSavings.savingsPct}% OFF)</span>` : ''}
+              ${effRedeemSavingsUsd > 0 ? `<span class="combo-opt-savings-tag">⚡ Ahorras ${effRedeemSavingsUsd.toFixed(2)}${effRedeemSavingsUsd.toFixed(2)} (${effRedeemSavingsPct}% OFF)</span>` : ''}
             </div>
             <div class="combo-opt-price-box">
               <strong class="combo-opt-price-val">${formatDualPrice(reward.priceUsd)}</strong>
