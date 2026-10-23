@@ -27,3 +27,4 @@ yarn.lock
 .agents/
 scratch/
 graphify-out/
+ai-review-report.md

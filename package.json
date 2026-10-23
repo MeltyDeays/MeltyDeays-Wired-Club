@@ -1,9 +1,11 @@
 {
   "name": "lain-wired-club",
-  "version": "2.9.97",
+  "version": "2.9.98",
   "type": "module",
   "private": true,
   "scripts": {
-    "test": "node scripts/run_ci_tests.mjs"
+    "test": "node scripts/run_ci_tests.mjs",
+    "lint": "node scripts/lint_codebase.mjs",
+    "ai:review": "node scripts/ai_code_review.mjs"
   }
 }

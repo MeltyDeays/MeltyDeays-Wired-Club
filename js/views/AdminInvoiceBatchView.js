@@ -536,7 +536,12 @@ export function renderComboItemTabs() {
 
 export function updateComboLiveSummary() {
   // UX 5: Sumar residualPriceUsd (Precio Individual) para el total de referencia
-  const sumUsd = Number(currentComboItems.reduce((acc, it) => acc + (parseFloat(it.residualPriceUsd) || parseFloat(it.priceUsd) || 0), 0).toFixed(2));
+  const sumUsd = Number(currentComboItems.reduce((acc, it) => {
+    const res = parseFloat(it.residualPriceUsd);
+    const p = parseFloat(it.priceUsd);
+    const val = (Number.isFinite(res) && res > 0) ? res : (Number.isFinite(p) ? p : 0);
+    return acc + (Number.isFinite(val) ? val : 0);
+  }, 0).toFixed(2));
   // Calcular suma de precios en combo para auto-relleno sugerido
   const sumComboPrices = Number(currentComboItems.reduce((acc, it) => acc + (parseFloat(it.priceUsd) || 0), 0).toFixed(2));
 

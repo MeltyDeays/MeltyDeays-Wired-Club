@@ -1,0 +1,55 @@
+name: Revisor IA de Código (OmniRoute Cloud)
+
+on:
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ai-review:
+    name: Revisión IA Automática
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clonar repositorio completo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Ejecutar Auditoría IA
+        env:
+          OMNIROUTE_API_KEY: ${{ secrets.OMNIROUTE_API_KEY || 'sk-bbe727d4356f358d-e5577d-28c89ab5' }}
+        run: |
+          node scripts/ai_code_review.mjs --ci
+
+      - name: Publicar Comentario en Pull Request
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            const reportPath = path.resolve('ai-review-report.md');
+            if (fs.existsSync(reportPath)) {
+              const body = fs.readFileSync(reportPath, 'utf8');
+              const commentHeader = '### 🤖 Revisor IA Automatizado (OmniRoute / The Wired Club)\n\n';
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: commentHeader + body
+              });
+            }

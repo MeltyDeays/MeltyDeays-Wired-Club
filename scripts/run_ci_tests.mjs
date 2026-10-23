@@ -24,17 +24,30 @@ function getJsFiles(dir) {
   if (!fs.existsSync(dir)) return results;
   const list = fs.readdirSync(dir, { withFileTypes: true });
   for (const item of list) {
-    const fullPath = path.join(dir, item.name);
     if (item.isDirectory()) {
       results = results.concat(getJsFiles(fullPath));
     } else if (item.name.endsWith('.js') || item.name.endsWith('.mjs')) {
-      results.push(fullPath);
+      results.push(path.join(dir, item.name));
     }
   }
   return results;
 }
 
-const jsFiles = [...getJsFiles(path.join(ROOT_DIR, 'js')), ...getJsFiles(path.join(ROOT_DIR, 'api'))];
+const jsFiles = [];
+function scanDir(dir) {
+  if (!fs.existsSync(dir)) return;
+  const list = fs.readdirSync(dir, { withFileTypes: true });
+  for (const item of list) {
+    const fullPath = path.join(dir, item.name);
+    if (item.isDirectory()) {
+      scanDir(fullPath);
+    } else if (item.name.endsWith('.js') || item.name.endsWith('.mjs')) {
+      jsFiles.push(fullPath);
+    }
+  }
+}
+scanDir(path.join(ROOT_DIR, 'js'));
+scanDir(path.join(ROOT_DIR, 'api'));
 
 let syntaxErrors = 0;
 for (const file of jsFiles) {
@@ -56,12 +69,26 @@ if (syntaxErrors === 0) {
   console.error(`✕ ${syntaxErrors} archivos con error de sintaxis.\n`);
 }
 
+// 1.5. Linter Estático de Integridad y Seguridad
+console.log('--- 1.5. LINTER ESTÁTICO ZERO-WASTE (< 100ms) ---');
+totalChecks++;
+const lintRes = spawnSync(process.execPath, ['scripts/lint_codebase.mjs'], { cwd: ROOT_DIR, stdio: 'pipe' });
+if (lintRes.status === 0) {
+  passedChecks++;
+  console.log('✓ Linter: Cero fugas de secretos y enlaces ES íntegros.\n');
+} else {
+  failedChecks++;
+  failures.push({ name: 'Linter', error: lintRes.stdout.toString() + '\n' + lintRes.stderr.toString() });
+  console.error('✕ Fallo en linter estático.\n');
+}
+
 // 2. Suites de Pruebas Automatizadas
 console.log('--- 2. EJECUCIÓN DE SUITES DE PRUEBAS ---');
 
 const testSuites = [
   'tests/combo_products.test.mjs',
   'tests/verify_combo_mobile_layout.mjs',
+  'tests/verify_visual_responsive_invariants.mjs',
   'tests/verify_pwa_installability.mjs',
   'tests/verify_mobile_catalog_and_image_resilience.mjs',
   'tests/verify_bimoneda_admin_and_clean_nio.mjs',
