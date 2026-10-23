@@ -1387,59 +1387,59 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
             <span class="combo-items-count-badge">${comboItems.length} ÍTEMS</span>
           </div>
           <div class="combo-included-items-list">
-            ${comboItems.map((cItem, idx) => `
+            ${comboItems.map((cItem, idx) => {
+              const parsed = cItem.description ? parseProductDescription(cItem.description) : null;
+              return `
               <div class="combo-included-item-card">
                 <div class="combo-item-top-row">
                   <div class="combo-item-thumb-box">
                     ${cItem.imageUrl 
-                      ? `<img src="${cItem.imageUrl}" alt="${cItem.title || ''}" class="combo-item-thumb-img" loading="lazy" decoding="async" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'combo-item-thumb-fallback\\'>📦</div>';">` 
+                      ? `<img src="${cItem.imageUrl}" alt="${cItem.title || ''}" class="combo-item-thumb-img" loading="lazy" decoding="async" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\\'combo-item-thumb-fallback\\\'>📦</div>';">` 
                       : `<div class="combo-item-thumb-fallback">📦</div>`
                     }
                     <span class="combo-item-num-badge">#${idx + 1}</span>
                   </div>
                   <div class="combo-item-info-col">
                     <div class="combo-item-title">${idx + 1}. ${cItem.title || 'Artículo del Combo'}</div>
-                    ${cItem.description 
-                      ? (() => {
-                          const parsed = parseProductDescription(cItem.description);
-                          return `
-                            <button type="button" class="combo-item-desc-toggle" id="combo-item-toggle-${item.id}-${idx}" onclick="toggleComboItemDesc('${item.id}', ${idx})">
-                              <span>⊕ Ver detalles</span>
-                            </button>
-                            <div class="combo-item-desc collapsed" id="combo-item-desc-${item.id}-${idx}">
-                              <div class="combo-item-details-inner">
-                                ${parsed.intro ? `<div class="combo-item-intro-text">${parsed.intro}</div>` : ''}
-                                ${parsed.specs.length > 0 
-                                  ? `
-                                    <div class="combo-item-specs-grid">
-                                      ${parsed.specs.map(spec => {
-                                        const parts = spec.split(':');
-                                        if (parts.length > 1) {
-                                          return `
-                                            <div class="combo-mini-spec-card">
-                                              <span class="combo-mini-spec-label">${parts[0].trim()}</span>
-                                              <span class="combo-mini-spec-val">${parts.slice(1).join(':').trim()}</span>
-                                            </div>
-                                          `;
-                                        }
-                                        return `<div class="combo-mini-spec-card-full">${spec}</div>`;
-                                      }).join('')}
-                                    </div>
-                                  ` 
-                                  : `<div class="combo-item-raw-desc">${cItem.description}</div>`}
-                              </div>
-                            </div>
-                          `;
-                        })()
-                      : ''}
+                    <div class="combo-item-price-tag">
+                      <span class="combo-price-tag-label">🏷️ Por separado:</span>
+                      <span class="combo-price-tag-val">${formatDualPrice(cItem.priceUsd)}</span>
+                    </div>
                   </div>
+                  ${cItem.description ? `
+                    <button type="button" class="combo-item-desc-toggle" id="combo-item-toggle-${item.id}-${idx}" onclick="toggleComboItemDesc('${item.id}', ${idx})" title="Ver detalles y especificaciones">
+                      <span>⊕ Ver detalles</span>
+                    </button>
+                  ` : ''}
                 </div>
-                <div class="combo-item-bottom-strip">
-                  <span class="combo-price-tag-label">🏷️ Comprado por separado:</span>
-                  <span class="combo-price-tag-val">${formatDualPrice(cItem.priceUsd)}</span>
-                </div>
+                ${cItem.description ? `
+                  <div class="combo-item-desc collapsed" id="combo-item-desc-${item.id}-${idx}">
+                    <div class="combo-item-details-inner">
+                      ${parsed && parsed.intro ? `<div class="combo-item-intro-text">${parsed.intro}</div>` : ''}
+                      ${parsed && parsed.specs.length > 0 
+                        ? `
+                          <div class="combo-item-specs-grid">
+                            ${parsed.specs.map(spec => {
+                              const parts = spec.split(':');
+                              if (parts.length > 1) {
+                                return `
+                                  <div class="combo-mini-spec-card">
+                                    <span class="combo-mini-spec-label">${parts[0].trim()}</span>
+                                    <span class="combo-mini-spec-val">${parts.slice(1).join(':').trim()}</span>
+                                  </div>
+                                `;
+                              }
+                              return `<div class="combo-mini-spec-card-full">${spec}</div>`;
+                            }).join('')}
+                          </div>
+                        ` 
+                        : `<div class="combo-item-raw-desc">${cItem.description}</div>`}
+                    </div>
+                  </div>
+                ` : ''}
               </div>
-            `).join('')}
+            `;
+            }).join('')}
           </div>
           <div class="combo-flexibility-callout">
             💡 <strong>Flexibilidad total:</strong> Al presionar "Adquirir", podrás elegir entre llevarte el combo completo con el descuento o comprar cualquiera de los artículos por separado al precio unitario indicado.
@@ -1542,13 +1542,13 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
 
     ${saleBannerHtml}
 
-    ${parsed.intro ? `
+    ${parsed.intro && !isCombo ? `
       <div class="modal-intro-callout">
         <div class="callout-text">${parsed.intro}</div>
       </div>
     ` : ''}
 
-    ${parsed.specs.length > 0 ? `
+    ${parsed.specs.length > 0 && !isCombo ? `
     <!-- DESPLEGABLE DE ESPECIFICACIONES TÉCNICAS (COLAPSADO POR DEFECTO) -->
     <div class="reward-specs-box" style="margin: 0.75rem 0 1rem 0;">
       <button type="button" class="reward-specs-toggle-btn" onclick="toggleModalProductSpecs('${item.id}')" id="modal-specs-btn-${item.id}">

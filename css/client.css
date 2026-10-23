@@ -3124,7 +3124,7 @@
 
 .combo-item-top-row {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 10px;
   width: 100%;
 }
@@ -3175,6 +3175,15 @@
   gap: 2px;
 }
 
+.combo-item-price-tag {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  margin-top: 2px;
+}
+
 .combo-item-title {
   font-weight: 800;
   font-size: 0.8rem;
@@ -3185,6 +3194,8 @@
 }
 
 .combo-item-desc {
+  width: 100%;
+  box-sizing: border-box;
   font-size: 0.68rem;
   color: #64748b;
   line-height: 1.4;
@@ -3206,6 +3217,8 @@
 }
 
 .combo-item-details-inner {
+  width: 100%;
+  box-sizing: border-box;
   padding: 8px 10px;
   background: linear-gradient(to bottom, #f8fafc, #f1f5f9);
   border-radius: 10px;
@@ -3226,8 +3239,10 @@
 }
 
 .combo-item-specs-grid {
+  width: 100%;
+  box-sizing: border-box;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 6px;
 }
 
