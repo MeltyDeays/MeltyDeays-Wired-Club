@@ -1793,7 +1793,7 @@
             <label class="form-label" style="font-size: 0.68rem; font-weight: 800; color: #334155; margin-bottom: 2px; display: block;">
               📝 Descripción / Especificaciones del Artículo
             </label>
-            <textarea id="combo-item-desc" class="form-input" placeholder="Características detalladas, medidas, compatibilidad..." rows="3" style="height: auto; min-height: 80px; font-size: 0.8rem; line-height: 1.4; font-family: var(--font-mono); font-weight: 500; width: 100%; box-sizing: border-box; padding: 8px; resize: vertical;" oninput="onActiveComboItemChange('description', this.value)"></textarea>
+            <textarea id="combo-item-desc" class="form-input" placeholder="Características detalladas, medidas, compatibilidad..." rows="3" style="min-height: 85px; max-height: 360px; height: 95px; font-size: 0.8rem; line-height: 1.45; font-family: var(--font-mono); font-weight: 500; width: 100%; box-sizing: border-box; padding: 8px 10px; resize: vertical; overflow-y: auto;" oninput="onActiveComboItemChange('description', this.value); if (typeof autoExpandAdminTextarea === 'function') autoExpandAdminTextarea(this);" onkeydown="if (typeof handleDescKeydown === 'function') handleDescKeydown(event, this);"></textarea>
           </div>
         </div>
 
@@ -2210,7 +2210,7 @@
             </button>
             <span style="font-size: 0.62rem; color: var(--gray-500); font-family: var(--font-mono); flex-shrink: 0; white-space: nowrap;">• Viñetas auto</span>
           </div>
-          <textarea id="prod-desc" class="form-input" rows="2" placeholder="Escribe la descripción o especificaciones del artículo (viñetas • automáticas)..." style="min-height: 60px; max-height: 140px; line-height: 1.4; resize: vertical; font-family: var(--font-mono); font-size: 0.78rem; padding: 7px; border: 1.5px solid var(--dark); border-radius: 4px; width: 100%; min-width: 0; box-sizing: border-box;"></textarea>
+          <textarea id="prod-desc" class="form-input" rows="3" placeholder="Escribe la descripción o especificaciones del artículo (viñetas • automáticas)..." style="min-height: 85px; max-height: 380px; height: 95px; line-height: 1.45; resize: vertical; overflow-y: auto; font-family: var(--font-mono); font-size: 0.8rem; padding: 8px 10px; border: 1.5px solid var(--dark); border-radius: 4px; width: 100%; min-width: 0; box-sizing: border-box;" oninput="if (typeof autoExpandAdminTextarea === 'function') autoExpandAdminTextarea(this);" onkeydown="if (typeof handleDescKeydown === 'function') handleDescKeydown(event, this);"></textarea>
         </div>
       </div>
 

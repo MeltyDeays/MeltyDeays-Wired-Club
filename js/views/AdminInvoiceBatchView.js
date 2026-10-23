@@ -362,6 +362,51 @@ export function selectComboItemTab(index) {
 /**
  * Genera la descripción combinada del combo usando IA basada en los ítems actuales.
  */
+
+export function autoExpandAdminTextarea(el) {
+  if (!el) return;
+  el.style.height = 'auto';
+  const minH = 85;
+  const isMobile = typeof window !== 'undefined' && window.innerWidth <= 640;
+  const maxH = isMobile ? 320 : 400;
+  const contentH = el.scrollHeight;
+  if (contentH > maxH) {
+    el.style.height = `${maxH}px`;
+    el.style.overflowY = 'auto';
+  } else {
+    el.style.height = `${Math.max(contentH, minH)}px`;
+    el.style.overflowY = 'hidden';
+  }
+}
+
+export function handleDescKeydown(e, el) {
+  if (!el || e.key !== "Enter" || e.shiftKey) return;
+  const val = el.value;
+  const pos = el.selectionStart;
+  const lastLineStart = val.lastIndexOf("\n", pos - 1) + 1;
+  const currentLine = val.substring(lastLineStart, pos);
+  const bulletMatch = currentLine.match(/^(\s*)([•\-\*])\s*/);
+  if (bulletMatch) {
+    e.preventDefault();
+    const indent = bulletMatch[1];
+    const bullet = bulletMatch[2];
+    const bulletPrefix = `${indent}${bullet} `;
+
+    if (currentLine.trim() === bullet) {
+      const newVal = val.substring(0, lastLineStart) + val.substring(pos);
+      el.value = newVal;
+      el.selectionStart = el.selectionEnd = lastLineStart;
+    } else {
+      const insertText = `\n${bulletPrefix}`;
+      const newVal = val.substring(0, pos) + insertText + val.substring(el.selectionEnd);
+      el.value = newVal;
+      el.selectionStart = el.selectionEnd = pos + insertText.length;
+    }
+    autoExpandAdminTextarea(el);
+    el.dispatchEvent(new Event("input", { bubbles: true }));
+  }
+}
+
 export async function generateComboDescriptionWithAI() {
   const comboTitle = document.getElementById("prod-title")?.value;
   if (!comboTitle || currentComboItems.length === 0) {
@@ -381,6 +426,7 @@ export async function generateComboDescriptionWithAI() {
     const combined = await generateComboCombinedDescription(comboTitle, currentComboItems);
     if (combined && descTextarea) {
       descTextarea.value = combined;
+      autoExpandAdminTextarea(descTextarea);
       showToast("✨ Descripción del combo generada con éxito.", "success");
     }
   } catch (err) {
@@ -459,7 +505,7 @@ export function populateComboItemForm(item) {
   const discVal = item.residualDiscountPct != null ? item.residualDiscountPct : (item.residualMaxDiscountPct != null ? item.residualMaxDiscountPct : 0);
   if (resDiscEl) resDiscEl.value = discVal;
   if (imgEl) imgEl.value = item.imageUrl || "";
-  if (descEl) descEl.value = item.description || "";
+  if (descEl) { descEl.value = item.description || ""; autoExpandAdminTextarea(descEl); }
 }
 
 export function renderComboItemTabs() {
@@ -490,7 +536,7 @@ export function renderComboItemTabs() {
 
 export function updateComboLiveSummary() {
   // UX 5: Sumar residualPriceUsd (Precio Individual) para el total de referencia
-  const sumUsd = Number(currentComboItems.reduce((acc, it) => acc + (parseFloat(it.residualPriceUsd) || 0), 0).toFixed(2));
+  const sumUsd = Number(currentComboItems.reduce((acc, it) => acc + (parseFloat(it.residualPriceUsd) || parseFloat(it.priceUsd) || 0), 0).toFixed(2));
   // Calcular suma de precios en combo para auto-relleno sugerido
   const sumComboPrices = Number(currentComboItems.reduce((acc, it) => acc + (parseFloat(it.priceUsd) || 0), 0).toFixed(2));
 
@@ -610,7 +656,7 @@ export function openNewProductModal() {
   const imgInput = document.getElementById("prod-img");
   if (imgInput) imgInput.value = "";
   const descInput = document.getElementById("prod-desc");
-  if (descInput) descInput.value = "";
+  if (descInput) { descInput.value = ""; autoExpandAdminTextarea(descInput); }
   clearProductImageUpload();
 
   // Limpiar campos y parámetros de preventa
@@ -748,7 +794,7 @@ export function openEditProductModal(productId) {
   const stockInput = document.getElementById("prod-stock");
   if (stockInput) stockInput.value = product.stock != null ? product.stock : 1;
   const descInput = document.getElementById("prod-desc");
-  if (descInput) descInput.value = product.description || "";
+  if (descInput) { descInput.value = product.description || ""; autoExpandAdminTextarea(descInput); }
 
   const productImages = typeof product.getImages === "function" 
     ? product.getImages() 
@@ -4281,4 +4327,9 @@ if (typeof window !== "undefined") {
   window.openProductInGoogleLens = openProductInGoogleLens;
   window.togglePasteLensInput = togglePasteLensInput;
   window.adoptPastedLensUrl = adoptPastedLensUrl;
+}
+
+if (typeof window !== "undefined") {
+  window.autoExpandAdminTextarea = autoExpandAdminTextarea;
+  window.handleDescKeydown = handleDescKeydown;
 }
