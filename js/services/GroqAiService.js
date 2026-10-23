@@ -94,3 +94,40 @@ export async function cleanCatalogDescription(title, rawDescription = "") {
 • Garantía: Cobertura oficial MeltyDeays por 30 días
 • Entrega: Entrega física y prueba técnica en mostrador`;
 }
+
+/**
+ * Genera una descripción combinada para un combo de productos basada en sus descripciones individuales.
+ * @param {string} comboTitle Título del combo
+ * @param {Array<{title: string, description: string}>} items Lista de productos del combo
+ * @returns {Promise<string>}
+ */
+export async function generateComboCombinedDescription(comboTitle, items = []) {
+  const itemsContext = items.map((it, idx) => `PRODUCTO #${idx + 1}: ${it.title}\nDESCRIPCIÓN: ${it.description || 'Sin descripción'}`).join("\n\n");
+  
+  try {
+    const response = await fetch("/api/groq-copy", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "combine-combo-descriptions",
+        title: comboTitle,
+        description: itemsContext
+      })
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      if (data && data.combinedDescription) {
+        return data.combinedDescription;
+      }
+    }
+  } catch (err) {
+    console.warn("Llamada a /api/groq-copy (combine) no disponible:", err.message);
+  }
+
+  // Fallback simple
+  return `Este paquete especial incluye: ${items.map(it => it.title).join(", ")}.
+• Versatilidad: Productos seleccionados por su alta compatibilidad y rendimiento.
+• Valor: Ahorro exclusivo al adquirir el conjunto completo.
+• Garantía: Respaldo oficial para cada artículo del combo.`;
+}

@@ -12,7 +12,7 @@ import {
 import { RewardModel } from "../models/RewardModel.js";
 import { isProduction, getEnvironmentInfo, getCollectionName } from "../config/env.js";
 import { processImageWithAiWhiteBg, composeSquareWhiteFromSource, preloadBgWorker } from "../utils/ImageProcessor.js";
-import { cleanCatalogDescription } from "../services/GroqAiService.js";
+import { cleanCatalogDescription, generateComboCombinedDescription } from "../services/GroqAiService.js";
 import {
   FB_IMG_JET_FAN,
   FB_IMG_JET_FAN_BODY,
@@ -92,8 +92,8 @@ export async function printFromModal() {
 // =============================================================================
 
 let currentComboItems = [
-  { id: "item-1", title: "Ítem 1", priceUsd: 25.00, residualPriceUsd: 28.00, residualDiscountPct: 20, imageUrl: "", description: "" },
-  { id: "item-2", title: "Ítem 2", priceUsd: 25.00, residualPriceUsd: 28.00, residualDiscountPct: 20, imageUrl: "", description: "" }
+  { id: "item-1", title: "Ítem 1", priceUsd: 25.00, residualPriceUsd: 28.00, residualDiscountPct: 0, imageUrl: "", description: "" },
+  { id: "item-2", title: "Ítem 2", priceUsd: 25.00, residualPriceUsd: 28.00, residualDiscountPct: 0, imageUrl: "", description: "" }
 ];
 let activeComboItemIndex = 0;
 
@@ -130,6 +130,14 @@ export function activateComboBuilder(existingProduct = null) {
   if (accBtn) accBtn.style.display = "none";
   if (accWrapper) accWrapper.style.display = "none";
   if (modeSelectorWrap) modeSelectorWrap.style.display = "none";
+
+  // En modo combo, la descripción inferior es la combinada (se muestra con botón IA)
+  const wrapProdDesc = document.getElementById("wrap-prod-desc-bottom");
+  const aiBtn = document.getElementById("btn-ai-combo-desc");
+  if (wrapProdDesc) {
+    wrapProdDesc.style.display = "";
+    if (aiBtn) aiBtn.style.display = "block";
+  }
 
   const wrapTitle = document.getElementById("wrap-prod-title");
   if (wrapTitle) wrapTitle.style.display = "none";
@@ -198,7 +206,7 @@ export function activateComboBuilder(existingProduct = null) {
         title: it.title || `Ítem ${idx + 1}`,
         priceUsd: Number(it.priceUsd) || 0,
         residualPriceUsd: it.residualPriceUsd != null ? Number(it.residualPriceUsd) : (Number(it.priceUsd) || 0),
-        residualDiscountPct: it.residualDiscountPct != null ? Number(it.residualDiscountPct) : (it.residualMaxDiscountPct != null ? Number(it.residualMaxDiscountPct) : 15),
+        residualDiscountPct: it.residualDiscountPct != null ? Number(it.residualDiscountPct) : (it.residualMaxDiscountPct != null ? Number(it.residualMaxDiscountPct) : 0),
         imageUrl: it.imageUrl || "",
         description: it.description || ""
       }));
@@ -239,6 +247,14 @@ export function deactivateComboBuilder() {
   if (accBtn) accBtn.style.display = "";
   if (accWrapper) accWrapper.style.display = "";
   if (modeSelectorWrap) modeSelectorWrap.style.display = "";
+
+  // Restaurar visibilidad de campos ocultos por modo combo
+  const wrapProdCost = document.getElementById("wrap-prod-cost");
+  if (wrapProdCost) wrapProdCost.style.display = "";
+  const wrapProdDesc = document.getElementById("wrap-prod-desc-bottom");
+  const aiBtn = document.getElementById("btn-ai-combo-desc");
+  if (wrapProdDesc) wrapProdDesc.style.display = "";
+  if (aiBtn) aiBtn.style.display = "none";
 
   const wrapTitle = document.getElementById("wrap-prod-title");
   if (wrapTitle) wrapTitle.style.display = "";
@@ -286,9 +302,9 @@ export function addComboItemTab() {
   const newItem = {
     id: `item-${nextNum}`,
     title: `Ítem ${nextNum}`,
-    priceUsd: 20.00,
-    residualPriceUsd: 22.00,
-    residualDiscountPct: 15,
+    priceUsd: 0,
+    residualPriceUsd: 0,
+    residualDiscountPct: 0,
     imageUrl: "",
     description: ""
   };
@@ -343,6 +359,43 @@ export function selectComboItemTab(index) {
   updateComboLiveSummary();
 }
 
+/**
+ * Genera la descripción combinada del combo usando IA basada en los ítems actuales.
+ */
+export async function generateComboDescriptionWithAI() {
+  const comboTitle = document.getElementById("prod-title")?.value;
+  if (!comboTitle || currentComboItems.length === 0) {
+    showToast("⚠️ Añade un título y al menos un producto al combo primero.", "warning");
+    return;
+  }
+
+  const btn = document.getElementById("btn-ai-combo-desc");
+  const descTextarea = document.getElementById("prod-desc");
+  
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = "✨ GENERANDO...";
+  }
+
+  try {
+    const combined = await generateComboCombinedDescription(comboTitle, currentComboItems);
+    if (combined && descTextarea) {
+      descTextarea.value = combined;
+      showToast("✨ Descripción del combo generada con éxito.", "success");
+    }
+  } catch (err) {
+    console.error("Error al generar descripción combo:", err);
+    showToast("❌ No se pudo generar la descripción con IA.", "error");
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = "✨ GENERAR CON IA";
+    }
+  }
+}
+
+window.generateComboDescriptionWithAI = generateComboDescriptionWithAI;
+
 export function onActiveComboItemChange(field, val) {
   if (!currentComboItems[activeComboItemIndex]) return;
   const item = currentComboItems[activeComboItemIndex];
@@ -382,7 +435,8 @@ export function syncActiveComboItemFromInputs() {
   if (priceEl) item.priceUsd = Math.max(0, parseFloat(priceEl.value) || 0);
   if (resPriceEl) item.residualPriceUsd = Math.max(0, parseFloat(resPriceEl.value) || (item.priceUsd || 0));
   if (resDiscEl) {
-    const p = Math.max(0, Math.min(100, parseFloat(resDiscEl.value) || 15));
+    const rawDisc = parseFloat(resDiscEl.value);
+    const p = Math.max(0, Math.min(100, Number.isNaN(rawDisc) ? 0 : rawDisc));
     item.residualDiscountPct = p;
     item.residualMaxDiscountPct = p;
   }
@@ -402,7 +456,7 @@ export function populateComboItemForm(item) {
   if (titleEl) titleEl.value = item.title || "";
   if (priceEl) priceEl.value = (item.priceUsd != null && item.priceUsd !== "") ? item.priceUsd : "";
   if (resPriceEl) resPriceEl.value = (item.residualPriceUsd != null && item.residualPriceUsd !== "") ? item.residualPriceUsd : "";
-  const discVal = item.residualDiscountPct != null ? item.residualDiscountPct : (item.residualMaxDiscountPct != null ? item.residualMaxDiscountPct : 15);
+  const discVal = item.residualDiscountPct != null ? item.residualDiscountPct : (item.residualMaxDiscountPct != null ? item.residualMaxDiscountPct : 0);
   if (resDiscEl) resDiscEl.value = discVal;
   if (imgEl) imgEl.value = item.imageUrl || "";
   if (descEl) descEl.value = item.description || "";
@@ -435,7 +489,10 @@ export function renderComboItemTabs() {
 }
 
 export function updateComboLiveSummary() {
-  const sumUsd = Number(currentComboItems.reduce((acc, it) => acc + (parseFloat(it.priceUsd) || 0), 0).toFixed(2));
+  // UX 5: Sumar residualPriceUsd (Precio Individual) para el total de referencia
+  const sumUsd = Number(currentComboItems.reduce((acc, it) => acc + (parseFloat(it.residualPriceUsd) || 0), 0).toFixed(2));
+  // Calcular suma de precios en combo para auto-relleno sugerido
+  const sumComboPrices = Number(currentComboItems.reduce((acc, it) => acc + (parseFloat(it.priceUsd) || 0), 0).toFixed(2));
 
   const sumEl = document.getElementById("combo-sum-usd");
   if (sumEl) sumEl.textContent = `$${sumUsd.toFixed(2)} USD`;
@@ -445,10 +502,12 @@ export function updateComboLiveSummary() {
 
   const promoInput = document.getElementById("combo-promo-price-usd");
   let promoPrice = parseFloat(promoInput?.value);
+  
+  // UX 6: Auto-rellenar con la suma de precios dentro del combo si está vacío o es inválido
   if (isNaN(promoPrice) || promoPrice <= 0) {
-    if (sumUsd > 0) {
-      promoPrice = Number((sumUsd * 0.85).toFixed(2));
-      if (promoInput && !promoInput.value) {
+    if (sumComboPrices > 0) {
+      promoPrice = sumComboPrices;
+      if (promoInput) {
         promoInput.value = promoPrice.toFixed(2);
       }
     } else {
@@ -457,13 +516,31 @@ export function updateComboLiveSummary() {
   }
 
   const maxDiscInput = document.getElementById("combo-max-discount-pct");
-  const maxDiscPct = Math.min(100, Math.max(0, parseFloat(maxDiscInput?.value) || 20));
+  // Bug 1/3: No usar || 20 porque 0 es falsy
+  const rawMaxDisc = parseFloat(maxDiscInput?.value);
+  const maxDiscPct = Math.min(100, Math.max(0, isNaN(rawMaxDisc) ? 0 : rawMaxDisc));
+  
   const maxDiscUsd = Number((promoPrice * (maxDiscPct / 100)).toFixed(2));
   const cashToPayUsd = Math.max(0, Number((promoPrice - maxDiscUsd).toFixed(2)));
 
   let pointsCost = Math.round(maxDiscUsd * 50);
   if (pointsCost % 10 !== 0) pointsCost = Math.round(pointsCost / 10) * 10;
-  if (pointsCost < 10) pointsCost = 10;
+  
+  // Bug 2: WP no se limpia a 0 cuando tope es 0%. Permitir 0 si el descuento es 0.
+  if (pointsCost < 10 && maxDiscPct > 0 && maxDiscUsd > 0) pointsCost = 10;
+  if (maxDiscPct <= 0) pointsCost = 0;
+
+  // UX 7: Ocultar campos redundantes en modo combo
+  const wrapProdCost = document.getElementById("wrap-prod-cost");
+  if (wrapProdCost) {
+    wrapProdCost.style.display = (maxDiscPct === 0) ? "none" : "";
+  }
+  const wrapProdDesc = document.getElementById("wrap-prod-desc-bottom");
+  const aiBtn = document.getElementById("btn-ai-combo-desc");
+  if (wrapProdDesc) {
+    wrapProdDesc.style.display = ""; // Mostrar en modo combo para la descripción combinada
+    if (aiBtn) aiBtn.style.display = "block"; // Mostrar botón IA
+  }
 
   const savingsUsd = Math.max(0, Number((sumUsd - promoPrice).toFixed(2)));
   const savingsPct = sumUsd > 0 ? Math.round((savingsUsd / sumUsd) * 100) : 0;
@@ -558,14 +635,14 @@ export function openNewProductModal() {
 
   // Reiniciar estado y pestañas de combo flexible
   currentComboItems = [
-    { id: "item-1", title: "Ítem 1", priceUsd: 25.00, residualPriceUsd: 28.00, residualDiscountPct: 20, imageUrl: "", description: "" },
-    { id: "item-2", title: "Ítem 2", priceUsd: 25.00, residualPriceUsd: 28.00, residualDiscountPct: 20, imageUrl: "", description: "" }
+    { id: "item-1", title: "Ítem 1", priceUsd: 0, residualPriceUsd: 0, residualDiscountPct: 0, imageUrl: "", description: "" },
+    { id: "item-2", title: "Ítem 2", priceUsd: 0, residualPriceUsd: 0, residualDiscountPct: 0, imageUrl: "", description: "" }
   ];
   activeComboItemIndex = 0;
   const comboPromoInput = document.getElementById("combo-promo-price-usd");
-  if (comboPromoInput) comboPromoInput.value = "40.00";
+  if (comboPromoInput) comboPromoInput.value = "";
   const comboMaxDiscInput = document.getElementById("combo-max-discount-pct");
-  if (comboMaxDiscInput) comboMaxDiscInput.value = "20";
+  if (comboMaxDiscInput) comboMaxDiscInput.value = "0";
   const comboPkgTitleInput = document.getElementById("combo-package-title");
   if (comboPkgTitleInput) comboPkgTitleInput.value = "";
   renderComboItemTabs();
@@ -1130,17 +1207,22 @@ export async function saveProductAdmin() {
       }
     }
 
-    const sumUsd = Number(currentComboItems.reduce((acc, it) => acc + (parseFloat(it.priceUsd) || 0), 0).toFixed(2));
+    const sumUsd = Number(currentComboItems.reduce((acc, it) => acc + (parseFloat(it.residualPriceUsd) || 0), 0).toFixed(2));
+    const sumComboPrices = Number(currentComboItems.reduce((acc, it) => acc + (parseFloat(it.priceUsd) || 0), 0).toFixed(2));
     let promoPriceUsd = parseFloat(document.getElementById("combo-promo-price-usd")?.value);
     if (isNaN(promoPriceUsd) || promoPriceUsd <= 0) {
-      promoPriceUsd = Number((sumUsd * 0.85).toFixed(2));
+      promoPriceUsd = sumComboPrices;
     }
-    const maxDiscountPct = parseFloat(document.getElementById("combo-max-discount-pct")?.value) || 20;
+    const rawMaxDisc = parseFloat(document.getElementById("combo-max-discount-pct")?.value);
+    const maxDiscountPct = isNaN(rawMaxDisc) ? 0 : rawMaxDisc;
     const maxDiscountUsd = Number((promoPriceUsd * (maxDiscountPct / 100)).toFixed(2));
     const cashToPayUsd = Math.max(0, Number((promoPriceUsd - maxDiscountUsd).toFixed(2)));
     let pointsCost = Math.round(maxDiscountUsd * 50);
     if (pointsCost % 10 !== 0) pointsCost = Math.round(pointsCost / 10) * 10;
-    if (pointsCost < 10) pointsCost = 10;
+    
+    // Bug 2: Permitir 0 si el tope es 0%
+    if (pointsCost < 10 && maxDiscountPct > 0 && maxDiscountUsd > 0) pointsCost = 10;
+    if (maxDiscountPct <= 0) pointsCost = 0;
 
     const pkgTitleInput = document.getElementById("combo-package-title");
     let comboTitle = (pkgTitleInput?.value || title || "").trim();
@@ -1166,7 +1248,7 @@ export async function saveProductAdmin() {
         imageUrl: (it.imageUrl || "").trim(),
         priceUsd: Number(parseFloat(it.priceUsd).toFixed(2)),
         residualPriceUsd: Number(parseFloat(it.residualPriceUsd != null && it.residualPriceUsd !== "" ? it.residualPriceUsd : it.priceUsd).toFixed(2)),
-        residualMaxDiscountPct: Number(parseFloat(it.residualDiscountPct ?? it.residualMaxDiscountPct ?? 15).toFixed(0))
+        residualMaxDiscountPct: Number(parseFloat(it.residualDiscountPct ?? it.residualMaxDiscountPct ?? 0).toFixed(0))
       }))
     };
 
@@ -4199,4 +4281,4 @@ if (typeof window !== "undefined") {
   window.openProductInGoogleLens = openProductInGoogleLens;
   window.togglePasteLensInput = togglePasteLensInput;
   window.adoptPastedLensUrl = adoptPastedLensUrl;
-}
+}

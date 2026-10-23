@@ -2325,7 +2325,7 @@ export function renderCatalog(catalog, user) {
               ${comboItems.map((cItem, idx) => `
                 ${idx > 0 ? '<div class="combo-split-divider"></div>' : ''}
                 <div class="combo-split-item" title="${cItem.title}">
-                  <img src="${cItem.imageUrl || ''}" alt="${cItem.title}" class="combo-split-img" referrerpolicy="no-referrer" loading="lazy" decoding="async" onerror="this.onerror=null; this.style.display='none'; this.parentElement.style.background='#0d131f';">
+                  <img src="${cItem.imageUrl || itemImages[idx] || mainCover}" alt="${cItem.title}" class="combo-split-img" referrerpolicy="no-referrer" loading="lazy" decoding="async" onerror="this.onerror=null; this.style.display='none'; this.parentElement.style.background='#0d131f';">
                   <div class="combo-split-item-label">${cItem.title}</div>
                 </div>
               `).join('')}

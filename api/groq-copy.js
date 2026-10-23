@@ -74,6 +74,61 @@ REGLAS ESTRICTAS DE LIMPIEZA:
     return res.status(200).json({ catalogDescription: fallbackDesc });
   }
 
+  // MODO 3: Combinación de descripciones para Combos
+  if (action === "combine-combo-descriptions") {
+    const fallbackCombined = `Este paquete especial incluye varios productos seleccionados por su calidad y compatibilidad.
+• Versatilidad: Conjunto optimizado para ofrecer el mejor rendimiento.
+• Valor: Ahorro exclusivo al adquirir el combo completo.
+• Respaldo: Cada artículo cuenta con su propia garantía MeltyDeays.`;
+
+    if (GROQ_KEYS.length === 0) {
+      return res.status(200).json({ combinedDescription: fallbackCombined });
+    }
+
+    const combineSystemPrompt = `Eres el redactor experto de "MeltyDeays · The Wired Club". 
+Tu tarea es crear una descripción combinada, persuasiva y profesional para un COMBO DE PRODUCTOS.
+Recibirás las descripciones individuales de los artículos que integran el paquete.
+
+REGLAS DE ORO:
+1. Crea una introducción breve (máximo 2 líneas) que explique por qué este combo es excelente.
+2. Agrupa las características más importantes de TODOS los productos en una lista de viñetas limpia.
+3. Usa emojis variados y temáticos al inicio de cada viñeta.
+4. Mantén un tono profesional y tecnológico.
+5. Responde ÚNICAMENTE el texto de la descripción final (intro + viñetas), sin saludos.`;
+
+    for (const apiKey of GROQ_KEYS) {
+      try {
+        const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${apiKey}`
+          },
+          body: JSON.stringify({
+            model: "llama-3.3-70b-versatile",
+            temperature: 0.5,
+            messages: [
+              { role: "system", content: combineSystemPrompt },
+              { role: "user", content: `Título del Combo: ${title}\n\nDetalles de los productos integrantes:\n${description}` }
+            ]
+          })
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          const content = data.choices?.[0]?.message?.content?.trim();
+          if (content && content.length > 50) {
+            return res.status(200).json({ combinedDescription: content });
+          }
+        }
+      } catch (err) {
+        console.warn("Rotación de clave en combine-combo-descriptions:", err.message);
+      }
+    }
+
+    return res.status(200).json({ combinedDescription: fallbackCombined });
+  }
+
   // MODO 2: Ficha comercial persuasiva y estética para publicar en Marketplace (Web -> Facebook)
   function getContextualEmojiForFeature(text) {
     const t = text.toLowerCase();
