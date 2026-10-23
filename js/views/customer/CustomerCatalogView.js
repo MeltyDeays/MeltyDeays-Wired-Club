@@ -1400,12 +1400,37 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
                   <div class="combo-item-info-col">
                     <div class="combo-item-title">${idx + 1}. ${cItem.title || 'Artículo del Combo'}</div>
                     ${cItem.description 
-                      ? `
-                        <button type="button" class="combo-item-desc-toggle" id="combo-item-toggle-${item.id}-${idx}" onclick="toggleComboItemDesc('${item.id}', ${idx})">
-                          <span>⊕ Ver detalles</span>
-                        </button>
-                        <div class="combo-item-desc collapsed" id="combo-item-desc-${item.id}-${idx}">${cItem.description}</div>
-                      ` 
+                      ? (() => {
+                          const parsed = parseProductDescription(cItem.description);
+                          return `
+                            <button type="button" class="combo-item-desc-toggle" id="combo-item-toggle-${item.id}-${idx}" onclick="toggleComboItemDesc('${item.id}', ${idx})">
+                              <span>⊕ Ver detalles</span>
+                            </button>
+                            <div class="combo-item-desc collapsed" id="combo-item-desc-${item.id}-${idx}">
+                              <div class="combo-item-details-inner">
+                                ${parsed.intro ? `<div class="combo-item-intro-text">${parsed.intro}</div>` : ''}
+                                ${parsed.specs.length > 0 
+                                  ? `
+                                    <div class="combo-item-specs-grid">
+                                      ${parsed.specs.map(spec => {
+                                        const parts = spec.split(':');
+                                        if (parts.length > 1) {
+                                          return `
+                                            <div class="combo-mini-spec-card">
+                                              <span class="combo-mini-spec-label">${parts[0].trim()}</span>
+                                              <span class="combo-mini-spec-val">${parts.slice(1).join(':').trim()}</span>
+                                            </div>
+                                          `;
+                                        }
+                                        return `<div class="combo-mini-spec-card-full">${spec}</div>`;
+                                      }).join('')}
+                                    </div>
+                                  ` 
+                                  : `<div class="combo-item-raw-desc">${cItem.description}</div>`}
+                              </div>
+                            </div>
+                          `;
+                        })()
                       : ''}
                   </div>
                 </div>

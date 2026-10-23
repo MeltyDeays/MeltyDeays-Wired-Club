@@ -653,7 +653,8 @@ function renderCatalogTable(catalog) {
   tbody.innerHTML = filtered.map(p => {
     const isPending = p.status === "PENDING_APPROVAL" || p.status === "PENDING_IMAGE";
     const isIncoming = !isPending && (p.status === "INCOMING" || (typeof p.isIncoming === "function" && p.isIncoming()));
-    const isPartial = !isPending && !isIncoming && (p.rewardType === "PARTIAL_DISCOUNT" || (typeof p.isPartialDiscount === "function" && p.isPartialDiscount()));
+    const isCombo = !isPending && !isIncoming && (p.rewardType === "COMBO" || (typeof p.isCombo === "function" && p.isCombo()));
+    const isPartial = !isPending && !isIncoming && !isCombo && (p.rewardType === "PARTIAL_DISCOUNT" || (typeof p.isPartialDiscount === "function" && p.isPartialDiscount()));
     const hasRealImage = Boolean((p.imageUrl && !p.imageUrl.includes("unsplash.com")) || (Array.isArray(p.images) && p.images.some(img => img && !img.includes("unsplash.com"))));
     const isBrand = Boolean(typeof window.isBrandVerifiable === "function" ? window.isBrandVerifiable(p.title, p.description) : p.brandVerified);
     const isBrandWithImage = isBrand && hasRealImage;
@@ -667,19 +668,21 @@ function renderCatalogTable(catalog) {
               : `<span class="badge-navi" style="background:#fffbeb; color:#b45309; border:1px solid #fcd34d; font-size:0.68rem;">⏳ ESPERANDO APROBACIÓN</span>`))
       : (isIncoming
         ? `<span class="badge-navi" style="background:#faf5ff; color:#7e22ce; border:1px solid #c084fc; font-size:0.68rem;">灰羽 EN CAMINO</span>`
-        : (isPartial
-          ? `<span class="badge-navi" style="background:#fef3c7; color:#92400e; border:1px solid #fcd34d; font-size:0.68rem;">🏷️ VENTA TOPADA (${p.maxDiscountPct || 5}%)</span>`
-          : `<span class="badge-navi" style="background:#ecfdf5; color:#065f46; border:1px solid #a7f3d0; font-size:0.68rem;">🎁 100% CANJE</span>`));
+        : (isCombo
+          ? `<span class="badge-navi" style="background:#fff7ed; color:#c2410c; border:1px solid #fed7aa; font-size:0.68rem; font-weight:800;">✦ WIRED COMBO</span>`
+          : (isPartial
+            ? `<span class="badge-navi" style="background:#fef3c7; color:#92400e; border:1px solid #fcd34d; font-size:0.68rem;">🏷️ VENTA TOPADA (${p.maxDiscountPct || 5}%)</span>`
+            : `<span class="badge-navi" style="background:#ecfdf5; color:#065f46; border:1px solid #a7f3d0; font-size:0.68rem;">🎁 100% CANJE</span>`)));
 
     const costDisplay = isIncoming
       ? `<div style="font-size:0.85rem; font-weight:800; color:#7e22ce;">Preventa: $${(p.presalePriceUsd || 0).toFixed(2)} USD</div><div style="font-size:0.7rem; color:var(--gray-500); text-decoration:line-through;">Reg: $${(p.priceUsd || 0).toFixed(2)} USD (-$${(p.presaleDiscountUsd || 0).toFixed(2)})</div><div style="font-size:0.68rem; color:#059669; font-weight:700;">0 WP (Directo)</div>`
-      : (isPartial
+      : (isCombo || isPartial
         ? `<div><strong style="color:#b45309;">${p.pointsCost.toLocaleString()} WP</strong></div><div style="font-size:0.7rem; color:#059669; font-weight:700;">-$${(p.maxDiscountUsd || 0).toFixed(2)} USD</div>`
         : `<strong style="color:var(--dark);">${p.pointsCost.toLocaleString()} WP</strong>`);
 
     const priceInfo = isIncoming
       ? `<div style="font-size:0.72rem; font-family:var(--font-mono); color:#7e22ce; margin-top:3px;">Preventa Directa · 🛡️ Sin consumo de puntos Wired</div>`
-      : (isPartial
+      : (isCombo || isPartial
         ? `<div style="font-size:0.72rem; font-family:var(--font-mono); color:var(--dark); margin-top:3px;">Precio: $${(p.priceUsd || 0).toFixed(2)} · <span style="color:#dc2626; font-weight:800;">Cobrar: $${(p.cashToPayUsd || 0).toFixed(2)} USD</span></div>`
         : "");
 
