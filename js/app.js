@@ -307,6 +307,8 @@ initCustomerViews({
   formatPrice,
   formatDualPrice,
   formatDualPricePlain,
+  formatUsd,
+  formatNio,
   USD_TO_NIO_RATE
 });
 
@@ -318,6 +320,8 @@ initCustomerPreOrderModalView({
   formatPrice,
   formatDualPrice,
   formatDualPricePlain,
+  formatUsd,
+  formatNio,
   USD_TO_NIO_RATE
 });
 

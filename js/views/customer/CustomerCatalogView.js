@@ -13,6 +13,21 @@ let showVoucherModal = (code) => {
     window.showVoucherModal(code);
   }
 };
+const USD_TO_NIO_RATE = 37.0;
+
+let formatNio = (num) => {
+  const n = Number(num) || 0;
+  if (Math.abs(n - Math.round(n)) < 0.25 || n >= 10) {
+    return Math.round(n).toLocaleString("en-US");
+  }
+  return n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+};
+
+let formatUsd = (num) => {
+  const n = Number(num) || 0;
+  return n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+};
+
 let formatPrice = (usd) => {
   const num = Number(usd || 0);
   return `$${num.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD`;
@@ -1964,6 +1979,8 @@ export function initCustomerCatalogView(deps) {
     if (deps.showVoucherModal) showVoucherModal = deps.showVoucherModal;
     if (deps.formatPrice) formatPrice = deps.formatPrice;
     if (deps.formatDualPrice) formatDualPrice = deps.formatDualPrice;
+    if (deps.formatNio) formatNio = deps.formatNio;
+    if (deps.formatUsd) formatUsd = deps.formatUsd;
   }
 
   // Exponer métodos de ficha técnica y deep-link en window
