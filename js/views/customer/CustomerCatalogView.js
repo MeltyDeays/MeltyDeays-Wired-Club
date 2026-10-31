@@ -2158,7 +2158,26 @@ export function renderCatalog(catalog, user) {
   if (typeof window !== "undefined") {
     window._rawCatalog = rawList;
   }
-  const baseCatalog = rawList.filter(item => {
+  // Deduplicación defensiva por ID y título normalizado
+  const dedupMap = new Map();
+  rawList.forEach(item => {
+    if (!item) return;
+    const normTitle = (item.title || "").trim().toLowerCase().replace(/\s+/g, ' ');
+    const semKey = normTitle ? `title_${normTitle}` : `id_${item.id}`;
+    if (!dedupMap.has(semKey)) {
+      dedupMap.set(semKey, item);
+    } else {
+      const existing = dedupMap.get(semKey);
+      if ((existing.stock <= 0 || existing.status === "SOLD_OUT") && (item.stock > 0 && item.status !== "SOLD_OUT")) {
+        dedupMap.set(semKey, item);
+      } else if (existing.id !== item.id && item.stock > 0) {
+        existing.stock = (existing.stock || 0) + (item.stock || 0);
+      }
+    }
+  });
+  const sanitizedList = Array.from(dedupMap.values());
+
+  const baseCatalog = sanitizedList.filter(item => {
     if (item.status === "PENDING_APPROVAL" || item.status === "PENDING_IMAGE") {
       return false;
     }

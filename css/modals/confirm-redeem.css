@@ -111,13 +111,22 @@
   justify-content: space-between !important;
   align-items: baseline !important;
   font-size: 0.74rem !important;
-  gap: 12px !important;
+  gap: 8px !important;
+  padding: 1px 0 !important;
+}
+
+.receipt-label-col {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  gap: 1px !important;
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
 }
 
 .receipt-label {
   color: #64748b !important;
   font-weight: 700 !important;
-  flex: 1 1 auto !important;
   white-space: nowrap !important;
 }
 
@@ -130,6 +139,7 @@
   align-items: baseline !important;
   justify-content: flex-end !important;
   gap: 6px !important;
+  flex: 0 0 auto !important;
 }
 
 .receipt-val.price-original {
@@ -167,21 +177,28 @@
 #confirm-type-discount strong,
 #confirm-type-max-disc strong,
 #confirm-type-cash strong {
-  min-width: 95px !important;
+  min-width: 84px !important;
   text-align: right !important;
   display: inline-block !important;
   font-variant-numeric: tabular-nums !important;
+  white-space: nowrap !important;
 }
 
 #confirm-type-price span,
 #confirm-type-discount span,
 #confirm-type-max-disc span,
-#confirm-type-pct-calc,
 #confirm-type-cash span {
-  min-width: 82px !important;
   text-align: right !important;
   display: inline-block !important;
   font-variant-numeric: tabular-nums !important;
+  white-space: nowrap !important;
+}
+
+#confirm-type-pct-calc {
+  text-align: left !important;
+  display: block !important;
+  font-variant-numeric: tabular-nums !important;
+  white-space: nowrap !important;
 }
 
 .receipt-total-row {

@@ -94,7 +94,8 @@ const testSuites = [
   'tests/verify_bimoneda_admin_and_clean_nio.mjs',
   'tests/specs_modal_locked_button.test.mjs',
   'tests/cancel_exploit_and_stock_fix.test.mjs',
-  'tests/verify_mobile_zero_freeze_upload.mjs'
+  'tests/verify_mobile_zero_freeze_upload.mjs',
+  'tests/test_payment_receipt_alignment_and_dedup.mjs'
 ];
 
 for (const suite of testSuites) {
