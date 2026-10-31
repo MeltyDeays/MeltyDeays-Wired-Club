@@ -4,6 +4,7 @@ import { InvoiceTemplateService } from "./services/InvoiceTemplateService.js";
 import { FirestoreService } from "./services/FirestoreService.js";
 import { injectEnvironmentBadge, isProduction } from "./config/env.js";
 import { parseProductDescription, isExpiredFbUrl } from "./models/RewardModel.js";
+import { validateCommunityText } from "./utils/ProfanityFilter.js";
 import {
   openImageLightbox,
   closeImageLightbox,
@@ -1484,6 +1485,12 @@ export async function submitAdminCommentReply(commentId) {
     return;
   }
   const replyText = input.value.trim();
+  const valResult = validateCommunityText(replyText, "respuesta oficial");
+  if (!valResult.valid) {
+    showToast(valResult.error, "error");
+    input.focus();
+    return;
+  }
   const submitBtn = document.getElementById(`admin-reply-submit-${commentId}`);
   const mode = submitBtn ? submitBtn.getAttribute("data-mode") : "EDIT";
   const isThread = (mode === "THREAD");

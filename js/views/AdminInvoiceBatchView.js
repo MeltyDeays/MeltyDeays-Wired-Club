@@ -1700,6 +1700,7 @@ export function openMarkProductSoldModal(rewardId, title) {
   const targetIdEl = document.getElementById("mark-sold-target-id");
   const titleEl = document.getElementById("mark-sold-product-title");
   const idEl = document.getElementById("mark-sold-product-id");
+  const priceEl = document.getElementById("mark-sold-product-price");
   const pointsEl = document.getElementById("mark-sold-product-points");
   const stockEl = document.getElementById("mark-sold-product-stock");
   const imgEl = document.getElementById("mark-sold-product-img");
@@ -1707,7 +1708,36 @@ export function openMarkProductSoldModal(rewardId, title) {
   if (targetIdEl) targetIdEl.value = rewardId;
   if (titleEl) titleEl.textContent = title || product?.title || rewardId;
   if (idEl) idEl.textContent = rewardId;
-  if (pointsEl) pointsEl.textContent = `${(product?.pointsCost || 0).toLocaleString()} WP`;
+
+  const priceUsd = Number(product?.priceUsd || 0);
+  const priceNio = product?.priceNio || Math.round(priceUsd * 37);
+  const pointsCost = Number(product?.pointsCost || 0);
+  const maxPct = Number(product?.maxDiscountPct || 0);
+  const isCombo = product?.rewardType === "COMBO";
+  const isIncoming = typeof product?.isIncoming === "function" ? product.isIncoming() : (product?.status === "INCOMING");
+  const isFlat = !isCombo && !isIncoming && priceUsd > 0 && (maxPct === 0 || pointsCost === 0);
+
+  if (priceEl) {
+    if (priceUsd > 0) {
+      priceEl.textContent = `$${priceUsd.toFixed(2)} USD (C$ ${priceNio.toLocaleString()} NIO)`;
+    } else {
+      priceEl.textContent = `Gratis (100% Puntos)`;
+    }
+  }
+
+  if (pointsEl) {
+    if (isFlat) {
+      pointsEl.textContent = `🛒 Precio Plano Oficial (Sin puntos)`;
+      pointsEl.style.color = "#334155";
+    } else if (maxPct > 0 || pointsCost > 0) {
+      pointsEl.textContent = `🏷️ Descuento hasta ${maxPct}% (${pointsCost.toLocaleString()} WP)`;
+      pointsEl.style.color = "#b45309";
+    } else {
+      pointsEl.textContent = `🎁 ${pointsCost.toLocaleString()} WP (100% Canje)`;
+      pointsEl.style.color = "#047857";
+    }
+  }
+
   if (stockEl) stockEl.textContent = `${product?.stock || 0} un.`;
 
   const cover = product ? (typeof product.getImages === "function" ? product.getImages()[0] : (product.imageUrl || "")) : "";

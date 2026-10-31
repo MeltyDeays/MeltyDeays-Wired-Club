@@ -2,6 +2,7 @@
 import { db } from "../config/firebase.js";
 import { getCollectionName, getStorageKey, isProduction, getEnvironmentInfo } from "../config/env.js";
 import { INITIAL_TOKENS } from "../data/initialTokens.js";
+import { cleanProfanity, hasProfanity } from "../utils/ProfanityFilter.js";
 
 const LOCAL_STORAGE_KEY = getStorageKey("wired_club_mvvm_db_v2");
 
@@ -1740,6 +1741,8 @@ export class FirestoreService {
     }
     comment.createdAt = comment.createdAt || new Date().toISOString();
     comment.status = comment.status || "APPROVED";
+    if (comment.questionText) comment.questionText = cleanProfanity(comment.questionText);
+    if (comment.userName) comment.userName = cleanProfanity(comment.userName);
     comment = this._normalizeCommentData(comment);
 
     const snap = engine.getSnapshot();
@@ -1886,7 +1889,7 @@ export class FirestoreService {
     comment = this._normalizeCommentData(comment);
 
     const now = new Date().toISOString();
-    const cleanText = answerText.trim();
+    const cleanText = cleanProfanity(answerText.trim());
     const isOfficial = Boolean(
       isOfficialReply === true ||
       (answeredBy && (answeredBy.includes("MeltyDeays") || answeredBy.includes("Soporte")))

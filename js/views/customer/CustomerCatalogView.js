@@ -3,6 +3,7 @@
  */
 import { parseProductDescription, isExpiredFbUrl } from "../../models/RewardModel.js";
 import { FirestoreService } from "../../services/FirestoreService.js";
+import { validateCommunityText, hasProfanity, cleanProfanity } from "../../utils/ProfanityFilter.js";
 
 let vm = null;
 let showToast = () => {};
@@ -859,9 +860,14 @@ export function updateSpecsModalCalculation(rewardId, pointsApplied) {
     (vm?.catalog || []).find(r => r.id === rewardId);
   if (!item) return;
 
+  const rawMaxPct = item.maxDiscountPct !== undefined ? item.maxDiscountPct : (item.max_discount_pct !== undefined ? item.max_discount_pct : item.maxDiscountPercent);
+  const maxPct = (rawMaxPct !== undefined && rawMaxPct !== null) ? Number(rawMaxPct) : 0;
+  const isCombo = item.rewardType === "COMBO" || (typeof item.isCombo === "function" && item.isCombo());
+  const isFlatPrice = !isCombo && ((maxPct === 0) || (item.pointsCost === 0));
+  if (isFlatPrice) return;
+
   const user = vm?.currentUser;
   const userPts = user ? (user.wiredPoints || 0) : 0;
-  const maxPct = item.maxDiscountPct != null ? Number(item.maxDiscountPct) : 0;
   const effectiveCap = item.maxDiscountUsd > 0 ? item.maxDiscountUsd : Number(((item.priceUsd || 0) * (maxPct / 100)).toFixed(2));
   // Invariante oficial MeltyDeays The Wired Club: 1 USD de descuento = 50 WP (1 WP = $0.02 USD = C$ 0.74 NIO)
   const WP_PER_USD = 50;
@@ -897,11 +903,25 @@ export async function submitProductComment(rewardId) {
   const text = textEl.value.trim();
   const name = (nameEl && nameEl.value.trim()) || (vm?.currentUser?.displayName) || "Cliente";
 
+  const valText = validateCommunityText(text, "pregunta");
+  if (!valText.valid) {
+    if (typeof showToast === "function") showToast(valText.error, "error");
+    textEl.focus();
+    return;
+  }
+
+  const valName = validateCommunityText(name, "nombre");
+  if (!valName.valid) {
+    if (typeof showToast === "function") showToast(valName.error, "error");
+    if (nameEl) nameEl.focus();
+    return;
+  }
+
   const commentData = {
     rewardId: rewardId,
     userId: vm?.currentUser?.uid || "guest",
-    userName: name,
-    questionText: text,
+    userName: valName.sanitizedText,
+    questionText: valText.sanitizedText,
     answerText: null,
     answeredBy: null,
     answeredAt: null,
@@ -1092,10 +1112,18 @@ export async function submitClientCommentReply(rewardId, commentId) {
   const input = document.getElementById(`reply-input-${commentId}`);
   if (!input || !input.value.trim()) return;
   const replyText = input.value.trim();
+
+  const valResult = validateCommunityText(replyText, "respuesta");
+  if (!valResult.valid) {
+    if (typeof showToast === "function") showToast(valResult.error, "error");
+    input.focus();
+    return;
+  }
+
   const author = (vm?.currentUser?.displayName) ? vm.currentUser.displayName.trim() : "Socio Wired";
 
   try {
-    await FirestoreService.answerProductComment(commentId, replyText, author, false);
+    await FirestoreService.answerProductComment(commentId, valResult.sanitizedText, author, false);
     input.value = "";
     const form = document.getElementById(`reply-form-${commentId}`);
     if (form) form.style.display = "none";
@@ -1276,17 +1304,18 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
   // Cálculo de valores de puntos del usuario para el banner
   const user = vm?.currentUser;
   const userPts = user ? (user.wiredPoints || 0) : 0;
-  const effectiveCap = item.maxDiscountUsd > 0 ? item.maxDiscountUsd : Number(((item.priceUsd || 0) * (maxPct / 100)).toFixed(2));
+  const isFlatPrice = isPartial && !isCombo && ((maxPct === 0 || rawMaxPct === 0) || (item.pointsCost === 0));
+  const effectiveCap = isFlatPrice ? 0 : (item.maxDiscountUsd > 0 ? item.maxDiscountUsd : Number(((item.priceUsd || 0) * (maxPct / 100)).toFixed(2)));
   const WP_PER_USD = 50;
-  const maxCapPts = item.pointsCost > 0 ? item.pointsCost : Math.max(10, Math.round(effectiveCap * WP_PER_USD));
-  const maxUsable = Math.min(userPts, maxCapPts);
+  const maxCapPts = isFlatPrice ? 0 : (item.pointsCost > 0 ? item.pointsCost : Math.max(10, Math.round(effectiveCap * WP_PER_USD)));
+  const maxUsable = isFlatPrice ? 0 : Math.min(userPts, maxCapPts);
 
   let appliedPts = 0;
   let appliedPct = 0;
   let appliedDiscountUsd = 0;
   let cashToPayWithPts = item.priceUsd || 0;
 
-  if (isPartial) {
+  if (isPartial && !isFlatPrice) {
     appliedPts = maxUsable;
     appliedPct = maxCapPts > 0 ? Number(((appliedPts / maxCapPts) * maxPct).toFixed(1)) : 0;
     const usdPerPoint = (maxCapPts > 0 && effectiveCap > 0) ? (effectiveCap / maxCapPts) : (1 / WP_PER_USD);
@@ -1476,39 +1505,56 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
       </div>
     `;
   } else if (isPartial) {
-    saleBannerHtml = `
-      <div class="temu-sale-banner">
-        <div class="temu-sale-header">
-          <span>🏷️ SÚPER DESCUENTOS WIRED POINTS</span>
-          <span class="temu-sale-badge">HASTA -${maxPct}% OFF</span>
-        </div>
-        <div class="temu-sale-prices-row">
-          <span class="temu-sale-price-curr" id="specs-calc-cash-${item.id}">${formatDualPrice(cashToPayWithPts, item.priceNio ? Math.round(item.priceNio * (1 - (appliedPct / 100))) : null)}</span>
-          <span class="temu-sale-price-orig">${formatPrice(item.priceUsd, item.priceNio, true)}</span>
-        </div>
-        <div class="specs-coin-row" style="font-size: 0.75rem; color: #78350f; font-family: var(--font-mono); font-weight: 700; display: flex; align-items: center; gap: 4px; line-height: 1.2;">
-          ${renderWiredCoinSvg()}
-          <span>Ahorro con puntos: <strong id="specs-calc-disc-${item.id}" style="color: #059669;">-${formatPrice(appliedDiscountUsd)} (-${formattedAppliedPct}%)</strong></span>
-        </div>
-        ${user && maxUsable > 0 ? `
-          <div class="specs-calc-box">
-            <div class="specs-calc-header">
-              <span>⚡ CALCULADORA DE DESCUENTO:</span>
-              <span class="specs-calc-value" id="specs-slider-val-${item.id}">${appliedPts} WP aplicados</span>
-            </div>
-            <input type="range" id="specs-slider-${item.id}" class="specs-calc-range" min="0" max="${maxUsable}" value="${appliedPts}" step="1" oninput="updateSpecsModalCalculation('${item.id}', this.value)">
-            <div class="specs-calc-presets-row">
-              <button type="button" class="specs-calc-preset-btn min" onclick="updateSpecsModalCalculation('${item.id}', 0)">
-                <span>🔄</span> <span>Sin desc. (0 WP)</span>
-              </button>
-              <button type="button" class="specs-calc-preset-btn max" onclick="updateSpecsModalCalculation('${item.id}', ${maxUsable})">
-                <span>⚡</span> <span>Tope (${maxUsable} WP)</span>
-              </button>
-            </div>
+    if (isFlatPrice) {
+      saleBannerHtml = `
+        <div class="temu-sale-banner" style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-color: #cbd5e1;">
+          <div class="temu-sale-header" style="color: #334155;">
+            <span>🛒 PRECIO OFICIAL MELTYDEAYS</span>
+            <span class="temu-sale-badge" style="background: #334155; color: #f8fafc;">PRECIO PLANO</span>
           </div>
-        ` : ''}
-      </div>
-    `;
+          <div class="temu-sale-prices-row">
+            <span class="temu-sale-price-curr" style="color: #0f172a;">${formatDualPrice(item.priceUsd, item.priceNio)}</span>
+          </div>
+          <div class="specs-coin-row" style="font-size: 0.75rem; color: #475569; font-family: var(--font-mono); font-weight: 700; display: flex; align-items: center; gap: 4px; line-height: 1.2;">
+            <span>🏪 Venta oficial directa en mostrador físico. Sin consumo ni canje de puntos.</span>
+          </div>
+        </div>
+      `;
+    } else {
+      saleBannerHtml = `
+        <div class="temu-sale-banner">
+          <div class="temu-sale-header">
+            <span>🏷️ SÚPER DESCUENTOS WIRED POINTS</span>
+            <span class="temu-sale-badge">HASTA -${maxPct}% OFF</span>
+          </div>
+          <div class="temu-sale-prices-row">
+            <span class="temu-sale-price-curr" id="specs-calc-cash-${item.id}">${formatDualPrice(cashToPayWithPts, item.priceNio ? Math.round(item.priceNio * (1 - (appliedPct / 100))) : null)}</span>
+            <span class="temu-sale-price-orig">${formatPrice(item.priceUsd, item.priceNio, true)}</span>
+          </div>
+          <div class="specs-coin-row" style="font-size: 0.75rem; color: #78350f; font-family: var(--font-mono); font-weight: 700; display: flex; align-items: center; gap: 4px; line-height: 1.2;">
+            ${renderWiredCoinSvg()}
+            <span>Ahorro con puntos: <strong id="specs-calc-disc-${item.id}" style="color: #059669;">-${formatPrice(appliedDiscountUsd)} (-${formattedAppliedPct}%)</strong></span>
+          </div>
+          ${user && maxUsable > 0 ? `
+            <div class="specs-calc-box">
+              <div class="specs-calc-header">
+                <span>⚡ CALCULADORA DE DESCUENTO:</span>
+                <span class="specs-calc-value" id="specs-slider-val-${item.id}">${appliedPts} WP aplicados</span>
+              </div>
+              <input type="range" id="specs-slider-${item.id}" class="specs-calc-range" min="0" max="${maxUsable}" value="${appliedPts}" step="1" oninput="updateSpecsModalCalculation('${item.id}', this.value)">
+              <div class="specs-calc-presets-row">
+                <button type="button" class="specs-calc-preset-btn min" onclick="updateSpecsModalCalculation('${item.id}', 0)">
+                  <span>🔄</span> <span>Sin desc. (0 WP)</span>
+                </button>
+                <button type="button" class="specs-calc-preset-btn max" onclick="updateSpecsModalCalculation('${item.id}', ${maxUsable})">
+                  <span>⚡</span> <span>Tope (${maxUsable} WP)</span>
+                </button>
+              </div>
+            </div>
+          ` : ''}
+        </div>
+      `;
+    }
   } else {
     const canAffordFreeBanner = user && userPts >= item.pointsCost;
     saleBannerHtml = `
@@ -1552,7 +1598,9 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
           : (isIncoming
             ? `<span class="specs-badge-item incoming" style="background: #fef3c7; color: #92400e; border: 1px solid #fcd34d;">🕊️ EXPEDICIÓN EN VUELO · PREVENTA</span>`
             : (isPartial 
-              ? `<span class="specs-badge-item discount">🏷️ Hasta ${maxPct}% OFF</span>` 
+              ? (isFlatPrice
+                  ? `<span class="specs-badge-item" style="background:#f1f5f9; color:#334155; border:1px solid #cbd5e1; font-weight:800;">🛒 PRECIO OFICIAL</span>`
+                  : `<span class="specs-badge-item discount">🏷️ Hasta ${maxPct}% OFF</span>`) 
               : `<span class="specs-badge-item points">⚡ ${item.pointsCost.toLocaleString()} WP</span>`
             )
           )
@@ -1678,12 +1726,21 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
       `;
     } else if (!isOut) {
       if (isPartial) {
-        actionBtn = `
-          <button type="button" class="modal-specs-action-btn btn-redeem-gold" onclick="closeProductSpecsModal(); confirmRedeem('${item.id}');">
-            ${tagSvg}
-            <span>Canjear / Comprar</span>
-          </button>
-        `;
+        if (isFlatPrice) {
+          actionBtn = `
+            <button type="button" class="modal-specs-action-btn" style="background: linear-gradient(135deg, #0284c7, #0369a1); color: #fff; border: 1px solid #0284c7;" onclick="closeProductSpecsModal(); confirmRedeem('${item.id}');">
+              <span style="font-size: 1rem;">🛒</span>
+              <span>Comprar en Tienda</span>
+            </button>
+          `;
+        } else {
+          actionBtn = `
+            <button type="button" class="modal-specs-action-btn btn-redeem-gold" onclick="closeProductSpecsModal(); confirmRedeem('${item.id}');">
+              ${tagSvg}
+              <span>Canjear / Comprar</span>
+            </button>
+          `;
+        }
       } else {
         const canAffordFree = user && userPts >= item.pointsCost;
         if (!user) {
