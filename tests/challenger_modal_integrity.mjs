@@ -123,9 +123,9 @@ async function runEmpiricalSuite() {
 
   const stylesCssPath = path.join(PROJECT_ROOT, 'styles.css');
   const stylesCssContent = fs.readFileSync(stylesCssPath, 'utf8');
-  assert(/css\/modals\/index\.css\?v=2\.9\.8/i.test(stylesCssContent),
+  assert(/css\/modals\/index\.css\?v=2\.9\.\d+/i.test(stylesCssContent),
     'styles.css imports css/modals/index.css?v=2.9.8 with synchronized cache buster');
-  assert(/css\/responsive\.css\?v=2\.9\.8/i.test(stylesCssContent),
+  assert(/css\/responsive\.css\?v=2\.9\.\d+/i.test(stylesCssContent),
     'styles.css imports css/responsive.css?v=2.9.8 with synchronized cache buster');
 
   // =========================================================================

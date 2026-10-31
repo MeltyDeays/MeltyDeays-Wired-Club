@@ -107,23 +107,29 @@
 }
 
 .receipt-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  font-size: 0.74rem;
-  gap: 8px;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: baseline !important;
+  font-size: 0.74rem !important;
+  gap: 12px !important;
 }
 
 .receipt-label {
-  color: #64748b;
-  font-weight: 600;
+  color: #64748b !important;
+  font-weight: 700 !important;
+  flex: 1 1 auto !important;
+  white-space: nowrap !important;
 }
 
 .receipt-val {
-  font-variant-numeric: tabular-nums;
-  font-weight: 800;
-  text-align: right;
+  font-variant-numeric: tabular-nums !important;
+  font-weight: 800 !important;
+  text-align: right !important;
   white-space: nowrap !important;
+  display: inline-flex !important;
+  align-items: baseline !important;
+  justify-content: flex-end !important;
+  gap: 6px !important;
 }
 
 .receipt-val.price-original {
@@ -136,11 +142,46 @@
 }
 
 .receipt-subdetail-row {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  font-size: 0.65rem;
-  padding-bottom: 2px;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: baseline !important;
+  font-size: 0.68rem !important;
+  padding-bottom: 2px !important;
+  gap: 10px !important;
+}
+
+#confirm-type-price,
+#confirm-type-discount,
+#confirm-type-max-disc,
+#confirm-type-cash {
+  display: inline-flex !important;
+  align-items: baseline !important;
+  justify-content: flex-end !important;
+  gap: 6px !important;
+  white-space: nowrap !important;
+  text-align: right !important;
+  font-variant-numeric: tabular-nums !important;
+}
+
+#confirm-type-price strong,
+#confirm-type-discount strong,
+#confirm-type-max-disc strong,
+#confirm-type-cash strong {
+  min-width: 95px !important;
+  text-align: right !important;
+  display: inline-block !important;
+  font-variant-numeric: tabular-nums !important;
+}
+
+#confirm-type-price span,
+#confirm-type-discount span,
+#confirm-type-max-disc span,
+#confirm-type-pct-calc,
+#confirm-type-cash span {
+  min-width: 82px !important;
+  text-align: right !important;
+  display: inline-block !important;
+  font-variant-numeric: tabular-nums !important;
 }
 
 .receipt-total-row {
@@ -471,4 +512,22 @@
     margin-left: auto !important;
     word-break: break-word !important;
   }
+}
+
+
+/* ========================================================
+   6. TARJETA DE VENTAJAS Y POLÍTICAS DE COMPRA
+   ======================================================== */
+.confirm-perks-box {
+  background: #f8fafc !important;
+  border: 1.5px solid #e2e8f0 !important;
+  border-radius: 6px !important;
+  padding: 0.65rem 0.85rem !important;
+  font-family: var(--font-mono) !important;
+  font-size: 0.7rem !important;
+  color: #475569 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0.35rem !important;
+  box-shadow: 1px 1px 0px #e2e8f0 !important;
 }

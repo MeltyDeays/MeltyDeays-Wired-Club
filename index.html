@@ -364,15 +364,18 @@
       <div class="confirm-redeem-body-grid">
         <!-- COLUMNA IZQUIERDA: ARTÍCULO Y CONFIGURACIÓN DE PUNTOS -->
         <div class="confirm-redeem-col-product">
-          <div style="display: flex; gap: 1rem; align-items: center; background: #f8fafc; border: 1.5px solid var(--dark); border-radius: 6px; padding: 0.85rem;">
-            <div id="confirm-reward-img-wrap" style="width: 68px; height: 68px; border-radius: 4px; border: 1px solid var(--gray-300); overflow: hidden; background: #0f172a; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+          <div class="confirm-product-card" style="display: flex; gap: 1rem; align-items: center; background: #ffffff; border: 1.5px solid var(--dark); border-radius: 6px; padding: 0.85rem; box-shadow: 2px 2px 0px #cbd5e1;">
+            <div id="confirm-reward-img-wrap" style="width: 70px; height: 70px; border-radius: 6px; border: 1.5px solid var(--gray-300); overflow: hidden; background: #0f172a; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
               <img id="confirm-reward-img" src="" alt="Reward" style="width: 100%; height: 100%; object-fit: cover; display: none;">
-              <span id="confirm-reward-fallback" style="font-size: 1.8rem;">🎁</span>
+              <span id="confirm-reward-fallback" style="font-size: 1.9rem;">🎁</span>
             </div>
-            <div>
-              <div style="font-family: var(--font-mono); font-size: 0.7rem; color: var(--gray-500); font-weight: 700;">ARTÍCULO SELECCIONADO</div>
-              <h3 id="confirm-reward-title" style="font-size: 1.1rem; font-weight: 900; color: var(--dark); margin: 2px 0 4px 0; line-height: 1.2;">-</h3>
-              <span class="badge-navi" id="confirm-reward-points" style="font-size: 0.75rem; background: #e0e7ff; color: #4338ca; border: 1px solid #c7d2fe;">0 WP</span>
+            <div style="flex: 1; min-width: 0;">
+              <div style="font-family: var(--font-mono); font-size: 0.68rem; color: var(--gray-500); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">ARTÍCULO SELECCIONADO</div>
+              <h3 id="confirm-reward-title" style="font-size: 1.05rem; font-weight: 900; color: var(--dark); margin: 2px 0 5px 0; line-height: 1.25; word-break: break-word;">-</h3>
+              <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+                <span class="badge-navi" id="confirm-reward-points" style="font-size: 0.72rem; background: #e0e7ff; color: #4338ca; border: 1px solid #c7d2fe;">0 WP</span>
+                <span id="confirm-reward-stock-badge" class="badge-navi" style="font-size: 0.68rem; background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0;">✓ Entrega Inmediata</span>
+              </div>
             </div>
           </div>
 
@@ -407,6 +410,25 @@
           <div id="confirm-zero-pts-note" style="display: none; padding: 6px 8px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 4px; color: #1e40af; font-size: 0.72rem; line-height: 1.3;">
             ℹ️ <strong>Sin puntos disponibles:</strong> Puedes generar tu vale de compra oficial para apartar y retirar el artículo en tienda pagando el precio completo.
           </div>
+
+          <!-- POLÍTICAS Y VENTAJAS DE COMPRA (EQUILIBRIO VISUAL DE COLUMNA) -->
+          <div id="confirm-product-perks" class="confirm-perks-box" style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 6px; padding: 0.65rem 0.85rem; font-family: var(--font-mono); font-size: 0.7rem; color: #475569; display: flex; flex-direction: column; gap: 0.35rem; margin-top: 0.25rem;">
+            <div style="font-weight: 800; color: #1e293b; font-size: 0.7rem; display: flex; align-items: center; gap: 4px; border-bottom: 1px dashed #cbd5e1; padding-bottom: 3px; margin-bottom: 2px; letter-spacing: 0.3px;">
+              <span>✦ CONDICIONES DE COMPRA Y RETIRO EN TIENDA</span>
+            </div>
+            <div style="display: flex; align-items: baseline; gap: 6px; line-height: 1.3;">
+              <span style="color: #0284c7;">🏪</span>
+              <span><strong>Retiro en mostrador:</strong> Prueba física y entrega personal inmediata en tienda.</span>
+            </div>
+            <div style="display: flex; align-items: baseline; gap: 6px; line-height: 1.3;">
+              <span style="color: #16a34a;">💳</span>
+              <span><strong>Métodos de pago:</strong> Efectivo (C$ NIO / $ USD) o Transferencia (BAC / LAFISE).</span>
+            </div>
+            <div id="confirm-perk-points-row" style="display: flex; align-items: baseline; gap: 6px; line-height: 1.3;">
+              <span style="color: #d97706;">🪙</span>
+              <span id="confirm-perk-points-text"><strong>Wired Points:</strong> Descuento aplicado directamente en tu recibo de compra.</span>
+            </div>
+          </div>
         </div>
 
         <!-- COLUMNA DERECHA: DESGLOSE FINANCIERO, AUDITORÍA Y ACCIONES -->
@@ -419,20 +441,21 @@
             </div>
 
             <div class="confirm-receipt-body">
-              <div class="confirm-callout-row receipt-row">
-                <span class="receipt-label">Precio regular:</span>
+              <div class="confirm-callout-row receipt-row" id="confirm-row-regular-price">
+                <span class="receipt-label" id="confirm-label-price">Precio regular:</span>
                 <strong id="confirm-type-price" class="receipt-val price-original">$0.00 USD</strong>
               </div>
 
-              <div class="confirm-callout-row receipt-row">
-                <span class="receipt-label">Descuento aplicado (<span id="confirm-calc-pct-label">0%</span>):</span>
+              <div class="confirm-callout-row receipt-row" id="confirm-row-discount">
+                <span class="receipt-label" id="confirm-label-discount">Descuento aplicado (<span id="confirm-calc-pct-label">0%</span>):</span>
                 <strong id="confirm-type-discount" class="receipt-val discount-val">-$0.00 USD</strong>
               </div>
 
-              <div class="receipt-subdetail-row">
-                <span style="font-size: 0.65rem; color: #92400e; opacity: 0.85;">
-                  Tope máx. tienda: <strong id="confirm-type-max-disc" class="confirm-callout-val" style="color: #b45309;">-$0.00 USD</strong>
-                  <span id="confirm-type-pct-calc" class="confirm-callout-val" style="display: none;">0% de descuento / Máximo 5%</span>
+              <div class="confirm-callout-row receipt-row receipt-subdetail-row" id="confirm-row-max-disc">
+                <span class="receipt-label" style="font-size: 0.68rem; color: #92400e;">Tope máx. tienda:</span>
+                <span class="receipt-val receipt-max-val" style="font-size: 0.68rem; color: #92400e;">
+                  <strong id="confirm-type-max-disc" class="confirm-callout-val" style="color: #b45309;">-$0.00 USD</strong>
+                  <span id="confirm-type-pct-calc" class="confirm-callout-val" style="display: inline-block;">(0 WP = 0% OFF)</span>
                 </span>
               </div>
 
@@ -451,7 +474,7 @@
           </div>
 
           <!-- ESTADO DE PUNTOS TRAS LA COMPRA -->
-          <div class="ledger-preview-box" style="border: 1.5px solid var(--dark); border-radius: 6px; overflow: hidden; font-family: var(--font-mono); font-size: 0.78rem; box-shadow: 1px 1px 0px #cbd5e1;">
+          <div class="ledger-preview-box" id="confirm-ledger-box" style="border: 1.5px solid var(--dark); border-radius: 6px; overflow: hidden; font-family: var(--font-mono); font-size: 0.78rem; box-shadow: 1px 1px 0px #cbd5e1;">
             <div style="background: #0f172a; color: #ffffff; padding: 0.45rem 0.75rem; font-weight: 800; font-size: 0.7rem; letter-spacing: 0.5px; display: flex; align-items: center; gap: 5px;">
               <span>🪙</span> ESTADO DE TUS PUNTOS TRAS LA COMPRA
             </div>

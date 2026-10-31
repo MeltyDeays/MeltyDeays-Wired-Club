@@ -2947,11 +2947,27 @@ export function confirmRedeem(rewardId) {
   const fallbackEl = document.getElementById("confirm-reward-fallback");
 
   if (titleEl) titleEl.textContent = reward.title;
+  const rewardMaxPct = reward.maxDiscountPct != null ? Number(reward.maxDiscountPct) : 0;
+  const rewardMaxPts = reward.pointsCost || 0;
+  const rewardIsFlat = isPartial && (rewardMaxPts === 0 || rewardMaxPct === 0);
+
   if (ptsEl) {
-    ptsEl.textContent = isPartial ? `Tope: ${reward.pointsCost.toLocaleString()} WP` : `${reward.pointsCost.toLocaleString()} WP`;
-    ptsEl.style.background = isPartial ? "#fef3c7" : "#e0e7ff";
-    ptsEl.style.color = isPartial ? "#92400e" : "#4338ca";
-    ptsEl.style.borderColor = isPartial ? "#fcd34d" : "#c7d2fe";
+    if (rewardIsFlat) {
+      ptsEl.textContent = "💵 PRECIO PLANO";
+      ptsEl.style.background = "#eff6ff";
+      ptsEl.style.color = "#1d4ed8";
+      ptsEl.style.borderColor = "#bfdbfe";
+    } else if (isPartial) {
+      ptsEl.textContent = `⚡ Tope: ${rewardMaxPts.toLocaleString()} WP (${rewardMaxPct}% OFF)`;
+      ptsEl.style.background = "#fef3c7";
+      ptsEl.style.color = "#92400e";
+      ptsEl.style.borderColor = "#fcd34d";
+    } else {
+      ptsEl.textContent = `${rewardMaxPts.toLocaleString()} WP (100% Puntos)`;
+      ptsEl.style.background = "#e0e7ff";
+      ptsEl.style.color = "#4338ca";
+      ptsEl.style.borderColor = "#c7d2fe";
+    }
   }
 
   const comboItems = isCombo ? (typeof reward.getComboItems === "function" ? reward.getComboItems() : (reward.comboData?.items || [])) : [];
@@ -3109,7 +3125,12 @@ export function confirmRedeem(rewardId) {
 
   const warrantyEl = document.getElementById("confirm-warranty-notice");
   if (warrantyEl) {
-    if (isPartial) {
+    if (rewardIsFlat) {
+      warrantyEl.innerHTML = `🛡️ <strong>GARANTÍA OFICIAL (30 DÍAS):</strong> Este producto cuenta con garantía técnica directa en tienda física respaldada por tu factura digital de compra.`;
+      warrantyEl.style.borderColor = "#bfdbfe";
+      warrantyEl.style.background = "#eff6ff";
+      warrantyEl.style.color = "#1e40af";
+    } else if (isPartial) {
       warrantyEl.innerHTML = `🛡️ <strong>GARANTÍA COMERCIAL (30 DÍAS):</strong> Este producto de venta cuenta con garantía técnica de fábrica respaldada por el abono de dinero a pagar en tienda.`;
       warrantyEl.style.borderColor = "#fcd34d";
       warrantyEl.style.background = "#fffbeb";
@@ -3270,27 +3291,95 @@ export function updateConfirmCalculation() {
     const typeCash = document.getElementById("confirm-type-cash");
     const ptsAppliedNotice = document.getElementById("confirm-pts-applied-notice");
 
+    const isFlatPrice = (targetMaxPct === 0 || targetMaxCapPts === 0);
+    const curr = (vm && vm.preferredCurrency) ? vm.preferredCurrency : "USD";
+    const discUsd = Number(discountUsd) || 0;
+    const discNio = Math.round(discUsd * USD_TO_NIO_RATE);
+    const formattedDiscUsd = formatUsd(discUsd);
+    const formattedDiscNio = formatNio(discNio);
+
+    // Dynamic row visibility & labeling in payment receipt
+    const rowDisc = document.getElementById("confirm-row-discount");
+    const rowMaxDisc = document.getElementById("confirm-row-max-disc");
+    const labelPrice = document.getElementById("confirm-label-price");
+    if (rowDisc) rowDisc.style.display = isFlatPrice ? "none" : "flex";
+    if (rowMaxDisc) rowMaxDisc.style.display = isFlatPrice ? "none" : "flex";
+    if (labelPrice) labelPrice.textContent = isFlatPrice ? "Precio oficial:" : "Precio regular:";
+
+    // Synchronize ledger box: hide completely if flat price product
+    const ledgerBox = document.getElementById("confirm-ledger-box") || document.querySelector(".ledger-preview-box");
+    if (ledgerBox) {
+      ledgerBox.style.display = isFlatPrice ? "none" : "block";
+    }
+
+    // Synchronize perks text in left column
+    const perkPointsText = document.getElementById("confirm-perk-points-text");
+    if (perkPointsText) {
+      if (isFlatPrice) {
+        perkPointsText.innerHTML = "<strong>Wired Points:</strong> Precio plano oficial. Tu saldo de puntos permanece 100% intacto.";
+      } else {
+        perkPointsText.innerHTML = "<strong>Wired Points:</strong> Descuento aplicado directamente en tu recibo de compra.";
+      }
+    }
+
     if (typePct) {
-      typePct.textContent = (targetMaxPct === 0 || targetMaxCapPts === 0)
-        ? "0% OFF (Precio Plano)"
-        : ((Number(formattedPct) === Number(targetMaxPct)) ? `${formattedPct}% OFF` : `${formattedPct}% OFF (Máx. ${targetMaxPct}%)`);
+      if (isFlatPrice) {
+        typePct.textContent = "PRECIO PLANO";
+        typePct.style.background = "#0284c7";
+      } else {
+        typePct.textContent = (Number(formattedPct) === Number(targetMaxPct)) ? `${formattedPct}% OFF` : `${formattedPct}% OFF (Máx. ${targetMaxPct}%)`;
+        typePct.style.background = "#047857";
+      }
     }
+
     if (typePctCalc) {
-      typePctCalc.textContent = (targetMaxPct === 0 || targetMaxCapPts === 0)
-        ? "Precio oficial de venta plano en tienda física"
-        : `${formattedPct}% de descuento / Máximo ${targetMaxPct}%`;
+      if (isFlatPrice) {
+        typePctCalc.textContent = "";
+        typePctCalc.style.display = "none";
+      } else {
+        typePctCalc.textContent = `(${targetMaxCapPts.toLocaleString()} WP = ${targetMaxPct}% OFF)`;
+        typePctCalc.style.display = "inline-block";
+      }
     }
+
     if (calcPctLabel) calcPctLabel.textContent = `${formattedPct}%`;
-    if (typeDisc) typeDisc.textContent = (targetMaxPct === 0 || targetMaxCapPts === 0) ? "$0.00" : `-${formatPrice(discountUsd)}`;
+
+    if (typeDisc) {
+      if (isFlatPrice) {
+        typeDisc.textContent = "$0.00";
+      } else if (curr === "NIO") {
+        typeDisc.innerHTML = `<strong>-C$ ${formattedDiscNio} NIO</strong> <span style="font-size:0.75rem; color:#047857; font-weight:600;">(-${formattedDiscUsd} USD)</span>`;
+      } else {
+        typeDisc.innerHTML = `<strong>-${formattedDiscUsd} USD</strong> <span style="font-size:0.75rem; color:#047857; font-weight:600;">(-C$ ${formattedDiscNio} NIO)</span>`;
+      }
+    }
+
     if (typeCash) typeCash.innerHTML = formatDualPrice(cashToPayUsd);
-    if (ptsAppliedNotice) ptsAppliedNotice.textContent = (targetMaxPct === 0 || targetMaxCapPts === 0) ? "0 WP (Sin descuento en puntos)" : `${deductPts.toLocaleString()} WP aplicados`;
+
+    if (typeMaxDisc) {
+      const maxDiscUsd = Number(targetMaxDiscUsd) || 0;
+      const maxDiscNio = Math.round(maxDiscUsd * USD_TO_NIO_RATE);
+      const formattedMaxUsd = formatUsd(maxDiscUsd);
+      const formattedMaxNio = formatNio(maxDiscNio);
+      if (isFlatPrice) {
+        typeMaxDisc.textContent = "Precio plano oficial (Sin descuento en puntos)";
+      } else if (curr === "NIO") {
+        typeMaxDisc.innerHTML = `<strong>-C$ ${formattedMaxNio} NIO</strong> <span style="font-size:0.68rem; color:#92400e; font-weight:600;">(-${formattedMaxUsd} USD)</span>`;
+      } else {
+        typeMaxDisc.innerHTML = `<strong>-${formattedMaxUsd} USD</strong> <span style="font-size:0.68rem; color:#92400e; font-weight:600;">(-C$ ${formattedMaxNio} NIO)</span>`;
+      }
+    }
+
+    if (ptsAppliedNotice) ptsAppliedNotice.textContent = isFlatPrice ? "0 WP (Sin descuento en puntos)" : `${deductPts.toLocaleString()} WP aplicados`;
 
     const doRedeemBtn = document.getElementById("btn-do-redeem");
     if (doRedeemBtn) {
-      if (deductPts > 0) {
-        doRedeemBtn.textContent = `🏷️ CANJEAR VALE DE DESCUENTO (${formattedPct}% = -${formatPrice(discountUsd)})`;
-      } else {
+      if (isFlatPrice || deductPts === 0) {
         doRedeemBtn.textContent = `🛒 GENERAR VALE DE COMPRA (${formatPrice(cashToPayUsd)})`;
+        doRedeemBtn.style.background = "linear-gradient(135deg, #0284c7, #0369a1)";
+      } else {
+        doRedeemBtn.textContent = `🏷️ CANJEAR VALE DE DESCUENTO (${formattedPct}% = -${formatPrice(discountUsd)})`;
+        doRedeemBtn.style.background = "linear-gradient(135deg, #d97706, #b45309)";
       }
     }
   } else {
@@ -3298,7 +3387,12 @@ export function updateConfirmCalculation() {
     discountUsd = reward.priceUsd || 0;
     cashToPayUsd = 0;
     const doRedeemBtn = document.getElementById("btn-do-redeem");
-    if (doRedeemBtn) doRedeemBtn.textContent = `⚡ AUTORIZAR CANJE WIRED`;
+    if (doRedeemBtn) {
+      doRedeemBtn.textContent = `⚡ AUTORIZAR CANJE WIRED`;
+      doRedeemBtn.style.background = "linear-gradient(135deg, #0284c7, #0369a1)";
+    }
+    const ledgerBox = document.getElementById("confirm-ledger-box") || document.querySelector(".ledger-preview-box");
+    if (ledgerBox) ledgerBox.style.display = "block";
   }
 
   const afterPts = Math.max(0, userPts - deductPts);
