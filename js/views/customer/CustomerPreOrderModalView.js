@@ -143,8 +143,8 @@ export function validatePreOrderForm(isBlur = false) {
   const rawPhone = (phoneInput.value || "").trim();
   const rawEmail = (emailInput.value || "").trim();
 
-  // 1. Validación de Cédula
-  let cedulaValid = false;
+  // 1. Validación de Cédula (Opcional: solo se valida si el usuario la escribe)
+  let cedulaValid = true;
   if (rawCedula.length > 0) {
     const valRes = NicaraguanCedulaValidator.validate(rawCedula);
     if (valRes.isValid) {
@@ -172,10 +172,10 @@ export function validatePreOrderForm(isBlur = false) {
     }
   } else {
     cedulaInput.classList.remove("is-valid", "is-invalid");
-    if (cedulaFeedback) cedulaFeedback.textContent = isBlur ? "❌ Campo obligatorio" : "";
+    if (cedulaFeedback) cedulaFeedback.textContent = "";
   }
 
-  // 2. Validación de Nombre Completo (>=2 palabras)
+  // 2. Validación de Nombre Completo (>=2 palabras - Obligatorio)
   let nameValid = false;
   const nameParts = rawName.split(/\s+/).filter(Boolean);
   if (nameParts.length >= 2 && rawName.length >= 5) {
@@ -198,7 +198,7 @@ export function validatePreOrderForm(isBlur = false) {
     }
   }
 
-  // 3. Validación de Teléfono (8 dígitos)
+  // 3. Validación de Teléfono (8 dígitos - Obligatorio)
   let phoneValid = false;
   const cleanPhoneDigits = rawPhone.replace(/\D/g, "");
   const normalizedPhone = (cleanPhoneDigits.startsWith("505") && cleanPhoneDigits.length === 11)
@@ -234,27 +234,32 @@ export function validatePreOrderForm(isBlur = false) {
     }
   }
 
-  // 4. Validación de Correo Electrónico
-  let emailValid = false;
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (emailRegex.test(rawEmail)) {
-    emailValid = true;
-    emailInput.classList.add("is-valid");
-    emailInput.classList.remove("is-invalid");
-    if (emailFeedback) emailFeedback.textContent = "";
-  } else {
-    emailValid = false;
-    if (rawEmail.length > 0 || isBlur) {
-      emailInput.classList.add("is-invalid");
-      emailInput.classList.remove("is-valid");
-      if (emailFeedback) {
-        emailFeedback.className = "field-feedback is-invalid";
-        emailFeedback.textContent = "❌ Ingresa una dirección de correo electrónico válida";
-      }
-    } else {
-      emailInput.classList.remove("is-valid", "is-invalid");
+  // 4. Validación de Correo Electrónico (Opcional)
+  let emailValid = true;
+  if (rawEmail.length > 0) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (emailRegex.test(rawEmail)) {
+      emailValid = true;
+      emailInput.classList.add("is-valid");
+      emailInput.classList.remove("is-invalid");
       if (emailFeedback) emailFeedback.textContent = "";
+    } else {
+      emailValid = false;
+      if (isBlur) {
+        emailInput.classList.add("is-invalid");
+        emailInput.classList.remove("is-valid");
+        if (emailFeedback) {
+          emailFeedback.className = "field-feedback is-invalid";
+          emailFeedback.textContent = "❌ Ingresa una dirección de correo electrónico válida";
+        }
+      } else {
+        emailInput.classList.remove("is-valid", "is-invalid");
+        if (emailFeedback) emailFeedback.textContent = "";
+      }
     }
+  } else {
+    emailInput.classList.remove("is-valid", "is-invalid");
+    if (emailFeedback) emailFeedback.textContent = "";
   }
 
   const isFormValid = cedulaValid && nameValid && phoneValid && emailValid;

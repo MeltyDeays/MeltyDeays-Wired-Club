@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>The Wired Club · MeltyDeays (Portal de Fidelización)</title>
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
@@ -211,6 +211,22 @@
 
     <!-- PESTAÑA 1: CATÁLOGO DE RECOMPENSAS -->
     <div id="tab-content-catalog">
+      <!-- BARRA DE BÚSQUEDA Y FILTROS POR CATEGORÍA EN CATÁLOGO -->
+      <div class="catalog-filters-bar">
+        <div class="catalog-search-box">
+          <span class="catalog-search-icon">🔍</span>
+          <input type="text" id="catalog-search-input" class="catalog-search-input" placeholder="Buscar por producto, marca, ID o palabra clave..." autocomplete="off" spellcheck="false" oninput="filterCustomerCatalog()">
+          <button type="button" id="catalog-search-clear" class="catalog-search-clear" onclick="clearCustomerCatalogSearch()" style="display:none;" title="Limpiar búsqueda">&times;</button>
+        </div>
+        <div class="catalog-category-chips" id="catalog-category-chips">
+          <button type="button" class="category-chip active" data-category="ALL" onclick="setCatalogCategory('ALL')">✦ Todos</button>
+          <button type="button" class="category-chip" data-category="AUDIO" onclick="setCatalogCategory('AUDIO')">🎧 Audio</button>
+          <button type="button" class="category-chip" data-category="PERIPHERALS" onclick="setCatalogCategory('PERIPHERALS')">⌨️ Periféricos</button>
+          <button type="button" class="category-chip" data-category="COMBOS" onclick="setCatalogCategory('COMBOS')">📦 Wired Combos</button>
+          <button type="button" class="category-chip" data-category="PRESALES" onclick="setCatalogCategory('PRESALES')">🕊️ Preventas</button>
+          <button type="button" class="category-chip" data-category="POINTS100" onclick="setCatalogCategory('POINTS100')">🎁 100% Puntos</button>
+        </div>
+      </div>
       <div class="rewards-grid" id="catalog-container"></div>
     </div>
 
@@ -272,6 +288,12 @@
             <input type="password" id="login-pin" name="login_pin" autocomplete="current-password" class="form-input" placeholder="••••••" maxlength="8" style="text-align: center; letter-spacing: 6px; font-size: 1.3rem; font-weight: 900;">
             <button type="button" class="btn-secondary" style="padding: 0.5rem 0.65rem; font-size: 0.85rem;" onclick="toggleClientPinVisibility('login-pin')" title="Ver/Ocultar PIN">👁️</button>
           </div>
+        </div>
+
+        <div style="text-align: right; margin-top: -0.85rem; margin-bottom: 1.25rem;">
+          <a href="https://wa.me/50558438412?text=Hola%20MeltyDeays,%20olvid%C3%A9%20mi%20PIN%20de%20socio%20de%20The%20Wired%20Club" target="_blank" rel="noopener noreferrer" style="font-size: 0.76rem; color: #0284c7; text-decoration: underline; font-weight: 600;">
+            ¿Olvidaste tu PIN? Contáctanos por WhatsApp
+          </a>
         </div>
 
         <button type="submit" class="btn-primary" style="width: 100%; padding: 0.75rem;">Ingresar a Mi Cuenta</button>
@@ -498,19 +520,19 @@
             </div>
           </div>
 
-          <!-- Desglose de Descuento Directo -->
+          <!-- Desglose de Descuento Directo (Estilo Retail Destacado) -->
           <div class="preorder-financial-breakdown">
             <div class="financial-row">
-              <span>Precio Regular:</span>
-              <span id="preorder-regular-price">$0.00 USD</span>
+              <span style="font-weight: 700;">Antes (Precio regular):</span>
+              <span id="preorder-regular-price" style="text-decoration: line-through; color: #94a3b8; font-weight: 800;">$0.00 USD</span>
             </div>
             <div class="financial-row discount-row">
-              <span>Descuento Preventa Directo:</span>
+              <span style="font-weight: 700;">Descuento preventa:</span>
               <span id="preorder-discount-val">-$0.00 USD</span>
             </div>
-            <div class="financial-row final-row">
-              <span>Abono al Llegar:</span>
-              <span id="preorder-cash-final">$0.00 USD</span>
+            <div class="financial-row final-row" style="color: #dc2626;">
+              <span style="font-weight: 900; color: #dc2626;">¡AHORA EN PREVENTA:</span>
+              <span id="preorder-cash-final" style="color: #dc2626; font-size: 1.15rem; font-weight: 900;">$0.00 USD</span>
             </div>
             <div class="preorder-points-invariant-note">
               🛡️ <strong>Sin consumo de puntos:</strong> Tu saldo de Wired Points permanece 100% intacto (0 WP gastados).
@@ -521,10 +543,10 @@
         <!-- Columna Derecha: Formulario de Compromiso con Validación Estricta -->
         <div class="preorder-col-form">
           <form id="form-preorder-reservation" onsubmit="event.preventDefault(); submitPreOrderReservation();" novalidate>
-            <!-- 1. Cédula Nicaragüense -->
+            <!-- 1. Cédula Nicaragüense (Opcional) -->
             <div class="form-group">
-              <label class="form-label" for="preorder-cedula">Cédula de Identidad (Nicaragua) *</label>
-              <input type="text" id="preorder-cedula" class="form-input font-mono" placeholder="001-010190-0001N" maxlength="16" autocomplete="off" required>
+              <label class="form-label" for="preorder-cedula">Cédula de Identidad <span style="font-weight: normal; color: var(--gray-500); font-size: 0.8em;">(Opcional)</span></label>
+              <input type="text" id="preorder-cedula" class="form-input font-mono" placeholder="001-010190-0001N (Opcional)" maxlength="16" autocomplete="off">
               <div id="preorder-cedula-feedback" class="field-feedback"></div>
             </div>
 
@@ -545,10 +567,10 @@
               <div id="preorder-phone-feedback" class="field-feedback"></div>
             </div>
 
-            <!-- 4. Correo Electrónico -->
+            <!-- 4. Correo Electrónico (Opcional) -->
             <div class="form-group">
-              <label class="form-label" for="preorder-email">Correo Electrónico Válido *</label>
-              <input type="email" id="preorder-email" class="form-input" placeholder="socio@ejemplo.com" autocomplete="email" required>
+              <label class="form-label" for="preorder-email">Correo Electrónico <span style="font-weight: normal; color: var(--gray-500); font-size: 0.8em;">(Opcional)</span></label>
+              <input type="email" id="preorder-email" class="form-input" placeholder="socio@ejemplo.com (Opcional)" autocomplete="email">
               <div id="preorder-email-feedback" class="field-feedback"></div>
             </div>
 

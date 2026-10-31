@@ -31,9 +31,9 @@ export class VoucherModel {
     this.createdAt = data.createdAt || data.created_at || new Date().toISOString();
 
     // Información del titular para reservas de preventa
-    this.customerInfo = data.customerInfo || data.customer_info || (data.cedula ? {
-      cedula: data.cedula,
-      fullName: data.fullName || data.userName || "",
+    this.customerInfo = data.customerInfo || data.customer_info || ((data.cedula || data.fullName || data.phone || data.customerName) ? {
+      cedula: data.cedula || "",
+      fullName: data.fullName || data.userName || data.customerName || "",
       phone: data.phone || "",
       email: data.email || ""
     } : null);

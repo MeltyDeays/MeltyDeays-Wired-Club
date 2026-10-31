@@ -177,6 +177,15 @@ vercel-live-feedback,
     min-width: 560px !important;
     font-size: 0.75rem !important;
   }
+  .admin-table th {
+    padding: 0.45rem 0.55rem !important;
+    font-size: 0.7rem !important;
+    white-space: nowrap !important;
+  }
+  .admin-table td {
+    padding: 0.45rem 0.55rem !important;
+    font-size: 0.73rem !important;
+  }
 
   /* CATÁLOGO ADMIN MÓVIL: TARJETAS COMPACTAS SIN SCROLL LATERAL */
   .catalog-table-responsive {
@@ -275,8 +284,8 @@ vercel-live-feedback,
   }
 }
 
-@media (max-width: 640px) {
-  /* NAVBAR MÓVIL ULTRA-COMPACTA & LIMPIA CON MENÚ HAMBURGUESA */
+@media (max-width: 860px) {
+  /* NAVBAR MÓVIL Y TABLET ULTRA-COMPACTA & LIMPIA CON MENÚ HAMBURGUESA */
   .navbar {
     flex-direction: row !important;
     align-items: center !important;
@@ -313,7 +322,7 @@ vercel-live-feedback,
     display: none !important;
   }
 
-  /* Ocultar elementos desktop pesados de la navbar en móvil */
+  /* Ocultar elementos desktop pesados de la navbar en móvil, preservando selector de moneda */
   .nav-controls {
     display: flex !important;
     align-items: center !important;
@@ -322,12 +331,25 @@ vercel-live-feedback,
     width: auto !important;
   }
 
-  .nav-controls .currency-toggle-wrapper,
   .nav-controls #nav-user-pill,
   .nav-controls #nav-login-btn,
   .nav-controls .btn-scan-qr,
   .nav-controls .btn-primary {
     display: none !important;
+  }
+
+  .nav-controls .currency-toggle-wrapper {
+    display: inline-flex !important;
+    padding: 1px !important;
+    gap: 2px !important;
+    margin-right: 2px !important;
+  }
+
+  .nav-controls .currency-toggle-btn {
+    padding: 0.2rem 0.45rem !important;
+    font-size: 0.68rem !important;
+    height: 28px !important;
+    min-height: 28px !important;
   }
 
   /* NAVBAR DE ADMINISTRADOR MÓVIL ULTRA-LIMPIA DE 1 LÍNEA (48px) + DOCK INFERIOR */
@@ -1791,8 +1813,10 @@ vercel-live-feedback,
   .copland-modal-wrapper .modal-close-btn {
     top: 8px !important;
     right: 8px !important;
-    width: 32px !important;
-    height: 32px !important;
+    width: 44px !important;
+    height: 44px !important;
+    min-width: 44px !important;
+    min-height: 44px !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
@@ -1800,7 +1824,7 @@ vercel-live-feedback,
     border: 1.5px solid var(--dark) !important;
     border-radius: 6px !important;
     box-shadow: 2px 2px 0px var(--dark) !important;
-    font-size: 1.15rem !important;
+    font-size: 1.25rem !important;
     color: var(--dark) !important;
     z-index: 25 !important;
     padding: 0 !important;
@@ -2183,8 +2207,10 @@ vercel-live-feedback,
   .modal-close-btn {
     top: 8px !important;
     right: 8px !important;
-    width: 32px !important;
-    height: 32px !important;
+    width: 44px !important;
+    height: 44px !important;
+    min-width: 44px !important;
+    min-height: 44px !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
@@ -2192,7 +2218,7 @@ vercel-live-feedback,
     border: 1.5px solid var(--dark) !important;
     border-radius: 6px !important;
     box-shadow: 2px 2px 0px var(--dark) !important;
-    font-size: 1.15rem !important;
+    font-size: 1.25rem !important;
     color: var(--dark) !important;
     z-index: 30 !important;
     padding: 0 !important;
@@ -2676,6 +2702,37 @@ vercel-live-feedback,
     box-sizing: border-box !important;
   }
 
+  /* SIMPLIFICACIÓN Y COMPACIDAD DEL PANEL ADMIN EN MÓVIL */
+  .admin-section-header {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+    margin-bottom: 0.85rem !important;
+  }
+
+  .admin-section-header h2 {
+    font-size: 1.05rem !important;
+    line-height: 1.25 !important;
+  }
+
+  .pos-scanner-box {
+    padding: 0.75rem 0.65rem !important;
+    margin-bottom: 1rem !important;
+  }
+
+  .dispatch-ticket-card {
+    padding: 0.85rem 0.75rem !important;
+  }
+
+  .noc-stat-val {
+    font-size: 1.35rem !important;
+  }
+
+  .noc-stat-lbl {
+    font-size: 0.62rem !important;
+  }
+
   /* BOTONES CABECERA SOCIOS */
   .admin-header-actions {
     width: 100% !important;
@@ -2795,6 +2852,66 @@ vercel-live-feedback,
   .reward-card .reward-pricing-box,
   .reward-card .reward-footer {
     display: none !important;
+  }
+
+  /* BOTÓN / INDICADOR TÁCTIL EN TARJETA MÓVIL ("🛒 Ver / Comprar") */
+  .reward-mobile-action-indicator {
+    display: block !important;
+    margin-top: auto !important;
+    padding-top: 0.35rem !important;
+  }
+
+  .btn-reward-mobile-action {
+    width: 100% !important;
+    border: 1.5px solid var(--dark) !important;
+    border-radius: 4px !important;
+    background: #0f172a !important;
+    color: #ffffff !important;
+    font-family: var(--font-mono) !important;
+    font-size: 0.72rem !important;
+    font-weight: 800 !important;
+    padding: 0.35rem 0.4rem !important;
+    cursor: pointer !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 4px !important;
+    box-shadow: 1px 1px 0px var(--dark) !important;
+    transition: transform 0.1s ease, background 0.1s ease !important;
+  }
+
+  .btn-reward-mobile-action:active {
+    transform: scale(0.97) !important;
+    background: #0284c7 !important;
+  }
+
+  .btn-reward-mobile-action.is-out {
+    background: #fee2e2 !important;
+    color: #b91c1c !important;
+    border-color: #b91c1c !important;
+    cursor: not-allowed !important;
+  }
+
+  .btn-reward-mobile-action.is-incoming {
+    background: #4338ca !important;
+    color: #ffffff !important;
+  }
+
+  .catalog-filters-bar {
+    padding: 0.65rem 0.75rem !important;
+    margin-bottom: 1rem !important;
+    gap: 0.65rem !important;
+  }
+
+  .catalog-search-input {
+    height: 38px !important;
+    font-size: 0.82rem !important;
+    padding-left: 2.2rem !important;
+  }
+
+  .category-chip {
+    padding: 0.35rem 0.65rem !important;
+    font-size: 0.7rem !important;
   }
 
   /* SELLOS MONUMENTALES EN MÓVIL (HAIBANE RENMEI) */

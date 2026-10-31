@@ -1328,12 +1328,14 @@ export class CustomerViewModel {
     const phone = (customerData.phone || "").trim();
     const email = (customerData.email || "").trim();
 
-    if (!cedulaInput) throw new Error("La cédula de identidad es obligatoria.");
-    const cedulaCheck = NicaraguanCedulaValidator.validate(cedulaInput);
-    if (!cedulaCheck.isValid) {
-      throw new Error(`Cédula inválida: ${cedulaCheck.reason}`);
+    let cedula = "";
+    if (cedulaInput) {
+      const cedulaCheck = NicaraguanCedulaValidator.validate(cedulaInput);
+      if (!cedulaCheck.isValid) {
+        throw new Error(`Cédula inválida: ${cedulaCheck.reason}`);
+      }
+      cedula = cedulaCheck.formatted;
     }
-    const cedula = cedulaCheck.formatted;
     if (!fullName || fullName.split(/\s+/).length < 2) {
       throw new Error("Por favor ingresa tu nombre y apellido completos.");
     }
@@ -1341,9 +1343,11 @@ export class CustomerViewModel {
     if (cleanPhoneDigits.length !== 8 && !(cleanPhoneDigits.startsWith("505") && cleanPhoneDigits.length === 11)) {
       throw new Error("Ingresa un número telefónico válido de 8 dígitos.");
     }
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      throw new Error("Por favor ingresa un correo electrónico válido.");
+    if (email) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        throw new Error("Por favor ingresa un correo electrónico válido.");
+      }
     }
 
     // 4. Cálculo del Descuento Directo de Preventa (Independiente de Puntos Wired)

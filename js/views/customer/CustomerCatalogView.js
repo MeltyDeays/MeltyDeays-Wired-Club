@@ -1340,15 +1340,15 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
           <div class="haibane-specs-subtitle">🕊️ EXPEDICIÓN EN VUELO · PREVENTA</div>
         </div>
 
-        <!-- Fila de Precios Sacra -->
+        <!-- Fila de Precios Sacra (Estilo Retail Destacado) -->
         <div class="haibane-specs-pricing-row">
           <div class="haibane-price-main-block">
-            <span class="haibane-price-label">PRECIO PREVENTA</span>
-            <div class="haibane-specs-price-curr">${formatDualPrice(item.presalePriceUsd ?? presalePrice)}</div>
+            <span class="haibane-price-label" style="color: #dc2626; font-weight: 800;">¡AHORA PREVENTA:</span>
+            <div class="haibane-specs-price-curr" style="color: #dc2626; font-weight: 900;">${formatDualPrice(item.presalePriceUsd ?? presalePrice)}!</div>
           </div>
           <div class="haibane-price-orig-block">
-            <span class="haibane-orig-label">PRECIO REGULAR</span>
-            <span class="haibane-specs-price-orig">${formatPrice(item.priceUsd)}</span>
+            <span class="haibane-orig-label">Antes (Precio regular):</span>
+            <span class="haibane-specs-price-orig" style="text-decoration: line-through; color: #94a3b8;">${formatPrice(item.priceUsd)}</span>
           </div>
         </div>
 
@@ -1411,14 +1411,14 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
           <div class="haibane-specs-subtitle" style="color: #92400e;">📦 PAQUETE INTEGRAL (${comboItems.length} PRODUCTOS)</div>
         </div>
 
-        <!-- Fila de Precios del Combo -->
+        <!-- Fila de Precios del Combo (Estilo Retail Destacado) -->
         <div class="haibane-specs-pricing-row">
           <div class="haibane-price-main-block">
-            <span class="haibane-price-label" style="color: #78350f;">PRECIO DEL COMBO</span>
-            <div class="haibane-specs-price-curr" style="color: #b45309;">${formatDualPrice(item.priceUsd)}</div>
+            <span class="haibane-price-label" style="color: #dc2626; font-weight: 800;">¡AHORA EN COMBO:</span>
+            <div class="haibane-specs-price-curr" style="color: #dc2626; font-weight: 900;">${formatDualPrice(item.priceUsd)}!</div>
           </div>
           <div class="haibane-price-orig-block">
-            <span class="haibane-orig-label">SUMA INDIVIDUAL</span>
+            <span class="haibane-orig-label">Antes por separado:</span>
             <span class="haibane-specs-price-orig" style="text-decoration: line-through; color: #94a3b8;">${formatPrice(effSpecsSumUsd)}</span>
           </div>
         </div>
@@ -1527,9 +1527,15 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
             <span>🏷️ SÚPER DESCUENTOS WIRED POINTS</span>
             <span class="temu-sale-badge">HASTA -${maxPct}% OFF</span>
           </div>
-          <div class="temu-sale-prices-row">
-            <span class="temu-sale-price-curr" id="specs-calc-cash-${item.id}">${formatDualPrice(cashToPayWithPts, item.priceNio ? Math.round(item.priceNio * (1 - (appliedPct / 100))) : null)}</span>
-            <span class="temu-sale-price-orig">${formatPrice(item.priceUsd, item.priceNio, true)}</span>
+          <div class="temu-sale-prices-row" style="display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap;">
+            <div>
+              <span style="font-size: 0.72rem; font-weight: 800; color: #dc2626; font-family: var(--font-mono);">¡AHORA:</span>
+              <span class="temu-sale-price-curr" id="specs-calc-cash-${item.id}" style="color: #dc2626; font-weight: 900;">${formatDualPrice(cashToPayWithPts, item.priceNio ? Math.round(item.priceNio * (1 - (appliedPct / 100))) : null)}!</span>
+            </div>
+            <div>
+              <span style="font-size: 0.72rem; color: #64748b; font-family: var(--font-mono);">Antes:</span>
+              <span class="temu-sale-price-orig" style="text-decoration: line-through; color: #94a3b8;">${formatPrice(item.priceUsd, item.priceNio, true)}</span>
+            </div>
           </div>
           <div class="specs-coin-row" style="font-size: 0.75rem; color: #78350f; font-family: var(--font-mono); font-weight: 700; display: flex; align-items: center; gap: 4px; line-height: 1.2;">
             ${renderWiredCoinSvg()}
@@ -1969,6 +1975,10 @@ export function initCustomerCatalogView(deps) {
     window.handleCatalogImgError = handleCatalogImgError;
     window.toggleComboItemDesc = toggleComboItemDesc;
     window.toggleModalProductSpecs = toggleModalProductSpecs;
+    window.filterCustomerCatalog = filterCustomerCatalog;
+    window.clearCustomerCatalogSearch = clearCustomerCatalogSearch;
+    window.setCatalogCategory = setCatalogCategory;
+    window.resetCustomerCatalogFilters = resetCustomerCatalogFilters;
   }
 
   // Soporte deep linking para URLs compartidas (#product-[id], ?openReward=...) y navegación del historial
@@ -1995,12 +2005,143 @@ let selectedRewardId = null;
 let selectedPointsToApply = 0;
 let currentRedeemReward = null;
 
+let catalogSearchQuery = "";
+let catalogCategoryFilter = "ALL";
+let currentCatalogRaw = [];
+let currentCatalogUser = null;
+
+function normalizeSearchText(str) {
+  return (str || "")
+    .toString()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+export function matchesCatalogCategory(item, category) {
+  if (!category || category === "ALL") return true;
+
+  const isCombo = (typeof item.isCombo === "function" ? item.isCombo() : (item.rewardType === "COMBO"));
+  const isIncoming = !isCombo && (typeof item.isIncoming === "function" ? item.isIncoming() : (item.status === "INCOMING" || Boolean(item.isIncoming || item.is_incoming))) && !(typeof item.isIncomingExpired === "function" && item.isIncomingExpired());
+  const isPartial = isCombo || item.rewardType === "PARTIAL_DISCOUNT" || (typeof item.isPartialDiscount === "function" && item.isPartialDiscount()) || (!isIncoming && Number(item.priceUsd) > 0);
+
+  if (category === "COMBOS") {
+    return isCombo;
+  }
+  if (category === "PRESALES") {
+    return isIncoming;
+  }
+  if (category === "POINTS100") {
+    return !isIncoming && !isCombo && (!isPartial || Number(item.priceUsd) <= 0 || item.rewardType === "FULL_POINTS");
+  }
+
+  const comboItems = isCombo ? (typeof item.getComboItems === "function" ? item.getComboItems() : (item.comboData?.items || [])) : [];
+  const comboText = comboItems.map(ci => `${ci.title || ""} ${ci.description || ""} ${ci.category || ""}`).join(" ");
+  const textToScan = normalizeSearchText(`${item.title || ""} ${item.category || ""} ${item.description || ""} ${item.rawDescription || ""} ${item.brand || ""} ${comboText}`);
+
+  if (category === "AUDIO") {
+    const audioKeywords = ["audio", "audifono", "auricular", "headset", "headphone", "earphone", "parlante", "speaker", "soundbar", "microfono", "tws", "bluetooth"];
+    return audioKeywords.some(kw => textToScan.includes(kw));
+  }
+  if (category === "PERIPHERALS") {
+    const periphKeywords = ["perif", "teclado", "keyboard", "mouse", "raton", "mousepad", "pad", "soporte", "hub", "switch", "keycap", "control", "mando", "gamepad", "joystick", "camara", "webcam"];
+    return periphKeywords.some(kw => textToScan.includes(kw));
+  }
+
+  return true;
+}
+
+export function matchesCatalogSearch(item, query) {
+  if (!query || !query.trim()) return true;
+  const q = normalizeSearchText(query.trim());
+  const title = normalizeSearchText(item.title);
+  const id = normalizeSearchText(item.id);
+  const desc = normalizeSearchText(item.description);
+  const rawDesc = normalizeSearchText(item.rawDescription || item.raw_description);
+  const category = normalizeSearchText(item.category);
+  const brand = normalizeSearchText(item.brand || item.brandName);
+
+  if (title.includes(q) || id.includes(q) || desc.includes(q) || rawDesc.includes(q) || category.includes(q) || brand.includes(q)) {
+    return true;
+  }
+
+  const isCombo = (typeof item.isCombo === "function" ? item.isCombo() : (item.rewardType === "COMBO"));
+  if (isCombo) {
+    const comboItems = typeof item.getComboItems === "function" ? item.getComboItems() : (item.comboData?.items || []);
+    if (comboItems.some(ci => normalizeSearchText(ci.title).includes(q) || normalizeSearchText(ci.description).includes(q) || normalizeSearchText(ci.category).includes(q))) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+export function filterCustomerCatalog() {
+  const input = document.getElementById("catalog-search-input");
+  const clearBtn = document.getElementById("catalog-search-clear");
+  catalogSearchQuery = input ? input.value : "";
+  if (clearBtn) {
+    clearBtn.style.display = catalogSearchQuery.trim() ? "flex" : "none";
+  }
+  renderCatalog(currentCatalogRaw, currentCatalogUser);
+}
+
+export function clearCustomerCatalogSearch() {
+  const input = document.getElementById("catalog-search-input");
+  const clearBtn = document.getElementById("catalog-search-clear");
+  if (input) input.value = "";
+  if (clearBtn) clearBtn.style.display = "none";
+  catalogSearchQuery = "";
+  renderCatalog(currentCatalogRaw, currentCatalogUser);
+  if (input) input.focus();
+}
+
+export function setCatalogCategory(category) {
+  catalogCategoryFilter = category;
+  const chips = document.querySelectorAll("#catalog-category-chips .category-chip");
+  chips.forEach(chip => {
+    if (chip.getAttribute("data-category") === category) {
+      chip.classList.add("active");
+    } else {
+      chip.classList.remove("active");
+    }
+  });
+  renderCatalog(currentCatalogRaw, currentCatalogUser);
+}
+
+export function resetCustomerCatalogFilters() {
+  catalogCategoryFilter = "ALL";
+  catalogSearchQuery = "";
+  const input = document.getElementById("catalog-search-input");
+  const clearBtn = document.getElementById("catalog-search-clear");
+  if (input) input.value = "";
+  if (clearBtn) clearBtn.style.display = "none";
+  const chips = document.querySelectorAll("#catalog-category-chips .category-chip");
+  chips.forEach(chip => {
+    if (chip.getAttribute("data-category") === "ALL") {
+      chip.classList.add("active");
+    } else {
+      chip.classList.remove("active");
+    }
+  });
+  renderCatalog(currentCatalogRaw, currentCatalogUser);
+}
+
+if (typeof window !== "undefined") {
+  window.filterCustomerCatalog = filterCustomerCatalog;
+  window.clearCustomerCatalogSearch = clearCustomerCatalogSearch;
+  window.setCatalogCategory = setCatalogCategory;
+  window.resetCustomerCatalogFilters = resetCustomerCatalogFilters;
+}
+
 export function renderCatalog(catalog, user) {
-  const rawList = Array.isArray(catalog) ? catalog : [];
+  currentCatalogRaw = Array.isArray(catalog) ? catalog : (currentCatalogRaw || []);
+  currentCatalogUser = user !== undefined ? user : currentCatalogUser;
+  const rawList = currentCatalogRaw;
   if (typeof window !== "undefined") {
     window._rawCatalog = rawList;
   }
-  const visibleCatalog = rawList.filter(item => {
+  const baseCatalog = rawList.filter(item => {
     if (item.status === "PENDING_APPROVAL" || item.status === "PENDING_IMAGE") {
       return false;
     }
@@ -2015,12 +2156,12 @@ export function renderCatalog(catalog, user) {
     return true;
   });
 
-  lastRenderedCatalog = visibleCatalog;
-  if (typeof window !== "undefined") window._lastRenderedCatalog = visibleCatalog;
+  lastRenderedCatalog = baseCatalog;
+  if (typeof window !== "undefined") window._lastRenderedCatalog = baseCatalog;
   const container = document.getElementById("catalog-container");
   if (!container) return;
 
-  if (visibleCatalog.length === 0) {
+  if (baseCatalog.length === 0) {
     container.innerHTML = `
       <div class="cyber-empty-box">
         <div class="empty-icon-wrap">
@@ -2038,6 +2179,27 @@ export function renderCatalog(catalog, user) {
         </p>
         <button class="btn-primary" onclick="openClaimModal()" style="margin-top: 1.25rem;">
           + Acreditar Factura de Compra
+        </button>
+      </div>
+    `;
+    return;
+  }
+
+  const visibleCatalog = baseCatalog.filter(item => {
+    return matchesCatalogCategory(item, catalogCategoryFilter) && matchesCatalogSearch(item, catalogSearchQuery);
+  });
+
+  if (visibleCatalog.length === 0) {
+    container.innerHTML = `
+      <div class="cyber-empty-box" style="grid-column: 1 / -1; width: 100%; box-sizing: border-box;">
+        <div class="empty-icon-wrap" style="font-size: 2rem;">🔍</div>
+        <div class="empty-tag">BÚSQUEDA // SIN COINCIDENCIAS</div>
+        <h3 class="empty-title">No encontramos productos</h3>
+        <p class="empty-desc">
+          No hay artículos que coincidan con la búsqueda actual o la categoría seleccionada.
+        </p>
+        <button type="button" class="btn-secondary" onclick="resetCustomerCatalogFilters()" style="margin-top: 1.25rem; padding: 0.55rem 1.15rem; font-weight: 800;">
+          ✦ Mostrar todos los productos
         </button>
       </div>
     `;
@@ -2094,45 +2256,64 @@ export function renderCatalog(catalog, user) {
     }
     const formattedAppliedPct = appliedPct % 1 === 0 ? appliedPct.toFixed(0) : appliedPct.toFixed(1);
 
-    // Cálculos para la píldora Temu & Moneda Wired Point
+    // Cálculos para precios estilo Retail (Antes / ¡AHORA!) & Píldora de Moneda
     let temuPriceMain = "";
     let temuPriceOrig = "";
     let temuCoinPillText = "";
+    let retailBeforeLabel = "Antes:";
+    let retailNowLabel = "¡AHORA:";
 
     if (isIncoming) {
       temuPriceMain = formatPrice(presalePrice, item.presalePriceNio || Math.round(presalePrice * 37));
       temuPriceOrig = formatPrice(item.priceUsd, item.priceNio, true);
       temuCoinPillText = `🕊️ PREVENTA (-${presaleDiscPct}% DIRECTO)`;
+      retailBeforeLabel = "Antes:";
+      retailNowLabel = "¡AHORA EN PREVENTA:";
     } else if (isCombo) {
       temuPriceMain = formatPrice(item.priceUsd, item.priceNio, true);
       temuPriceOrig = formatPrice(effCardSumUsd, Math.round(effCardSumUsd * 37), true);
       temuCoinPillText = `✦ COMBO ${comboItems.length} EN 1 (-${effCardSavingsPct}%)`;
+      retailBeforeLabel = "Antes por separado:";
+      retailNowLabel = "¡AHORA EN COMBO:";
     } else if (isPartial) {
       if (user && appliedPts > 0 && maxPct > 0) {
         const cashDueNio = item.priceNio ? Math.round(item.priceNio * (1 - (appliedPct / 100))) : Math.round(cashToPayWithPts * 37);
         temuPriceMain = formatPrice(cashToPayWithPts, cashDueNio);
         temuPriceOrig = formatPrice(item.priceUsd, item.priceNio, true);
+        retailBeforeLabel = "Antes:";
+        retailNowLabel = "¡AHORA:";
         if (userPts >= maxCapPts) {
           temuCoinPillText = `-${maxPct}% Aplicado (Tope)`;
         } else {
           temuCoinPillText = `-${formattedAppliedPct}% Aplicado · Máx ${maxPct}%`;
         }
       } else {
-        temuPriceMain = formatPrice(item.priceUsd, item.priceNio, true);
-        temuPriceOrig = "";
+        if (maxPct > 0 && item.cashToPayUsd > 0) {
+          temuPriceMain = `Desde ${formatPrice(item.cashToPayUsd, item.cashToPayNio || Math.round(item.cashToPayUsd * 37))}`;
+          temuPriceOrig = formatPrice(item.priceUsd, item.priceNio, true);
+          retailBeforeLabel = "Antes:";
+          retailNowLabel = "¡AHORA:";
+        } else {
+          temuPriceMain = formatPrice(item.priceUsd, item.priceNio, true);
+          temuPriceOrig = "";
+          retailBeforeLabel = "Precio oficial:";
+          retailNowLabel = "¡AHORA:";
+        }
         temuCoinPillText = (maxPct === 0 || maxCapPts === 0) ? "Precio oficial en tienda" : `Hasta -${maxPct}% con WP`;
       }
     } else {
-      temuPriceMain = "¡GRATIS!";
+      temuPriceMain = "GRATIS";
       temuPriceOrig = item.priceUsd ? formatPrice(item.priceUsd, item.priceNio, true) : "";
+      retailBeforeLabel = item.priceUsd ? "Valor comercial:" : "";
+      retailNowLabel = "¡AHORA:";
       temuCoinPillText = `${item.pointsCost.toLocaleString()} WP (100% Puntos)`;
     }
 
     const temuMetaHtml = `
       <div class="reward-temu-meta">
-        <div class="reward-temu-price-line">
-          <span class="reward-temu-price-main">${temuPriceMain}</span>
-          ${temuPriceOrig ? `<span class="reward-temu-price-orig">${temuPriceOrig}</span>` : ''}
+        <div class="retail-price-badge-box">
+          ${temuPriceOrig ? `<div class="retail-price-before">${retailBeforeLabel} <span class="retail-strike">${temuPriceOrig}</span></div>` : ''}
+          <div class="retail-price-now"><span class="retail-now-label">${retailNowLabel}</span> <span class="retail-now-amount" style="color:${temuPriceMain === 'GRATIS' ? '#10b981' : '#dc2626'}; font-weight:900;">${temuPriceMain}</span>!</div>
         </div>
         <div class="reward-temu-coin-pill">
           ${renderWiredCoinSvg()}
@@ -2205,16 +2386,16 @@ export function renderCatalog(catalog, user) {
       partialBreakdown = `
         <div class="reward-pricing-box reward-pricing-incoming">
           <div class="pricing-row">
-            <span class="pricing-label">Precio regular:</span>
-            <span class="pricing-val">${formatPrice(item.priceUsd)}</span>
+            <span class="pricing-label">Antes:</span>
+            <span class="pricing-val" style="text-decoration: line-through; color: #94a3b8; font-variant-numeric: tabular-nums;">${formatPrice(item.priceUsd)}</span>
           </div>
           <div class="pricing-row discount-row">
             <span class="pricing-label">Descuento Preventa (-${presaleDiscPct}%):</span>
-            <span class="pricing-val green">-${formatPrice(presaleDiscUsd)}</span>
+            <span class="pricing-val green" style="font-variant-numeric: tabular-nums;">-${formatPrice(presaleDiscUsd)}</span>
           </div>
           <div class="pricing-row total-row">
-            <span class="pricing-label">Total en Preventa:</span>
-            <span class="pricing-val total" style="color: #38bdf8;">${formatPrice(presalePrice)}</span>
+            <span class="pricing-label">¡AHORA EN PREVENTA:</span>
+            <span class="pricing-val total" style="color: #dc2626; font-weight: 900; font-variant-numeric: tabular-nums;">${formatPrice(presalePrice)}!</span>
           </div>
           <div class="pricing-row footnote-row" style="color: #94a3b8; font-size: 0.65rem; margin-top: 3px; line-height: 1.35; display: block; width: 100%; white-space: normal;">
             <span style="white-space: normal; word-break: break-word; display: block; width: 100%;">✨ Descuento directo de preventa. No requiere puntos Wired.</span>
@@ -2225,7 +2406,7 @@ export function renderCatalog(catalog, user) {
       partialBreakdown = `
         <div class="reward-pricing-box combo-pricing-box" style="border: 1.5px solid #d97706; background: #fffbeb; padding: 0.5rem 0.65rem; border-radius: 4px; margin-top: 0.5rem;">
           <div class="pricing-row" style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 2px 6px; font-size: 0.72rem; color: #78350f;">
-            <span class="pricing-label">Suma individual:</span>
+            <span class="pricing-label">Antes por separado:</span>
             <span class="pricing-val" style="text-decoration: line-through; color: #94a3b8; font-variant-numeric: tabular-nums;">${formatPrice(effCardSumUsd)}</span>
           </div>
           <div class="pricing-row discount-row" style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 2px 6px; font-size: 0.72rem; color: #b45309; font-weight: 800;">
@@ -2233,8 +2414,8 @@ export function renderCatalog(catalog, user) {
             <span class="pricing-val green" style="color: #d97706; font-variant-numeric: tabular-nums;">-${formatPrice(effCardSavingsUsd)} (${effCardSavingsPct}% OFF)</span>
           </div>
           <div class="pricing-row total-row" style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 2px 6px; font-size: 0.8rem; font-weight: 900; color: #78350f; border-top: 1px dashed #fcd34d; margin-top: 4px; padding-top: 4px;">
-            <span class="pricing-label">Precio del Combo:</span>
-            <span class="pricing-val total" style="color: #b45309; font-variant-numeric: tabular-nums;">${formatPrice(item.priceUsd)}</span>
+            <span class="pricing-label">¡AHORA EN COMBO:</span>
+            <span class="pricing-val total" style="color: #dc2626; font-weight: 900; font-variant-numeric: tabular-nums;">${formatPrice(item.priceUsd)}!</span>
           </div>
           <div class="pricing-row footnote-row" style="color: #92400e; font-size: 0.65rem; margin-top: 3px; line-height: 1.35; display: block; width: 100%; white-space: normal;">
             <span style="white-space: normal; word-break: break-word; display: block; width: 100%;">✦ Adquiere el combo completo con descuento o compra cualquier producto por separado.</span>
@@ -2258,16 +2439,16 @@ export function renderCatalog(catalog, user) {
         partialBreakdown = `
           <div class="reward-pricing-box">
             <div class="pricing-row" style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 4px 8px;">
-              <span class="pricing-label">Precio oficial:</span>
-              <span class="pricing-val" style="margin-left: auto;">${formatPrice(item.priceUsd)}</span>
+              <span class="pricing-label">Antes:</span>
+              <span class="pricing-val" style="text-decoration: line-through; color: #94a3b8; font-variant-numeric: tabular-nums; margin-left: auto;">${formatPrice(item.priceUsd)}</span>
             </div>
             <div class="pricing-row discount-row" style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 4px 8px;">
               <span class="pricing-label">Tu ahorro (Tope ${maxPct}%):</span>
-              <span class="pricing-val green" style="margin-left: auto;">-${formatPrice(item.maxDiscountUsd)}</span>
+              <span class="pricing-val green" style="font-variant-numeric: tabular-nums; margin-left: auto;">-${formatPrice(item.maxDiscountUsd)}</span>
             </div>
             <div class="pricing-row total-row" style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 4px 8px;">
-              <span class="pricing-label">Total a pagar:</span>
-              <span class="pricing-val total" style="margin-left: auto;">${formatPrice(item.cashToPayUsd)}</span>
+              <span class="pricing-label">¡AHORA:</span>
+              <span class="pricing-val total" style="color: #dc2626; font-weight: 900; font-variant-numeric: tabular-nums; margin-left: auto;">${formatPrice(item.cashToPayUsd)}!</span>
             </div>
           </div>
         `;
@@ -2275,16 +2456,16 @@ export function renderCatalog(catalog, user) {
         partialBreakdown = `
           <div class="reward-pricing-box">
             <div class="pricing-row" style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 4px 8px;">
-              <span class="pricing-label">Precio oficial:</span>
-              <span class="pricing-val" style="margin-left: auto;">${formatPrice(item.priceUsd)}</span>
+              <span class="pricing-label">Antes:</span>
+              <span class="pricing-val" style="text-decoration: line-through; color: #94a3b8; font-variant-numeric: tabular-nums; margin-left: auto;">${formatPrice(item.priceUsd)}</span>
             </div>
             <div class="pricing-row discount-row" style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 4px 8px;">
               <span class="pricing-label">Tu ahorro (${appliedPts.toLocaleString()} WP):</span>
-              <span class="pricing-val green" style="margin-left: auto;">-${formatPrice(appliedDiscountUsd)} (${formattedAppliedPct}%)</span>
+              <span class="pricing-val green" style="font-variant-numeric: tabular-nums; margin-left: auto;">-${formatPrice(appliedDiscountUsd)} (${formattedAppliedPct}%)</span>
             </div>
             <div class="pricing-row total-row" style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 4px 8px;">
-              <span class="pricing-label">Total a pagar:</span>
-              <span class="pricing-val total" style="margin-left: auto;">${formatPrice(cashToPayWithPts)}</span>
+              <span class="pricing-label">¡AHORA:</span>
+              <span class="pricing-val total" style="color: #dc2626; font-weight: 900; font-variant-numeric: tabular-nums; margin-left: auto;">${formatPrice(cashToPayWithPts)}!</span>
             </div>
             <div class="pricing-row footnote-row" style="color: #64748b; font-size: 0.65rem; margin-top: 3px; line-height: 1.35; display: block; width: 100%; white-space: normal;">
               <span style="white-space: normal; word-break: break-word; display: block; width: 100%;">Tope máx. (${maxCapPts.toLocaleString()} WP): -${formatPrice(item.maxDiscountUsd)} (${maxPct}% OFF)</span>
@@ -2296,15 +2477,15 @@ export function renderCatalog(catalog, user) {
           <div class="reward-pricing-box">
             <div class="pricing-row" style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 4px 8px;">
               <span class="pricing-label">Precio oficial:</span>
-              <span class="pricing-val" style="margin-left: auto;">${formatPrice(item.priceUsd)}</span>
+              <span class="pricing-val" style="font-variant-numeric: tabular-nums; margin-left: auto;">${formatPrice(item.priceUsd)}</span>
             </div>
             <div class="pricing-row discount-row" style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 4px 8px;">
               <span class="pricing-label">Tu ahorro (0 WP):</span>
               <span class="pricing-val gray" style="margin-left: auto;">0% (Sin puntos)</span>
             </div>
             <div class="pricing-row total-row" style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 4px 8px;">
-              <span class="pricing-label">Total a pagar:</span>
-              <span class="pricing-val total" style="margin-left: auto;">${formatPrice(item.priceUsd)}</span>
+              <span class="pricing-label">¡AHORA:</span>
+              <span class="pricing-val total" style="color: #0f172a; font-weight: 900; font-variant-numeric: tabular-nums; margin-left: auto;">${formatPrice(item.priceUsd)}</span>
             </div>
             <div class="pricing-row footnote-row" style="color: #64748b; font-size: 0.65rem; margin-top: 3px; line-height: 1.35; display: block; width: 100%; white-space: normal;">
               <span style="white-space: normal; word-break: break-word; display: block; width: 100%;">Tope máx. (${maxCapPts.toLocaleString()} WP): Hasta -${formatPrice(item.maxDiscountUsd)} (${maxPct}% OFF)</span>
@@ -2315,16 +2496,16 @@ export function renderCatalog(catalog, user) {
         partialBreakdown = `
           <div class="reward-pricing-box">
             <div class="pricing-row">
-              <span class="pricing-label">Precio oficial:</span>
-              <span class="pricing-val">${formatPrice(item.priceUsd)}</span>
+              <span class="pricing-label">Antes (Precio regular):</span>
+              <span class="pricing-val" style="text-decoration: line-through; color: #94a3b8; font-variant-numeric: tabular-nums;">${formatPrice(item.priceUsd)}</span>
             </div>
             <div class="pricing-row discount-row">
               <span class="pricing-label">Ahorro con puntos:</span>
-              <span class="pricing-val green">Hasta ${maxPct}% OFF</span>
+              <span class="pricing-val green" style="font-variant-numeric: tabular-nums;">Hasta ${maxPct}% OFF</span>
             </div>
             <div class="pricing-row total-row">
-              <span class="pricing-label">Pagas en tienda:</span>
-              <span class="pricing-val total">Desde ${formatPrice(item.cashToPayUsd)}</span>
+              <span class="pricing-label">¡AHORA:</span>
+              <span class="pricing-val total" style="color: #dc2626; font-weight: 900; font-variant-numeric: tabular-nums;">Desde ${formatPrice(item.cashToPayUsd)}!</span>
             </div>
           </div>
         `;
@@ -2706,6 +2887,11 @@ export function renderCatalog(catalog, user) {
         <div class="reward-body">
           <div class="reward-title" title="${item.title}">${item.title}</div>
           ${temuMetaHtml}
+          <div class="reward-mobile-action-indicator">
+            <button type="button" class="btn-reward-mobile-action ${isOut ? 'is-out' : (isIncoming ? 'is-incoming' : '')}" onclick="event.stopPropagation(); ${isIncoming ? `openReservationModal('${item.id}')` : `openProductSpecsModal('${item.id}')`}">
+              <span>${isOut ? '❌ Agotado' : (isIncoming ? '📅 Reservar' : '🛒 Ver / Comprar')}</span>
+            </button>
+          </div>
           ${descHtml}
           ${partialBreakdown}
           ${footerHtml}

@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Terminal · MeltyDeays NOC</title>
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
@@ -16,6 +16,8 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="application-name" content="Wired Club Admin">
   <link rel="stylesheet" href="./styles.css?v=2.9.41">
+  <link rel="stylesheet" href="./css/admin.css?v=2.9.41">
+  <link rel="stylesheet" href="./css/modals/admin.css?v=2.9.41">
   
   <!-- Auto-registro PWA Service Worker -->
   <script>
@@ -3986,10 +3988,10 @@
       <span class="dock-icon">🧮</span>
       <span class="dock-text">CALC WP</span>
     </button>
-    <a href="/" target="_blank" class="dock-btn dock-btn-secondary dock-link" style="text-decoration:none;" title="Ver Vista Cliente en pestaña externa">
-      <span class="dock-icon">👁️</span>
-      <span class="dock-text">CLIENTE ↗</span>
-    </a>
+    <button type="button" class="dock-btn dock-btn-secondary dock-link" onclick="switchAdminTab('pos'); document.getElementById('input-scan-voucher')?.focus();" title="Abrir Despacho POS en Mostrador Físico">
+      <span class="dock-icon">⚡</span>
+      <span class="dock-text">DESPACHO POS</span>
+    </button>
   </nav>
 
   <script type="module" src="./js/admin-app.js?v=2.9.97"></script>

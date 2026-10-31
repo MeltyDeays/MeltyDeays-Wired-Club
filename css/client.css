@@ -1043,6 +1043,163 @@
   line-height: 1.45;
 }
 
+/* BARRA DE BÚSQUEDA Y FILTROS POR CATEGORÍA EN CATÁLOGO */
+.catalog-filters-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  margin-bottom: 1.5rem;
+  background: #ffffff;
+  border: 1.5px solid var(--dark);
+  border-radius: 8px;
+  padding: 0.85rem 1rem;
+  box-shadow: var(--hard-shadow-sm);
+}
+
+.catalog-search-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.catalog-search-icon {
+  position: absolute;
+  left: 12px;
+  font-size: 1rem;
+  color: var(--gray-500);
+  pointer-events: none;
+}
+
+.catalog-search-input {
+  width: 100%;
+  height: 42px;
+  padding: 0 2.2rem 0 2.4rem;
+  font-family: var(--font-main);
+  font-size: 0.88rem;
+  color: var(--dark);
+  background: #f8fafc;
+  border: 1.5px solid var(--dark);
+  border-radius: 6px;
+  outline: none;
+  transition: all 0.15s ease;
+  box-sizing: border-box;
+}
+
+.catalog-search-input:focus {
+  background: #ffffff;
+  border-color: #0284c7;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+}
+
+.catalog-search-clear {
+  position: absolute;
+  right: 10px;
+  background: #e2e8f0;
+  border: none;
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  font-size: 1rem;
+  line-height: 1;
+  color: var(--gray-700);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.catalog-search-clear:hover {
+  background: #cbd5e1;
+  color: var(--dark);
+}
+
+.catalog-category-chips {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+
+.catalog-category-chips::-webkit-scrollbar {
+  height: 4px;
+}
+
+.catalog-category-chips::-webkit-scrollbar-thumb {
+  background: var(--gray-300);
+  border-radius: 4px;
+}
+
+.category-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.85rem;
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--dark);
+  background: #ffffff;
+  border: 1.5px solid var(--dark);
+  border-radius: 20px;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  box-shadow: 1.5px 1.5px 0px var(--dark);
+  transition: all 0.1s ease;
+}
+
+.category-chip:hover {
+  background: #f1f5f9;
+  transform: translateY(-1px);
+}
+
+.category-chip.active {
+  background: #0f172a;
+  color: #ffffff;
+  border-color: #0f172a;
+  box-shadow: 1.5px 1.5px 0px rgba(15, 23, 42, 0.4);
+}
+
+/* RETAIL PRICING CARDS & BADGES (ESTILO RETAIL ALTO IMPACTO) */
+.retail-price-badge-box {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.retail-price-before {
+  font-size: 0.72rem;
+  color: var(--gray-500);
+  font-family: var(--font-mono);
+}
+
+.retail-strike {
+  text-decoration: line-through;
+  color: var(--gray-400);
+  font-variant-numeric: tabular-nums;
+}
+
+.retail-price-now {
+  font-size: 1.05rem;
+  font-weight: 900;
+  color: #dc2626;
+  font-family: var(--font-mono);
+  line-height: 1.15;
+}
+
+.retail-now-label {
+  font-size: 0.82rem;
+  font-weight: 900;
+  letter-spacing: -0.2px;
+}
+
+.reward-mobile-action-indicator {
+  display: none;
+}
+
 /* REWARDS GRID & CARDS */
 .rewards-grid, .catalog-grid {
   display: grid;

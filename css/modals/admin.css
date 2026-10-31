@@ -1,0 +1,7 @@
+/**
+ * Módulos Atómicos de Modales Administrativos (The Wired Club)
+ * Desacoplados del bundle de clientes para ahorro de ancho de banda y carga diferida.
+ */
+@import url("./invoice.css");
+@import url("./users.css");
+@import url("./print-sheet.css");
