@@ -554,10 +554,16 @@ function setProductDiscountPreset(pct) {
   const input = document.getElementById("calc-sale-prod-discount-pct");
   if (input) input.value = activeProductDiscountPct;
 
+  updateDiscountPresetsUI(activeProductDiscountPct);
+  recalculateProductDiscount();
+  applyCalculatedDiscountToProduct();
+}
+
+function updateDiscountPresetsUI(pct) {
   [5, 10, 15, 20, 25, 30].forEach(p => {
     const btn = document.getElementById(`btn-disc-preset-${p}`);
     if (btn) {
-      if (p === activeProductDiscountPct) {
+      if (Math.abs(p - pct) < 0.05) {
         btn.classList.add("active");
         btn.style.border = "2px solid #d97706";
         btn.style.background = "#fef3c7";
@@ -570,9 +576,80 @@ function setProductDiscountPreset(pct) {
       }
     }
   });
+}
 
+function onAdminCashNioInput() {
+  const priceNioInput = document.getElementById("calc-sale-prod-price-nio");
+  const priceUsdInput = document.getElementById("calc-sale-prod-price-usd");
+  const cashNioInput = document.getElementById("calc-sale-prod-cash-nio");
+  const cashUsdInput = document.getElementById("calc-sale-prod-cash-usd");
+  const pctInput = document.getElementById("calc-sale-prod-discount-pct");
+
+  let salePriceNio = parseFloat(priceNioInput?.value) || 0;
+  if (salePriceNio <= 0) {
+    const salePriceUsd = parseFloat(priceUsdInput?.value) || 0;
+    if (salePriceUsd > 0) salePriceNio = roundToCleanNio(salePriceUsd * 37.0);
+  }
+  if (salePriceNio <= 0) return;
+
+  const rawCashNio = parseFloat(cashNioInput?.value);
+  if (isNaN(rawCashNio)) return;
+
+  const cashDueNio = Math.min(salePriceNio, Math.max(0, rawCashNio));
+  const discountNio = salePriceNio - cashDueNio;
+  const rawPct = (discountNio / salePriceNio) * 100;
+  const discountPct = Math.min(100, Math.max(0, Number(rawPct.toFixed(1))));
+
+  if (pctInput) {
+    pctInput.value = (discountPct % 1 === 0) ? discountPct.toFixed(0) : discountPct;
+  }
+
+  const salePriceUsd = parseFloat(priceUsdInput?.value) || Number((salePriceNio / 37.0).toFixed(2));
+  const cashDueUsd = Number(Math.max(0, salePriceUsd * (1 - (discountPct / 100))).toFixed(2));
+
+  if (cashUsdInput && document.activeElement !== cashUsdInput) {
+    cashUsdInput.value = cashDueUsd.toFixed(2);
+  }
+
+  updateDiscountPresetsUI(discountPct);
   recalculateProductDiscount();
-  applyCalculatedDiscountToProduct();
+}
+
+function onAdminCashUsdInput() {
+  const priceUsdInput = document.getElementById("calc-sale-prod-price-usd");
+  const priceNioInput = document.getElementById("calc-sale-prod-price-nio");
+  const cashUsdInput = document.getElementById("calc-sale-prod-cash-usd");
+  const cashNioInput = document.getElementById("calc-sale-prod-cash-nio");
+  const pctInput = document.getElementById("calc-sale-prod-discount-pct");
+
+  let salePriceUsd = parseFloat(priceUsdInput?.value) || 0;
+  if (salePriceUsd <= 0) {
+    const salePriceNio = parseFloat(priceNioInput?.value) || 0;
+    if (salePriceNio > 0) salePriceUsd = Number((salePriceNio / 37.0).toFixed(2));
+  }
+  if (salePriceUsd <= 0) return;
+
+  const rawCashUsd = parseFloat(cashUsdInput?.value);
+  if (isNaN(rawCashUsd)) return;
+
+  const cashDueUsd = Math.min(salePriceUsd, Math.max(0, rawCashUsd));
+  const discountUsd = salePriceUsd - cashDueUsd;
+  const rawPct = (discountUsd / salePriceUsd) * 100;
+  const discountPct = Math.min(100, Math.max(0, Number(rawPct.toFixed(1))));
+
+  if (pctInput) {
+    pctInput.value = (discountPct % 1 === 0) ? discountPct.toFixed(0) : discountPct;
+  }
+
+  const salePriceNio = parseFloat(priceNioInput?.value) || roundToCleanNio(salePriceUsd * 37.0);
+  const cashDueNio = Math.max(0, Math.round(salePriceNio * (1 - (discountPct / 100))));
+
+  if (cashNioInput && document.activeElement !== cashNioInput) {
+    cashNioInput.value = cashDueNio;
+  }
+
+  updateDiscountPresetsUI(discountPct);
+  recalculateProductDiscount();
 }
 
 function recalculateProductDiscount() {
@@ -608,6 +685,15 @@ function recalculateProductDiscount() {
   const cashDue = Math.max(0, Number((salePrice - maxDiscountUsd).toFixed(2)));
   const maxDiscountNio = Math.round(salePriceNio * (discountPct / 100));
   const cashDueNio = Math.max(0, salePriceNio - maxDiscountNio);
+
+  const cashNioInput = document.getElementById("calc-sale-prod-cash-nio");
+  const cashUsdInput = document.getElementById("calc-sale-prod-cash-usd");
+  if (cashNioInput && document.activeElement !== cashNioInput) {
+    cashNioInput.value = cashDueNio;
+  }
+  if (cashUsdInput && document.activeElement !== cashUsdInput) {
+    cashUsdInput.value = cashDue.toFixed(2);
+  }
 
   const discMaxEl = document.getElementById("calc-disc-max-usd");
   const discMaxNioEl = document.getElementById("calc-disc-max-nio");
@@ -710,6 +796,8 @@ if (typeof window !== "undefined") {
   window.setAdminPriceInputMode = setAdminPriceInputMode;
   window.onAdminPriceUsdInput = onAdminPriceUsdInput;
   window.onAdminPriceNioInput = onAdminPriceNioInput;
+  window.onAdminCashNioInput = onAdminCashNioInput;
+  window.onAdminCashUsdInput = onAdminCashUsdInput;
   window.onAdminIncomingPriceUsdInput = onAdminIncomingPriceUsdInput;
   window.onAdminIncomingPriceNioInput = onAdminIncomingPriceNioInput;
   window.setProductDiscountPreset = setProductDiscountPreset;
@@ -744,6 +832,8 @@ export {
   setAdminPriceInputMode,
   onAdminPriceUsdInput,
   onAdminPriceNioInput,
+  onAdminCashNioInput,
+  onAdminCashUsdInput,
   onAdminIncomingPriceUsdInput,
   onAdminIncomingPriceNioInput
 };

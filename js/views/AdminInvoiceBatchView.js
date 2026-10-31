@@ -739,9 +739,9 @@ export function openEditProductModal(productId) {
   const btnSubmit = document.getElementById("btn-save-product-submit");
   if (btnSubmit) btnSubmit.textContent = "💾 ACTUALIZAR PRODUCTO";
 
-  const isIncoming = product.status === "INCOMING" || Boolean(product.isIncomingFlag) || (typeof product.isIncoming === "function" && product.isIncoming());
+  const isIncoming = (typeof product.isIncoming === "function" ? product.isIncoming() : (product.status === "INCOMING" || Boolean(product.isIncomingFlag))) && !(typeof product.isIncomingExpired === "function" && product.isIncomingExpired());
   const isCombo = product.rewardType === "COMBO" || (typeof product.isCombo === "function" && product.isCombo());
-  const isPartial = !isIncoming && !isCombo && (product.rewardType === "PARTIAL_DISCOUNT" || (typeof product.isPartialDiscount === "function" && product.isPartialDiscount()));
+  const isPartial = !isIncoming && !isCombo && (product.rewardType === "PARTIAL_DISCOUNT" || (typeof product.isPartialDiscount === "function" && product.isPartialDiscount()) || Number(product.priceUsd) > 0);
 
   if (isCombo) {
     activateComboBuilder(product);
@@ -1669,6 +1669,11 @@ export function handleAdminReleaseIncoming(rewardId) {
     if (!reward) throw new Error("Producto no encontrado.");
     reward.status = "ACTIVE";
     reward.isIncomingFlag = false;
+    reward.rewardType = "PARTIAL_DISCOUNT";
+    reward.cashToPayUsd = reward.priceUsd;
+    reward.maxDiscountPct = 0;
+    reward.maxDiscountUsd = 0;
+    reward.pointsCost = 0;
     reward.updatedAt = new Date().toISOString();
     await FirestoreService.saveReward(reward.toJSON());
     if (vm && typeof vm.refreshData === "function") await vm.refreshData();

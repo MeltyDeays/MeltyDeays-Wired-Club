@@ -111,8 +111,12 @@ export class RewardModel {
     this.id = data.id || data.reward_id || "";
     this.title = data.title || "";
     const hasExplicitPrice = (Number(data.priceUsd) > 0 || Number(data.price_usd) > 0);
-    const rawType = data.rewardType || data.reward_type || (hasExplicitPrice ? "PARTIAL_DISCOUNT" : "FREE_REWARD");
-    const isIncomingData = Boolean(data.isIncoming || data.is_incoming || data.status === "INCOMING" || rawType === "INCOMING");
+    const isExplicitlyActive = data.status === "ACTIVE" || data.status === "SOLD_OUT";
+    let rawType = data.rewardType || data.reward_type || (hasExplicitPrice ? "PARTIAL_DISCOUNT" : "FREE_REWARD");
+    if (isExplicitlyActive && rawType === "INCOMING") {
+      rawType = hasExplicitPrice ? "PARTIAL_DISCOUNT" : "FREE_REWARD";
+    }
+    const isIncomingData = Boolean(data.isIncoming || data.is_incoming || data.status === "INCOMING" || (!isExplicitlyActive && rawType === "INCOMING"));
 
     const parseNum = (val, fallback = 0) => {
       const n = Number(val);
@@ -124,7 +128,7 @@ export class RewardModel {
       this.priceUsd = parseNum(data.priceUsd !== undefined ? data.priceUsd : data.price_usd, 0);
       this.maxDiscountPct = 0;
       this.maxDiscountUsd = 0;
-      this.cashToPayUsd = 0;
+      this.cashToPayUsd = this.priceUsd;
     } else if (rawType === "COMBO") {
       this.rewardType = "COMBO";
       this.priceUsd = parseNum(data.priceUsd !== undefined ? data.priceUsd : data.price_usd, 0);
@@ -136,7 +140,7 @@ export class RewardModel {
       this.priceUsd = parseNum(data.priceUsd !== undefined ? data.priceUsd : data.price_usd, 0);
       this.maxDiscountPct = parseNum(data.maxDiscountPct !== undefined ? data.maxDiscountPct : data.max_discount_pct, 0);
       this.maxDiscountUsd = parseNum(data.maxDiscountUsd !== undefined ? data.maxDiscountUsd : data.max_discount_usd, 0);
-      this.cashToPayUsd = parseNum(data.cashToPayUsd !== undefined ? data.cashToPayUsd : data.cash_to_pay_usd, 0);
+      this.cashToPayUsd = parseNum(data.cashToPayUsd !== undefined ? data.cashToPayUsd : data.cash_to_pay_usd, this.priceUsd);
     } else {
       this.rewardType = "FREE_REWARD";
       this.priceUsd = 0;
@@ -323,9 +327,14 @@ export class RewardModel {
   }
 
   checkIncomingTransition() {
-    if ((this.status === "INCOMING" || this.isIncomingFlag) && this.isIncomingExpired()) {
+    if ((this.status === "INCOMING" || this.isIncomingFlag || this.rewardType === "INCOMING") && this.isIncomingExpired()) {
       this.status = "ACTIVE";
       this.isIncomingFlag = false;
+      this.rewardType = "PARTIAL_DISCOUNT";
+      this.cashToPayUsd = this.priceUsd;
+      this.maxDiscountPct = 0;
+      this.maxDiscountUsd = 0;
+      this.pointsCost = 0;
       this.updatedAt = new Date().toISOString();
       return true;
     }
@@ -364,7 +373,7 @@ export class RewardModel {
   }
 
   isPartialDiscount() {
-    return this.rewardType === "PARTIAL_DISCOUNT";
+    return this.rewardType === "PARTIAL_DISCOUNT" || (!this.isIncoming() && this.rewardType !== "COMBO" && this.priceUsd > 0);
   }
 
   decrementStock(qty = 1) {

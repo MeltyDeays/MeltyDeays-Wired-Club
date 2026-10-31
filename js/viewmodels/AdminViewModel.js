@@ -63,7 +63,13 @@ export class AdminViewModel {
 
   async refreshData() {
     const rawRewards = await FirestoreService.fetchRewards();
-    this.catalog = rawRewards.map(r => new RewardModel(r));
+    this.catalog = rawRewards.map(r => {
+      const model = new RewardModel(r);
+      if (typeof model.checkIncomingTransition === "function" && model.checkIncomingTransition()) {
+        FirestoreService.saveReward(model.toJSON()).catch(console.warn);
+      }
+      return model;
+    });
     const rawTokens = await FirestoreService.fetchTokens();
     // Deduplicación inteligente por invoiceFolio: conservar el token con invoiceData o activo/reclamado
     const tokenMap = new Map();

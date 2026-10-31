@@ -75,7 +75,13 @@ export class CustomerViewModel {
     // 1. Cargar catálogo desde Firestore/Cache y activar sync en tiempo real
     await this.refreshCatalog();
     FirestoreService.subscribeRewards(rawRewards => {
-      this.catalog = (rawRewards || []).map(r => new RewardModel(r));
+      this.catalog = (rawRewards || []).map(r => {
+        const model = new RewardModel(r);
+        if (typeof model.checkIncomingTransition === "function" && model.checkIncomingTransition()) {
+          FirestoreService.saveReward(model.toJSON()).catch(console.warn);
+        }
+        return model;
+      });
       this.notify();
     });
 
@@ -154,7 +160,13 @@ export class CustomerViewModel {
 
   async refreshCatalog() {
     const rawRewards = await FirestoreService.fetchRewards();
-    this.catalog = (rawRewards || []).map(r => new RewardModel(r));
+    this.catalog = (rawRewards || []).map(r => {
+      const model = new RewardModel(r);
+      if (typeof model.checkIncomingTransition === "function" && model.checkIncomingTransition()) {
+        FirestoreService.saveReward(model.toJSON()).catch(console.warn);
+      }
+      return model;
+    });
     this.notify();
   }
 

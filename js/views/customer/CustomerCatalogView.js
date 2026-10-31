@@ -262,11 +262,17 @@ export function handleComingSoonTransition(item) {
   } else {
     item.status = "ACTIVE";
     item.isIncomingFlag = false;
+    item.rewardType = "PARTIAL_DISCOUNT";
+    item.cashToPayUsd = item.priceUsd || 0;
+    item.maxDiscountPct = 0;
+    item.maxDiscountUsd = 0;
+    item.pointsCost = 0;
     if ("isIncoming" in item && typeof item.isIncoming !== "function") item.isIncoming = false;
   }
 
   if (FirestoreService && typeof FirestoreService.saveReward === "function") {
-    FirestoreService.saveReward(item).catch(console.warn);
+    const payload = typeof item.toJSON === "function" ? item.toJSON() : item;
+    FirestoreService.saveReward(payload).catch(console.warn);
   }
 
   if (typeof showToast === "function") {
@@ -340,9 +346,18 @@ export function setupCatalogCountdowns(catalogItems) {
   registeredCatalogCountdowns.clear();
 
   const now = Date.now();
+  let hasExpiredTransition = false;
   (catalogItems || []).forEach(item => {
-    const isIncoming = (typeof item.isIncoming === "function" ? item.isIncoming() : (item.status === "INCOMING" || Boolean(item.isIncoming || item.is_incoming))) && !(typeof item.isIncomingExpired === "function" && item.isIncomingExpired());
-    if (isIncoming && item.estimatedArrival) {
+    const isExpired = typeof item.isIncomingExpired === "function" ? item.isIncomingExpired() : (item.estimatedArrival && new Date() >= new Date(item.estimatedArrival));
+    const isIncomingState = (typeof item.isIncoming === "function" ? item.isIncoming() : (item.status === "INCOMING" || Boolean(item.isIncoming || item.is_incoming)));
+
+    if (isExpired && (item.status === "INCOMING" || item.rewardType === "INCOMING" || item.isIncomingFlag)) {
+      handleComingSoonTransition(item);
+      hasExpiredTransition = true;
+      return;
+    }
+
+    if (isIncomingState && item.estimatedArrival && !isExpired) {
       const targetTime = new Date(item.estimatedArrival).getTime();
       if (!isNaN(targetTime)) {
         registeredCatalogCountdowns.set(item.id, {
@@ -353,6 +368,10 @@ export function setupCatalogCountdowns(catalogItems) {
       }
     }
   });
+
+  if (hasExpiredTransition && vm && typeof vm.notify === "function") {
+    vm.notify();
+  }
 
   if (registeredCatalogCountdowns.size > 0) {
     tickCatalogCountdowns();
@@ -1154,7 +1173,7 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
 
   const parsed = parseProductDescription(item.description);
   const isIncoming = !isCombo && (typeof item.isIncoming === "function" ? item.isIncoming() : (item.status === "INCOMING" || Boolean(item.isIncoming || item.is_incoming))) && !(typeof item.isIncomingExpired === "function" && item.isIncomingExpired());
-  const isPartial = isCombo || item.rewardType === "PARTIAL_DISCOUNT" || (typeof item.isPartialDiscount === "function" && item.isPartialDiscount());
+  const isPartial = isCombo || item.rewardType === "PARTIAL_DISCOUNT" || (typeof item.isPartialDiscount === "function" && item.isPartialDiscount()) || (!isIncoming && Number(item.priceUsd) > 0);
   const presalePrice = Number(item.presalePriceUsd ?? (item.priceUsd * (1 - (item.presaleDiscountPct || item.presaleDiscountValue || 0) / 100)));
   const presaleDiscUsd = Number(item.presaleDiscountUsd ?? Math.max(0, item.priceUsd - presalePrice));
   const presaleDiscPct = item.presaleDiscountType === "PERCENTAGE" ? Number(item.presaleDiscountValue || 0) : (item.priceUsd > 0 ? Math.round((presaleDiscUsd / item.priceUsd) * 100) : 0);
@@ -1984,7 +2003,7 @@ export function renderCatalog(catalog, user) {
     const isIncoming = !isCombo && (typeof item.isIncoming === "function" ? item.isIncoming() : (item.status === "INCOMING" || Boolean(item.isIncoming || item.is_incoming))) && !(typeof item.isIncomingExpired === "function" && item.isIncomingExpired());
     const isOut = !isIncoming && (item.stock <= 0 || item.status === "SOLD_OUT");
     const canAfford = user && user.wiredPoints >= item.pointsCost;
-    const isPartial = isCombo || item.rewardType === "PARTIAL_DISCOUNT" || (typeof item.isPartialDiscount === "function" && item.isPartialDiscount());
+    const isPartial = isCombo || item.rewardType === "PARTIAL_DISCOUNT" || (typeof item.isPartialDiscount === "function" && item.isPartialDiscount()) || (!isIncoming && Number(item.priceUsd) > 0);
     const userPts = user ? (user.wiredPoints || 0) : 0;
     const maxCapPts = item.pointsCost || 0;
     const maxPct = item.maxDiscountPct != null ? Number(item.maxDiscountPct) : 0;
@@ -1999,15 +2018,22 @@ export function renderCatalog(catalog, user) {
     let cashToPayWithPts = item.priceUsd || 0;
 
     if (isPartial && !isCombo) {
-      const effectiveCap = item.maxDiscountUsd > 0 ? item.maxDiscountUsd : Number(((item.priceUsd || 0) * (maxPct / 100)).toFixed(2));
-      const WP_PER_USD = 50;
-      const effectiveCapPts = maxCapPts > 0 ? maxCapPts : Math.max(10, Math.round(effectiveCap * WP_PER_USD));
-      appliedPts = Math.min(userPts, effectiveCapPts);
-      appliedPct = effectiveCapPts > 0 ? Number(((appliedPts / effectiveCapPts) * maxPct).toFixed(2)) : 0;
-      const usdPerPoint = (effectiveCapPts > 0 && effectiveCap > 0) ? (effectiveCap / effectiveCapPts) : (1 / WP_PER_USD);
-      appliedDiscountUsd = Number(Math.min(effectiveCap || 0, appliedPts * usdPerPoint).toFixed(2));
-      const minCashAllowed = Math.max(item.cashToPayUsd || 0, Number(((item.priceUsd || 0) - effectiveCap).toFixed(2)));
-      cashToPayWithPts = Math.max(minCashAllowed, Number(((item.priceUsd || 0) - appliedDiscountUsd).toFixed(2)));
+      if (maxPct === 0 || maxCapPts === 0) {
+        appliedPts = 0;
+        appliedPct = 0;
+        appliedDiscountUsd = 0;
+        cashToPayWithPts = item.priceUsd || 0;
+      } else {
+        const effectiveCap = item.maxDiscountUsd > 0 ? item.maxDiscountUsd : Number(((item.priceUsd || 0) * (maxPct / 100)).toFixed(2));
+        const WP_PER_USD = 50;
+        const effectiveCapPts = maxCapPts > 0 ? maxCapPts : Math.max(10, Math.round(effectiveCap * WP_PER_USD));
+        appliedPts = Math.min(userPts, effectiveCapPts);
+        appliedPct = effectiveCapPts > 0 ? Number(((appliedPts / effectiveCapPts) * maxPct).toFixed(2)) : 0;
+        const usdPerPoint = (effectiveCapPts > 0 && effectiveCap > 0) ? (effectiveCap / effectiveCapPts) : (1 / WP_PER_USD);
+        appliedDiscountUsd = Number(Math.min(effectiveCap || 0, appliedPts * usdPerPoint).toFixed(2));
+        const minCashAllowed = Math.max(item.cashToPayUsd || 0, Number(((item.priceUsd || 0) - effectiveCap).toFixed(2)));
+        cashToPayWithPts = Math.max(minCashAllowed, Number(((item.priceUsd || 0) - appliedDiscountUsd).toFixed(2)));
+      }
     }
     const formattedAppliedPct = appliedPct % 1 === 0 ? appliedPct.toFixed(0) : appliedPct.toFixed(1);
 
@@ -2025,7 +2051,7 @@ export function renderCatalog(catalog, user) {
       temuPriceOrig = formatPrice(effCardSumUsd, Math.round(effCardSumUsd * 37), true);
       temuCoinPillText = `✦ COMBO ${comboItems.length} EN 1 (-${effCardSavingsPct}%)`;
     } else if (isPartial) {
-      if (user && appliedPts > 0) {
+      if (user && appliedPts > 0 && maxPct > 0) {
         const cashDueNio = item.priceNio ? Math.round(item.priceNio * (1 - (appliedPct / 100))) : Math.round(cashToPayWithPts * 37);
         temuPriceMain = formatPrice(cashToPayWithPts, cashDueNio);
         temuPriceOrig = formatPrice(item.priceUsd, item.priceNio, true);
@@ -2037,7 +2063,7 @@ export function renderCatalog(catalog, user) {
       } else {
         temuPriceMain = formatPrice(item.priceUsd, item.priceNio, true);
         temuPriceOrig = "";
-        temuCoinPillText = `Hasta -${maxPct}% con WP`;
+        temuCoinPillText = (maxPct === 0 || maxCapPts === 0) ? "Precio oficial en tienda" : `Hasta -${maxPct}% con WP`;
       }
     } else {
       temuPriceMain = "¡GRATIS!";
@@ -2086,7 +2112,7 @@ export function renderCatalog(catalog, user) {
         </button>
       `;
     } else if (isPartial) {
-      if (userPts > 0) {
+      if (maxPct > 0 && userPts > 0) {
         btnHtml = `<button class="btn-redeem active-canje" style="background: linear-gradient(135deg, #d97706, #b45309);" onclick="event.stopPropagation(); confirmRedeem('${item.id}')">🏷️ APLICAR DESCUENTO (${formattedAppliedPct}%)</button>`;
       } else {
         btnHtml = `<button class="btn-redeem active-canje" style="background: linear-gradient(135deg, #0284c7, #0369a1);" onclick="event.stopPropagation(); confirmRedeem('${item.id}')">🛒 COMPRAR EN TIENDA</button>`;
@@ -2658,7 +2684,8 @@ export function confirmRedeem(rewardId) {
   if (!reward) return;
 
   const isCombo = (typeof reward.isCombo === "function" ? reward.isCombo() : (reward.rewardType === "COMBO"));
-  const isPartial = isCombo || reward.rewardType === "PARTIAL_DISCOUNT" || (typeof reward.isPartialDiscount === "function" && reward.isPartialDiscount());
+  const isIncoming = (typeof reward.isIncoming === "function" ? reward.isIncoming() : (reward.status === "INCOMING" || Boolean(reward.isIncoming || reward.is_incoming))) && !(typeof reward.isIncomingExpired === "function" && reward.isIncomingExpired());
+  const isPartial = isCombo || reward.rewardType === "PARTIAL_DISCOUNT" || (typeof reward.isPartialDiscount === "function" && reward.isPartialDiscount()) || (!isIncoming && Number(reward.priceUsd) > 0);
 
   // Si es canje 100% gratuito en puntos, sí bloquea si no tiene saldo suficiente
   if (!isPartial && vm.currentUser.wiredPoints < reward.pointsCost) {
@@ -2954,7 +2981,8 @@ export function updateConfirmCalculation() {
   if (!currentRedeemReward) return;
   const reward = currentRedeemReward;
   const isCombo = (typeof reward.isCombo === "function" ? reward.isCombo() : (reward.rewardType === "COMBO"));
-  const isPartial = isCombo || reward.rewardType === "PARTIAL_DISCOUNT" || (typeof reward.isPartialDiscount === "function" && reward.isPartialDiscount());
+  const isIncoming = (typeof reward.isIncoming === "function" ? reward.isIncoming() : (reward.status === "INCOMING" || Boolean(reward.isIncoming || reward.is_incoming))) && !(typeof reward.isIncomingExpired === "function" && reward.isIncomingExpired());
+  const isPartial = isCombo || reward.rewardType === "PARTIAL_DISCOUNT" || (typeof reward.isPartialDiscount === "function" && reward.isPartialDiscount()) || (!isIncoming && Number(reward.priceUsd) > 0);
   const userPts = vm.currentUser ? (vm.currentUser.wiredPoints || 0) : 0;
 
   let targetPrice = reward.priceUsd || 0;

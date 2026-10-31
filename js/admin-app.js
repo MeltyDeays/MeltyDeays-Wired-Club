@@ -36,6 +36,8 @@ import {
   setAdminPriceInputMode,
   onAdminPriceUsdInput,
   onAdminPriceNioInput,
+  onAdminCashNioInput,
+  onAdminCashUsdInput,
   onAdminIncomingPriceUsdInput,
   onAdminIncomingPriceNioInput,
   // 2. Calculadora de Puntos de Venta
@@ -594,14 +596,17 @@ function renderCatalogTable(catalog) {
 
   let filtered = [...allItems];
 
+  const isIncomingItem = p => !isPendingItem(p) && (typeof p.isIncoming === "function" ? p.isIncoming() : (p.status === "INCOMING" && !(typeof p.isIncomingExpired === "function" && p.isIncomingExpired())));
+  const isPendingItem = p => p.status === "PENDING_APPROVAL" || p.status === "PENDING_IMAGE";
+
   if (catalogTypeFilter === "PENDING") {
-    filtered = filtered.filter(p => p.status === "PENDING_APPROVAL" || p.status === "PENDING_IMAGE");
+    filtered = filtered.filter(p => isPendingItem(p));
   } else if (catalogTypeFilter === "FREE") {
-    filtered = filtered.filter(p => p.status !== "PENDING_APPROVAL" && p.status !== "PENDING_IMAGE" && p.status !== "INCOMING" && !(typeof p.isIncoming === "function" && p.isIncoming()) && p.rewardType !== "PARTIAL_DISCOUNT" && !(typeof p.isPartialDiscount === "function" && p.isPartialDiscount()));
+    filtered = filtered.filter(p => !isPendingItem(p) && !isIncomingItem(p) && p.rewardType !== "PARTIAL_DISCOUNT" && !(typeof p.isPartialDiscount === "function" && p.isPartialDiscount()) && (!p.priceUsd || p.priceUsd <= 0));
   } else if (catalogTypeFilter === "PARTIAL") {
-    filtered = filtered.filter(p => p.status !== "PENDING_APPROVAL" && p.status !== "PENDING_IMAGE" && p.status !== "INCOMING" && !(typeof p.isIncoming === "function" && p.isIncoming()) && (p.rewardType === "PARTIAL_DISCOUNT" || (typeof p.isPartialDiscount === "function" && p.isPartialDiscount())));
+    filtered = filtered.filter(p => !isPendingItem(p) && !isIncomingItem(p) && (p.rewardType === "PARTIAL_DISCOUNT" || (typeof p.isPartialDiscount === "function" && p.isPartialDiscount()) || Number(p.priceUsd) > 0));
   } else if (catalogTypeFilter === "INCOMING") {
-    filtered = filtered.filter(p => p.status === "INCOMING" || (typeof p.isIncoming === "function" && p.isIncoming()));
+    filtered = filtered.filter(p => isIncomingItem(p));
   }
 
   if (catalogFilterQuery) {
@@ -651,10 +656,15 @@ function renderCatalogTable(catalog) {
   }
 
   tbody.innerHTML = filtered.map(p => {
+    if (typeof p.checkIncomingTransition === "function" && p.checkIncomingTransition()) {
+      if (typeof FirestoreService !== "undefined" && FirestoreService.saveReward) {
+        FirestoreService.saveReward(p.toJSON ? p.toJSON() : p).catch(console.warn);
+      }
+    }
     const isPending = p.status === "PENDING_APPROVAL" || p.status === "PENDING_IMAGE";
-    const isIncoming = !isPending && (p.status === "INCOMING" || (typeof p.isIncoming === "function" && p.isIncoming()));
+    const isIncoming = !isPending && (typeof p.isIncoming === "function" ? p.isIncoming() : (p.status === "INCOMING" && !(typeof p.isIncomingExpired === "function" && p.isIncomingExpired())));
     const isCombo = !isPending && !isIncoming && (p.rewardType === "COMBO" || (typeof p.isCombo === "function" && p.isCombo()));
-    const isPartial = !isPending && !isIncoming && !isCombo && (p.rewardType === "PARTIAL_DISCOUNT" || (typeof p.isPartialDiscount === "function" && p.isPartialDiscount()));
+    const isPartial = !isPending && !isIncoming && !isCombo && (p.rewardType === "PARTIAL_DISCOUNT" || (typeof p.isPartialDiscount === "function" && p.isPartialDiscount()) || Number(p.priceUsd) > 0);
     const hasRealImage = Boolean((p.imageUrl && !p.imageUrl.includes("unsplash.com")) || (Array.isArray(p.images) && p.images.some(img => img && !img.includes("unsplash.com"))));
     const isBrand = Boolean(typeof window.isBrandVerifiable === "function" ? window.isBrandVerifiable(p.title, p.description) : p.brandVerified);
     const isBrandWithImage = isBrand && hasRealImage;
@@ -671,13 +681,17 @@ function renderCatalogTable(catalog) {
         : (isCombo
           ? `<span class="badge-navi" style="background:#fff7ed; color:#c2410c; border:1px solid #fed7aa; font-size:0.68rem; font-weight:800;">✦ WIRED COMBO</span>`
           : (isPartial
-            ? `<span class="badge-navi" style="background:#fef3c7; color:#92400e; border:1px solid #fcd34d; font-size:0.68rem;">🏷️ VENTA TOPADA (${p.maxDiscountPct || 5}%)</span>`
+            ? ((p.maxDiscountPct || 0) === 0 || (p.pointsCost || 0) === 0
+                ? `<span class="badge-navi" style="background:#f1f5f9; color:#334155; border:1px solid #cbd5e1; font-size:0.68rem; font-weight:800;">🛒 PRECIO OFICIAL</span>`
+                : `<span class="badge-navi" style="background:#fef3c7; color:#92400e; border:1px solid #fcd34d; font-size:0.68rem;">🏷️ VENTA TOPADA (${p.maxDiscountPct || 5}%)</span>`)
             : `<span class="badge-navi" style="background:#ecfdf5; color:#065f46; border:1px solid #a7f3d0; font-size:0.68rem;">🎁 100% CANJE</span>`)));
 
     const costDisplay = isIncoming
       ? `<div style="font-size:0.85rem; font-weight:800; color:#7e22ce;">Preventa: $${(p.presalePriceUsd || 0).toFixed(2)} USD</div><div style="font-size:0.7rem; color:var(--gray-500); text-decoration:line-through;">Reg: $${(p.priceUsd || 0).toFixed(2)} USD (-$${(p.presaleDiscountUsd || 0).toFixed(2)})</div><div style="font-size:0.68rem; color:#059669; font-weight:700;">0 WP (Directo)</div>`
       : (isCombo || isPartial
-        ? `<div><strong style="color:#b45309;">${p.pointsCost.toLocaleString()} WP</strong></div><div style="font-size:0.7rem; color:#059669; font-weight:700;">-$${(p.maxDiscountUsd || 0).toFixed(2)} USD</div>`
+        ? ((p.maxDiscountPct || 0) === 0 || (p.pointsCost || 0) === 0
+            ? `<div style="font-size:0.85rem; font-weight:800; color:#0f172a;">$${(p.priceUsd || 0).toFixed(2)} USD</div><div style="font-size:0.68rem; color:#64748b; font-weight:700;">Precio Plano (0 WP)</div>`
+            : `<div><strong style="color:#b45309;">${p.pointsCost.toLocaleString()} WP</strong></div><div style="font-size:0.7rem; color:#059669; font-weight:700;">-$${(p.maxDiscountUsd || 0).toFixed(2)} USD</div>`)
         : `<strong style="color:var(--dark);">${p.pointsCost.toLocaleString()} WP</strong>`);
 
     const priceInfo = isIncoming
@@ -825,8 +839,8 @@ export function openProductActionsModal(productId) {
   if (!modal || !summaryEl || !actionsListEl) return;
 
   const isPending = p.status === "PENDING_APPROVAL" || p.status === "PENDING_IMAGE";
-  const isIncoming = !isPending && (p.status === "INCOMING" || (typeof p.isIncoming === "function" && p.isIncoming()));
-  const isPartial = !isPending && !isIncoming && (p.rewardType === "PARTIAL_DISCOUNT" || (typeof p.isPartialDiscount === "function" && p.isPartialDiscount()));
+  const isIncoming = !isPending && (typeof p.isIncoming === "function" ? p.isIncoming() : (p.status === "INCOMING" && !(typeof p.isIncomingExpired === "function" && p.isIncomingExpired())));
+  const isPartial = !isPending && !isIncoming && (p.rewardType === "PARTIAL_DISCOUNT" || (typeof p.isPartialDiscount === "function" && p.isPartialDiscount()) || Number(p.priceUsd) > 0);
   const isSoldOut = !isIncoming && ((p.stock || 0) <= 0 || (typeof p.isSoldOut === "function" && p.isSoldOut()) || p.status === "SOLD_OUT");
 
   const pImages = typeof p.getImages === "function" ? p.getImages() : (Array.isArray(p.images) && p.images.length ? p.images : (p.imageUrl ? [p.imageUrl] : []));
@@ -1628,6 +1642,8 @@ document.addEventListener("DOMContentLoaded", () => {
   window.setAdminPriceInputMode = setAdminPriceInputMode;
   window.onAdminPriceUsdInput = onAdminPriceUsdInput;
   window.onAdminPriceNioInput = onAdminPriceNioInput;
+  window.onAdminCashNioInput = onAdminCashNioInput;
+  window.onAdminCashUsdInput = onAdminCashUsdInput;
   window.onAdminIncomingPriceUsdInput = onAdminIncomingPriceUsdInput;
   window.onAdminIncomingPriceNioInput = onAdminIncomingPriceNioInput;
   window.setIncomingArrivalPreset = setIncomingArrivalPreset;
