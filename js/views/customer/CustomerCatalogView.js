@@ -3306,6 +3306,8 @@ export function updateConfirmCalculation() {
     const calcPctLabel = document.getElementById("confirm-calc-pct-label");
     const typeDisc = document.getElementById("confirm-type-discount");
     const typeCash = document.getElementById("confirm-type-cash");
+    const typeMaxDisc = document.getElementById("confirm-type-max-disc");
+    const typePrice = document.getElementById("confirm-type-price");
     const ptsAppliedNotice = document.getElementById("confirm-pts-applied-notice");
 
     const isFlatPrice = (targetMaxPct === 0 || targetMaxCapPts === 0);
