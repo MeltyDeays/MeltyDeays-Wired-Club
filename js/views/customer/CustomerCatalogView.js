@@ -3340,9 +3340,14 @@ export function updateConfirmCalculation() {
     const rowDisc = document.getElementById("confirm-row-discount");
     const rowMaxDisc = document.getElementById("confirm-row-max-disc");
     const labelPrice = document.getElementById("confirm-label-price");
-    if (rowDisc) rowDisc.style.display = isFlatPrice ? "none" : "flex";
-    if (rowMaxDisc) rowMaxDisc.style.display = isFlatPrice ? "none" : "flex";
+    const labelDisc = document.getElementById("confirm-label-discount");
+
+    // Ocultar descuento si es precio plano o si el cliente no aplicó puntos (0 WP)
+    if (rowDisc) rowDisc.style.display = (isFlatPrice || deductPts === 0) ? "none" : "flex";
+    // El tope ya se indica claramente en el panel de puntos izquierdo; ocultar en el ticket para no duplicar cifras
+    if (rowMaxDisc) rowMaxDisc.style.display = "none";
     if (labelPrice) labelPrice.textContent = isFlatPrice ? "Precio oficial:" : "Precio regular:";
+    if (labelDisc) labelDisc.innerHTML = `Descuento (${formattedPct}%):`;
 
     // Synchronize ledger box: hide completely if flat price product
     const ledgerBox = document.getElementById("confirm-ledger-box") || document.querySelector(".ledger-preview-box");

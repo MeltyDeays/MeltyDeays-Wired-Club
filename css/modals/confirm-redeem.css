@@ -99,7 +99,7 @@
 }
 
 .confirm-receipt-body {
-  padding: 0.65rem 0.85rem;
+  padding: 0.75rem 1.05rem;
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
