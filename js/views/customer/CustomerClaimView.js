@@ -21,12 +21,21 @@ export function openClaimModal() {
     return;
   }
   const modal = document.getElementById("modal-manual-claim");
-  if (modal) modal.style.display = "flex";
+  if (modal) {
+    modal.style.display = "flex";
+    if (typeof window !== "undefined" && window._modalHistoryManager) {
+      window._modalHistoryManager.pushModalHistory("modal-manual-claim");
+    }
+  }
 }
 
-export function closeClaimModal() {
+export function closeClaimModal(options = {}) {
+  const fromPopState = options && options.fromPopState === true;
   const modal = document.getElementById("modal-manual-claim");
   if (modal) modal.style.display = "none";
+  if (!fromPopState && typeof window !== "undefined" && window._modalHistoryManager) {
+    window._modalHistoryManager.popModalHistory("modal-manual-claim");
+  }
 }
 
 export async function submitManualClaim() {
@@ -64,7 +73,12 @@ let clientQrCodeScanner = null;
 
 export async function openClientCameraScanner() {
   const modal = document.getElementById("modal-client-camera-scanner");
-  if (modal) modal.style.display = "flex";
+  if (modal) {
+    modal.style.display = "flex";
+    if (typeof window !== "undefined" && window._modalHistoryManager) {
+      window._modalHistoryManager.pushModalHistory("modal-client-camera-scanner");
+    }
+  }
 
   if (typeof Html5Qrcode !== "undefined") {
     try {
@@ -89,7 +103,8 @@ export async function openClientCameraScanner() {
   }
 }
 
-export function stopClientCameraScanner() {
+export function stopClientCameraScanner(options = {}) {
+  const fromPopState = options && options.fromPopState === true;
   if (clientQrCodeScanner) {
     clientQrCodeScanner.stop().catch(() => {}).finally(() => {
       clientQrCodeScanner = null;
@@ -97,6 +112,9 @@ export function stopClientCameraScanner() {
   }
   const modal = document.getElementById("modal-client-camera-scanner");
   if (modal) modal.style.display = "none";
+  if (!fromPopState && typeof window !== "undefined" && window._modalHistoryManager) {
+    window._modalHistoryManager.popModalHistory("modal-client-camera-scanner");
+  }
 }
 
 export async function handleClientQrScanned(decodedText) {

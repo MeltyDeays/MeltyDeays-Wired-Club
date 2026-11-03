@@ -542,6 +542,9 @@ export function openImageLightbox(rewardIdOrImages, index = 0, customTitle = "")
 
   modal.style.display = "flex";
   document.body.classList.add("modal-open");
+  if (typeof window !== "undefined" && window._modalHistoryManager) {
+    window._modalHistoryManager.pushModalHistory("modal-image-lightbox");
+  }
   const fab = document.getElementById("fab-mobile-menu");
   if (fab) {
     fab.classList.add("is-hidden");
@@ -551,10 +554,15 @@ export function openImageLightbox(rewardIdOrImages, index = 0, customTitle = "")
   renderLightboxView();
 }
 
-export function closeImageLightbox() {
+export function closeImageLightbox(options = {}) {
+  const fromPopState = options && options.fromPopState === true;
   const modal = document.getElementById("modal-image-lightbox");
   if (modal) modal.style.display = "none";
   resetLightboxPan();
+
+  if (!fromPopState && typeof window !== "undefined" && window._modalHistoryManager) {
+    window._modalHistoryManager.popModalHistory("modal-image-lightbox");
+  }
 
   const specsModal = document.getElementById("modal-product-specs");
   const isSpecsOpen = specsModal && specsModal.style.display !== "none" && specsModal.style.display !== "";
@@ -1153,7 +1161,7 @@ export async function submitClientCommentReply(rewardId, commentId) {
   }
 }
 
-export function openProductSpecsModal(rewardId, imgIdx = 0) {
+export function openProductSpecsModal(rewardId, imgIdx = 0, options = {}) {
   const item = findProductInCatalog(rewardId);
   const modal = document.getElementById("modal-product-specs");
   const body = document.getElementById("modal-specs-body");
@@ -1817,12 +1825,17 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
     fab.style.setProperty("display", "none", "important");
   }
 
-  // Sincronizar hash en la barra de direcciones de forma transparente
-  if (typeof window !== "undefined" && window.history && typeof window.history.replaceState === "function") {
-    const canonicalId = item.id || rewardId;
-    const targetHash = `#product-${canonicalId}`;
-    if (window.location.hash !== targetHash) {
-      window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}${targetHash}`);
+  // Sincronizar hash en la barra de direcciones y apilar estado en historial para botón Atrás en móviles
+  const canonicalId = item.id || rewardId;
+  const targetHash = `#product-${canonicalId}`;
+  const fromDeepLink = options && options.fromDeepLink === true;
+  if (!fromDeepLink) {
+    if (typeof window !== "undefined" && window._modalHistoryManager) {
+      window._modalHistoryManager.pushModalHistory("modal-product-specs", `${window.location.pathname}${window.location.search}${targetHash}`);
+    } else if (typeof window !== "undefined" && window.history && typeof window.history.pushState === "function") {
+      if (window.location.hash !== targetHash) {
+        window.history.pushState({ modalOpen: true, modalId: "modal-product-specs", rewardId: canonicalId }, document.title, `${window.location.pathname}${window.location.search}${targetHash}`);
+      }
     }
   }
 
@@ -1861,6 +1874,7 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
 
 export function closeProductSpecsModal(options = {}) {
   const updateHash = options && options.updateHash !== false;
+  const fromPopState = options && options.fromPopState === true;
   if (typeof window !== "undefined") {
     window._pendingSpecsModalProductId = null;
     clearDeepLinkWatcher();
@@ -1894,8 +1908,17 @@ export function closeProductSpecsModal(options = {}) {
     }
   }
 
+  // Si se cerró por interacción manual ("X", "Volver", backdrop) y hay un estado de modal en historial, revertirlo
+  if (!fromPopState && typeof window !== "undefined") {
+    if (window._modalHistoryManager) {
+      window._modalHistoryManager.popModalHistory("modal-product-specs");
+    } else if (window.history && window.history.state && window.history.state.modalOpen) {
+      window.history.back();
+    }
+  }
+
   // Limpiar hash de producto en la barra de URL de forma transparente sin saltos ni recargas
-  if (updateHash && typeof window !== "undefined") {
+  if (updateHash && !fromPopState && typeof window !== "undefined") {
     const hash = window.location.hash || "";
     if (hash.startsWith("#product-") || hash.startsWith("#p-") || hash.startsWith("#item-") || hash.startsWith("#reward-") || /^#fb_/i.test(hash)) {
       if (window.history && typeof window.history.replaceState === "function") {
@@ -3182,6 +3205,9 @@ export function confirmRedeem(rewardId) {
   const modal = document.getElementById("modal-confirm-redeem");
   if (modal) {
     modal.style.display = "flex";
+    if (typeof window !== "undefined" && window._modalHistoryManager) {
+      window._modalHistoryManager.pushModalHistory("modal-confirm-redeem");
+    }
     modal.scrollTop = 0;
     const content = modal.querySelector(".modal-content");
     if (content) content.scrollTop = 0;
@@ -3520,7 +3546,8 @@ export function setPointsPreset(mode) {
   updateConfirmCalculation();
 }
 
-export function closeRedeemModal() {
+export function closeRedeemModal(options = {}) {
+  const fromPopState = options && options.fromPopState === true;
   selectedRewardId = null;
   currentRedeemReward = null;
   selectedComboOption = "FULL_COMBO";
@@ -3538,6 +3565,9 @@ export function closeRedeemModal() {
     modal.scrollTop = 0;
     const content = modal.querySelector(".modal-content");
     if (content) content.scrollTop = 0;
+  }
+  if (!fromPopState && typeof window !== "undefined" && window._modalHistoryManager) {
+    window._modalHistoryManager.popModalHistory("modal-confirm-redeem");
   }
 }
 

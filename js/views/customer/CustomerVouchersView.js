@@ -747,13 +747,22 @@ export function showVoucherModal(voucherCode) {
   }
 
   const modal = document.getElementById("modal-voucher");
-  if (modal) modal.style.display = "flex";
+  if (modal) {
+    modal.style.display = "flex";
+    if (typeof window !== "undefined" && window._modalHistoryManager) {
+      window._modalHistoryManager.pushModalHistory("modal-voucher");
+    }
+  }
 }
 
-export function closeVoucherModal() {
+export function closeVoucherModal(options = {}) {
+  const fromPopState = options && options.fromPopState === true;
   currentOpenVoucherCode = null;
   const modal = document.getElementById("modal-voucher");
   if (modal) modal.style.display = "none";
+  if (!fromPopState && typeof window !== "undefined" && window._modalHistoryManager) {
+    window._modalHistoryManager.popModalHistory("modal-voucher");
+  }
 }
 
 export function promptCancelCurrentVoucher() {
@@ -806,13 +815,22 @@ export function promptCancelVoucher(voucherCode) {
     `;
   }
 
-  if (modal) modal.style.display = "flex";
+  if (modal) {
+    modal.style.display = "flex";
+    if (typeof window !== "undefined" && window._modalHistoryManager) {
+      window._modalHistoryManager.pushModalHistory("modal-confirm-cancel-voucher");
+    }
+  }
 }
 
-export function closeCancelVoucherModal() {
+export function closeCancelVoucherModal(options = {}) {
+  const fromPopState = options && options.fromPopState === true;
   pendingCancelVoucherCode = null;
   const modal = document.getElementById("modal-confirm-cancel-voucher");
   if (modal) modal.style.display = "none";
+  if (!fromPopState && typeof window !== "undefined" && window._modalHistoryManager) {
+    window._modalHistoryManager.popModalHistory("modal-confirm-cancel-voucher");
+  }
 }
 
 export async function executeCancelVoucher() {

@@ -50,6 +50,9 @@ export function renderUserQr(text) {
 export function openAuthModal(tab = "login", feedback = null) {
   const modal = document.getElementById("modal-client-auth");
   if (modal) modal.style.display = "flex";
+  if (typeof window !== "undefined" && window._modalHistoryManager) {
+    window._modalHistoryManager.pushModalHistory("modal-client-auth");
+  }
   switchAuthTab(tab);
   if (feedback) {
     setAuthFeedback(feedback, "info");
@@ -58,10 +61,14 @@ export function openAuthModal(tab = "login", feedback = null) {
   }
 }
 
-export function closeAuthModal() {
+export function closeAuthModal(options = {}) {
+  const fromPopState = options && options.fromPopState === true;
   const modal = document.getElementById("modal-client-auth");
   if (modal) modal.style.display = "none";
   setAuthFeedback(null);
+  if (!fromPopState && typeof window !== "undefined" && window._modalHistoryManager) {
+    window._modalHistoryManager.popModalHistory("modal-client-auth");
+  }
 }
 
 export function switchAuthTab(tab) {

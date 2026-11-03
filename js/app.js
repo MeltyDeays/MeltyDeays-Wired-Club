@@ -3,6 +3,7 @@ import { CustomerViewModel } from "./viewmodels/CustomerViewModel.js";
 import { FirestoreService } from "./services/FirestoreService.js";
 import { injectEnvironmentBadge } from "./config/env.js";
 import { roundToCleanNio } from "./utils/PriceNormalizer.js";
+import { initModalHistoryListener, pushModalHistory, popModalHistory } from "./utils/ModalHistoryManager.js";
 
 import {
   initCustomerViews,
@@ -596,6 +597,9 @@ document.addEventListener("DOMContentLoaded", () => {
   // Inicializar Service Worker para Google Chrome (Push & Móvil)
   PushNotificationService.registerServiceWorker();
 
+  // Inicializar interceptor de historial para botón Atrás en móviles
+  initModalHistoryListener();
+
   // Soporte universal para Deep Linking (URL Hash #product-..., Query Params ?openReward=... / ?product=...)
   const handleInitialDeepLink = () => {
     let targetId = null;
@@ -613,8 +617,13 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
     if (targetId) {
+      if (typeof window.history !== "undefined" && typeof window.history.replaceState === "function") {
+        const baseUrl = `${window.location.pathname}${window.location.search}`;
+        window.history.replaceState({ modalOpen: false, base: true }, document.title, baseUrl);
+        window.history.pushState({ modalOpen: true, modalId: "modal-product-specs", rewardId: targetId }, document.title, window.location.href);
+      }
       if (typeof window.openProductSpecsModal === "function") {
-        window.openProductSpecsModal(targetId);
+        window.openProductSpecsModal(targetId, 0, { fromDeepLink: true });
       } else {
         window._pendingSpecsModalProductId = targetId;
       }

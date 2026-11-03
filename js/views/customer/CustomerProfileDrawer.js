@@ -53,6 +53,10 @@ export function openMobileProfileDrawer() {
   const fab = document.getElementById("fab-mobile-menu");
   if (!drawer) return;
 
+  if (typeof window !== "undefined" && window._modalHistoryManager) {
+    window._modalHistoryManager.pushModalHistory("drawer-mobile-profile");
+  }
+
   if (fab) {
     fab.classList.add("is-hidden");
     fab.style.setProperty("display", "none", "important");
@@ -65,7 +69,8 @@ export function openMobileProfileDrawer() {
   document.addEventListener("keydown", handleDrawerKeyDown);
 }
 
-export function closeMobileProfileDrawer() {
+export function closeMobileProfileDrawer(options = {}) {
+  const fromPopState = options && options.fromPopState === true;
   const drawer = document.getElementById("drawer-mobile-profile");
   const overlay = document.getElementById("drawer-profile-overlay");
   const fab = document.getElementById("fab-mobile-menu");
@@ -87,6 +92,10 @@ export function closeMobileProfileDrawer() {
   }
   document.body.classList.remove("drawer-open");
   document.body.style.overflow = "";
+
+  if (!fromPopState && typeof window !== "undefined" && window._modalHistoryManager) {
+    window._modalHistoryManager.popModalHistory("drawer-mobile-profile");
+  }
 }
 
 export const openClientProfileDrawer = openMobileProfileDrawer;

@@ -383,6 +383,9 @@ export function openPreOrderModal(rewardId) {
       if (scrollableBody) scrollableBody.scrollTop = 0;
     });
     document.body.classList.add("modal-open");
+    if (typeof window !== "undefined" && window._modalHistoryManager) {
+      window._modalHistoryManager.pushModalHistory("modal-preorder-reservation");
+    }
   }
 }
 
@@ -394,7 +397,8 @@ export const openReservationModal = openPreOrderModal;
 /**
  * Cierra el modal de reserva y limpia el intervalo del temporizador.
  */
-export function closePreOrderModal() {
+export function closePreOrderModal(options = {}) {
+  const fromPopState = options && options.fromPopState === true;
   if (modalCountdownTimer) {
     clearInterval(modalCountdownTimer);
     modalCountdownTimer = null;
@@ -411,6 +415,10 @@ export function closePreOrderModal() {
     const scrollableBody = modal.querySelector(".preorder-modal-body");
     if (scrollableBody) scrollableBody.scrollTop = 0;
     document.body.classList.remove("modal-open");
+  }
+
+  if (!fromPopState && typeof window !== "undefined" && window._modalHistoryManager) {
+    window._modalHistoryManager.popModalHistory("modal-preorder-reservation");
   }
 }
 
