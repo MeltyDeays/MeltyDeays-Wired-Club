@@ -1539,13 +1539,13 @@ export function openProductSpecsModal(rewardId, imgIdx = 0) {
       saleBannerHtml = `
         <div class="temu-sale-banner">
           <div class="temu-sale-header">
-            <span>🏷️ SÚPER DESCUENTOS WIRED POINTS</span>
+            <span>🏷️ DESCUENTOS WIRED POINTS</span>
             <span class="temu-sale-badge">HASTA -${maxPct}% OFF</span>
           </div>
           <div class="temu-sale-prices-row" style="display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap;">
             <div>
               <span style="font-size: 0.72rem; font-weight: 800; color: #dc2626; font-family: var(--font-mono);">¡AHORA:</span>
-              <span class="temu-sale-price-curr" id="specs-calc-cash-${item.id}" style="color: #dc2626; font-weight: 900;">${formatDualPrice(cashToPayWithPts, item.priceNio ? Math.round(item.priceNio * (1 - (appliedPct / 100))) : null)}!</span>
+              <span class="temu-sale-price-curr" id="specs-calc-cash-${item.id}" style="color: #dc2626; font-weight: 900;">${formatDualPrice(cashToPayWithPts, item.priceNio ? Math.round(item.priceNio * (1 - (appliedPct / 100))) : null)}</span>
             </div>
             <div>
               <span style="font-size: 0.72rem; color: #64748b; font-family: var(--font-mono);">Antes:</span>
@@ -2349,7 +2349,7 @@ export function renderCatalog(catalog, user) {
       <div class="reward-temu-meta">
         <div class="retail-price-badge-box">
           ${temuPriceOrig ? `<div class="retail-price-before">${retailBeforeLabel} <span class="retail-strike">${temuPriceOrig}</span></div>` : ''}
-          <div class="retail-price-now"><span class="retail-now-label">${retailNowLabel}</span> <span class="retail-now-amount" style="color:${temuPriceMain === 'GRATIS' ? '#10b981' : '#dc2626'}; font-weight:900;">${temuPriceMain}</span>!</div>
+          <div class="retail-price-now"><span class="retail-now-label">${retailNowLabel}</span> <span class="retail-now-amount" style="color:${temuPriceMain === 'GRATIS' ? '#10b981' : '#dc2626'}; font-weight:900;">${temuPriceMain}</span></div>
         </div>
         <div class="reward-temu-coin-pill">
           ${renderWiredCoinSvg()}
@@ -3123,7 +3123,7 @@ export function confirmRedeem(rewardId) {
       if (typePrice) typePrice.innerHTML = formatDualPrice(reward.priceUsd);
       if (typeMaxDisc) {
         typeMaxDisc.textContent = (maxPct === 0 || maxCapPts === 0)
-          ? "Precio plano oficial (Sin descuento en puntos)"
+          ? "Sin descuento en puntos"
           : `-${formatPrice(reward.maxDiscountUsd)} (${maxCapPts.toLocaleString()} WP = ${maxPct}% OFF)`;
       }
 
@@ -3343,9 +3343,17 @@ export function updateConfirmCalculation() {
     const labelDisc = document.getElementById("confirm-label-discount");
 
     // Ocultar descuento si es precio plano o si el cliente no aplicó puntos (0 WP)
-    if (rowDisc) rowDisc.style.display = (isFlatPrice || deductPts === 0) ? "none" : "flex";
+    if (rowDisc) {
+      if (isFlatPrice || deductPts === 0) {
+        rowDisc.style.setProperty("display", "none", "important");
+      } else {
+        rowDisc.style.setProperty("display", "flex", "important");
+      }
+    }
     // El tope ya se indica claramente en el panel de puntos izquierdo; ocultar en el ticket para no duplicar cifras
-    if (rowMaxDisc) rowMaxDisc.style.display = "none";
+    if (rowMaxDisc) {
+      rowMaxDisc.style.setProperty("display", "none", "important");
+    }
     if (labelPrice) labelPrice.textContent = isFlatPrice ? "Precio oficial:" : "Precio regular:";
     if (labelDisc) labelDisc.innerHTML = `Descuento (${formattedPct}%):`;
 

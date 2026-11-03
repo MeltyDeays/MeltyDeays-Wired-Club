@@ -1353,6 +1353,13 @@
   font-weight: 900;
   color: #b91c1c;
   text-transform: uppercase;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.temu-sale-header > span:first-child {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .temu-sale-prices-row {
@@ -1363,11 +1370,16 @@
 }
 
 .temu-sale-price-curr {
-  font-size: 1.45rem;
+  font-size: clamp(1.15rem, 4vw, 1.4rem);
   font-weight: 900;
   color: #dc2626;
   font-family: var(--font-mono);
-  line-height: 1;
+  line-height: 1.15;
+}
+
+.temu-sale-price-curr strong,
+.temu-sale-price-curr span {
+  white-space: nowrap;
 }
 
 .temu-sale-price-orig {
@@ -1381,10 +1393,12 @@
   background: #dc2626;
   color: #ffffff;
   font-family: var(--font-mono);
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   font-weight: 800;
   padding: 2px 7px;
   border-radius: 4px;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 /* CALCULADORA DE DESCUENTO PARCIAL Y BOTONES PRESET */
