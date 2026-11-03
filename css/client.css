@@ -1174,12 +1174,23 @@
   font-size: 0.72rem;
   color: var(--gray-500);
   font-family: var(--font-mono);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 4px;
+}
+
+.retail-before-label {
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .retail-strike {
   text-decoration: line-through;
   color: var(--gray-400);
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  display: inline-block;
 }
 
 .retail-price-now {

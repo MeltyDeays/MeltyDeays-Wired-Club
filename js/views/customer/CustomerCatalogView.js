@@ -1438,10 +1438,10 @@ export function openProductSpecsModal(rewardId, imgIdx = 0, options = {}) {
         <div class="haibane-specs-pricing-row">
           <div class="haibane-price-main-block">
             <span class="haibane-price-label" style="color: #dc2626; font-weight: 800;">¡AHORA EN COMBO:</span>
-            <div class="haibane-specs-price-curr" style="color: #dc2626; font-weight: 900;">${formatDualPrice(item.priceUsd)}!</div>
+            <div class="haibane-specs-price-curr" style="color: #dc2626; font-weight: 900;">${formatDualPrice(item.priceUsd)}</div>
           </div>
           <div class="haibane-price-orig-block">
-            <span class="haibane-orig-label">Antes por separado:</span>
+            <span class="haibane-orig-label">Por separado:</span>
             <span class="haibane-specs-price-orig" style="text-decoration: line-through; color: #94a3b8;">${formatPrice(effSpecsSumUsd)}</span>
           </div>
         </div>
@@ -2332,7 +2332,7 @@ export function renderCatalog(catalog, user) {
       temuPriceMain = formatPrice(item.priceUsd, item.priceNio, true);
       temuPriceOrig = formatPrice(effCardSumUsd, Math.round(effCardSumUsd * 37), true);
       temuCoinPillText = `✦ COMBO ${comboItems.length} EN 1 (-${effCardSavingsPct}%)`;
-      retailBeforeLabel = "Antes por separado:";
+      retailBeforeLabel = "Por separado:";
       retailNowLabel = "¡AHORA EN COMBO:";
     } else if (isPartial) {
       if (user && appliedPts > 0 && maxPct > 0) {
@@ -2371,7 +2371,7 @@ export function renderCatalog(catalog, user) {
     const temuMetaHtml = `
       <div class="reward-temu-meta">
         <div class="retail-price-badge-box">
-          ${temuPriceOrig ? `<div class="retail-price-before">${retailBeforeLabel} <span class="retail-strike">${temuPriceOrig}</span></div>` : ''}
+          ${temuPriceOrig ? `<div class="retail-price-before"><span class="retail-before-label">${retailBeforeLabel}</span> <span class="retail-strike">${temuPriceOrig}</span></div>` : ''}
           <div class="retail-price-now"><span class="retail-now-label">${retailNowLabel}</span> <span class="retail-now-amount" style="color:${temuPriceMain === 'GRATIS' ? '#10b981' : '#dc2626'}; font-weight:900;">${temuPriceMain}</span></div>
         </div>
         <div class="reward-temu-coin-pill">
@@ -2465,7 +2465,7 @@ export function renderCatalog(catalog, user) {
       partialBreakdown = `
         <div class="reward-pricing-box combo-pricing-box" style="border: 1.5px solid #d97706; background: #fffbeb; padding: 0.5rem 0.65rem; border-radius: 4px; margin-top: 0.5rem;">
           <div class="pricing-row" style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 2px 6px; font-size: 0.72rem; color: #78350f;">
-            <span class="pricing-label">Antes por separado:</span>
+            <span class="pricing-label">Por separado:</span>
             <span class="pricing-val" style="text-decoration: line-through; color: #94a3b8; font-variant-numeric: tabular-nums;">${formatPrice(effCardSumUsd)}</span>
           </div>
           <div class="pricing-row discount-row" style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 2px 6px; font-size: 0.72rem; color: #b45309; font-weight: 800;">
@@ -2474,7 +2474,7 @@ export function renderCatalog(catalog, user) {
           </div>
           <div class="pricing-row total-row" style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 2px 6px; font-size: 0.8rem; font-weight: 900; color: #78350f; border-top: 1px dashed #fcd34d; margin-top: 4px; padding-top: 4px;">
             <span class="pricing-label">¡AHORA EN COMBO:</span>
-            <span class="pricing-val total" style="color: #dc2626; font-weight: 900; font-variant-numeric: tabular-nums;">${formatPrice(item.priceUsd)}!</span>
+            <span class="pricing-val total" style="color: #dc2626; font-weight: 900; font-variant-numeric: tabular-nums;">${formatPrice(item.priceUsd)}</span>
           </div>
           <div class="pricing-row footnote-row" style="color: #92400e; font-size: 0.65rem; margin-top: 3px; line-height: 1.35; display: block; width: 100%; white-space: normal;">
             <span style="white-space: normal; word-break: break-word; display: block; width: 100%;">✦ Adquiere el combo completo con descuento o compra cualquier producto por separado.</span>

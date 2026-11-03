@@ -96,7 +96,8 @@ const testSuites = [
   'tests/cancel_exploit_and_stock_fix.test.mjs',
   'tests/verify_mobile_zero_freeze_upload.mjs',
   'tests/test_payment_receipt_alignment_and_dedup.mjs',
-  'tests/verify_modal_back_navigation.mjs'
+  'tests/verify_modal_back_navigation.mjs',
+  'tests/verify_combo_price_nowrap_and_label.mjs'
 ];
 
 for (const suite of testSuites) {
