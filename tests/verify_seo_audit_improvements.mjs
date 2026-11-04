@@ -53,6 +53,9 @@ export async function runSeoAuditTestSuite(ctx) {
     assert.strictEqual(indexHtml.includes('<footer class="portal-footer"'), true, 'Debe existir footer semántico');
     assert.strictEqual(indexHtml.includes('href="./#tab-content-catalog"'), true, 'Debe enlazar internamente al catálogo');
     assert.strictEqual(indexHtml.includes('href="./#tab-content-vouchers"'), true, 'Debe enlazar internamente a vales');
+    assert.strictEqual(indexHtml.includes('Juigalpa, Nicaragua'), true, 'Debe mostrar ubicación en Juigalpa');
+    assert.strictEqual(indexHtml.includes('Lun - Dom: 9:00 AM - 6:00 PM'), true, 'Debe mostrar atención 7 días');
+    assert.strictEqual(indexHtml.includes('"addressLocality": "Juigalpa"'), true, 'Schema.org debe indicar Juigalpa');
   });
 
   await ctx.test('6. Archivos robots.txt y sitemap.xml existen y están configurados', () => {
