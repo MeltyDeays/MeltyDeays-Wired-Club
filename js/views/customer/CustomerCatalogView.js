@@ -1570,7 +1570,7 @@ export function openProductSpecsModal(rewardId, imgIdx = 0, options = {}) {
                 <span>⚡ CALCULADORA DE DESCUENTO:</span>
                 <span class="specs-calc-value" id="specs-slider-val-${item.id}">${appliedPts} WP aplicados</span>
               </div>
-              <input type="range" id="specs-slider-${item.id}" class="specs-calc-range" min="0" max="${maxUsable}" value="${appliedPts}" step="1" oninput="updateSpecsModalCalculation('${item.id}', this.value)">
+              <input type="range" id="specs-slider-${item.id}" class="specs-calc-range" min="0" max="${maxUsable}" value="${appliedPts}" step="1" oninput="updateSpecsModalCalculation('${item.id}', this.value)" aria-label="Ajustar puntos Wired para descuento">
               <div class="specs-calc-presets-row">
                 <button type="button" class="specs-calc-preset-btn min" onclick="updateSpecsModalCalculation('${item.id}', 0)">
                   <span>🔄</span> <span>Sin desc. (0 WP)</span>
@@ -1693,7 +1693,7 @@ export function openProductSpecsModal(rewardId, imgIdx = 0, options = {}) {
       <form class="temu-comment-form" onsubmit="event.preventDefault(); submitProductComment('${item.id}')">
         <textarea id="comment-input-text-${item.id}" class="temu-comment-textarea" placeholder="¿Tienes alguna duda sobre este producto? Escríbela aquí..." required></textarea>
         <div class="temu-comment-row">
-          <input type="text" id="comment-input-name-${item.id}" class="temu-comment-author-input" placeholder="Tu nombre o socio" value="${user?.displayName || ''}">
+          <input type="text" id="comment-input-name-${item.id}" class="temu-comment-author-input" placeholder="Tu nombre o socio" value="${user?.displayName || ''}" aria-label="Nombre del autor de la reseña">
           <button type="submit" class="temu-comment-btn-submit">Publicar Pregunta</button>
         </div>
       </form>
@@ -3071,7 +3071,7 @@ export function confirmRedeem(rewardId) {
       comboList.innerHTML = `
         <div class="confirm-combo-option-row active" id="combo-opt-full" onclick="selectComboRedeemOption('FULL_COMBO')">
           <div class="combo-opt-main">
-            <input type="radio" name="combo-redeem-choice" id="radio-combo-full" value="FULL_COMBO" checked class="combo-opt-radio">
+            <input type="radio" name="combo-redeem-choice" id="radio-combo-full" value="FULL_COMBO" checked class="combo-opt-radio" aria-label="Canjear combo completo">
             <div class="combo-opt-thumb-wrap">
               ${fullComboImg ? `<img src="${fullComboImg}" alt="${reward.title}" class="combo-opt-thumb-img" loading="lazy" decoding="async" onerror="if(this.nextElementSibling) this.nextElementSibling.style.display='block'; this.style.display='none';"><span class="combo-opt-thumb-fallback" style="display:none;">✨</span>` : '<span class="combo-opt-thumb-fallback">✨</span>'}
             </div>
@@ -3095,7 +3095,7 @@ export function confirmRedeem(rewardId) {
           return `
             <div class="confirm-combo-option-row" id="combo-opt-${cItem.id}" onclick="selectComboRedeemOption('${cItem.id}')">
               <div class="combo-opt-main">
-                <input type="radio" name="combo-redeem-choice" id="radio-combo-${cItem.id}" value="${cItem.id}" class="combo-opt-radio">
+                <input type="radio" name="combo-redeem-choice" id="radio-combo-${cItem.id}" value="${cItem.id}" class="combo-opt-radio" aria-label="Canjear artículo individual ${escapeHtml(cItem.title || '')}">
                 <div class="combo-opt-thumb-wrap">
                   ${cItem.imageUrl ? `<img src="${cItem.imageUrl}" alt="${cItem.title}" class="combo-opt-thumb-img" loading="lazy" decoding="async" onerror="if(this.nextElementSibling) this.nextElementSibling.style.display='block'; this.style.display='none';"><span class="combo-opt-thumb-fallback" style="display:none;">📦</span>` : '<span class="combo-opt-thumb-fallback">📦</span>'}
                 </div>

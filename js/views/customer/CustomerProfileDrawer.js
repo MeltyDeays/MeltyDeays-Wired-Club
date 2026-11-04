@@ -156,7 +156,7 @@ export function renderProfileDrawer() {
         </div>
         <label class="preset-upload-label">
           📁 Subir mi propia imagen
-          <input type="file" accept="image/*" style="display:none;" onchange="handleBannerFileInput(this)">
+          <input type="file" accept="image/*" style="display:none;" onchange="handleBannerFileInput(this)" aria-label="Subir imagen de banner">
         </label>
       </div>
 
@@ -173,7 +173,7 @@ export function renderProfileDrawer() {
           </div>
           <label class="preset-upload-label" style="font-size: 0.65rem; margin-top: 4px;">
             📁 Subir foto
-            <input type="file" accept="image/*" style="display:none;" onchange="handleAvatarFileInput(this)">
+            <input type="file" accept="image/*" style="display:none;" onchange="handleAvatarFileInput(this)" aria-label="Subir foto de avatar">
           </label>
         </div>
       </div>
@@ -191,7 +191,7 @@ export function renderProfileDrawer() {
 
       <!-- MODO EDICIÓN ACTIVABLE CON GUARDAR Y CANCELAR -->
       <div id="profile-name-edit-box" class="profile-name-edit-box ${isEditingProfileName ? 'active' : ''}" style="display: ${isEditingProfileName ? 'flex' : 'none'};">
-        <input type="text" id="input-profile-name" class="profile-name-input" value="${escapeHtml(user.displayName)}" placeholder="Tu nombre" maxlength="35" onkeydown="if(event.key==='Enter') saveProfileDisplayName(); if(event.key==='Escape') cancelProfileNameEditing();">
+        <input type="text" id="input-profile-name" class="profile-name-input" value="${escapeHtml(user.displayName)}" placeholder="Tu nombre" maxlength="35" onkeydown="if(event.key==='Enter') saveProfileDisplayName(); if(event.key==='Escape') cancelProfileNameEditing();" aria-label="Nombre del socio">
         <div class="profile-name-edit-actions">
           <button type="button" class="btn-cancel-name" onclick="cancelProfileNameEditing()" title="Cancelar edición">
             ✕ Cancelar
@@ -309,7 +309,7 @@ export function renderProfileDrawer() {
       </div>
 
       <form id="profile-pin-form-body" class="profile-security-form-box" onsubmit="event.preventDefault(); executeProfilePinUpdate();" autocomplete="on" style="display: ${isPinFormOpen ? 'block' : 'none'};">
-        <input type="text" name="username" value="${user.phone || 'client'}" autocomplete="username" style="display: none;" tabindex="-1" aria-hidden="true">
+        <input type="text" name="username" value="${user.phone || 'client'}" autocomplete="username" style="display: none;" tabindex="-1" aria-hidden="true" aria-label="Usuario">
         <div class="pin-vault-badge">
           <span class="vault-badge-icon">🛡️</span>
           <span class="vault-badge-text">Protege tus Wired Points y validaciones de canje</span>
@@ -320,7 +320,7 @@ export function renderProfileDrawer() {
             <span>🔑 PIN Actual</span>
           </label>
           <div class="pin-input-wrapper">
-            <input type="password" id="input-pin-current" name="current_pin" class="profile-pin-input" maxlength="8" placeholder="Ingresa tu PIN actual" autocomplete="current-password" inputmode="numeric">
+            <input type="password" id="input-pin-current" name="current_pin" class="profile-pin-input" maxlength="8" placeholder="Ingresa tu PIN actual" autocomplete="current-password" inputmode="numeric" aria-label="PIN actual">
             <button type="button" class="btn-pin-toggle-visibility" onclick="toggleClientPinVisibility('input-pin-current', this)" title="Ver / ocultar PIN">👁️</button>
           </div>
         </div>
@@ -333,7 +333,7 @@ export function renderProfileDrawer() {
             <span class="pin-label-helper">4 a 8 dígitos</span>
           </div>
           <div class="pin-input-wrapper">
-            <input type="password" id="input-pin-new" name="new_pin" class="profile-pin-input" maxlength="8" placeholder="Define 4-8 dígitos" autocomplete="new-password" inputmode="numeric">
+            <input type="password" id="input-pin-new" name="new_pin" class="profile-pin-input" maxlength="8" placeholder="Define 4-8 dígitos" autocomplete="new-password" inputmode="numeric" aria-label="Nuevo PIN">
             <button type="button" class="btn-pin-toggle-visibility" onclick="toggleClientPinVisibility('input-pin-new', this)" title="Ver / ocultar PIN">👁️</button>
           </div>
         </div>
@@ -343,7 +343,7 @@ export function renderProfileDrawer() {
             <span>🔒 Confirmar Nuevo PIN</span>
           </label>
           <div class="pin-input-wrapper">
-            <input type="password" id="input-pin-confirm" name="confirm_pin" class="profile-pin-input" maxlength="8" placeholder="Repite tu nuevo PIN" autocomplete="new-password" inputmode="numeric">
+            <input type="password" id="input-pin-confirm" name="confirm_pin" class="profile-pin-input" maxlength="8" placeholder="Repite tu nuevo PIN" autocomplete="new-password" inputmode="numeric" aria-label="Confirmar nuevo PIN">
             <button type="button" class="btn-pin-toggle-visibility" onclick="toggleClientPinVisibility('input-pin-confirm', this)" title="Ver / ocultar PIN">👁️</button>
           </div>
         </div>
