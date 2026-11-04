@@ -15,8 +15,8 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="application-name" content="Wired Club">
-  <link rel="stylesheet" href="./styles.css?v=2.9.44">
-  <link rel="stylesheet" href="./css/modals/preorder.css?v=2.9.44">
+  <link rel="stylesheet" href="./styles.css?v=2.9.45">
+  <link rel="stylesheet" href="./css/modals/preorder.css?v=2.9.45">
   
   <!-- Auto-registro PWA Service Worker -->
   <script>
@@ -780,7 +780,7 @@
   </div>
 
   <!-- MODAL: ESCÁNER QR DE CÁMARA PARA CLIENTES -->
-  <div id="modal-client-camera-scanner" class="modal-overlay" style="display: none; align-items: center; justify-content: center; z-index: 10000;">
+  <div id="modal-client-camera-scanner" class="modal-overlay" style="display: none; align-items: center; justify-content: center; z-index: 10000;" onclick="if(event.target === this) stopClientCameraScanner()">
     <div class="modal-content" style="max-width: 440px; width: 92vw; text-align: center; padding: 1.25rem; border-radius: 12px; background: #ffffff; box-shadow: 0 20px 40px rgba(0,0,0,0.3); border: 2px solid var(--dark);">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
         <span class="badge-navi" style="background: var(--dark); color: #fff; font-size: 0.68rem; padding: 0.2rem 0.5rem; border-radius: 3px; font-weight: 800; font-family: var(--font-mono);">
@@ -925,6 +925,6 @@
   <div id="toast-container" class="toast-container"></div>
 
   <!-- CONTROLADOR MVVM -->
-  <script type="module" src="./js/app.js?v=2.9.44"></script>
+  <script type="module" src="./js/app.js?v=2.9.45"></script>
 </body>
 </html>

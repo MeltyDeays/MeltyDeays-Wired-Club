@@ -616,13 +616,6 @@ vercel-live-feedback,
     pointer-events: none !important;
     z-index: -9999 !important;
   }
-    box-shadow: 0 4px 18px rgba(15, 23, 42, 0.4), 0 0 0 3px rgba(56, 189, 248, 0.25) !important;
-    color: #ffffff !important;
-    align-items: center !important;
-    justify-content: center !important;
-    cursor: pointer !important;
-    transition: transform 0.15s ease, box-shadow 0.15s ease !important;
-  }
 
   .fab-mobile-menu-btn:active {
     transform: scale(0.92) !important;

@@ -83,7 +83,15 @@ export async function openClientCameraScanner() {
   if (typeof Html5Qrcode !== "undefined") {
     try {
       if (clientQrCodeScanner) {
-        await clientQrCodeScanner.stop().catch(() => {});
+        try {
+          const isScanning = typeof clientQrCodeScanner.isScanning === "boolean"
+            ? clientQrCodeScanner.isScanning
+            : (typeof clientQrCodeScanner.getState === "function" ? clientQrCodeScanner.getState() === 2 : false);
+          if (isScanning) {
+            await clientQrCodeScanner.stop().catch(() => {});
+          }
+          clientQrCodeScanner.clear();
+        } catch (_) {}
         clientQrCodeScanner = null;
       }
       clientQrCodeScanner = new Html5Qrcode("client-camera-reader");
@@ -96,6 +104,10 @@ export async function openClientCameraScanner() {
         () => {}
       );
     } catch (err) {
+      try {
+        if (clientQrCodeScanner) clientQrCodeScanner.clear();
+      } catch (_) {}
+      clientQrCodeScanner = null;
       showToast("No se pudo iniciar la cámara: " + (err.message || err), "error");
     }
   } else {
@@ -106,9 +118,22 @@ export async function openClientCameraScanner() {
 export function stopClientCameraScanner(options = {}) {
   const fromPopState = options && options.fromPopState === true;
   if (clientQrCodeScanner) {
-    clientQrCodeScanner.stop().catch(() => {}).finally(() => {
-      clientQrCodeScanner = null;
-    });
+    const scanner = clientQrCodeScanner;
+    clientQrCodeScanner = null;
+    try {
+      const isScanning = typeof scanner.isScanning === "boolean"
+        ? scanner.isScanning
+        : (typeof scanner.getState === "function" ? scanner.getState() === 2 : true);
+      if (isScanning) {
+        scanner.stop().catch(() => {}).finally(() => {
+          try { scanner.clear(); } catch (_) {}
+        });
+      } else {
+        try { scanner.clear(); } catch (_) {}
+      }
+    } catch (_) {
+      try { scanner.clear(); } catch (_) {}
+    }
   }
   const modal = document.getElementById("modal-client-camera-scanner");
   if (modal) modal.style.display = "none";

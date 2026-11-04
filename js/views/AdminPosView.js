@@ -86,7 +86,15 @@ export async function startCameraScanner() {
   if (typeof Html5Qrcode !== "undefined") {
     try {
       if (html5QrCodeScanner) {
-        await html5QrCodeScanner.stop().catch(() => {});
+        try {
+          const isScanning = typeof html5QrCodeScanner.isScanning === "boolean"
+            ? html5QrCodeScanner.isScanning
+            : (typeof html5QrCodeScanner.getState === "function" ? html5QrCodeScanner.getState() === 2 : false);
+          if (isScanning) {
+            await html5QrCodeScanner.stop().catch(() => {});
+          }
+          html5QrCodeScanner.clear();
+        } catch (_) {}
         html5QrCodeScanner = null;
       }
       html5QrCodeScanner = new Html5Qrcode("camera-scanner-reader");
@@ -104,6 +112,10 @@ export async function startCameraScanner() {
         () => {}
       );
     } catch (err) {
+      try {
+        if (html5QrCodeScanner) html5QrCodeScanner.clear();
+      } catch (_) {}
+      html5QrCodeScanner = null;
       showToast("No se pudo iniciar la cámara: " + (err.message || err), "error");
     }
   } else {
@@ -113,9 +125,22 @@ export async function startCameraScanner() {
 
 export function stopCameraScanner() {
   if (html5QrCodeScanner) {
-    html5QrCodeScanner.stop().catch(() => {}).finally(() => {
-      html5QrCodeScanner = null;
-    });
+    const scanner = html5QrCodeScanner;
+    html5QrCodeScanner = null;
+    try {
+      const isScanning = typeof scanner.isScanning === "boolean"
+        ? scanner.isScanning
+        : (typeof scanner.getState === "function" ? scanner.getState() === 2 : true);
+      if (isScanning) {
+        scanner.stop().catch(() => {}).finally(() => {
+          try { scanner.clear(); } catch (_) {}
+        });
+      } else {
+        try { scanner.clear(); } catch (_) {}
+      }
+    } catch (_) {
+      try { scanner.clear(); } catch (_) {}
+    }
   }
   const modal = document.getElementById("modal-camera-scanner");
   if (modal) modal.style.display = "none";
