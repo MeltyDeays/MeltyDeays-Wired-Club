@@ -4754,3 +4754,61 @@
   }
 }
 
+.fw-bold {
+  font-weight: 700;
+}
+
+.fw-heavy {
+  font-weight: 900;
+}
+
+.portal-static-page {
+  max-width: 860px;
+  margin: 2rem auto;
+  padding: 1.75rem;
+  background: var(--bg-card, #ffffff);
+  border: 2px solid var(--dark, #0f172a);
+  border-radius: 8px;
+  box-shadow: 4px 4px 0px var(--dark, #0f172a);
+}
+
+.portal-static-page h1 {
+  font-size: 1.6rem;
+  font-weight: 900;
+  color: var(--dark, #0f172a);
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+}
+
+.portal-static-page h2 {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--dark, #0f172a);
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border-color, #e2e8f0);
+  padding-bottom: 0.35rem;
+}
+
+.portal-static-page p, .portal-static-page li {
+  font-size: 0.92rem;
+  line-height: 1.6;
+  color: var(--gray-700, #334155);
+}
+
+.portal-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #0284c7;
+  text-decoration: none;
+}
+
+.portal-back-link:hover {
+  text-decoration: underline;
+}
+
+

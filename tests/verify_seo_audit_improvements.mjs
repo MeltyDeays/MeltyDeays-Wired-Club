@@ -27,6 +27,9 @@ export async function runSeoAuditTestSuite(ctx) {
 
   await ctx.test('1. Meta description y canonical existen y son válidos', () => {
     assert.strictEqual(indexHtml.includes('<meta name="description" content="'), true, 'Debe incluir meta description');
+    const descMatch = indexHtml.match(/<meta name="description" content="([^"]+)"/i);
+    assert.strictEqual(Boolean(descMatch), true, 'Debe capturar meta description');
+    assert.strictEqual(descMatch[1].length <= 155, true, 'Meta description debe medir <= 155 chars para no sobrepasar 1000px');
     assert.strictEqual(indexHtml.includes('<link rel="canonical" href="https://meltydeays-wired-club.vercel.app/">'), true, 'Debe incluir canonical URL');
   });
 
@@ -34,12 +37,15 @@ export async function runSeoAuditTestSuite(ctx) {
     assert.strictEqual(indexHtml.includes('<script type="application/ld+json">'), true, 'Debe incluir script JSON-LD');
     assert.strictEqual(indexHtml.includes('"@type": "WebSite"'), true, 'Debe definir tipo WebSite');
     assert.strictEqual(indexHtml.includes('"@type": "Store"'), true, 'Debe definir tipo Store');
+    assert.strictEqual(indexHtml.includes('"addressLocality": "Juigalpa"'), true, 'Schema.org debe indicar Juigalpa');
   });
 
-  await ctx.test('3. Exactamente un encabezado H1 con palabras clave del título', () => {
+  await ctx.test('3. Exactamente un encabezado H1 y palabras clave presentes en texto del cuerpo', () => {
     const h1Matches = indexHtml.match(/<h1[\s\S]*?<\/h1>/gi) || [];
     assert.strictEqual(h1Matches.length, 1, 'Debe existir exactamente un H1 en la página');
     assert.strictEqual(h1Matches[0].includes('The Wired Club · MeltyDeays (Portal de Fidelización)'), true, 'El H1 debe contener las palabras clave del título');
+    assert.strictEqual(indexHtml.includes('portal de fidelización'), true, 'El texto del cuerpo debe contener "portal de fidelización"');
+    assert.strictEqual(indexHtml.includes('The Wired Club'), true, 'El texto del cuerpo debe contener "The Wired Club"');
   });
 
   await ctx.test('4. Jerarquía de encabezados libre de saltos y encabezados vacíos "-"', () => {
@@ -49,23 +55,34 @@ export async function runSeoAuditTestSuite(ctx) {
     assert.strictEqual(h2Matches.length >= 3, true, 'Deben existir secciones semánticas H2');
   });
 
-  await ctx.test('5. Footer semántico con enlaces internos para rastreadores de búsqueda', () => {
+  await ctx.test('5. Footer semántico y páginas internas enlazadas (FAQ, Términos, Privacidad)', () => {
     assert.strictEqual(indexHtml.includes('<footer class="portal-footer"'), true, 'Debe existir footer semántico');
-    assert.strictEqual(indexHtml.includes('href="./#tab-content-catalog"'), true, 'Debe enlazar internamente al catálogo');
-    assert.strictEqual(indexHtml.includes('href="./#tab-content-vouchers"'), true, 'Debe enlazar internamente a vales');
+    assert.strictEqual(indexHtml.includes('href="./faq.html"'), true, 'Debe enlazar a FAQ');
+    assert.strictEqual(indexHtml.includes('href="./terminos.html"'), true, 'Debe enlazar a Términos');
+    assert.strictEqual(indexHtml.includes('href="./privacidad.html"'), true, 'Debe enlazar a Privacidad');
+    assert.strictEqual(fs.existsSync(path.join(PROJECT_ROOT, 'faq.html')), true, 'faq.html debe existir');
+    assert.strictEqual(fs.existsSync(path.join(PROJECT_ROOT, 'terminos.html')), true, 'terminos.html debe existir');
+    assert.strictEqual(fs.existsSync(path.join(PROJECT_ROOT, 'privacidad.html')), true, 'privacidad.html debe existir');
     assert.strictEqual(indexHtml.includes('Juigalpa, Nicaragua'), true, 'Debe mostrar ubicación en Juigalpa');
     assert.strictEqual(indexHtml.includes('Lun - Dom: 9:00 AM - 6:00 PM'), true, 'Debe mostrar atención 7 días');
-    assert.strictEqual(indexHtml.includes('"addressLocality": "Juigalpa"'), true, 'Schema.org debe indicar Juigalpa');
   });
 
-  await ctx.test('6. Archivos robots.txt y sitemap.xml existen y están configurados', () => {
+  await ctx.test('6. Uso optimizado de etiquetas strong (cero exceso y cero duplicados)', () => {
+    const strongMatches = indexHtml.match(/<strong[\s\S]*?<\/strong>/gi) || [];
+    assert.strictEqual(strongMatches.length <= 5, true, `Etiquetas strong deben ser moderadas (detectadas ${strongMatches.length})`);
+    assert.strictEqual(indexHtml.includes('<strong></strong>'), false, 'No deben existir etiquetas strong vacías');
+  });
+
+  await ctx.test('7. Archivos robots.txt y sitemap.xml contienen todas las páginas internas', () => {
     assert.strictEqual(fs.existsSync(robotsTxtPath), true, 'robots.txt debe existir');
     assert.strictEqual(fs.existsSync(sitemapXmlPath), true, 'sitemap.xml debe existir');
-    const robots = fs.readFileSync(robotsTxtPath, 'utf8');
-    assert.strictEqual(robots.includes('Sitemap: https://meltydeays-wired-club.vercel.app/sitemap.xml'), true);
+    const sitemap = fs.readFileSync(sitemapXmlPath, 'utf8');
+    assert.strictEqual(sitemap.includes('https://meltydeays-wired-club.vercel.app/faq.html'), true);
+    assert.strictEqual(sitemap.includes('https://meltydeays-wired-club.vercel.app/terminos.html'), true);
+    assert.strictEqual(sitemap.includes('https://meltydeays-wired-club.vercel.app/privacidad.html'), true);
   });
 
-  await ctx.test('7. Enlace externo WhatsApp no genera redirección intermedia wa.me', () => {
+  await ctx.test('8. Enlace externo WhatsApp no genera redirección intermedia wa.me', () => {
     assert.strictEqual(indexHtml.includes('https://wa.me/50558438412'), false, 'No debe usar wa.me que genera redirecciones intermedias');
     assert.strictEqual(indexHtml.includes('https://api.whatsapp.com/send?phone=50558438412'), true, 'Debe apuntar directo a api.whatsapp.com');
   });
