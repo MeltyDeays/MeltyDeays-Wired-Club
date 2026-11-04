@@ -2454,7 +2454,7 @@ export function renderCatalog(catalog, user) {
           </div>
           <div class="pricing-row total-row">
             <span class="pricing-label">¡AHORA EN PREVENTA:</span>
-            <span class="pricing-val total" style="color: #dc2626; font-weight: 900; font-variant-numeric: tabular-nums;">${formatPrice(presalePrice)}!</span>
+            <span class="pricing-val total" style="color: #b91c1c; font-weight: 900; font-variant-numeric: tabular-nums;">${formatPrice(presalePrice)}!</span>
           </div>
           <div class="pricing-row footnote-row" style="color: #64748b; font-size: 0.65rem; margin-top: 3px; line-height: 1.35; display: block; width: 100%; white-space: normal;">
             <span style="white-space: normal; word-break: break-word; display: block; width: 100%;">✨ Descuento directo de preventa. No requiere puntos Wired.</span>
@@ -2474,7 +2474,7 @@ export function renderCatalog(catalog, user) {
           </div>
           <div class="pricing-row total-row" style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 2px 6px; font-size: 0.8rem; font-weight: 900; color: #78350f; border-top: 1px dashed #fcd34d; margin-top: 4px; padding-top: 4px;">
             <span class="pricing-label">¡AHORA EN COMBO:</span>
-            <span class="pricing-val total" style="color: #dc2626; font-weight: 900; font-variant-numeric: tabular-nums;">${formatPrice(item.priceUsd)}</span>
+            <span class="pricing-val total" style="color: #b91c1c; font-weight: 900; font-variant-numeric: tabular-nums;">${formatPrice(item.priceUsd)}</span>
           </div>
           <div class="pricing-row footnote-row" style="color: #92400e; font-size: 0.65rem; margin-top: 3px; line-height: 1.35; display: block; width: 100%; white-space: normal;">
             <span style="white-space: normal; word-break: break-word; display: block; width: 100%;">✦ Adquiere el combo completo con descuento o compra cualquier producto por separado.</span>
@@ -2503,11 +2503,11 @@ export function renderCatalog(catalog, user) {
             </div>
             <div class="pricing-row discount-row" style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 4px 8px;">
               <span class="pricing-label">Tu ahorro (Tope ${maxPct}%):</span>
-              <span class="pricing-val green" style="font-variant-numeric: tabular-nums; margin-left: auto;">-${formatPrice(item.maxDiscountUsd)}</span>
+              <span class="pricing-val green" style="color: #047857; font-variant-numeric: tabular-nums; margin-left: auto;">-${formatPrice(item.maxDiscountUsd)}</span>
             </div>
             <div class="pricing-row total-row" style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 4px 8px;">
               <span class="pricing-label">¡AHORA:</span>
-              <span class="pricing-val total" style="color: #dc2626; font-weight: 900; font-variant-numeric: tabular-nums; margin-left: auto;">${formatPrice(item.cashToPayUsd)}!</span>
+              <span class="pricing-val total" style="color: #b91c1c; font-weight: 900; font-variant-numeric: tabular-nums; margin-left: auto;">${formatPrice(item.cashToPayUsd)}!</span>
             </div>
           </div>
         `;
@@ -2520,11 +2520,11 @@ export function renderCatalog(catalog, user) {
             </div>
             <div class="pricing-row discount-row" style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 4px 8px;">
               <span class="pricing-label">Tu ahorro (${appliedPts.toLocaleString()} WP):</span>
-              <span class="pricing-val green" style="font-variant-numeric: tabular-nums; margin-left: auto;">-${formatPrice(appliedDiscountUsd)} (${formattedAppliedPct}%)</span>
+              <span class="pricing-val green" style="color: #047857; font-variant-numeric: tabular-nums; margin-left: auto;">-${formatPrice(appliedDiscountUsd)} (${formattedAppliedPct}%)</span>
             </div>
             <div class="pricing-row total-row" style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 4px 8px;">
               <span class="pricing-label">¡AHORA:</span>
-              <span class="pricing-val total" style="color: #dc2626; font-weight: 900; font-variant-numeric: tabular-nums; margin-left: auto;">${formatPrice(cashToPayWithPts)}!</span>
+              <span class="pricing-val total" style="color: #b91c1c; font-weight: 900; font-variant-numeric: tabular-nums; margin-left: auto;">${formatPrice(cashToPayWithPts)}!</span>
             </div>
             <div class="pricing-row footnote-row" style="color: #64748b; font-size: 0.65rem; margin-top: 3px; line-height: 1.35; display: block; width: 100%; white-space: normal;">
               <span style="white-space: normal; word-break: break-word; display: block; width: 100%;">Tope máx. (${maxCapPts.toLocaleString()} WP): -${formatPrice(item.maxDiscountUsd)} (${maxPct}% OFF)</span>
@@ -2560,11 +2560,11 @@ export function renderCatalog(catalog, user) {
             </div>
             <div class="pricing-row discount-row">
               <span class="pricing-label">Ahorro con puntos:</span>
-              <span class="pricing-val green" style="font-variant-numeric: tabular-nums;">Hasta ${maxPct}% OFF</span>
+              <span class="pricing-val green" style="color: #047857; font-variant-numeric: tabular-nums;">Hasta ${maxPct}% OFF</span>
             </div>
             <div class="pricing-row total-row">
               <span class="pricing-label">¡AHORA:</span>
-              <span class="pricing-val total" style="color: #dc2626; font-weight: 900; font-variant-numeric: tabular-nums;">Desde ${formatPrice(item.cashToPayUsd)}!</span>
+              <span class="pricing-val total" style="color: #b91c1c; font-weight: 900; font-variant-numeric: tabular-nums;">Desde ${formatPrice(item.cashToPayUsd)}!</span>
             </div>
           </div>
         `;

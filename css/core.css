@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800;900&family=Outfit:wght@400;500;600;700;800;900&display=swap');
+/* Fonts cargadas de forma paralela via preconnect en HTML head */
 
 :root {
   --dark: #0f172a;

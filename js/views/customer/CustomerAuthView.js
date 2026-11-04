@@ -44,6 +44,19 @@ export function renderUserQr(text) {
       colorLight: "#ffffff",
       correctLevel: QRCode.CorrectLevel.M
     });
+    const fixQrImg = () => {
+      const img = el.querySelector("img");
+      if (img) {
+        img.setAttribute("alt", "Código QR de socio MeltyDeays CyberPass");
+        img.setAttribute("width", "76");
+        img.setAttribute("height", "76");
+        img.setAttribute("loading", "lazy");
+        img.setAttribute("decoding", "async");
+      }
+    };
+    fixQrImg();
+    setTimeout(fixQrImg, 30);
+    setTimeout(fixQrImg, 150);
   } catch (e) { }
 }
 

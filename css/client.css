@@ -1255,7 +1255,7 @@
   justify-content: space-between;
   align-items: baseline;
   flex-wrap: wrap;
-  color: var(--gray-500);
+  color: #475569;
   margin-bottom: 3px;
   gap: 4px 8px;
   min-width: 0;
@@ -1267,6 +1267,7 @@
   white-space: nowrap;
   flex-shrink: 0;
   font-size: 0.72rem;
+  color: inherit;
 }
 
 .pricing-val {
@@ -1278,13 +1279,13 @@
 }
 
 .pricing-row.discount-row {
-  color: #b45309;
+  color: #92400e;
   font-weight: 800;
   margin-top: 3px;
 }
 
 .pricing-row.discount-row .green {
-  color: #059669;
+  color: #047857;
   font-weight: 900;
 }
 
@@ -1302,7 +1303,7 @@
 }
 
 .pricing-row.total-row .total {
-  color: #dc2626;
+  color: #b91c1c;
   font-size: 0.98rem;
   font-weight: 900;
 }

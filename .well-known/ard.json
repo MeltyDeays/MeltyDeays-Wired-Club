@@ -1,6 +1,35 @@
 {
   "version": "1.0",
   "name": "The Wired Club · MeltyDeays",
-  "description": "Portal oficial de fidelización y recompensas en tecnología, gadgets y gaming hardware.",
-  "resources": []
+  "description": "Portal oficial de fidelización y recompensas en tecnología, gadgets y gaming hardware de MeltyDeays en Juigalpa, Nicaragua.",
+  "entries": [
+    {
+      "identifier": "urn:air:meltydeays-wired-club.vercel.app:portal:catalog",
+      "displayName": "The Wired Club - Catálogo de Recompensas",
+      "type": "text/html",
+      "url": "https://meltydeays-wired-club.vercel.app/",
+      "capabilities": ["BrowseCatalog", "RedeemPoints", "Preorders"]
+    },
+    {
+      "identifier": "urn:air:meltydeays-wired-club.vercel.app:portal:faq",
+      "displayName": "Preguntas Frecuentes FAQ",
+      "type": "text/html",
+      "url": "https://meltydeays-wired-club.vercel.app/faq.html",
+      "capabilities": ["CustomerSupport", "Documentation"]
+    },
+    {
+      "identifier": "urn:air:meltydeays-wired-club.vercel.app:portal:terminos",
+      "displayName": "Términos y Condiciones de Uso",
+      "type": "text/html",
+      "url": "https://meltydeays-wired-club.vercel.app/terminos.html",
+      "capabilities": ["TermsOfService", "Legal"]
+    },
+    {
+      "identifier": "urn:air:meltydeays-wired-club.vercel.app:portal:privacidad",
+      "displayName": "Política de Privacidad y Manejo de Datos",
+      "type": "text/html",
+      "url": "https://meltydeays-wired-club.vercel.app/privacidad.html",
+      "capabilities": ["PrivacyPolicy", "DataProtection"]
+    }
+  ]
 }

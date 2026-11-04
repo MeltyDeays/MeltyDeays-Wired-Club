@@ -106,6 +106,27 @@ export async function runSeoAuditTestSuite(ctx) {
     const clientCss = fs.readFileSync(path.join(PROJECT_ROOT, 'css', 'client.css'), 'utf8');
     assert.strictEqual(clientCss.includes('#tab-content-catalog {\n  min-height: 80vh;\n}'), true, 'Debe reservar min-height en catalog para prevenir CLS');
     assert.strictEqual(clientCss.includes('.portal-breadcrumb a {\n  color: #0369a1;'), true, 'Breadcrumb link debe tener contraste WCAG AA (#0369a1)');
+    assert.strictEqual(clientCss.includes('.pricing-row.discount-row .green {\n  color: #047857;'), true, 'Descuento verde debe tener ratio WCAG AA (#047857)');
+  });
+
+  await ctx.test('11. llms.txt y .well-known/ard.json válidos para Agentic Browsing (100%)', () => {
+    const llmsPath = path.join(PROJECT_ROOT, 'llms.txt');
+    assert.strictEqual(fs.existsSync(llmsPath), true, 'llms.txt debe existir');
+    const llmsContent = fs.readFileSync(llmsPath, 'utf8');
+    assert.strictEqual(llmsContent.startsWith('# '), true, 'llms.txt debe iniciar con un encabezado H1');
+    assert.strictEqual(llmsContent.includes('[Catálogo de Recompensas]'), true, 'llms.txt debe incluir enlaces markdown');
+
+    const ardPath = path.join(PROJECT_ROOT, '.well-known', 'ard.json');
+    assert.strictEqual(fs.existsSync(ardPath), true, 'ard.json debe existir');
+    const ardJson = JSON.parse(fs.readFileSync(ardPath, 'utf8'));
+    assert.strictEqual(Array.isArray(ardJson.entries), true, 'ard.json debe contener array "entries"');
+    assert.strictEqual(ardJson.entries.length >= 2, true, 'ard.json debe listar entries válidos');
+  });
+
+  await ctx.test('12. Recursos críticos preconectados y scripts en head con defer', () => {
+    assert.strictEqual(indexHtml.includes('<link rel="preconnect" href="https://fonts.googleapis.com">'), true);
+    assert.strictEqual(indexHtml.includes('<script defer src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js">'), true);
+    assert.strictEqual(indexHtml.includes('<script defer src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js">'), true);
   });
 }
 

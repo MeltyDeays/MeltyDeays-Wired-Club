@@ -1,0 +1,19 @@
+# The Wired Club · MeltyDeays
+
+> Portal oficial de fidelización y recompensas en tecnología, periféricos gaming y gadgets en Juigalpa, Nicaragua.
+
+The Wired Club es el ecosistema oficial de MeltyDeays para que los clientes acumulen Wired Points (WP) en compras físicas y virtuales, canjeen vales con descuentos directos en mostrador y accedan a preventas y combos tecnológicos.
+
+## Documentación y Enlaces Oficiales
+
+- [Catálogo de Recompensas](https://meltydeays-wired-club.vercel.app/): Catálogo interactivo de periféricos gamer, componentes y gadgets con calculadora interactiva de Wired Points.
+- [Preguntas Frecuentes (FAQ)](https://meltydeays-wired-club.vercel.app/faq.html): Guía de ayuda sobre acumulación de puntos, canje de vales, ubicación de la tienda y horarios de atención.
+- [Términos y Condiciones](https://meltydeays-wired-club.vercel.app/terminos.html): Reglamento del club, políticas de vigencia de vales (3 días) y garantías de hardware.
+- [Política de Privacidad](https://meltydeays-wired-club.vercel.app/privacidad.html): Compromiso de protección de datos personales y confidencialidad para socios.
+
+## Información de la Tienda
+
+- Ubicación: Juigalpa, Chontales, Nicaragua
+- Horario: Lunes a Domingo de 9:00 AM a 6:00 PM (7 días de la semana)
+- Atención al Cliente: WhatsApp (+505 5843-8412)
+- Tasa Oficial de Puntos: 50 Wired Points = $1.00 USD
