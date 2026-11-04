@@ -1,5 +1,5 @@
 // Service Worker Oficial PWA & Web Push de MeltyDeays Wired Club (v2.9.88)
-const CACHE_NAME = 'wired-club-v2.9.90';
+const CACHE_NAME = 'wired-club-v2.9.91';
 
 const PRECACHE_ASSETS = [
   './',
@@ -52,15 +52,9 @@ self.addEventListener('fetch', (event) => {
   // Ignorar extensiones de navegador y esquemas no HTTP(S)
   if (!url.protocol.startsWith('http')) return;
 
-  // Dejar pasar libremente peticiones a APIs dinámicas y servicios de Firebase
-  if (
-    url.hostname.includes('firestore.googleapis.com') ||
-    url.hostname.includes('firebaseinstallations.googleapis.com') ||
-    url.hostname.includes('identitytoolkit.googleapis.com') ||
-    url.pathname.startsWith('/api/')
-  ) {
-    return;
-  }
+  // Interceptar exclusivamente recursos propios (Same-Origin)
+  if (url.origin !== self.location.origin) return;
+  if (url.pathname.startsWith('/api/')) return;
 
   // Estrategia Network-First con fallback a CacheStorage local
   event.respondWith(
@@ -78,8 +72,9 @@ self.addEventListener('fetch', (event) => {
         return caches.match(event.request).then((cachedResponse) => {
           if (cachedResponse) return cachedResponse;
           if (event.request.mode === 'navigate') {
-            return caches.match('./index.html');
+            return caches.match('./index.html').then((r) => r || new Response('', { status: 404 }));
           }
+          return new Response('', { status: 408, statusText: 'Offline' });
         });
       })
   );
