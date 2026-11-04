@@ -187,7 +187,7 @@ function renderVouchersList() {
       container.innerHTML = `
         <div class="cyber-empty-box">
           <div class="empty-icon-wrap" style="color: var(--accent); background: #fff1f2; border-color: #fecdd3;">
-            <svg viewBox="0 0 24 24" width="34" height="34" stroke="currentColor" stroke-width="1.8" fill="none">
+            <svg viewBox="0 0 24 24" width="34" height="34" stroke="currentColor" stroke-width="1.8" fill="none" aria-hidden="true" focusable="false">
               <path d="M4 8V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2a2 2 0 0 0 0-4Z" />
               <path d="M10 4v16M14 4v16" stroke-dasharray="2 2" />
             </svg>
@@ -217,7 +217,7 @@ function renderVouchersList() {
       container.innerHTML = `
         <div class="cyber-empty-box">
           <div class="empty-icon-wrap" style="color: var(--gray-600); background: #f1f5f9; border-color: #cbd5e1;">
-            <svg viewBox="0 0 24 24" width="34" height="34" stroke="currentColor" stroke-width="1.8" fill="none">
+            <svg viewBox="0 0 24 24" width="34" height="34" stroke="currentColor" stroke-width="1.8" fill="none" aria-hidden="true" focusable="false">
               <circle cx="12" cy="12" r="10" />
               <polyline points="12 6 12 12 16 14" />
             </svg>
@@ -255,7 +255,7 @@ export function renderLedger(ledger) {
     container.innerHTML = `
       <div class="cyber-empty-box">
         <div class="empty-icon-wrap" style="color: #0284c7; background: #e0f2fe; border-color: #bae6fd;">
-          <svg viewBox="0 0 24 24" width="34" height="34" stroke="currentColor" stroke-width="1.8" fill="none">
+          <svg viewBox="0 0 24 24" width="34" height="34" stroke="currentColor" stroke-width="1.8" fill="none" aria-hidden="true" focusable="false">
             <line x1="12" y1="20" x2="12" y2="10" />
             <line x1="18" y1="20" x2="18" y2="4" />
             <line x1="6" y1="20" x2="6" y2="16" />
@@ -741,6 +741,16 @@ export function showVoucherModal(voucherCode) {
         colorLight: "#ffffff",
         correctLevel: (QRCode.CorrectLevel && QRCode.CorrectLevel.H) !== undefined ? QRCode.CorrectLevel.H : 2
       });
+      const fixVoucherQrImg = () => {
+        const img = qrCanvas.querySelector("img");
+        if (img) {
+          img.setAttribute("alt", `Código QR del Vale ${voucher.voucherCode}`);
+          img.setAttribute("width", "148");
+          img.setAttribute("height", "148");
+        }
+      };
+      fixVoucherQrImg();
+      setTimeout(fixVoucherQrImg, 50);
     } catch (e) {
       console.warn("QRCode generation skipped:", e.message);
     }

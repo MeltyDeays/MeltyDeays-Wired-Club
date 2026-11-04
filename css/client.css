@@ -68,7 +68,7 @@
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background: #d97706;
+  background: #92400e;
   color: #ffffff;
   font-family: var(--font-mono);
   font-size: 0.72rem;
@@ -776,7 +776,7 @@
   font-family: var(--font-mono);
   font-size: 0.72rem;
   font-weight: 800;
-  color: #64748b;
+  color: #475569;
   letter-spacing: 1.2px;
   text-transform: uppercase;
 }
@@ -1460,7 +1460,7 @@
 }
 
 .lain-rate-divider {
-  color: var(--gray-400);
+  color: #475569;
   font-weight: 900;
 }
 

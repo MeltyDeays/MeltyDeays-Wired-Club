@@ -837,7 +837,7 @@ export function openLightboxFromSpecs() {
 
 export function renderWiredCoinSvg() {
   return `
-    <svg class="reward-temu-coin-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg class="reward-temu-coin-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
       <circle cx="12" cy="12" r="10.5" fill="#f59e0b" stroke="#b45309" stroke-width="1.2"/>
       <circle cx="12" cy="12" r="8" fill="none" stroke="#fef08a" stroke-width="0.8" stroke-dasharray="2 1"/>
       <text x="12" y="15.5" text-anchor="middle" font-family="'Impact', 'Arial Black', sans-serif" font-size="10.5" font-weight="900" fill="#78350f">W</text>
@@ -1708,13 +1708,13 @@ export function openProductSpecsModal(rewardId, imgIdx = 0, options = {}) {
     const isOut = item.stock <= 0;
     
     const waSvg = `
-      <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" style="color: #059669; flex-shrink: 0;">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" style="color: #059669; flex-shrink: 0;" aria-hidden="true" focusable="false">
         <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0 0 12.04 2zm.01 1.67c2.2 0 4.26.86 5.82 2.41a8.16 8.16 0 0 1 2.41 5.83c0 4.54-3.7 8.24-8.24 8.24-1.48 0-2.93-.4-4.2-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.217 8.217 0 0 1-1.26-4.38c0-4.54 3.7-8.24 8.24-8.24zm4.52 11.66c-.25-.13-1.47-.72-1.7-.81-.23-.08-.39-.13-.56.13-.17.25-.64.81-.79.97-.14.17-.29.19-.54.06-.25-.13-1.06-.39-2.02-1.25-.75-.67-1.26-1.5-1.4-1.75-.15-.25-.02-.39.11-.51.11-.11.25-.29.38-.44.12-.14.17-.25.25-.42.08-.17.04-.31-.02-.44-.06-.13-.56-1.35-.77-1.85-.2-.49-.41-.42-.56-.43h-.48c-.17 0-.44.06-.67.31-.23.25-.87.85-.87 2.08 0 1.22.89 2.41 1.01 2.58.13.17 1.76 2.68 4.26 3.76.6.26 1.06.41 1.43.53.6.19 1.15.16 1.58.1.48-.07 1.47-.6 1.68-1.18.21-.58.21-1.08.15-1.18-.06-.1-.23-.17-.48-.3z"/>
       </svg>
     `;
 
     const shareSvg = `
-      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--dark); flex-shrink: 0;">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--dark); flex-shrink: 0;" aria-hidden="true" focusable="false">
         <circle cx="18" cy="5" r="3"></circle>
         <circle cx="6" cy="12" r="3"></circle>
         <circle cx="18" cy="19" r="3"></circle>
@@ -1724,13 +1724,13 @@ export function openProductSpecsModal(rewardId, imgIdx = 0, options = {}) {
     `;
 
     const zapSvg = `
-      <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" stroke="none" style="flex-shrink: 0;">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" stroke="none" style="flex-shrink: 0;" aria-hidden="true" focusable="false">
         <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
       </svg>
     `;
 
     const tagSvg = `
-      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;" aria-hidden="true" focusable="false">
         <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
         <line x1="7" y1="7" x2="7.01" y2="7"></line>
       </svg>
@@ -2224,7 +2224,7 @@ export function renderCatalog(catalog, user) {
     container.innerHTML = `
       <div class="cyber-empty-box">
         <div class="empty-icon-wrap">
-          <svg viewBox="0 0 24 24" width="34" height="34" stroke="currentColor" stroke-width="1.8" fill="none">
+          <svg viewBox="0 0 24 24" width="34" height="34" stroke="currentColor" stroke-width="1.8" fill="none" aria-hidden="true" focusable="false">
             <rect x="2" y="3" width="20" height="14" rx="2" />
             <line x1="8" y1="21" x2="16" y2="21" />
             <line x1="12" y1="17" x2="12" y2="21" />
@@ -2720,7 +2720,7 @@ export function renderCatalog(catalog, user) {
               ${comboItems.map((cItem, idx) => `
                 ${idx > 0 ? '<div class="combo-split-divider"><span class="combo-split-plus">+</span></div>' : ''}
                 <div class="combo-split-item" title="${cItem.title}">
-                  <img src="${cItem.imageUrl || itemImages[idx] || mainCover}" alt="${cItem.title}" width="160" height="160" class="combo-split-img" referrerpolicy="no-referrer" loading="lazy" decoding="async" onerror="this.onerror=null; this.style.display='none'; this.parentElement.style.background='#0d131f';">
+                  <img src="${cItem.imageUrl || itemImages[idx] || mainCover}" alt="${(cItem.title || '').replace(/"/g, '&quot;')}" width="160" height="160" class="combo-split-img" referrerpolicy="no-referrer" loading="lazy" decoding="async" onerror="this.onerror=null; this.style.display='none'; this.parentElement.style.background='#0d131f';">
                   <div class="combo-split-item-label">${cItem.title}</div>
                 </div>
               `).join('')}
@@ -2742,7 +2742,7 @@ export function renderCatalog(catalog, user) {
             ` : ''}
             ${mainCover
               ? `
-                <img src="${mainCover}" alt="${item.title}" width="320" height="320" class="reward-img" referrerpolicy="no-referrer" loading="lazy" decoding="async" onclick="event.stopPropagation(); openProductSpecsModal('${item.id}')" title="Clic para ver detalles y fotos" onerror="handleCatalogImgError(this, '${item.id}', '${isIncoming ? '🕊️' : (isPartial ? '🏷️' : '🎁')}', '${isIncoming ? 'PREORDER_ITEM' : (isPartial ? 'SALE_DISCOUNT' : 'TECH_REWARD')}');">
+                <img src="${mainCover}" alt="${(item.title || '').replace(/"/g, '&quot;')}" width="320" height="320" class="reward-img" referrerpolicy="no-referrer" loading="lazy" decoding="async" onclick="event.stopPropagation(); openProductSpecsModal('${item.id}')" title="Clic para ver detalles y fotos" onerror="handleCatalogImgError(this, '${item.id}', '${isIncoming ? '🕊️' : (isPartial ? '🏷️' : '🎁')}', '${isIncoming ? 'PREORDER_ITEM' : (isPartial ? 'SALE_DISCOUNT' : 'TECH_REWARD')}');">
                 ${!isOut ? `
                   <div class="reward-img-action-overlay" onclick="event.stopPropagation(); openProductSpecsModal('${item.id}')">
                     <div class="reward-img-expand-badge">
@@ -2758,7 +2758,7 @@ export function renderCatalog(catalog, user) {
           ${isOut ? `
             <div class="reward-sold-stamp-container">
               <div class="reward-sold-stamp">
-                <svg class="sold-seal-svg" viewBox="0 0 240 120" width="190" height="95">
+                <svg class="sold-seal-svg" viewBox="0 0 240 120" width="190" height="95" aria-hidden="true" focusable="false">
                   <defs>
                     <linearGradient id="haibaneGold-${item.id}" x1="0%" y1="0%" x2="100%" y2="100%">
                       <stop offset="0%" stop-color="#fffbeb" />
@@ -2847,7 +2847,7 @@ export function renderCatalog(catalog, user) {
 
               <!-- Sello sagrado levitando suavemente -->
               <div class="reward-incoming-stamp haibane-levitating">
-                <svg class="incoming-seal-svg" viewBox="0 0 240 120" width="180" height="90">
+                <svg class="incoming-seal-svg" viewBox="0 0 240 120" width="180" height="90" aria-hidden="true" focusable="false">
                   <defs>
                     <linearGradient id="haibaneGoldInc-${item.id}" x1="0%" y1="0%" x2="100%" y2="100%">
                       <stop offset="0%" stop-color="#fffbeb" />

@@ -99,7 +99,7 @@ export function injectEnvironmentBadge() {
           cursor: grab;
           letter-spacing: 0.03em;
         " title="Arrastra para mover. Haz clic en ⤢ para expandir">
-          <span style="cursor: grab; opacity: 0.6; font-size: 0.75rem;">⠿</span>
+          <span style="cursor: grab; color: #451a03; font-weight: 900; font-size: 0.75rem;">⠿</span>
           <span>🧪 Sandbox</span>
           <button id="btn-toggle-dev-badge" type="button" style="
             background: #0f172a;
@@ -132,7 +132,7 @@ export function injectEnvironmentBadge() {
           cursor: grab;
           letter-spacing: 0.03em;
         " title="Mantén presionado para arrastrar a cualquier lugar">
-          <span style="cursor: grab; opacity: 0.6; font-size: 0.85rem;" title="Asa de arrastre">⠿</span>
+          <span style="cursor: grab; color: #451a03; font-weight: 900; font-size: 0.85rem;" title="Asa de arrastre">⠿</span>
           <span style="font-size: 0.85rem;">🧪</span>
           <span style="white-space: nowrap;">MODO PRUEBAS (SANDBOX)</span>
           <span style="background:#0f172a; color:#fef08a; padding:1.5px 5px; border-radius:3px; font-size:0.62rem; white-space:nowrap;">BD: dev_*</span>
