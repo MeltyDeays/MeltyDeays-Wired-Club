@@ -72,6 +72,16 @@ export class CustomerViewModel {
   }
 
   async init() {
+    // 0. Renderizado inmediato desde snapshot local en frame 1 (Instant Paint / LCP acelerado)
+    try {
+      const snap = FirestoreService.getSnapshot();
+      const cachedRewards = Object.values((snap && snap.rewards) || {});
+      if (cachedRewards.length > 0) {
+        this.catalog = cachedRewards.map(r => new RewardModel(r));
+        this.notify();
+      }
+    } catch (e) {}
+
     // 1. Cargar catálogo desde Firestore/Cache y activar sync en tiempo real
     await this.refreshCatalog();
     FirestoreService.subscribeRewards(rawRewards => {
