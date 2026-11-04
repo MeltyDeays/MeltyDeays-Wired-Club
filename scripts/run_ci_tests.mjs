@@ -98,7 +98,8 @@ const testSuites = [
   'tests/test_payment_receipt_alignment_and_dedup.mjs',
   'tests/verify_modal_back_navigation.mjs',
   'tests/verify_combo_price_nowrap_and_label.mjs',
-  'tests/verify_desktop_layout_and_scanner_close.mjs'
+  'tests/verify_desktop_layout_and_scanner_close.mjs',
+  'tests/verify_seo_audit_improvements.mjs'
 ];
 
 for (const suite of testSuites) {

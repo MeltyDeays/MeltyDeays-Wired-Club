@@ -4631,3 +4631,126 @@
   text-align: center;
 }
 
+/* ========================================================
+   SEO, ACCESIBILIDAD Y ENCABEZADOS SEMÁNTICOS (AUDITORÍA SEO)
+   ======================================================== */
+.sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+.portal-hero-header {
+  margin-bottom: 1.5rem;
+  padding: 1rem 1.25rem;
+  background: #ffffff;
+  border: 2px solid var(--dark);
+  border-radius: 8px;
+  box-shadow: 3px 3px 0px var(--dark);
+}
+
+.portal-hero-title {
+  font-size: 1.15rem;
+  font-weight: 900;
+  color: var(--dark);
+  margin: 0 0 0.35rem 0;
+  line-height: 1.25;
+  letter-spacing: -0.2px;
+}
+
+.portal-hero-subtitle {
+  font-size: 0.82rem;
+  color: var(--gray-700);
+  margin: 0;
+  line-height: 1.45;
+}
+
+/* FOOTER SEMÁNTICO Y ENLACES DE RASTREO SEO */
+.portal-footer {
+  margin-top: 3.5rem;
+  border-top: 2px solid var(--dark);
+  background: #ffffff;
+  padding: 2.5rem 1.5rem 2rem 1.5rem;
+  box-shadow: 0 -2px 10px rgba(15, 23, 42, 0.04);
+}
+
+.portal-footer .footer-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 1fr;
+  gap: 2rem;
+}
+
+.footer-brand-title {
+  font-size: 1.25rem;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 0.5rem;
+}
+
+.footer-tagline {
+  font-size: 0.82rem;
+  color: var(--gray-700);
+  margin: 0 0 0.75rem 0;
+  line-height: 1.4;
+}
+
+.footer-copy {
+  font-size: 0.75rem;
+  color: var(--gray-500);
+  margin: 0;
+}
+
+.footer-col-title {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 900;
+  color: var(--dark);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.75rem;
+  font-family: var(--font-mono);
+}
+
+.footer-links-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.footer-links-list li {
+  font-size: 0.8rem;
+  color: var(--gray-700);
+}
+
+.footer-links-list a {
+  color: #0284c7;
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.15s ease;
+}
+
+.footer-links-list a:hover {
+  color: #0369a1;
+  text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+  .portal-footer .footer-content {
+    grid-template-columns: 1fr;
+    gap: 1.75rem;
+  }
+}
+

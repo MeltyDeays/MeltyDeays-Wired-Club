@@ -4,6 +4,59 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>The Wired Club · MeltyDeays (Portal de Fidelización)</title>
+  <meta name="description" content="The Wired Club de MeltyDeays: Portal de fidelización oficial. Acumula Wired Points por cada compra de tecnología, gadgets y gaming hardware y canjea descuentos exclusivos.">
+  <meta name="keywords" content="MeltyDeays, The Wired Club, fidelización, recompensas, gaming hardware, gadgets, tecnología, Wired Points, Nicaragua">
+  <meta name="author" content="MeltyDeays">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://meltydeays-wired-club.vercel.app/">
+
+  <!-- Open Graph / Meta Etiquetas Sociales -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://meltydeays-wired-club.vercel.app/">
+  <meta property="og:title" content="The Wired Club · MeltyDeays (Portal de Fidelización)">
+  <meta property="og:description" content="Acumula Wired Points por cada compra de tecnología, gadgets y gaming hardware en MeltyDeays y canjea recompensas oficiales.">
+  <meta property="og:image" content="https://meltydeays-wired-club.vercel.app/assets/icons/icon-512x512.png">
+  <meta property="og:site_name" content="The Wired Club · MeltyDeays">
+  <meta property="og:locale" content="es_NI">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="The Wired Club · MeltyDeays (Portal de Fidelización)">
+  <meta name="twitter:description" content="Acumula Wired Points por cada compra de tecnología, gadgets y gaming hardware en MeltyDeays y canjea recompensas oficiales.">
+  <meta name="twitter:image" content="https://meltydeays-wired-club.vercel.app/assets/icons/icon-512x512.png">
+
+  <!-- Datos Estructurados Schema.org (JSON-LD) -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": "https://meltydeays-wired-club.vercel.app/#website",
+        "url": "https://meltydeays-wired-club.vercel.app/",
+        "name": "The Wired Club · MeltyDeays",
+        "description": "Portal de fidelización y recompensas en tecnología, gadgets y gaming hardware de MeltyDeays.",
+        "inLanguage": "es"
+      },
+      {
+        "@type": "Store",
+        "@id": "https://meltydeays-wired-club.vercel.app/#organization",
+        "name": "MeltyDeays",
+        "url": "https://meltydeays-wired-club.vercel.app/",
+        "logo": "https://meltydeays-wired-club.vercel.app/assets/icons/icon-512x512.png",
+        "image": "https://meltydeays-wired-club.vercel.app/assets/icons/icon-512x512.png",
+        "telephone": "+505-5843-8412",
+        "priceRange": "$$",
+        "address": {
+          "@type": "PostalAddress",
+          "addressLocality": "Managua",
+          "addressCountry": "NI"
+        }
+      }
+    ]
+  }
+  </script>
+
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
@@ -15,8 +68,8 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="application-name" content="Wired Club">
-  <link rel="stylesheet" href="./styles.css?v=2.9.45">
-  <link rel="stylesheet" href="./css/modals/preorder.css?v=2.9.45">
+  <link rel="stylesheet" href="./styles.css?v=2.9.46">
+  <link rel="stylesheet" href="./css/modals/preorder.css?v=2.9.46">
   
   <!-- Auto-registro PWA Service Worker -->
   <script>
@@ -135,12 +188,18 @@
 
   <!-- CONTENEDOR PRINCIPAL CLIENTE -->
   <main class="main-container">
+
+    <!-- ENCABEZADO PRINCIPAL SEMÁNTICO SEO & ACCESIBILIDAD -->
+    <header class="portal-hero-header">
+      <h1 class="portal-hero-title">The Wired Club · MeltyDeays (Portal de Fidelización)</h1>
+      <p class="portal-hero-subtitle">Tech, Gadgets & Gaming Hardware · Acumula Wired Points por cada compra y canjea recompensas oficiales.</p>
+    </header>
     
     <!-- BANNER DE RECLAMO POR ESCANEO DE FACTURA -->
     <div id="claim-banner" class="claim-banner" style="display: none; position: relative;">
       <button type="button" class="claim-banner-close" onclick="dismissClaimBanner()" aria-label="Cerrar notificación" style="position: absolute; top: 8px; right: 12px; background: none; border: none; font-size: 1.4rem; line-height: 1; cursor: pointer; color: var(--accent); font-weight: 900; z-index: 5;" title="Cerrar notificación">&times;</button>
       <div class="claim-info">
-        <h3>⚡ ¡Factura MeltyDeays Detectada!</h3>
+        <h2>⚡ ¡Factura MeltyDeays Detectada!</h2>
         <p id="claim-banner-text">Código: <strong id="detected-token">WP-XXXX</strong> · Listo para acreditar tus Wired Points a tu cuenta.</p>
       </div>
       <div class="claim-actions">
@@ -210,7 +269,8 @@
     </div>
 
     <!-- PESTAÑA 1: CATÁLOGO DE RECOMPENSAS -->
-    <div id="tab-content-catalog">
+    <section id="tab-content-catalog" aria-labelledby="heading-catalog-section">
+      <h2 id="heading-catalog-section" class="sr-only">Catálogo de Recompensas de Tecnología y Gaming</h2>
       <!-- BARRA DE BÚSQUEDA Y FILTROS POR CATEGORÍA EN CATÁLOGO -->
       <div class="catalog-filters-bar">
         <div class="catalog-search-box">
@@ -228,10 +288,11 @@
         </div>
       </div>
       <div class="rewards-grid" id="catalog-container"></div>
-    </div>
+    </section>
 
     <!-- PESTAÑA 2: MIS VALES ACTIVOS DE CANJE -->
-    <div id="tab-content-vouchers" style="display: none;">
+    <section id="tab-content-vouchers" style="display: none;" aria-labelledby="heading-vouchers-section">
+      <h2 id="heading-vouchers-section" class="sr-only">Mis Vales Activos y Canjeados</h2>
       <!-- SUBTABS DE NAVEGACIÓN: ACTIVOS VS ANTERIORES / HISTORIAL -->
       <div class="voucher-subtabs-wrapper">
         <div class="tab-controls voucher-subtabs">
@@ -244,14 +305,52 @@
         </div>
       </div>
       <div id="vouchers-container"></div>
-    </div>
+    </section>
 
     <!-- PESTAÑA 3: HISTORIAL CONTABLE / LEDGER -->
-    <div id="tab-content-ledger" style="display: none;">
+    <section id="tab-content-ledger" style="display: none;" aria-labelledby="heading-ledger-section">
+      <h2 id="heading-ledger-section" class="sr-only">Historial y Movimientos de Wired Points</h2>
       <div id="ledger-container"></div>
-    </div>
+    </section>
 
   </main>
+
+  <!-- FOOTER SEMÁNTICO CON ENLACES INTERNOS (SEO & USABILIDAD) -->
+  <footer class="portal-footer" id="portal-footer">
+    <div class="footer-content">
+      <div class="footer-brand-col">
+        <div class="footer-brand-title">
+          <span class="brand-word-melty">Melty</span><span class="brand-word-deays">Deays</span>
+          <span class="brand-pill-tag">CLUB</span>
+        </div>
+        <p class="footer-tagline">Tech, Gadgets & Gaming Hardware · The Wired Club</p>
+        <p class="footer-copy">&copy; 2026 MeltyDeays. Todos los derechos reservados.</p>
+      </div>
+
+      <nav class="footer-nav-col" aria-label="Enlaces rápidos">
+        <span class="footer-col-title">Acceso Rápido</span>
+        <ul class="footer-links-list">
+          <li><a href="./#tab-content-catalog" onclick="switchTab('catalog');">🎁 Catálogo de Recompensas</a></li>
+          <li><a href="./#tab-content-vouchers" onclick="switchTab('vouchers');">🎟️ Mis Vales de Compra</a></li>
+          <li><a href="./#tab-content-ledger" onclick="switchTab('ledger');">📊 Historial de Puntos</a></li>
+          <li><a href="https://meltydeays-wired-club.vercel.app/">🏠 Inicio The Wired Club</a></li>
+        </ul>
+      </nav>
+
+      <div class="footer-contact-col">
+        <span class="footer-col-title">Atención al Cliente</span>
+        <ul class="footer-links-list">
+          <li>
+            <a href="https://api.whatsapp.com/send?phone=50558438412&text=Hola%20MeltyDeays%2C%20tengo%20una%20consulta%20sobre%20The%20Wired%20Club" target="_blank" rel="noopener noreferrer">
+              💬 WhatsApp (+505 5843-8412)
+            </a>
+          </li>
+          <li><span>📍 Managua, Nicaragua</span></li>
+          <li><span>🕒 Lun - Sáb: 9:00 AM - 6:00 PM</span></li>
+        </ul>
+      </div>
+    </div>
+  </footer>
 
   <!-- MODAL: LOGIN / REGISTRO DE CLIENTE -->
   <div id="modal-client-auth" class="modal-overlay" style="display: none;">
@@ -291,7 +390,7 @@
         </div>
 
         <div style="text-align: right; margin-top: -0.85rem; margin-bottom: 1.25rem;">
-          <a href="https://wa.me/50558438412?text=Hola%20MeltyDeays,%20olvid%C3%A9%20mi%20PIN%20de%20socio%20de%20The%20Wired%20Club" target="_blank" rel="noopener noreferrer" style="font-size: 0.76rem; color: #0284c7; text-decoration: underline; font-weight: 600;">
+          <a href="https://api.whatsapp.com/send?phone=50558438412&text=Hola%20MeltyDeays%2C%20olvid%C3%A9%20mi%20PIN%20de%20socio%20de%20The%20Wired%20Club" target="_blank" rel="noopener noreferrer" style="font-size: 0.76rem; color: #0284c7; text-decoration: underline; font-weight: 600;">
             ¿Olvidaste tu PIN? Contáctanos por WhatsApp
           </a>
         </div>
@@ -371,7 +470,7 @@
             </div>
             <div style="flex: 1; min-width: 0;">
               <div style="font-family: var(--font-mono); font-size: 0.68rem; color: var(--gray-500); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">ARTÍCULO SELECCIONADO</div>
-              <h3 id="confirm-reward-title" style="font-size: 1.05rem; font-weight: 900; color: var(--dark); margin: 2px 0 5px 0; line-height: 1.25; word-break: break-word;">-</h3>
+              <h3 id="confirm-reward-title" style="font-size: 1.05rem; font-weight: 900; color: var(--dark); margin: 2px 0 5px 0; line-height: 1.25; word-break: break-word;">Detalles de Compra y Canje</h3>
               <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
                 <span class="badge-navi" id="confirm-reward-points" style="font-size: 0.72rem; background: #e0e7ff; color: #4338ca; border: 1px solid #c7d2fe;">0 WP</span>
                 <span id="confirm-reward-stock-badge" class="badge-navi" style="font-size: 0.68rem; background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0;">✓ Entrega Inmediata</span>
@@ -443,12 +542,12 @@
             <div class="confirm-receipt-body">
               <div class="confirm-callout-row receipt-row" id="confirm-row-regular-price">
                 <span class="receipt-label" id="confirm-label-price">Precio regular:</span>
-                <strong id="confirm-type-price" class="receipt-val price-original">$0.00 USD</strong>
+                <span id="confirm-type-price" class="receipt-val price-original" style="font-weight: 800;">$0.00 USD</span>
               </div>
 
               <div class="confirm-callout-row receipt-row" id="confirm-row-discount" style="display: none;">
                 <span class="receipt-label" id="confirm-label-discount">Descuento aplicado (<span id="confirm-calc-pct-label">0%</span>):</span>
-                <strong id="confirm-type-discount" class="receipt-val discount-val">-$0.00 USD</strong>
+                <span id="confirm-type-discount" class="receipt-val discount-val" style="font-weight: 800;">-$0.00 USD</span>
               </div>
 
               <div class="confirm-callout-row receipt-row receipt-subdetail-row" id="confirm-row-max-disc" style="display: none !important;">
@@ -457,7 +556,7 @@
                   <span id="confirm-type-pct-calc" class="receipt-sublabel" style="font-size: 0.64rem; color: #b45309; font-weight: 700; display: inline-block;">(0 WP = 0% OFF)</span>
                 </div>
                 <div class="receipt-val receipt-max-val" style="font-size: 0.68rem; color: #92400e;">
-                  <strong id="confirm-type-max-disc" class="confirm-callout-val" style="color: #b45309;">-$0.00 USD</strong>
+                  <span id="confirm-type-max-disc" class="confirm-callout-val" style="color: #b45309; font-weight: 800;">-$0.00 USD</span>
                 </div>
               </div>
 
@@ -466,7 +565,7 @@
                   <span class="receipt-total-title">Pagas en mostrador:</span>
                   <span class="receipt-total-sub">En efectivo o transferencia</span>
                 </div>
-                <strong id="confirm-type-cash" class="confirm-callout-val receipt-cash-total">$0.00 USD</strong>
+                <span id="confirm-type-cash" class="confirm-callout-val receipt-cash-total" style="font-weight: 900;">$0.00 USD</span>
               </div>
             </div>
 
@@ -482,15 +581,15 @@
             </div>
             <div style="padding: 0.55rem 0.75rem; background: #ffffff; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed var(--gray-200);">
               <span style="color: var(--gray-600); font-size: 0.74rem;">Tu saldo disponible:</span>
-              <strong id="confirm-balance-current" style="color: var(--dark); font-weight: 800; font-size: 0.8rem;">- WP</strong>
+              <span id="confirm-balance-current" style="color: var(--dark); font-weight: 800; font-size: 0.8rem;">- WP</span>
             </div>
             <div style="padding: 0.55rem 0.75rem; background: #fff1f2; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #fecdd3;">
               <span style="color: #9f1239; font-weight: 700; font-size: 0.74rem;">Puntos a deducir:</span>
-              <strong id="confirm-balance-deduct" style="color: #e11d48; font-weight: 900; font-size: 0.8rem;">-0 WP</strong>
+              <span id="confirm-balance-deduct" style="color: #e11d48; font-weight: 900; font-size: 0.8rem;">-0 WP</span>
             </div>
             <div style="padding: 0.55rem 0.75rem; background: #ecfdf5; display: flex; justify-content: space-between; align-items: center;">
               <span style="color: #065f46; font-weight: 800; font-size: 0.74rem;">Te quedarán:</span>
-              <strong id="confirm-balance-after" style="color: #059669; font-weight: 900; font-size: 0.82rem;">- WP</strong>
+              <span id="confirm-balance-after" style="color: #059669; font-weight: 900; font-size: 0.82rem;">- WP</span>
             </div>
           </div>
 
@@ -538,7 +637,7 @@
               <span id="preorder-product-img-fallback" class="preorder-img-fallback">📦</span>
             </div>
             <div class="preorder-product-info">
-              <h3 id="preorder-product-title">-</h3>
+              <h3 id="preorder-product-title">Reservar Producto en Preventa</h3>
               <div id="preorder-eta-countdown" class="preorder-countdown-pill">
                 ⏱️ Llega en: <strong id="preorder-countdown-timer">--d --h --m --s</strong>
               </div>
@@ -635,9 +734,9 @@
 
       <!-- TITULO Y SUBTITULO -->
       <div style="margin-bottom: 0.85rem;">
-        <h2 id="modal-voucher-title" style="font-size: 1.25rem; color: var(--dark); margin: 0 0 2px 0; font-weight: 900; line-height: 1.2;">
+        <h3 id="modal-voucher-title" style="font-size: 1.25rem; color: var(--dark); margin: 0 0 2px 0; font-weight: 900; line-height: 1.2;">
           Combo Gamer
-        </h2>
+        </h3>
         <div id="modal-voucher-subtitle" style="font-size: 0.75rem; color: var(--gray-600);">
           Válido para entrega personal de producto con MeltyDeays
         </div>
@@ -743,14 +842,14 @@
     <div class="modal-content" style="max-width: 420px; text-align: left;">
       <button class="modal-close-btn" onclick="closeClaimModal()" aria-label="Cerrar">&times;</button>
       <span class="badge-navi">ACREDITACIÓN DE FACTURA</span>
-      <h2 style="font-size: 1.15rem; color: var(--dark); margin: 0.5rem 0 0.5rem 0; font-weight: 900;">Acreditar Wired Points</h2>
+      <h3 style="font-size: 1.15rem; color: var(--dark); margin: 0.5rem 0 0.5rem 0; font-weight: 900;">Acreditar Wired Points</h3>
       <p style="color: var(--gray-700); font-size: 0.82rem; margin-bottom: 1.1rem;">
         Escanea el QR de tu factura o escribe tu número de factura y PIN.
       </p>
 
       <!-- Botón de Escaneo Directo con Cámara -->
       <button type="button" class="btn-primary" style="width: 100%; margin-bottom: 1rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem; font-size: 0.9rem; padding: 0.65rem; background: #0f172a; border-color: #0f172a;" onclick="closeClaimModal(); openClientCameraScanner();">
-        <span style="font-size: 1.15rem;">📷</span> <strong>Escanear con mi Cámara</strong>
+        <span style="font-size: 1.15rem;">📷</span> <span>Escanear con mi Cámara</span>
       </button>
 
       <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem; color: var(--gray-700); font-size: 0.75rem;">
@@ -804,7 +903,7 @@
     <div class="modal-content" style="max-width: 420px; text-align: left;">
       <button class="modal-close-btn" onclick="closeAdminAssignModal()" aria-label="Cerrar">&times;</button>
       <span class="badge-navi">ADMIN MOSTRADOR // ACTIVAR FACTURA</span>
-      <h2 style="font-size: 1.15rem; color: var(--dark); margin: 0.5rem 0 0.25rem 0; font-weight: 900;">Asignar Puntos a Factura</h2>
+      <h3 style="font-size: 1.15rem; color: var(--dark); margin: 0.5rem 0 0.25rem 0; font-weight: 900;">Asignar Puntos a Factura</h3>
       <p style="color: var(--gray-700); font-size: 0.82rem; margin-bottom: 1rem;">
         Asigna el valor en Wired Points a la factura <strong id="assign-scan-folio" style="font-family: var(--font-mono); color: var(--dark);">WP-XXXX</strong> antes de entregarla.
       </p>
@@ -868,7 +967,7 @@
       <div class="image-lightbox-header">
         <div class="image-lightbox-meta">
           <span class="lightbox-badge-kicker">WIRED GALLERY // FULL_VIEW</span>
-          <h4 id="lightbox-title" class="lightbox-title">Título del Producto</h4>
+          <h3 id="lightbox-title" class="lightbox-title" style="margin: 0; font-size: inherit; font-weight: inherit;">Título del Producto</h3>
         </div>
         <div class="image-lightbox-controls">
           <span id="lightbox-counter" class="lightbox-counter-badge">1 / 1</span>
@@ -925,6 +1024,6 @@
   <div id="toast-container" class="toast-container"></div>
 
   <!-- CONTROLADOR MVVM -->
-  <script type="module" src="./js/app.js?v=2.9.45"></script>
+  <script type="module" src="./js/app.js?v=2.9.46"></script>
 </body>
 </html>
