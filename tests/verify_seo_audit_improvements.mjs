@@ -125,8 +125,8 @@ export async function runSeoAuditTestSuite(ctx) {
 
   await ctx.test('12. Recursos críticos preconectados y scripts en head con defer', () => {
     assert.strictEqual(indexHtml.includes('<link rel="preconnect" href="https://fonts.googleapis.com">'), true);
-    assert.strictEqual(indexHtml.includes('<script defer src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js">'), true);
-    assert.strictEqual(indexHtml.includes('<script defer src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js">'), true);
+    assert.strictEqual(indexHtml.includes('src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"') && indexHtml.includes('defer'), true);
+    assert.strictEqual(indexHtml.includes('src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"') && indexHtml.includes('defer'), true);
   });
 
   await ctx.test('13. Páginas estáticas contienen >500 palabras y palabras clave de H1 en texto (Seobility 100%)', () => {

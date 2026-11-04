@@ -1,5 +1,5 @@
 // Service Worker Oficial PWA & Web Push de MeltyDeays Wired Club (v2.9.88)
-const CACHE_NAME = 'wired-club-v2.9.88';
+const CACHE_NAME = 'wired-club-v2.9.90';
 
 const PRECACHE_ASSETS = [
   './',
