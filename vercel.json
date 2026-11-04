@@ -112,6 +112,17 @@
   ],
   "routes": [
     {
+      "src": "/(.*)",
+      "headers": {
+        "X-Content-Type-Options": "nosniff",
+        "X-Frame-Options": "DENY",
+        "Referrer-Policy": "strict-origin-when-cross-origin",
+        "Permissions-Policy": "camera=(self), microphone=(), geolocation=()",
+        "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com wss://*.firebaseio.com; frame-ancestors 'none'; base-uri 'self';"
+      },
+      "continue": true
+    },
+    {
       "src": "/api/sync-facebook(?:\\.js)?",
       "dest": "/api/sync-facebook.js"
     },
