@@ -135,8 +135,20 @@ export function stopClientCameraScanner(options = {}) {
       try { scanner.clear(); } catch (_) {}
     }
   }
+  try {
+    const reader = document.getElementById("client-camera-reader");
+    if (reader) {
+      const videos = reader.querySelectorAll("video");
+      videos.forEach(v => {
+        if (v.srcObject && typeof v.srcObject.getTracks === "function") {
+          v.srcObject.getTracks().forEach(t => t.stop());
+        }
+      });
+    }
+  } catch (_) {}
   const modal = document.getElementById("modal-client-camera-scanner");
   if (modal) modal.style.display = "none";
+  if (modal) modal.style.setProperty("display", "none", "important");
   if (!fromPopState && typeof window !== "undefined" && window._modalHistoryManager) {
     window._modalHistoryManager.popModalHistory("modal-client-camera-scanner");
   }

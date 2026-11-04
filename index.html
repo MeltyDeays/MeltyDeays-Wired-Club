@@ -910,7 +910,7 @@
         <span class="badge-navi" style="background: var(--dark); color: #fff; font-size: 0.68rem; padding: 0.2rem 0.5rem; border-radius: 3px; font-weight: 800; font-family: var(--font-mono);">
           WIRED SCANNER // V2.6
         </span>
-        <button class="modal-close-btn" onclick="stopClientCameraScanner()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--dark);" aria-label="Cerrar escáner">&times;</button>
+        <button class="modal-close-btn" onclick="stopClientCameraScanner(); try { const m = document.getElementById('modal-client-camera-scanner'); if (m) { m.style.display = 'none'; m.style.setProperty('display', 'none', 'important'); } } catch(_){}" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--dark);" aria-label="Cerrar escáner">&times;</button>
       </div>
       <h3 style="font-size: 1.1rem; font-weight: 900; margin: 0 0 0.35rem 0; color: var(--dark);">Escanear Factura MeltyDeays</h3>
       <p style="font-size: 0.8rem; color: var(--gray-700); margin: 0 0 1rem 0;">Apunta tu cámara al código QR impreso en el anverso o reverso de tu factura.</p>
@@ -918,7 +918,7 @@
       <div id="client-camera-reader" style="width: 100%; min-height: 260px; background: #0f172a; border-radius: 8px; overflow: hidden; position: relative; border: 2px dashed #38bdf8;"></div>
 
       <div style="margin-top: 1rem; display: flex; gap: 0.5rem;">
-        <button class="btn-secondary" style="flex: 1;" onclick="stopClientCameraScanner()">Cerrar Cámara</button>
+        <button class="btn-secondary" style="flex: 1;" onclick="stopClientCameraScanner(); try { const m = document.getElementById('modal-client-camera-scanner'); if (m) { m.style.display = 'none'; m.style.setProperty('display', 'none', 'important'); } } catch(_){}">Cerrar Cámara</button>
       </div>
     </div>
   </div>
