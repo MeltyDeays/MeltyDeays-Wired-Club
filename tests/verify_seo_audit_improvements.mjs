@@ -128,6 +128,53 @@ export async function runSeoAuditTestSuite(ctx) {
     assert.strictEqual(indexHtml.includes('<script defer src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js">'), true);
     assert.strictEqual(indexHtml.includes('<script defer src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js">'), true);
   });
+
+  await ctx.test('13. Páginas estáticas contienen >500 palabras y palabras clave de H1 en texto (Seobility 100%)', () => {
+    for (const [file, minWords, keywords] of [
+      ['faq.html', 500, ['Preguntas', 'Frecuentes']],
+      ['terminos.html', 500, ['términos', 'condiciones', 'uso']],
+      ['privacidad.html', 500, ['política', 'privacidad', 'manejo', 'datos']]
+    ]) {
+      const pageHtml = fs.readFileSync(path.join(PROJECT_ROOT, file), 'utf8');
+      const text = pageHtml.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+      const wordCount = text.split(' ').length;
+      assert.strictEqual(wordCount >= minWords, true, `${file} debe tener al menos ${minWords} palabras (tiene ${wordCount})`);
+      for (const kw of keywords) {
+        const regex = new RegExp(`\\b${kw}\\b`, 'i');
+        assert.strictEqual(regex.test(pageHtml), true, `${file} debe contener la palabra clave "${kw}" en su cuerpo`);
+      }
+    }
+  });
+
+  await ctx.test('14. Formularios accesibles (WAVE WebAIM 100% compliant: cero missing labels)', () => {
+    const inputMatches = indexHtml.matchAll(/<input\b([^>]*)>/gi);
+    for (const match of inputMatches) {
+      const attrs = match[1];
+      const type = (attrs.match(/type=["']([^"']*)["']/i) || ['', 'text'])[1].toLowerCase();
+      if (['hidden', 'submit', 'button', 'reset', 'image'].includes(type)) continue;
+      const hasAria = /aria-label=/i.test(attrs) || /aria-labelledby=/i.test(attrs);
+      const idMatch = attrs.match(/id=["']([^"']*)["']/i);
+      const id = idMatch ? idMatch[1] : null;
+      let hasLabel = hasAria;
+      if (!hasLabel && id) {
+        hasLabel = new RegExp(`<label[^>]*for=["']${id}["']`, 'i').test(indexHtml);
+      }
+      assert.strictEqual(hasLabel, true, `Input con id "${id}" debe tener label o aria-label asociado`);
+    }
+  });
+
+  await ctx.test('15. Cabeceras de seguridad HTTP configuradas en vercel.json (Sucuri / ImmuniWeb A+)', () => {
+    const vercelJson = JSON.parse(fs.readFileSync(path.join(PROJECT_ROOT, 'vercel.json'), 'utf8'));
+    const globalHeader = vercelJson.headers.find(h => h.source === '/(.*)');
+    assert.strictEqual(Boolean(globalHeader), true, 'Debe existir bloque de headers para /(.*)');
+    const headerKeys = globalHeader.headers.map(h => h.key);
+    assert.strictEqual(headerKeys.includes('X-Content-Type-Options'), true);
+    assert.strictEqual(headerKeys.includes('X-Frame-Options'), true);
+    assert.strictEqual(headerKeys.includes('Referrer-Policy'), true);
+    assert.strictEqual(headerKeys.includes('Permissions-Policy'), true);
+    assert.strictEqual(headerKeys.includes('Strict-Transport-Security'), true);
+    assert.strictEqual(headerKeys.includes('Content-Security-Policy'), true);
+  });
 }
 
 if (process.argv[1] && process.argv[1].endsWith('verify_seo_audit_improvements.mjs')) {

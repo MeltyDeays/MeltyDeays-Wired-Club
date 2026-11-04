@@ -299,8 +299,8 @@
       <div class="catalog-filters-bar">
         <div class="catalog-search-box">
           <span class="catalog-search-icon">🔍</span>
-          <input type="text" id="catalog-search-input" class="catalog-search-input" placeholder="Buscar por producto, marca, ID o palabra clave..." autocomplete="off" spellcheck="false" oninput="filterCustomerCatalog()">
-          <button type="button" id="catalog-search-clear" class="catalog-search-clear" onclick="clearCustomerCatalogSearch()" style="display:none;" title="Limpiar búsqueda">&times;</button>
+          <input type="text" id="catalog-search-input" class="catalog-search-input" placeholder="Buscar por producto, marca, ID o palabra clave..." autocomplete="off" spellcheck="false" oninput="filterCustomerCatalog()" aria-label="Buscar producto o periférico en el catálogo">
+          <button type="button" id="catalog-search-clear" class="catalog-search-clear" onclick="clearCustomerCatalogSearch()" style="display:none;" title="Limpiar búsqueda" aria-label="Limpiar búsqueda">&times;</button>
         </div>
         <div class="catalog-category-chips" id="catalog-category-chips">
           <button type="button" class="category-chip active" data-category="ALL" onclick="setCatalogCategory('ALL')">✦ Todos</button>
@@ -399,18 +399,18 @@
         </p>
 
         <div class="form-group" style="margin-bottom: 1rem;">
-          <label class="form-label">Teléfono / WhatsApp (8 dígitos)</label>
+          <label class="form-label" for="login-phone">Teléfono / WhatsApp (8 dígitos)</label>
           <div class="phone-input-group">
             <span class="phone-prefix-addon">🇳🇮 +505</span>
-            <input type="tel" id="login-phone" name="login_phone" class="form-input" placeholder="5843-8412" maxlength="9" autocomplete="username tel">
+            <input type="tel" id="login-phone" name="login_phone" class="form-input" placeholder="5843-8412" maxlength="9" autocomplete="username tel" aria-label="Número de WhatsApp">
           </div>
         </div>
 
         <div class="form-group" style="margin-bottom: 1.5rem;">
-          <label class="form-label">PIN de Seguridad (4 a 8 dígitos)</label>
+          <label class="form-label" for="login-pin">PIN de Seguridad (4 a 8 dígitos)</label>
           <div style="display: flex; gap: 0.35rem; align-items: center;">
-            <input type="password" id="login-pin" name="login_pin" autocomplete="current-password" class="form-input" placeholder="••••••" maxlength="8" style="text-align: center; letter-spacing: 6px; font-size: 1.3rem; font-weight: 900;">
-            <button type="button" class="btn-secondary" style="padding: 0.5rem 0.65rem; font-size: 0.85rem;" onclick="toggleClientPinVisibility('login-pin')" title="Ver/Ocultar PIN">👁️</button>
+            <input type="password" id="login-pin" name="login_pin" autocomplete="current-password" class="form-input" placeholder="••••••" maxlength="8" style="text-align: center; letter-spacing: 6px; font-size: 1.3rem; font-weight: 900;" aria-label="PIN de seguridad">
+            <button type="button" class="btn-secondary" style="padding: 0.5rem 0.65rem; font-size: 0.85rem;" onclick="toggleClientPinVisibility('login-pin')" title="Ver/Ocultar PIN" aria-label="Ver u ocultar PIN">👁️</button>
           </div>
         </div>
 
@@ -440,23 +440,23 @@
         </div>
 
         <div class="form-group" style="margin-bottom: 1rem;">
-          <label class="form-label">Nombre y Apellido</label>
-          <input type="text" id="reg-name" name="reg_name" class="form-input" placeholder="Ej: Carlos Mendoza" autocomplete="name">
+          <label class="form-label" for="reg-name">Nombre y Apellido</label>
+          <input type="text" id="reg-name" name="reg_name" class="form-input" placeholder="Ej: Carlos Mendoza" autocomplete="name" aria-label="Nombre completo del socio">
         </div>
 
         <div class="form-group" style="margin-bottom: 1rem;">
-          <label class="form-label">Teléfono / WhatsApp (8 dígitos)</label>
+          <label class="form-label" for="reg-phone">Teléfono / WhatsApp (8 dígitos)</label>
           <div class="phone-input-group">
             <span class="phone-prefix-addon">🇳🇮 +505</span>
-            <input type="tel" id="reg-phone" name="reg_phone" class="form-input" placeholder="5843-8412" maxlength="9" autocomplete="username tel">
+            <input type="tel" id="reg-phone" name="reg_phone" class="form-input" placeholder="5843-8412" maxlength="9" autocomplete="username tel" aria-label="Número de WhatsApp">
           </div>
         </div>
 
         <div class="form-group" style="margin-bottom: 1.5rem;">
-          <label class="form-label">Crea tu PIN de Seguridad (4 a 8 dígitos)</label>
+          <label class="form-label" for="reg-pin">Crea tu PIN de Seguridad (4 a 8 dígitos)</label>
           <div style="display: flex; gap: 0.35rem; align-items: center;">
-            <input type="password" id="reg-pin" name="reg_pin" autocomplete="new-password" class="form-input" placeholder="••••••" maxlength="8" style="text-align: center; letter-spacing: 6px; font-size: 1.3rem; font-weight: 900;">
-            <button type="button" class="btn-secondary" style="padding: 0.5rem 0.65rem; font-size: 0.85rem;" onclick="toggleClientPinVisibility('reg-pin')" title="Ver/Ocultar PIN">👁️</button>
+            <input type="password" id="reg-pin" name="reg_pin" autocomplete="new-password" class="form-input" placeholder="••••••" maxlength="8" style="text-align: center; letter-spacing: 6px; font-size: 1.3rem; font-weight: 900;" aria-label="PIN de seguridad">
+            <button type="button" class="btn-secondary" style="padding: 0.5rem 0.65rem; font-size: 0.85rem;" onclick="toggleClientPinVisibility('reg-pin')" title="Ver/Ocultar PIN" aria-label="Ver u ocultar PIN">👁️</button>
           </div>
         </div>
 
@@ -518,10 +518,10 @@
               <span style="font-weight: 800; font-size: 0.72rem; color: #78350f;">⚡ APLICAR DESCUENTO CON PUNTOS:</span>
               <span id="confirm-pts-applied-notice" style="font-weight: 900; color: #b45309; font-size: 0.75rem; background: #fef3c7; border: 1px solid #fcd34d; padding: 2px 7px; border-radius: 4px;">0 WP aplicados</span>
             </div>
-            <input type="range" id="confirm-points-slider" min="0" max="100" value="0" step="1" style="width: 100%; accent-color: #d97706; cursor: pointer; margin: 6px 0;" oninput="onPointsSliderChange(this.value)">
+            <input type="range" id="confirm-points-slider" min="0" max="100" value="0" step="1" style="width: 100%; accent-color: #d97706; cursor: pointer; margin: 6px 0;" oninput="onPointsSliderChange(this.value)" aria-label="Porcentaje de puntos Wired a canjear">
             <div style="display: flex; gap: 6px; align-items: center; justify-content: space-between; margin-top: 4px; flex-wrap: wrap;">
               <div style="display: flex; align-items: center; gap: 4px;">
-                <input type="number" id="confirm-points-num" style="width: 70px; padding: 3px 6px; font-family: var(--font-mono); font-weight: 800; font-size: 0.75rem; border: 1.5px solid #d97706; border-radius: 4px; color: #b45309; background: #fff;" oninput="onPointsNumChange(this.value)">
+                <input type="number" id="confirm-points-num" style="width: 70px; padding: 3px 6px; font-family: var(--font-mono); font-weight: 800; font-size: 0.75rem; border: 1.5px solid #d97706; border-radius: 4px; color: #b45309; background: #fff;" oninput="onPointsNumChange(this.value)" aria-label="Cantidad de puntos Wired">
                 <span style="font-size: 0.7rem; font-weight: 800; color: #b45309;">WP</span>
               </div>
               <div style="display: flex; gap: 6px;">
@@ -884,15 +884,15 @@
       </div>
 
       <form id="form-manual-claim" onsubmit="event.preventDefault(); submitManualClaim();" autocomplete="on">
-        <input type="text" name="username" value="client-ticket" autocomplete="username" style="display: none;" tabindex="-1" aria-hidden="true">
+        <input type="text" name="username" value="client-ticket" autocomplete="username" style="display: none;" tabindex="-1" aria-hidden="true" aria-label="Usuario del sistema">
         <div class="form-group" style="margin-bottom: 1rem;">
-          <label class="form-label">Número de Factura / Folio o Código</label>
-          <input type="text" id="manual-input-token" name="token_code" class="form-input" placeholder="Ej: 4, 0004, F0004 o WP-2026-F..." style="text-transform: uppercase; font-family: var(--font-mono);">
+          <label class="form-label" for="manual-input-token">Número de Factura / Folio o Código</label>
+          <input type="text" id="manual-input-token" name="token_code" class="form-input" placeholder="Ej: 4, 0004, F0004 o WP-2026-F..." style="text-transform: uppercase; font-family: var(--font-mono);" aria-label="Número de factura o token">
         </div>
 
         <div class="form-group" style="margin-bottom: 1.5rem;">
-          <label class="form-label">PIN de Seguridad (4 dígitos impreso en factura)</label>
-          <input type="password" id="manual-input-pin" name="token_pin" autocomplete="off" class="form-input" placeholder="••••" maxlength="4" style="text-align: center; letter-spacing: 8px; font-size: 1.3rem; font-weight: 900;">
+          <label class="form-label" for="manual-input-pin">PIN de Seguridad (4 dígitos impreso en factura)</label>
+          <input type="password" id="manual-input-pin" name="token_pin" autocomplete="off" class="form-input" placeholder="••••" maxlength="4" style="text-align: center; letter-spacing: 8px; font-size: 1.3rem; font-weight: 900;" aria-label="PIN de seguridad de factura">
         </div>
 
         <div style="display: flex; gap: 0.75rem;">
@@ -910,7 +910,7 @@
         <span class="badge-navi" style="background: var(--dark); color: #fff; font-size: 0.68rem; padding: 0.2rem 0.5rem; border-radius: 3px; font-weight: 800; font-family: var(--font-mono);">
           WIRED SCANNER // V2.6
         </span>
-        <button class="modal-close-btn" onclick="stopClientCameraScanner()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--dark);">&times;</button>
+        <button class="modal-close-btn" onclick="stopClientCameraScanner()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--dark);" aria-label="Cerrar escáner">&times;</button>
       </div>
       <h3 style="font-size: 1.1rem; font-weight: 900; margin: 0 0 0.35rem 0; color: var(--dark);">Escanear Factura MeltyDeays</h3>
       <p style="font-size: 0.8rem; color: var(--gray-700); margin: 0 0 1rem 0;">Apunta tu cámara al código QR impreso en el anverso o reverso de tu factura.</p>
@@ -934,15 +934,15 @@
       </p>
 
       <form id="form-admin-assign-scan" onsubmit="event.preventDefault(); submitAdminAssignFromScan();" autocomplete="on">
-        <input type="text" name="username" value="admin" autocomplete="username" style="display: none;" tabindex="-1" aria-hidden="true">
+        <input type="text" name="username" value="admin" autocomplete="username" style="display: none;" tabindex="-1" aria-hidden="true" aria-label="Usuario administrador">
         <div class="form-group" style="margin-bottom: 0.85rem;">
-          <label class="form-label">Wired Points a Asignar</label>
-          <input type="number" id="assign-scan-points" name="assign_points" class="form-input" placeholder="Ej: 30" style="font-size: 1.3rem; font-weight: 900; color: var(--dark);">
+          <label class="form-label" for="assign-scan-points">Wired Points a Asignar</label>
+          <input type="number" id="assign-scan-points" name="assign_points" class="form-input" placeholder="Ej: 30" style="font-size: 1.3rem; font-weight: 900; color: var(--dark);" aria-label="Puntos a asignar">
         </div>
 
         <div class="form-group" style="margin-bottom: 1.25rem;">
-          <label class="form-label">PIN Maestro de Admin</label>
-          <input type="password" id="assign-scan-admin-pin" name="admin_scan_pin" autocomplete="current-password" class="form-input" placeholder="••••••" maxlength="6" style="text-align: center; letter-spacing: 6px; font-size: 1.1rem; font-weight: 900;">
+          <label class="form-label" for="assign-scan-admin-pin">PIN Maestro de Admin</label>
+          <input type="password" id="assign-scan-admin-pin" name="admin_scan_pin" autocomplete="current-password" class="form-input" placeholder="••••••" maxlength="6" style="text-align: center; letter-spacing: 6px; font-size: 1.1rem; font-weight: 900;" aria-label="PIN maestro de administrador">
         </div>
 
         <div style="display: flex; gap: 0.75rem;">
