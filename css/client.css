@@ -1187,7 +1187,7 @@
 
 .retail-strike {
   text-decoration: line-through;
-  color: var(--gray-400);
+  color: #475569;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
   display: inline-block;
