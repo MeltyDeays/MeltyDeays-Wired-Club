@@ -92,8 +92,10 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="application-name" content="Wired Club">
-  <link rel="stylesheet" href="./styles.css?v=2.9.51">
-  <link rel="stylesheet" href="./css/modals/preorder.css?v=2.9.51">
+  <link rel="preload" as="style" href="./css/core.css?v=2.9.52">
+  <link rel="preload" as="style" href="./css/client.css?v=2.9.52">
+  <link rel="preload" as="style" href="./css/responsive.css?v=2.9.52">
+  <link rel="stylesheet" href="./styles.css?v=2.9.52">
   
   <!-- Auto-registro PWA Service Worker -->
   <script>
@@ -121,7 +123,7 @@
   <script defer src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   
-  <!-- QRCode.js para generación de QRs en cliente & Html5Qrcode para escáner de cámara -->
+  <!-- QRCode.js para generación de QRs en cliente & Html5Qrcode para escáner de cámara (con defer no bloqueante) -->
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
 </head>

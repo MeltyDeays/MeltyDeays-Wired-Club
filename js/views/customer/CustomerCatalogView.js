@@ -1051,17 +1051,17 @@ export function renderProductCommentsDom(rewardId, comments) {
                   <div class="temu-comment-reply-box official-reply" style="background: #f0f9ff; border-left: 3px solid #0284c7; padding: 6px 10px; border-radius: 4px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
                       <span class="temu-comment-reply-tag official-tag" style="background: #0284c7; color: #ffffff; font-weight: 800; font-size: 0.65rem; padding: 2px 7px; border-radius: 3px; display: inline-flex; align-items: center; gap: 4px;">🛡️ MeltyDeays Soporte</span>
-                      ${repDate ? `<span style="font-size: 0.60rem; color: #64748b; font-family: var(--font-mono);">${repDate}</span>` : ''}
+                      ${repDate ? `<span style="font-size: 0.60rem; color: #475569; font-family: var(--font-mono);">${repDate}</span>` : ''}
                     </div>
                     <div class="temu-comment-reply-text" style="font-size: 0.74rem; color: #0f172a; line-height: 1.35;">${repText}</div>
                   </div>
                 `;
               } else {
                 return `
-                  <div class="temu-comment-reply-box community-reply" style="background: #f8fafc; border-left: 3px solid #64748b; padding: 6px 10px; border-radius: 4px;">
+                  <div class="temu-comment-reply-box community-reply" style="background: #f8fafc; border-left: 3px solid #475569; padding: 6px 10px; border-radius: 4px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
                       <span class="temu-comment-reply-tag community-tag" style="background: #e2e8f0; color: #334155; font-weight: 700; font-size: 0.65rem; padding: 2px 7px; border-radius: 3px; display: inline-flex; align-items: center; gap: 4px; border: 1px solid #cbd5e1;">👤 Respuesta de ${cleanAuthor}</span>
-                      ${repDate ? `<span style="font-size: 0.60rem; color: #64748b; font-family: var(--font-mono);">${repDate}</span>` : ''}
+                      ${repDate ? `<span style="font-size: 0.60rem; color: #475569; font-family: var(--font-mono);">${repDate}</span>` : ''}
                     </div>
                     <div class="temu-comment-reply-text" style="font-size: 0.74rem; color: #334155; line-height: 1.35;">${repText}</div>
                   </div>
@@ -1483,7 +1483,7 @@ export function openProductSpecsModal(rewardId, imgIdx = 0, options = {}) {
                     <div class="combo-item-title">${idx + 1}. ${cItem.title || 'Artículo del Combo'}</div>
                     <div class="combo-item-price-tag" style="display: flex; align-items: baseline; flex-wrap: wrap; gap: 3px 8px; font-size: 0.72rem; font-family: var(--font-mono); margin-top: 3px;">
                       <span class="combo-price-in-combo" style="color: #b45309; font-weight: 800;">⚡ En combo: ${formatDualPrice(cItem.priceUsd || 0)}</span>
-                      <span class="combo-price-sep" style="color: #64748b; font-weight: 600;">🏷️ Por separado: <strong style="color: #334155; font-weight: 800;">${formatDualPrice(Number(cItem.residualPriceUsd !== undefined && cItem.residualPriceUsd !== null && cItem.residualPriceUsd !== "" ? cItem.residualPriceUsd : (cItem.priceUsd || 0)))}</strong></span>
+                      <span class="combo-price-sep" style="color: #475569; font-weight: 600;">🏷️ Por separado: <strong style="color: #334155; font-weight: 800;">${formatDualPrice(Number(cItem.residualPriceUsd !== undefined && cItem.residualPriceUsd !== null && cItem.residualPriceUsd !== "" ? cItem.residualPriceUsd : (cItem.priceUsd || 0)))}</strong></span>
                     </div>
                   </div>
                   ${cItem.description ? `
@@ -1556,7 +1556,7 @@ export function openProductSpecsModal(rewardId, imgIdx = 0, options = {}) {
               <span class="temu-sale-price-curr" id="specs-calc-cash-${item.id}" style="color: #dc2626; font-weight: 900;">${formatDualPrice(cashToPayWithPts, item.priceNio ? Math.round(item.priceNio * (1 - (appliedPct / 100))) : null)}</span>
             </div>
             <div>
-              <span style="font-size: 0.72rem; color: #64748b; font-family: var(--font-mono);">Antes:</span>
+              <span style="font-size: 0.72rem; color: #475569; font-family: var(--font-mono);">Antes:</span>
               <span class="temu-sale-price-orig" style="text-decoration: line-through; color: #94a3b8;">${formatPrice(item.priceUsd, item.priceNio, true)}</span>
             </div>
           </div>
@@ -1687,7 +1687,7 @@ export function openProductSpecsModal(rewardId, imgIdx = 0, options = {}) {
         <div class="temu-comments-title">
           <span>💬</span> <span>Preguntas & Dudas</span>
         </div>
-        <span style="font-size: 0.68rem; color: #64748b; font-family: var(--font-mono);">COMUNIDAD WIRED</span>
+        <span style="font-size: 0.68rem; color: #475569; font-family: var(--font-mono);">COMUNIDAD WIRED</span>
       </div>
       
       <form class="temu-comment-form" onsubmit="event.preventDefault(); submitProductComment('${item.id}')">
@@ -2446,7 +2446,7 @@ export function renderCatalog(catalog, user) {
         <div class="reward-pricing-box reward-pricing-incoming">
           <div class="pricing-row">
             <span class="pricing-label">Antes:</span>
-            <span class="pricing-val" style="text-decoration: line-through; color: #64748b; font-variant-numeric: tabular-nums;">${formatPrice(item.priceUsd)}</span>
+            <span class="pricing-val" style="text-decoration: line-through; color: #475569; font-variant-numeric: tabular-nums;">${formatPrice(item.priceUsd)}</span>
           </div>
           <div class="pricing-row discount-row">
             <span class="pricing-label">Descuento Preventa (-${presaleDiscPct}%):</span>
@@ -2456,7 +2456,7 @@ export function renderCatalog(catalog, user) {
             <span class="pricing-label">¡AHORA EN PREVENTA:</span>
             <span class="pricing-val total" style="color: #b91c1c; font-weight: 900; font-variant-numeric: tabular-nums;">${formatPrice(presalePrice)}!</span>
           </div>
-          <div class="pricing-row footnote-row" style="color: #64748b; font-size: 0.65rem; margin-top: 3px; line-height: 1.35; display: block; width: 100%; white-space: normal;">
+          <div class="pricing-row footnote-row" style="color: #475569; font-size: 0.65rem; margin-top: 3px; line-height: 1.35; display: block; width: 100%; white-space: normal;">
             <span style="white-space: normal; word-break: break-word; display: block; width: 100%;">✨ Descuento directo de preventa. No requiere puntos Wired.</span>
           </div>
         </div>
@@ -2466,7 +2466,7 @@ export function renderCatalog(catalog, user) {
         <div class="reward-pricing-box combo-pricing-box" style="border: 1.5px solid #b45309; background: #fffbeb; padding: 0.5rem 0.65rem; border-radius: 4px; margin-top: 0.5rem;">
           <div class="pricing-row" style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 2px 6px; font-size: 0.72rem; color: #78350f;">
             <span class="pricing-label">Por separado:</span>
-            <span class="pricing-val" style="text-decoration: line-through; color: #64748b; font-variant-numeric: tabular-nums;">${formatPrice(effCardSumUsd)}</span>
+            <span class="pricing-val" style="text-decoration: line-through; color: #475569; font-variant-numeric: tabular-nums;">${formatPrice(effCardSumUsd)}</span>
           </div>
           <div class="pricing-row discount-row" style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 2px 6px; font-size: 0.72rem; color: #b45309; font-weight: 800;">
             <span class="pricing-label">Ahorro en Combo:</span>
@@ -2489,7 +2489,7 @@ export function renderCatalog(catalog, user) {
               <span class="pricing-label">Precio oficial:</span>
               <span class="pricing-val total" style="color: #0f172a; font-variant-numeric: tabular-nums; margin-left: auto;">${formatPrice(item.priceUsd)}</span>
             </div>
-            <div class="pricing-row footnote-row" style="color: #64748b; font-size: 0.65rem; margin-top: 3px; line-height: 1.35; display: block; width: 100%; white-space: normal;">
+            <div class="pricing-row footnote-row" style="color: #475569; font-size: 0.65rem; margin-top: 3px; line-height: 1.35; display: block; width: 100%; white-space: normal;">
               <span style="white-space: normal; word-break: break-word; display: block; width: 100%;">✦ Precio de venta plano oficial en tienda física.</span>
             </div>
           </div>
@@ -2499,7 +2499,7 @@ export function renderCatalog(catalog, user) {
           <div class="reward-pricing-box">
             <div class="pricing-row" style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 4px 8px;">
               <span class="pricing-label">Antes:</span>
-              <span class="pricing-val" style="text-decoration: line-through; color: #64748b; font-variant-numeric: tabular-nums; margin-left: auto;">${formatPrice(item.priceUsd)}</span>
+              <span class="pricing-val" style="text-decoration: line-through; color: #475569; font-variant-numeric: tabular-nums; margin-left: auto;">${formatPrice(item.priceUsd)}</span>
             </div>
             <div class="pricing-row discount-row" style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 4px 8px;">
               <span class="pricing-label">Tu ahorro (Tope ${maxPct}%):</span>
@@ -2516,7 +2516,7 @@ export function renderCatalog(catalog, user) {
           <div class="reward-pricing-box">
             <div class="pricing-row" style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 4px 8px;">
               <span class="pricing-label">Antes:</span>
-              <span class="pricing-val" style="text-decoration: line-through; color: #64748b; font-variant-numeric: tabular-nums; margin-left: auto;">${formatPrice(item.priceUsd)}</span>
+              <span class="pricing-val" style="text-decoration: line-through; color: #475569; font-variant-numeric: tabular-nums; margin-left: auto;">${formatPrice(item.priceUsd)}</span>
             </div>
             <div class="pricing-row discount-row" style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 4px 8px;">
               <span class="pricing-label">Tu ahorro (${appliedPts.toLocaleString()} WP):</span>
@@ -2526,7 +2526,7 @@ export function renderCatalog(catalog, user) {
               <span class="pricing-label">¡AHORA:</span>
               <span class="pricing-val total" style="color: #b91c1c; font-weight: 900; font-variant-numeric: tabular-nums; margin-left: auto;">${formatPrice(cashToPayWithPts)}!</span>
             </div>
-            <div class="pricing-row footnote-row" style="color: #64748b; font-size: 0.65rem; margin-top: 3px; line-height: 1.35; display: block; width: 100%; white-space: normal;">
+            <div class="pricing-row footnote-row" style="color: #475569; font-size: 0.65rem; margin-top: 3px; line-height: 1.35; display: block; width: 100%; white-space: normal;">
               <span style="white-space: normal; word-break: break-word; display: block; width: 100%;">Tope máx. (${maxCapPts.toLocaleString()} WP): -${formatPrice(item.maxDiscountUsd)} (${maxPct}% OFF)</span>
             </div>
           </div>
@@ -2546,7 +2546,7 @@ export function renderCatalog(catalog, user) {
               <span class="pricing-label">¡AHORA:</span>
               <span class="pricing-val total" style="color: #0f172a; font-weight: 900; font-variant-numeric: tabular-nums; margin-left: auto;">${formatPrice(item.priceUsd)}</span>
             </div>
-            <div class="pricing-row footnote-row" style="color: #64748b; font-size: 0.65rem; margin-top: 3px; line-height: 1.35; display: block; width: 100%; white-space: normal;">
+            <div class="pricing-row footnote-row" style="color: #475569; font-size: 0.65rem; margin-top: 3px; line-height: 1.35; display: block; width: 100%; white-space: normal;">
               <span style="white-space: normal; word-break: break-word; display: block; width: 100%;">Tope máx. (${maxCapPts.toLocaleString()} WP): Hasta -${formatPrice(item.maxDiscountUsd)} (${maxPct}% OFF)</span>
             </div>
           </div>
@@ -2556,7 +2556,7 @@ export function renderCatalog(catalog, user) {
           <div class="reward-pricing-box">
             <div class="pricing-row">
               <span class="pricing-label">Antes (Precio regular):</span>
-              <span class="pricing-val" style="text-decoration: line-through; color: #64748b; font-variant-numeric: tabular-nums;">${formatPrice(item.priceUsd)}</span>
+              <span class="pricing-val" style="text-decoration: line-through; color: #475569; font-variant-numeric: tabular-nums;">${formatPrice(item.priceUsd)}</span>
             </div>
             <div class="pricing-row discount-row">
               <span class="pricing-label">Ahorro con puntos:</span>

@@ -80,6 +80,22 @@ export async function openClientCameraScanner() {
     }
   }
 
+  if (typeof Html5Qrcode === "undefined") {
+    try {
+      showToast("Iniciando escáner...", "info");
+      await new Promise((resolve, reject) => {
+        const s = document.createElement("script");
+        s.src = "https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js";
+        s.onload = resolve;
+        s.onerror = () => reject(new Error("Librería de escáner no disponible."));
+        document.head.appendChild(s);
+      });
+    } catch (_) {
+      showToast("Librería de escáner no disponible.", "error");
+      return;
+    }
+  }
+
   if (typeof Html5Qrcode !== "undefined") {
     try {
       if (clientQrCodeScanner) {

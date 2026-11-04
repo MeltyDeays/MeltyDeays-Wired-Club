@@ -1,8 +1,9 @@
 /**
  * Módulos Atómicos de Modales (The Wired Club)
  */
-@import url("./base.css");
-@import url("./auth.css");
-@import url("./voucher.css");
-@import url("./confirm-redeem.css?v=2.9.18");
-@import url("./lightbox.css");
+@import url("./base.css?v=2.9.52");
+@import url("./auth.css?v=2.9.52");
+@import url("./voucher.css?v=2.9.52");
+@import url("./confirm-redeem.css?v=2.9.52");
+@import url("./lightbox.css?v=2.9.52");
+@import url("./preorder.css?v=2.9.52");
