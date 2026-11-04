@@ -86,6 +86,27 @@ export async function runSeoAuditTestSuite(ctx) {
     assert.strictEqual(indexHtml.includes('https://wa.me/50558438412'), false, 'No debe usar wa.me que genera redirecciones intermedias');
     assert.strictEqual(indexHtml.includes('https://api.whatsapp.com/send?phone=50558438412'), true, 'Debe apuntar directo a api.whatsapp.com');
   });
+
+  await ctx.test('9. Páginas estáticas (FAQ, Términos, Privacidad) poseen navbar oficial con branding y navegación', () => {
+    for (const pageName of ['faq.html', 'terminos.html', 'privacidad.html']) {
+      const pageHtml = fs.readFileSync(path.join(PROJECT_ROOT, pageName), 'utf8');
+      assert.strictEqual(pageHtml.includes('<header class="navbar">'), true, `${pageName} debe incluir navbar con clase .navbar`);
+      assert.strictEqual(pageHtml.includes('brand-wrapper'), true, `${pageName} debe contener brand-wrapper`);
+      assert.strictEqual(pageHtml.includes('wired-pole-svg'), true, `${pageName} debe incluir el logo oficial de poste de cables`);
+      assert.strictEqual(pageHtml.includes('nav-controls'), true, `${pageName} debe contener contenedor nav-controls para controles`);
+      assert.strictEqual(pageHtml.includes('Volver al Catálogo'), true, `${pageName} debe incluir enlace de retorno al catálogo`);
+      assert.strictEqual(pageHtml.includes('portal-static-page lain-card'), true, `${pageName} debe envolverse en .portal-static-page.lain-card`);
+      assert.strictEqual(pageHtml.includes('tech-corner'), true, `${pageName} debe tener esquinas tech-corner`);
+      assert.strictEqual(pageHtml.includes('static-section-card'), true, `${pageName} debe estructurar el contenido en static-section-card`);
+      assert.strictEqual(pageHtml.includes('portal-subnav-pills'), true, `${pageName} debe incluir píldoras de navegación inferior`);
+    }
+  });
+
+  await ctx.test('10. Ratios de contraste WCAG AA y CLS preservados', () => {
+    const clientCss = fs.readFileSync(path.join(PROJECT_ROOT, 'css', 'client.css'), 'utf8');
+    assert.strictEqual(clientCss.includes('#tab-content-catalog {\n  min-height: 80vh;\n}'), true, 'Debe reservar min-height en catalog para prevenir CLS');
+    assert.strictEqual(clientCss.includes('.portal-breadcrumb a {\n  color: #0369a1;'), true, 'Breadcrumb link debe tener contraste WCAG AA (#0369a1)');
+  });
 }
 
 if (process.argv[1] && process.argv[1].endsWith('verify_seo_audit_improvements.mjs')) {

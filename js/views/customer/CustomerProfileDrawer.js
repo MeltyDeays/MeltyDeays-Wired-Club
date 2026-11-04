@@ -161,14 +161,14 @@ export function renderProfileDrawer() {
       </div>
 
       <div class="profile-avatar-wrap">
-        <img src="${avatarUrl}" alt="Avatar" class="profile-avatar-img" onerror="this.src='https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80'">
+        <img src="${avatarUrl}" alt="Avatar del socio" width="64" height="64" class="profile-avatar-img" onerror="this.src='https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80'">
         <button type="button" class="btn-edit-avatar" onclick="toggleAvatarPresetPicker()" title="Cambiar foto de perfil">
           📷
         </button>
         <div class="avatar-presets-dropdown" id="avatar-presets-dropdown" style="display:none;">
           <div class="avatar-presets-grid">
             ${AVATAR_PRESETS.map(a => `
-              <img src="${a.url}" class="avatar-preset-opt" onclick="selectAvatarPreset('${a.url}')" title="${a.label}">
+              <img src="${a.url}" alt="${a.label}" width="40" height="40" loading="lazy" decoding="async" class="avatar-preset-opt" onclick="selectAvatarPreset('${a.url}')" title="${a.label}">
             `).join("")}
           </div>
           <label class="preset-upload-label" style="font-size: 0.65rem; margin-top: 4px;">

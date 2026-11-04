@@ -653,7 +653,7 @@ function renderLightboxView() {
       thumbsContainer.style.display = "flex";
       thumbsContainer.innerHTML = currentLightboxImages.map((src, i) => `
         <div class="lightbox-thumb-item ${i === currentLightboxIndex ? 'active' : ''}" onclick="setLightboxImageIndex(${i})" title="Frame ${i + 1}">
-          <img src="${src}" alt="Frame ${i + 1}">
+          <img src="${src}" alt="Frame ${i + 1}" width="48" height="48" loading="lazy" decoding="async">
         </div>
       `).join("");
     }
@@ -2446,7 +2446,7 @@ export function renderCatalog(catalog, user) {
         <div class="reward-pricing-box reward-pricing-incoming">
           <div class="pricing-row">
             <span class="pricing-label">Antes:</span>
-            <span class="pricing-val" style="text-decoration: line-through; color: #94a3b8; font-variant-numeric: tabular-nums;">${formatPrice(item.priceUsd)}</span>
+            <span class="pricing-val" style="text-decoration: line-through; color: #64748b; font-variant-numeric: tabular-nums;">${formatPrice(item.priceUsd)}</span>
           </div>
           <div class="pricing-row discount-row">
             <span class="pricing-label">Descuento Preventa (-${presaleDiscPct}%):</span>
@@ -2456,21 +2456,21 @@ export function renderCatalog(catalog, user) {
             <span class="pricing-label">¡AHORA EN PREVENTA:</span>
             <span class="pricing-val total" style="color: #dc2626; font-weight: 900; font-variant-numeric: tabular-nums;">${formatPrice(presalePrice)}!</span>
           </div>
-          <div class="pricing-row footnote-row" style="color: #94a3b8; font-size: 0.65rem; margin-top: 3px; line-height: 1.35; display: block; width: 100%; white-space: normal;">
+          <div class="pricing-row footnote-row" style="color: #64748b; font-size: 0.65rem; margin-top: 3px; line-height: 1.35; display: block; width: 100%; white-space: normal;">
             <span style="white-space: normal; word-break: break-word; display: block; width: 100%;">✨ Descuento directo de preventa. No requiere puntos Wired.</span>
           </div>
         </div>
       `;
     } else if (isCombo) {
       partialBreakdown = `
-        <div class="reward-pricing-box combo-pricing-box" style="border: 1.5px solid #d97706; background: #fffbeb; padding: 0.5rem 0.65rem; border-radius: 4px; margin-top: 0.5rem;">
+        <div class="reward-pricing-box combo-pricing-box" style="border: 1.5px solid #b45309; background: #fffbeb; padding: 0.5rem 0.65rem; border-radius: 4px; margin-top: 0.5rem;">
           <div class="pricing-row" style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 2px 6px; font-size: 0.72rem; color: #78350f;">
             <span class="pricing-label">Por separado:</span>
-            <span class="pricing-val" style="text-decoration: line-through; color: #94a3b8; font-variant-numeric: tabular-nums;">${formatPrice(effCardSumUsd)}</span>
+            <span class="pricing-val" style="text-decoration: line-through; color: #64748b; font-variant-numeric: tabular-nums;">${formatPrice(effCardSumUsd)}</span>
           </div>
           <div class="pricing-row discount-row" style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 2px 6px; font-size: 0.72rem; color: #b45309; font-weight: 800;">
             <span class="pricing-label">Ahorro en Combo:</span>
-            <span class="pricing-val green" style="color: #d97706; font-variant-numeric: tabular-nums;">-${formatPrice(effCardSavingsUsd)} (${effCardSavingsPct}% OFF)</span>
+            <span class="pricing-val green" style="color: #b45309; font-variant-numeric: tabular-nums;">-${formatPrice(effCardSavingsUsd)} (${effCardSavingsPct}% OFF)</span>
           </div>
           <div class="pricing-row total-row" style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 2px 6px; font-size: 0.8rem; font-weight: 900; color: #78350f; border-top: 1px dashed #fcd34d; margin-top: 4px; padding-top: 4px;">
             <span class="pricing-label">¡AHORA EN COMBO:</span>
@@ -2499,7 +2499,7 @@ export function renderCatalog(catalog, user) {
           <div class="reward-pricing-box">
             <div class="pricing-row" style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 4px 8px;">
               <span class="pricing-label">Antes:</span>
-              <span class="pricing-val" style="text-decoration: line-through; color: #94a3b8; font-variant-numeric: tabular-nums; margin-left: auto;">${formatPrice(item.priceUsd)}</span>
+              <span class="pricing-val" style="text-decoration: line-through; color: #64748b; font-variant-numeric: tabular-nums; margin-left: auto;">${formatPrice(item.priceUsd)}</span>
             </div>
             <div class="pricing-row discount-row" style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 4px 8px;">
               <span class="pricing-label">Tu ahorro (Tope ${maxPct}%):</span>
@@ -2516,7 +2516,7 @@ export function renderCatalog(catalog, user) {
           <div class="reward-pricing-box">
             <div class="pricing-row" style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 4px 8px;">
               <span class="pricing-label">Antes:</span>
-              <span class="pricing-val" style="text-decoration: line-through; color: #94a3b8; font-variant-numeric: tabular-nums; margin-left: auto;">${formatPrice(item.priceUsd)}</span>
+              <span class="pricing-val" style="text-decoration: line-through; color: #64748b; font-variant-numeric: tabular-nums; margin-left: auto;">${formatPrice(item.priceUsd)}</span>
             </div>
             <div class="pricing-row discount-row" style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 4px 8px;">
               <span class="pricing-label">Tu ahorro (${appliedPts.toLocaleString()} WP):</span>
@@ -2556,7 +2556,7 @@ export function renderCatalog(catalog, user) {
           <div class="reward-pricing-box">
             <div class="pricing-row">
               <span class="pricing-label">Antes (Precio regular):</span>
-              <span class="pricing-val" style="text-decoration: line-through; color: #94a3b8; font-variant-numeric: tabular-nums;">${formatPrice(item.priceUsd)}</span>
+              <span class="pricing-val" style="text-decoration: line-through; color: #64748b; font-variant-numeric: tabular-nums;">${formatPrice(item.priceUsd)}</span>
             </div>
             <div class="pricing-row discount-row">
               <span class="pricing-label">Ahorro con puntos:</span>
@@ -2720,7 +2720,7 @@ export function renderCatalog(catalog, user) {
               ${comboItems.map((cItem, idx) => `
                 ${idx > 0 ? '<div class="combo-split-divider"><span class="combo-split-plus">+</span></div>' : ''}
                 <div class="combo-split-item" title="${cItem.title}">
-                  <img src="${cItem.imageUrl || itemImages[idx] || mainCover}" alt="${cItem.title}" class="combo-split-img" referrerpolicy="no-referrer" loading="lazy" decoding="async" onerror="this.onerror=null; this.style.display='none'; this.parentElement.style.background='#0d131f';">
+                  <img src="${cItem.imageUrl || itemImages[idx] || mainCover}" alt="${cItem.title}" width="160" height="160" class="combo-split-img" referrerpolicy="no-referrer" loading="lazy" decoding="async" onerror="this.onerror=null; this.style.display='none'; this.parentElement.style.background='#0d131f';">
                   <div class="combo-split-item-label">${cItem.title}</div>
                 </div>
               `).join('')}
@@ -2742,7 +2742,7 @@ export function renderCatalog(catalog, user) {
             ` : ''}
             ${mainCover
               ? `
-                <img src="${mainCover}" alt="${item.title}" class="reward-img" referrerpolicy="no-referrer" loading="lazy" decoding="async" onclick="event.stopPropagation(); openProductSpecsModal('${item.id}')" title="Clic para ver detalles y fotos" onerror="handleCatalogImgError(this, '${item.id}', '${isIncoming ? '🕊️' : (isPartial ? '🏷️' : '🎁')}', '${isIncoming ? 'PREORDER_ITEM' : (isPartial ? 'SALE_DISCOUNT' : 'TECH_REWARD')}');">
+                <img src="${mainCover}" alt="${item.title}" width="320" height="320" class="reward-img" referrerpolicy="no-referrer" loading="lazy" decoding="async" onclick="event.stopPropagation(); openProductSpecsModal('${item.id}')" title="Clic para ver detalles y fotos" onerror="handleCatalogImgError(this, '${item.id}', '${isIncoming ? '🕊️' : (isPartial ? '🏷️' : '🎁')}', '${isIncoming ? 'PREORDER_ITEM' : (isPartial ? 'SALE_DISCOUNT' : 'TECH_REWARD')}');">
                 ${!isOut ? `
                   <div class="reward-img-action-overlay" onclick="event.stopPropagation(); openProductSpecsModal('${item.id}')">
                     <div class="reward-img-expand-badge">

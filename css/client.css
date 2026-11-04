@@ -4736,15 +4736,26 @@
 }
 
 .footer-links-list a {
-  color: #0284c7;
+  color: #0369a1;
   text-decoration: none;
   font-weight: 600;
   transition: color 0.15s ease;
 }
 
 .footer-links-list a:hover {
-  color: #0369a1;
+  color: #0c4a6e;
   text-decoration: underline;
+}
+
+/* PREVENCIÓN DE CUMULATIVE LAYOUT SHIFT (CLS: 0) */
+#tab-content-catalog {
+  min-height: 80vh;
+}
+
+.rewards-grid {
+  min-height: 520px;
+  content-visibility: auto;
+  contain-intrinsic-size: 1px 600px;
 }
 
 @media (max-width: 768px) {
@@ -4839,7 +4850,7 @@
 }
 
 .portal-breadcrumb a {
-  color: #0284c7;
+  color: #0369a1;
   text-decoration: none;
   font-weight: 700;
 }
